@@ -30,6 +30,12 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   after the installation (can be turned off). Later: Settings → Advanced → Game files and DLC.
   `aot\tools\make_release.ps1 [-Zip]` builds the release package without game files.
 
+- **Updates** (`src\Updates.cs`). On start the launcher asks the GitHub API for the latest release of
+  OpenPortroid/ArmyOfTwoRecompilation (off the UI thread, 6 s timeout). The version under Play reads `v1.0 · up to date`,
+  or `v1.0 · update available: v1.1`, and then a window offers to download the new archive (the browser downloads
+  the release's `.zip`). Offline only the version is shown. `Updates.Current` is the package's version: bump it before
+  every release, the tag is `v` + it.
+
 Build: `build.cmd` (Roslyn from Visual Studio / Build Tools, or the csc that ships with Windows). The pictures
 in `res\` are made by `tools\make_assets.py <background> [<logo>]`: the background is cropped to the main
 screen's 2.5:1 art band (`bg.jpg`) and to the window's shape, blurred, for Settings (`bg_dim.jpg`).
@@ -39,4 +45,6 @@ bevel, without the rosette and the ground — into `res\logo.png` with a soft sh
 Debugging: `--dump-args=<file> [--host=<ip>]` writes the game command line for the current settings (`--host`:
 as if a host had been found); `--snapshot=<png> [--screen=main|settings|install] [--tab=N] [--sel=N]` renders
 the window to a file without showing it; `--probe=<file>` runs the host search and writes the found IP or
-`none`; `--install=<log> --src=<path>[;<path>...]` installs from the given sources without the window.
+`none`; `--install=<log> --src=<path>[;<path>...]` installs from the given sources without the window;
+`--check-update=<file>` asks GitHub for the latest release and writes `<version> <url> newer|current` or `none`;
+`--latest=<tag>` takes this tag as the latest release instead of asking GitHub (with `--snapshot`: the update window).

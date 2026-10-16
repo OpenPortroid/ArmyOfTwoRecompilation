@@ -75,6 +75,29 @@ namespace AO2Launcher
             a("Fullscreen", "Полный экран", "Plein écran", "Vollbild", "Pantalla completa", "Schermo intero");
             a("Window {0}", "Окно {0}", "Fenêtre {0}", "Fenster {0}", "Ventana {0}", "Finestra {0}");
 
+            // --- Updates ---
+            a("{0} · up to date", "{0} · актуальная версия", "{0} · à jour", "{0} · aktuell", "{0} · actualizado", "{0} · aggiornato");
+            a("{0} · update available: {1}", "{0} · доступно обновление: {1}", "{0} · mise à jour disponible : {1}",
+              "{0} · Update verfügbar: {1}", "{0} · actualización disponible: {1}", "{0} · aggiornamento disponibile: {1}");
+            a("UPDATE AVAILABLE", "ДОСТУПНО ОБНОВЛЕНИЕ", "MISE À JOUR DISPONIBLE", "UPDATE VERFÜGBAR", "ACTUALIZACIÓN DISPONIBLE",
+              "AGGIORNAMENTO DISPONIBILE");
+            a("Version {0} is out, you have {1}. Download it now?",
+              "Вышла версия {0}, у вас {1}. Скачать сейчас?",
+              "La version {0} est sortie, vous avez la {1}. La télécharger maintenant ?",
+              "Version {0} ist erschienen, Sie haben {1}. Jetzt herunterladen?",
+              "Ya está disponible la versión {0}; tienes la {1}. ¿Descargarla ahora?",
+              "È uscita la versione {0}, hai la {1}. Scaricarla ora?");
+            a("Extract the archive over this folder: settings and saves are kept.",
+              "Распакуйте архив поверх этой папки: настройки и сохранения останутся.",
+              "Extrayez l'archive par-dessus ce dossier : paramètres et sauvegardes sont conservés.",
+              "Entpacken Sie das Archiv über diesen Ordner: Einstellungen und Spielstände bleiben erhalten.",
+              "Extrae el archivo sobre esta carpeta: se conservan los ajustes y las partidas.",
+              "Estrai l'archivio sopra questa cartella: impostazioni e salvataggi restano.");
+            a("DOWNLOAD", "СКАЧАТЬ", "TÉLÉCHARGER", "HERUNTERLADEN", "DESCARGAR", "SCARICA");
+            a("LATER", "ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
+            a("Could not open the browser: {0}", "Не удалось открыть браузер: {0}", "Impossible d'ouvrir le navigateur : {0}",
+              "Browser konnte nicht geöffnet werden: {0}", "No se pudo abrir el navegador: {0}", "Impossibile aprire il browser: {0}");
+
             // --- Settings: tabs, hints, common values ---
             a("GRAPHICS", "ГРАФИКА", "GRAPHISMES", "GRAFIK", "GRÁFICOS", "GRAFICA");
             a("CONTROLS", "УПРАВЛЕНИЕ", "COMMANDES", "STEUERUNG", "CONTROLES", "COMANDI");

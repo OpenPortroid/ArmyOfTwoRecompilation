@@ -131,6 +131,9 @@ namespace AO2Launcher
         bool toastBad;
         DateTime toastUntil;
         string gameExe;
+        Updates.Release latest; // the latest release on GitHub; null until known (or offline)
+        bool updatePrompt;      // the "update available" window is open
+        int promptSel;          // in it: 0 = download, 1 = later
 
         public LauncherForm()
         {
@@ -184,6 +187,89 @@ namespace AO2Launcher
             };
             timer.Start();
             LayoutRows();
+            CheckForUpdate();
+        }
+
+        // Asks GitHub for the latest release off the UI thread; a newer one opens the update window.
+        void CheckForUpdate()
+        {
+            if (Updates.Override != null)
+            {
+                OnLatest(Updates.Latest());
+                return;
+            }
+            var th = new System.Threading.Thread(() =>
+            {
+                Updates.Release r = Updates.Latest();
+                try
+                {
+                    BeginInvoke(new Action(() => OnLatest(r)));
+                }
+                catch (InvalidOperationException)
+                {
+                    // The form was closed meanwhile.
+                }
+            });
+            th.IsBackground = true;
+            th.Start();
+        }
+
+        void OnLatest(Updates.Release r)
+        {
+            if (IsDisposed || Disposing || r == null)
+            {
+                return;
+            }
+            latest = r;
+            if (UpdateAvailable)
+            {
+                updatePrompt = true;
+                promptSel = 0;
+            }
+            Invalidate();
+        }
+
+        bool UpdateAvailable
+        {
+            get { return latest != null && Updates.Newer(latest.Version, Updates.Current); }
+        }
+
+        // The update window is shown over the main screen only, and not while the game is being installed.
+        bool PromptShown
+        {
+            get { return updatePrompt && screen == UiScreen.Main && !installing; }
+        }
+
+        void DownloadUpdate()
+        {
+            updatePrompt = false;
+            try
+            {
+                System.Diagnostics.Process.Start(latest.Url);
+            }
+            catch (Exception ex)
+            {
+                ShowToast(L.F("Could not open the browser: {0}", ex.Message), true);
+            }
+            Invalidate();
+        }
+
+        void ClosePrompt()
+        {
+            updatePrompt = false;
+            Invalidate();
+        }
+
+        void PromptActivate()
+        {
+            if (promptSel == 0)
+            {
+                DownloadUpdate();
+            }
+            else
+            {
+                ClosePrompt();
+            }
         }
 
         public void Snapshot(string path, int t, int s, UiScreen scr)
@@ -1023,6 +1109,25 @@ namespace AO2Launcher
         void OnPad(int b)
         {
             UsePad(true);
+            if (PromptShown)
+            {
+                switch (b)
+                {
+                    case Gamepad.DpadLeft:
+                    case Gamepad.DpadRight:
+                        promptSel = 1 - promptSel;
+                        Invalidate();
+                        break;
+                    case Gamepad.A:
+                    case Gamepad.Start:
+                        PromptActivate();
+                        break;
+                    case Gamepad.B:
+                        ClosePrompt();
+                        break;
+                }
+                return;
+            }
             if (RevealFocus(b == Gamepad.A || b == Gamepad.Start))
             {
                 return;
@@ -1077,6 +1182,27 @@ namespace AO2Launcher
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             UsePad(false);
+            if (PromptShown)
+            {
+                switch (keyData)
+                {
+                    case Keys.Left:
+                    case Keys.Right:
+                    case Keys.Tab:
+                    case Keys.Shift | Keys.Tab:
+                        promptSel = 1 - promptSel;
+                        Invalidate();
+                        return true;
+                    case Keys.Enter:
+                    case Keys.Space:
+                        PromptActivate();
+                        return true;
+                    case Keys.Escape:
+                        ClosePrompt();
+                        return true;
+                }
+                return true;
+            }
             if (!(ActiveControl is TextBox) && RevealFocus(keyData == Keys.Enter || keyData == Keys.Space))
             {
                 return true;
@@ -1463,6 +1589,11 @@ namespace AO2Launcher
             if (screen == UiScreen.Main)
             {
                 DrawMain(g);
+                if (PromptShown)
+                {
+                    hots.Clear();
+                    DrawPrompt(g);
+                }
                 DrawTitleBar(g, "Launcher", false, false);
             }
             else if (screen == UiScreen.Install)
@@ -1501,9 +1632,9 @@ namespace AO2Launcher
 
         void DrawMain(Graphics g)
         {
-            var play = new RectangleF((W - 260) / 2, 548, 260, 50);
-            var set = new RectangleF(play.X - 20 - 170, 552, 170, 42);
-            var exit = new RectangleF(play.Right + 20, 552, 170, 42);
+            var play = new RectangleF((W - 260) / 2, 538, 260, 50);
+            var set = new RectangleF(play.X - 20 - 170, 542, 170, 42);
+            var exit = new RectangleF(play.Right + 20, 542, 170, 42);
             bool install = gameExe != null && !Installed;
             FlatButton(g, set, L.T("SETTINGS"), fBtn, false, Lit(mainSel, 1) || IsHover("settings"), false);
             FlatButton(g, exit, L.T("EXIT"), fBtn, false, Lit(mainSel, 2) || IsHover("exit"), false);
@@ -1513,7 +1644,26 @@ namespace AO2Launcher
             AddHot(exit, "exit", Close, 2);
             AddHot(play, "play", Play, 0);
 
-            var status = new RectangleF((W - 520) / 2, 614, 520, 22);
+            // The version under PLAY: up to date, or the newer release (click: the update window).
+            var ver = new RectangleF((W - 520) / 2, 593, 520, 18);
+            string current = "v" + Updates.Current;
+            if (UpdateAvailable)
+            {
+                bool hv = IsHover("version");
+                DrawText(g, L.F("{0} · update available: {1}", current, "v" + latest.Version), fTiny, hv ? PaperHi : Paper, ver, CenterFmt());
+                AddHot(ver, "version", () =>
+                {
+                    updatePrompt = true;
+                    promptSel = 0;
+                    Invalidate();
+                });
+            }
+            else
+            {
+                DrawText(g, latest != null ? L.F("{0} · up to date", current) : current, fTiny, Color.FromArgb(110, 122, 140), ver, CenterFmt());
+            }
+
+            var status = new RectangleF((W - 520) / 2, 616, 520, 22);
             if (gameExe == null)
             {
                 bool hv = IsHover("path");
@@ -1524,7 +1674,29 @@ namespace AO2Launcher
             {
                 DrawText(g, Summary(), fLcd, Color.FromArgb(130, 142, 160), status, CenterFmt());
             }
-            Dot(g, 28, 625, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
+            Dot(g, 28, 627, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
+        }
+
+        // The update window: over the art, the rest of the main screen dimmed and not clickable.
+        void DrawPrompt(Graphics g)
+        {
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            var box = new RectangleF((W - 520) / 2, 196, 520, 210);
+            Panel(g, box);
+            Caps(g, L.T("UPDATE AVAILABLE"), fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+            var text = new StringFormat { Alignment = StringAlignment.Center };
+            DrawText(g, L.F("Version {0} is out, you have {1}. Download it now?", "v" + latest.Version, "v" + Updates.Current),
+                fLabel, TextLight, new RectangleF(box.X + 30, box.Y + 62, box.Width - 60, 42), text);
+            DrawText(g, L.T("Extract the archive over this folder: settings and saves are kept."),
+                fSmall, TextDim, new RectangleF(box.X + 30, box.Y + 98, box.Width - 60, 36), text);
+
+            var dl = new RectangleF(box.X + box.Width / 2 - 10 - 180, box.Bottom - 66, 180, 42);
+            var later = new RectangleF(box.X + box.Width / 2 + 10, box.Bottom - 66, 180, 42);
+            bool onButton = IsHover("upd_dl") || IsHover("upd_later");
+            FlatButton(g, dl, L.T("DOWNLOAD"), fBtn, true, IsHover("upd_dl") || (!onButton && promptSel == 0), false);
+            FlatButton(g, later, L.T("LATER"), fBtn, false, IsHover("upd_later") || (!onButton && promptSel == 1), false);
+            AddHot(dl, "upd_dl", DownloadUpdate);
+            AddHot(later, "upd_later", ClosePrompt);
         }
 
         void DrawSettings(Graphics g)
@@ -1816,6 +1988,15 @@ namespace AO2Launcher
                 File.WriteAllText(dump, Game.CommandLine(new Settings(), opt("host")));
                 return;
             }
+            // --check-update=<file>: asks GitHub for the latest release, writes "<version> <url>" (or "none").
+            string check = opt("check-update");
+            if (check != null)
+            {
+                Updates.Release r = Updates.Latest();
+                File.WriteAllText(check, r == null ? "none" : r.Version + " " + r.Url +
+                    (Updates.Newer(r.Version, Updates.Current) ? " newer" : " current"));
+                return;
+            }
             if (probe != null)
             {
                 string found = Discovery.FindHost(new Settings()["host_ip"].Trim(), 1200);
@@ -1858,6 +2039,7 @@ namespace AO2Launcher
                 File.AppendAllText(install, result + "\r\n");
                 return;
             }
+            Updates.Override = opt("latest"); // --latest=<tag>: the latest release, without asking GitHub
             var form = new LauncherForm();
             if (opt("bench") != null)
             {
