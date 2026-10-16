@@ -101,5 +101,5 @@ log_to_files = false
 ao2_game_language = "auto"
 ao2_native_gpu_resolution_scale = 2
 ao2_aspect_ratio = "auto"
-ao2_fps_overlay = 1
+ao2_fps_overlay = 0
 ao2_native_gpu_vsync = false
