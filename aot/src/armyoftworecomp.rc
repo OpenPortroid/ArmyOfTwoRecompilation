@@ -1,0 +1,7 @@
+// armyoftworecomp.rc
+// Resource script for Windows executable icon
+
+#include "winresrc.h"
+
+// Icon resource
+IDI_ICON1 ICON "bin_ico.ico"

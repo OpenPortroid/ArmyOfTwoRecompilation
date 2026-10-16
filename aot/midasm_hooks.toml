@@ -1,0 +1,32 @@
+# Mid-asm hooks replacing xenia-canary code patches for Army of Two (4541084C).
+# Code bytes are compiled into C++ by codegen, so writing patched instructions
+# into guest memory at runtime has no effect; these hooks run the same logic.
+# Implementations: src/midasm_hooks.cpp, declarations: src/midasm_hooks.h.
+
+# "Unlock FPS" (be32 0x82545AF0 = nop): the frame limiter's `lfs f0,21288(r11)`
+# loads K, and the limiter waits until (K / f1) - elapsed(f30) has passed
+# (f1 from a virtual call: 1 on loading screens = 30 FPS, 2 in gameplay). The
+# hook sets K = f1 / target so the frame time is at least 1 / target. Never no
+# wait at all: with zero frame times the loading screen's PhysX step never
+# completes (hang on "Loading map").
+[[midasm_hook]]
+address = 0x82545AF0
+name = "AO2FrameLimiterHook"
+registers = ["f0", "f1", "f30"]
+after_instruction = true
+
+# "Unlock FPS" (be8 0x82B231C7): D3DPRESENT_INTERVAL_TWO -> `li r10,2` is the
+# VdSwap presentation interval (2 vblanks = 30 FPS).
+[[midasm_hook]]
+address = 0x82B231C4
+name = "AO2PresentIntervalHook"
+registers = ["r10"]
+after_instruction = true
+
+# "16x Anisotropic Filtering" (be32 0x82AA22C0 = li r5,16): `mr r5,r30` passes
+# the max anisotropy to the per-sampler setter.
+[[midasm_hook]]
+address = 0x82AA22C0
+name = "AO2AnisotropyHook"
+registers = ["r5"]
+after_instruction = true

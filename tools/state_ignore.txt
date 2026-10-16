@@ -1,0 +1,24 @@
+# tools/state_diff.py: properties that differ between two co-op machines by design.
+# One regex per line, searched in "Class.Property" (Class = the object's class).
+
+# This player's interface: each machine ticks and draws only its own HUD.
+^AO2H[uU][dD]\w*\.
+^MaterialInstanceConstant\.
+^AO2PRI\.(UniqueId|bFade\w+)$
+^AO2PlayerController\.(CurrentPlayerData|CurrentPlayerSettings|OnlinePlayerData|ProfileSettings|bApplyProfileSettings)$
+^AO2PlayerController\.(PartnerPIP_SceneCapture|bUsePartnerPIP)$
+
+# The partner's picture-in-picture / GPS view: this machine's scene captures.
+^(SceneCapture2DActor|SceneCapture2DComponent|DrawFrustumComponent)\.
+
+# Rendering: what this machine drew and when, lighting caches, decals, terrain tessellation.
+\.(LastRenderTime|LastHUDRenderTime)$
+^WorldInfo\.RealTimeSeconds$
+^\w*Light\w*\.
+^DynamicLightEnvironmentComponent\.
+^(DecalComponent|DecalLifetime\w*)\.
+^Terrain\w*\.
+
+# Per-machine counters and addresses kept in script-visible fields.
+\.(LightGuid|LightmapGuid|OverlapTag|OctreeNodes)$
+Component\.Tag$

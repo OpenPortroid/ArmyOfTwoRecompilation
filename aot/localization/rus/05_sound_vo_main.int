@@ -1,0 +1,769 @@
+;; Exported by dgikunda at 8:15 PM on 9/13/2007
+;; script from CL # 146031
+[100_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Не знаю... Может, радиопередатчик или что-то такое." , Time=0)
+[101_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Давай обойдем этого типа с тыла - через здание." , Time=0)
+[102_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Господи!" , Time=0)
+[103_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что это было?" , Time=0)
+[104_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, мне только что сообщили, что армия США нашла" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: источник радиопередачи" , Time=1.7)
+Subtitles[2]=(Text="МЮРРЕЙ: и выпустила по зданию управляемую ракету." , Time=4.2)
+Subtitles[3]=(Text="МЮРРЕЙ: Вы что-нибудь видели? Прием." , Time=6.4)
+[105_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Да -" , Time=0)
+[106_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы слышали. Прием." , Time=0)
+[107_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Ладно, тогда это ваша цель. Обыщите место удара, ищите любые следы Али Юсуфа. Конец связи." , Time=0)
+[112_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Может, попробуем пробраться через крышу." , Time=0)
+[113_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Спорим, через крышу можно попасть внутрь." , Time=0)
+[121a_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="МЮРРЕЙ: Достаньте этот вертолет. Там один из помощников Али Юсуфа!" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Не дайте ему уйти!" , Time=2.67)
+[137_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вертолет на мне - займись теми, кто на земле." , Time=0)
+[14_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тут все разнесено в хлам." , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: Ты правда думаешь, что Эйзенхауэр где-то здесь?" , Time=1.52)
+[141_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Не дай вертолету уйти - этих я беру на себя." , Time=0)
+[145_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тайс, держи этих от меня подальше - вертолет на мне!" , Time=0)
+[147_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тут я справлюсь - не дай вертолету уйти!" , Time=0)
+[149_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Есть!" , Time=0)
+[15_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Не похоже, но давай осмотримся." , Time=0)
+[150_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Блять. Он ушел." , Time=0)
+[151_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ненавижу, когда так бывает." , Time=0)
+[152_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, хорошие новости." , Time=0)
+Subtitles[1]=(Text="Кто-то из того вертолета позвонил по мобильному самому Али Юсуфу." , Time=1.71)
+Subtitles[2]=(Text="Я отследила звонок и выяснила, где Юсуф." , Time=5.44)
+Subtitles[3]=(Text="Он на иракской военной базе в паре километров от вас." , Time=8.51)
+Subtitles[4]=(Text="Сейчас отмечу ее у вас на GPS. Прием." , Time=11.85)
+[153_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Отлично, выдвигаемся! Конец связи." , Time=0)
+[154_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Знаешь, я тут подумал. Как мы тогда попали в засаду? Мы на шифрованных частотах. Где мы, знали только SSC и штаб армии." , Time=0)
+[155_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не знаю. И знать не хочу." , Time=0)
+[156_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Про такие засады каждый день в новостях говорят. По-моему, кто-то сливает им, где наши войска." , Time=0)
+[16_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Слыхал про законопроект, о котором все говорят?" , Time=0)
+[16_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="РИОС: Сэм, это ты? Бля, это же я, Тайсон Риос!" , Time=0)
+[161_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты и твои теории заговора. Ну ты и фрукт, Тайс." , Time=0)
+[166_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Похоже, мы нашли базу Али Юсуфа." , Time=0)
+[167_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: С чего ты взял? Охрана, оружие, вышки? Или ты у нас ебаный экстрасенс?" , Time=0)
+[168_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Зови меня мисс Клео!" , Time=0)
+[169_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152426"
+Subtitles[0]=(Text="МЮРРЕЙ: Ребята, еще хорошие новости. Оказывается, коалиция" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: давно искала базу Али Юсуфа" , Time=2.63)
+Subtitles[2]=(Text="МЮРРЕЙ: - и вы нашли ее первыми." , Time=4.9)
+Subtitles[3]=(Text="МЮРРЕЙ: В бункере на базе производят оружие." , Time=6.6)
+Subtitles[4]=(Text="МЮРРЕЙ: Минобороны хорошо заплатит, если вы его уничтожите. Прием." , Time=9)
+[17_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Какой еще \"законопроект\"?" , Time=0)
+[17_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Не думал, что еще тебя увижу!" , Time=0)
+[170_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Отлично. Меня это устраивает!" , Time=0)
+[171_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Я так и думала. И это еще не все. У нас будет наготове истребитель, так что если понадобится помощь с врагами, просто поставьте радиомаяк на нужную цель, и мы вызовем самолет. Ясно? Конец связи." , Time=0)
+[171e_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Отвлеки их. Я поставлю радиомаяк и вызову авиаудар." , Time=0)
+[171f_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Так, Элис, маяк установлен. Можешь вызвать авиаудар? Прием." , Time=0)
+[171g_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Сделаю, Тайсон. Уходите оттуда. Конец связи!" , Time=0)
+[171h_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Займи их, бро. Я поставлю радиомаяк и вызову авиаудар." , Time=0)
+[171i_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Элис, можешь вызывать авиаудар. Радиомаяк на месте. Прием." , Time=0)
+[171j_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Без проблем, Эллиот. Убирайтесь из-под удара. Конец связи." , Time=0)
+[171k_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ебать - они реально это сделали!" , Time=0)
+[171l_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот за это и налоги платить не жалко." , Time=0)
+[171m_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="МЮРРЕЙ: Ребята! Али Юсуф бежит к вертолету." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Не дайте ему сбежать!" , Time=2.08)
+[172_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Достань вертолет - он уходит." , Time=0)
+[173_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Нет!" , Time=0)
+[174_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Только не опять." , Time=0)
+[175_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Этот тип мотается туда-сюда, как священник по детским садам." , Time=0)
+[176_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="СЕЙЛЕМ: Этого парня найти труднее, чем трусы Бритни." , Time=0)
+[177_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Что ты сейчас сказал?" , Time=0)
+[178_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Элис, можешь выяснить, куда летит этот вертолет? Прием." , Time=0)
+[179_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Уже выяснила. Он только что сел на маленьком острове к югу от вас - возле нефтезавода. Прием." , Time=0)
+[18_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: О приватизации армии." , Time=0)
+[18_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты в порядке?" , Time=0)
+[180_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вас понял. Выдвигаемся. Конец связи." , Time=0)
+[181_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="РИОС: Йо, Восьмерка. Слушай. Мне нужна твоя помощь. Слышал про все эти засады в Ираке и Афганистане? Так вот, я думаю, кто-то сливает врагу позиции наших войск. Поищи все, что исходит от армии или от частных подрядчиков с доступом к таким данным. Поможешь?" , Time=0)
+[181A_OIL_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 5uR3. 17'z 4 819 j08..." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: ..S8" , Time=2)
+[183_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Спасибо, друг. Еще свяжемся. Конец связи." , Time=0)
+[19_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="СЕЙЛЕМ: Знаешь, они хотят заменить всю армию" , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: такими наемниками, как мы." , Time=1.85)
+[19_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Э... Выглядит хуже, чем есть. Я в порядке." , Time=0)
+Subtitles[1]=(Text="ЭЙЗЕНХАУЭР: Сколько прошло, лет десять?" , Time=2.19)
+[20_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="РИОС: Его не примут. Про такое дерьмо" , Time=0)
+Subtitles[1]=(Text="РИОС: вечно болтают, но его никогда не принимают." , Time=2.07)
+[20_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Больше. С самого Сомали." , Time=0)
+[206_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Так. Где этот тип?" , Time=0)
+[207_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Выходи, выходи, где бы ты ни был..." , Time=0)
+[208_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты всегда был таким ребенком - или у тебя просто какое-то \"второе детство\"?" , Time=0)
+[209_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот он!" , Time=0)
+[21_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот обязательно тебе мне все обосрать?" , Time=0)
+[210_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Наконец-то!" , Time=0)
+[211_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять, это он! Али Юсуф!" , Time=0)
+[212_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Тебе конец!" , Time=0)
+[213_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Стой смирно, уебок!" , Time=0)
+[213A_OIL_ALI_YOUSSEF SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="АЛИ ЮСУФ: Да здравствует Саддам!" , Time=0)
+[218_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Он убегает." , Time=0)
+[219_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ненадолго... Ненадолго, бро." , Time=0)
+[221_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да, блять! Это тебе за Эйзенхауэра." , Time=0)
+[222_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Не дайте ему добраться до вертолета." , Time=0)
+[223_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не дадим, не волнуйся." , Time=0)
+[224_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем. Вы справились." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Я знала, что вы не подведете. Конец связи." , Time=1.67)
+[229_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="РИОС: Знаешь, у меня все крутятся в голове его слова - что у компании нет морали, что армии должны быть у государств, а не у компаний, понимаешь? И меня это тревожит, брат. Я не всем в SSC доверяю." , Time=0)
+[23_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Да, вряд ли я смогу идти, брат. Не против меня понести?" , Time=0)
+[230_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="СЕЙЛЕМ: Как вернемся в Багдад, возьмем пива, может, заглянем в кальянную. Поверь, одна ночь со мной в Зеленой зоне - и ты забудешь обо всем этом." , Time=0)
+[231_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Да. Может, ты и прав." , Time=0)
+[24_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты эту херню на ходу выдумываешь?" , Time=0)
+[24_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Держу, дружище." , Time=0)
+[25_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Они взорвали нашу машину. На базе остался хоть какой-то рабочий транспорт?" , Time=0)
+[26_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Недалеко от периметра стоит танк M1." , Time=0)
+Subtitles[1]=(Text="ЭЙЗЕНХАУЭР: Он должен быть на ходу." , Time=2)
+[27_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ладно. Возьмем его." , Time=0)
+[30_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не могу поверить, что они достали Эйзенхауэра." , Time=0)
+[31_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это просто несправедливо, понимаешь. У него дома жена и дети. Кажется, это нас должны были убить, а не его." , Time=0)
+[31_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, Сэм, это я, Эллиот - из рейнджеров!" , Time=0)
+[32_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Может, и надо было тебя..." , Time=0)
+[32_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Не думал, что еще тебя увижу! Все такой же сучонок, ты погляди!" , Time=0)
+[33_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Думаешь, он что-то знал?" , Time=0)
+[33_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты в порядке, брат?" , Time=0)
+[34_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Кто?" , Time=0)
+[34_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Э... Выглядит хуже, чем есть. Все будет нормально. Сколько прошло, лет десять?" , Time=0)
+[35_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эйзенхауэр - думаешь, поэтому его и убили?" , Time=0)
+[35_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Больше. Еще с Сомали, брат." , Time=0)
+[36_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты что, спятил, брат?" , Time=0)
+[37_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Они целились именно в него. Знали, что он в том вертолете. Он что-то знал. Они не могли дать ему вернуться на базу." , Time=0)
+[38_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Кто «они»? Что ты носишься со своими теориями заговора? Он оказался не в том месте не в то время - вот и все." , Time=0)
+[38_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Да, вряд ли я смогу идти, брат. Не против меня понести?" , Time=0)
+[39_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно, держу." , Time=0)
+[40_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Слушай, надо тебя отсюда вытаскивать, а они взорвали нашу машину. Не знаешь, на базе остался рабочий транспорт?" , Time=0)
+[41_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Недалеко от периметра стоит танк M1." , Time=0)
+Subtitles[1]=(Text="ЭЙЗЕНХАУЭР: Он должен быть на ходу." , Time=2.33)
+[42_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Возьмем его." , Time=0)
+[45_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Кто-нибудь из вас еще общается с кем-то из нашего отряда?" , Time=0)
+[46_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Только с Далтоном. Он наш босс в SSC." , Time=0)
+[50_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Все трое перешли на темную сторону, да? Надо было и мне, блять, так сделать, вот что я скажу, потому что у нас одно ебаное барахло из вторых рук. И чуть ли не через день кто-то из моих знакомых гибнет в одной из этих сраных засад." , Time=0)
+[51_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Говорят, армия больше не нужна. Частные фирмы все сделают сами." , Time=0)
+[52_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Скажу тебе прямо. Если твоя армия зарабатывает на каждой войне, войн станет намного больше, приятель. Я такого будущего не хочу." , Time=0)
+[53_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Берегись!" , Time=0)
+[54_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Блять! Они перекрыли дорогу." , Time=0)
+[55_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Опять засада?" , Time=0)
+[56_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Похоже на то." , Time=0)
+[57_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Не знаю, как они всегда узнают, где мы, но в последнее время мы попадаем в засаду раз в неделю." , Time=0)
+[59_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эта жара меня доконает." , Time=0)
+[59_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, что вы делаете?" , Time=0)
+[60_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это пустыня. Не знаю, чего ты ждал." , Time=0)
+[60_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мы попали в засаду. Дорога перекрыта. Прием." , Time=0)
+[61_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Знаю, бро. Я просто говорю. Жарко." , Time=0)
+[62_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты просто ноешь. Ты вечно из-за чего-то ноешь. Меня это достало." , Time=0)
+[64_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Пару лет назад мы наткнулись на Дастина, он охранял наркокартель." , Time=0)
+[65_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Он работал на наркобарона?" , Time=0)
+[66_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Он пошел на нас так, будто мы и знакомы не были." , Time=0)
+[67_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Погоди. Пытаюсь это переварить." , Time=0)
+Subtitles[1]=(Text="ЭЙЗЕНХАУЭР: То есть вы... Прошу... Вы же не..." , Time=1.83)
+[68_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: У нас не было выбора. Либо мы, либо он." , Time=0)
+[69_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Вы что, не понимаете, насколько это неправильно? Серьезно, вот поэтому армией должны управлять правительства, а не корпорации." , Time=0)
+[75_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Слушайте, простите за ту хрень, что я там наговорил. Вы сегодня отлично поработали." , Time=0)
+[76_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Все путем, чувак. Рад был снова увидеть тебя спустя столько лет." , Time=0)
+[77_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да, береги себя, бро." , Time=0)
+[78_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Вы тоже. Выпьем пива, когда закончится эта война, сукин ты сын." , Time=0)
+[79_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Обязательно... Обязательно выпьем!" , Time=0)
+[80_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос - Мюррею. Задание выполнено. Эйзенхауэр в вертолете. Нам самим идти к точке эвакуации или..." , Time=0)
+[81_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Охуеть!" , Time=0)
+[82_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Господи..." , Time=0)
+[83_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Ч-что случилось?" , Time=0)
+[84_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это вертушка Эйзенхауэра!" , Time=0)
+[85_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вертолет Эйзенхауэра - он только что взорвался!" , Time=0)
+[86_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Блять. Я позвоню в Минобороны. Конец связи." , Time=0)
+[89_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="МЮРРЕЙ: Мы только что перехватили радиопередачу. Али Юсуф берет на себя ответственность за взрыв вертолета. Мы отследили передачу до деревни рядом с вами." , Time=0)
+[93_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: До сих пор не верится, чувак. Эйзенхауэр..." , Time=0)
+[94_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мне тоже, чувак, мне тоже." , Time=0)
+[95_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Кроме Далтона, из нашего отряда в живых, считай, только мы и остались." , Time=0)
+[96_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: И Педро." , Time=0)
+[97_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Четверо из десяти - так себе шансы." , Time=0)
+[98_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Война - опасное дело, чувак." , Time=0)
+[99_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Так что мы ищем?" , Time=0)

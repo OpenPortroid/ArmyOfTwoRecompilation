@@ -1,0 +1,1983 @@
+[AO2CheckpointManager]
+SaveGameFriendlyName=Army of Two: контрольная точка
+[AO2Armor_Light]
+ArmorName=Легкая
+Description=Описание легкой брони
+[AO2Armor_Medium]
+ArmorName=Средняя
+Description=Описание средней брони
+[AO2Armor_Heavy]
+ArmorName=Тяжелая
+Description=Описание тяжелой брони
+[AO2CSAText]
+CSA_EnterVehicle=Сесть
+CSA_Use=Использовать
+CSA_DropFlip=Опрокинуть
+CSA_GiveCPR=Реанимировать
+CSA_Heal=Лечить
+CSA_Drag=Тащить
+CS_Accept=Принять
+CS_Decline=Отклонить
+CS_Cancel=Отмена
+CS_Yes=Да
+CS_No=Нет
+CS_Abort=Прервать
+CS_CoopSnipe=Парный снайпинг
+CS_BackToBack=Спина к спине
+CS_StepJump=Подсадка
+CS_PullUp=Подтянуть
+CS_DragMe=Тащи меня!
+[CSADescription]
+CSADesc_None=Нет
+CSADesc_Use=ИСПОЛЬЗОВАТЬ
+CSADesc_EnterVehicle=СЕСТЬ
+CSADesc_GenericReject=Нет
+CSADesc_GenericAccept=Да
+CSADesc_GenericAbort=Отменить действие
+CSADesc_BackToBack=СПИНА К СПИНЕ
+CSADesc_PowerMode=ОВЕРКИЛЛ
+CSADesc_CoopSnipe=ПАРНЫЙ СНАЙПИНГ
+CSADesc_StepJump=ПОДСАДКА
+CSADesc_PullUp=ПОДТЯНУТЬ
+CSADesc_DragPartner=ТАЩИТЬ
+CSADesc_HealPartner=УДЕРЖИВАТЬ - ЛЕЧИТЬ
+CSADesc_FiremanCarry=НЕСТИ НА ПЛЕЧЕ
+CSADesc_CPR=УДЕРЖИВАТЬ - РЕАНИМАЦИЯ
+CSADesc_DropFlip=ОПРОКИНУТЬ
+CSADesc_DragMe=ТАЩИ МЕНЯ!
+CSADesc_RiotShield=ВЗЯТЬ ЩИТ
+CSADesc_RiotShield_Detach=БРОСИТЬ ЩИТ
+CSADesc_CoopMortar=Парный миномет
+CSADesc_GenericContinue=Продолжить действие
+CSADesc_CoopRopeAbort=ОБРЕЗАТЬ ТРОС
+CSADesc_RiotShield_Coop=ПАРНЫЙ ЩИТ
+CSADesc_Coop_Orders=ПАРНЫЕ ДЕЙСТВИЯ
+CSADesc_Partner_Orders=ПРИКАЗЫ НАПАРНИКУ
+CSADesc_Partner_Attack=ВПЕРЕД
+CSADesc_Partner_Defend=КО МНЕ
+CSADesc_Partner_HoldPosition_Passive=СТОЯТЬ НА МЕСТЕ
+CSADesc_Partner_Defend_Passive=КО МНЕ
+CSADesc_Partner_Defend_Aggressive=КО МНЕ
+CSADesc_Partner_Attack_Passive=ВПЕРЕД
+CSADesc_Partner_Attack_Aggressive=ВПЕРЕД
+CSADesc_Back=Назад
+CSADesc_ExchangeWeapon=СМЕНИТЬ ОРУЖИЕ
+CSADesc_CoopRope=ПАРНЫЙ СПУСК
+CSADesc_BaseJump=БЕЙСДЖАМП
+CSADesc_ToggleAggro=Переключить агро
+CSADesc_Partner_HoldPosition_Aggressive=СТОЯТЬ НА МЕСТЕ
+CSADesc_ChuteLeft=ВЛЕВО
+CSADesc_ChuteRight=ВПРАВО
+CSADesc_ChuteSpeedUp=УСКОРИТЬСЯ
+CSADesc_ChuteSlowDown=ВЫРОВНЯТЬ
+CSADesc_FeignDeath_Start=ПРИТВОРИТЬСЯ МЕРТВЫМ
+CSADesc_FeignDeath_Stop=ВСТАТЬ
+CSADesc_CoordinatedAction_Start=ИСПОЛЬЗОВАТЬ
+CSADesc_ClimbLadder=ЗАЛЕЗТЬ
+CSADesc_CoopRocket=ПАРНАЯ РАКЕТА
+CSADesc_PAI_RopeDown=ОПУСТИТЬ
+CSADesc_PAI_RopeUp=ПОДНЯТЬ
+CSADesc_PAI_RopeLeft=ВЛЕВО
+CSADesc_PAI_RopeRight=ВПРАВО
+CSADesc_MPBuyWeapons=Купить оружие
+CSADesc_MPRevivePartner=Поднять напарника
+CSADesc_Inventory_Explosives=ВЗРЫВЧАТКА
+CSADesc_Inventory_Primary=ОСНОВНОЕ
+CSADesc_Inventory_Secondary=ДОПОЛНИТЕЛЬНОЕ
+CSADesc_Inventory_Special=ОСОБОЕ
+CSADesc_Inventory_SwitchPrimaryFrontMount=ОСНОВНОЕ
+CSADesc_Inventory_SwitchExplosives=ВЗРЫВЧАТКА
+CSADesc_CoopSnipe_Countdown=ОТСЧЕТ
+[AO2CSARequestData]
+Swap_Primary=ОСНОВНОЕ
+Swap_Secondary=ДОПОЛНИТЕЛЬНОЕ
+Swap_Special=ОСОБОЕ
+Swap_Explosive=ВЗРЫВЧАТКА
+Swap_Unswap=ВЕРНУТЬ ОРУЖИЕ
+[AO2AmmoPack]
+PrimaryAmmoPicked=x патроны (основное)
+SecondaryAmmoPicked=x патроны (дополнительное)
+SpecialAmmoPicked=x патроны (особое оружие)
+ExplosivesPicked=x граната
+FrontMountAmmoPicked=x подствольник
+[AO2HUD]
+LoadingMap=ЗАГРУЗКА КАРТЫ...
+LoadingString=Загрузка...
+BodyCountString=Убито врагов:
+Reward=Награда:
+ObjectivesComplete=Задачи выполнены
+CheckpointReachedString=КОНТРОЛЬНАЯ ТОЧКА
+WaitingForOtherPlayer=Ожидание другого игрока...
+OtherPlayerInPauseMenu=Другой игрок в меню паузы...
+VehicleDockedMessage=Транспорт причалил
+[UIScene_Objective]
+ObjectiveComplete=ВЫПОЛНЕНО
+ObjectiveFailed=ПРОВАЛЕНО
+ObjectivePending=В ПРОЦЕССЕ
+ObjectiveObsolete=НЕАКТУАЛЬНО
+NoObjective=НЕТ ЗАДАЧИ
+[UIScene_CheckpointInfo]
+Title=Контрольная точка
+Kills=Убийства
+TotalCash=Всего денег
+[UIScene_Confirmation]
+Confirmation_TutorialHint_Title=Пауза (обучение)
+[AO2HudItem_Action]
+ReloadCaption=ПЕРЕЗАРЯДИТЕ
+[AO2HudItem_Aggro]
+Stealth=Скрытность
+DoubleDamage=2X урон
+AggroMeter=Агрометр
+[AO2HudItem_BodyCount]
+DisplayText=УБИТО ВРАГОВ
+[AO2HudItem_CoopRequestIcon]
+CancelText=ОТМЕНА
+[AO2HudItem_GPSInfo]
+GPSTitle=SSC
+ObjectiveTitle=Текущая задача
+[AO2HudDataManager]
+GPSMetric=м
+GPSTypeToDescriptionCntr[0]=Подсадка
+GPSTypeToDescriptionCntr[1]=Штурмовой щит
+GPSTypeToDescriptionCntr[2]=Причал
+GPSTypeToDescriptionCntr[3]=Цель парного снайпинга
+GPSTypeToDescriptionCntr[4]=Задача
+GPSTypeToDescriptionCntr[5]=Переключатель
+GPSTypeToDescriptionCntr[6]=Парный спуск
+GPSTypeToDescriptionCntr[7]=Лестница
+GPSTypeToDescriptionCntr[8]=Пулемет
+GPSTypeToDescriptionCntr[9]=Ховеркрафт
+GPSTypeToDescriptionCntr[10]=Парная дверь
+GPSTypeToDescriptionCntr[11]=Парашют
+[AO2HudItem_MPGPSInfo]
+GPSTitle=SSC
+ObjectiveTitle=Текущая задача
+GPSSubtitle=GPS
+NavigationSystem=навигационная система
+Version=версия 8172a
+[AO2PlayerController]
+MPMapNames_Any=Любая
+CoopLobby_WaitingForPlayer="Ожидание игрока..."
+MPLobby_Empty="Пусто"
+ReadyRoom_Ready="Готов"
+MPHost=Хост:
+ConstrollerDisconnectionMessageTitle="Беспроводной контроллер отключен"
+ConstrollerDisconnectionMessageBody="Снова подключите беспроводной контроллер игрока"
+PS3Invite_Title="Приглашение в игру"
+PS3Invite_Message="Вас пригласили в сетевую игру!"
+PS3Invite_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Показать друзей  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+PS3InviteReceived="Получено приглашение"
+UnlockWeapon_Message="Открыто единиц оружия:"
+UnlockWeapon_Title=Открытие оружия
+UnlockWeaponError_Message=Введен неверный код.  Оружие не открыто.
+MoneyCollectablePicked=собрано
+;OBSOLETE
+PlayerTwo="Игрок 2"
+[AO2Character_Novak]
+CharacterName=Риос
+[AO2Character_Rosco]
+CharacterName=Сейлем
+[AO2GameplayModifier_PowerMode]
+PowerModeLabel=ОВЕРКИЛЛ:
+[AO2GameplayModifier_BackToBack]
+HUDLabel=СПИНА К СПИНЕ
+[Objectives]
+Objectives=Задачи
+PrimaryObjectives=Текущие задачи
+SubObjectives=Подзадачи
+ObjectiveDesc=Описание задачи
+ObjectiveReward=Награда
+ObjectiveStatus=Статус
+CompletedObjectives=Выполненные задачи
+ObjectiveTotalCash=Всего денег
+ObjectiveExplorationItems=Найденные предметы:
+[Shell_PauseMenu]
+RestartFromCheckpoint="Начать с контрольной точки"
+QuitGame="Выйти из игры"
+PAUSE="ПАУЗА"
+Resume="Продолжить"
+GameOver=ИГРА ОКОНЧЕНА
+[Shell_MPGameOver]
+PlayerName="Имя игрока"
+Money="Деньги"
+PvPKills="Убито игроков"
+NPCKills="Убито NPC"
+Deaths="Смерти"
+Accuracy="Точность"
+[Shell_OptionMenu]
+GameplayOptions="Настройки игры"
+Controls="Управление"
+AVOptions="Звук/изображение"
+ChooseChar=Выбор персонажа
+PreferredChar=Любимый персонаж
+OPTIONS="НАСТРОЙКИ"
+SelectDevice="Выбрать устройство хранения"
+[Shell_Legal]
+Legal01=<Styles:legal_font>© 2008 Electronic Arts Inc. Все права защищены.<Styles:/>
+Legal02=<Styles:legal_font>Уведомление ESRB:\nОнлайн-взаимодействие не оценивается ESRB.<Styles:/>
+[Shell_MainMenu]
+PressStart="Нажмите <Fonts:00_fonts.Xbox360_18pt>;<Fonts:/>"
+;OBSOLETE
+PressStart_PS3="Нажмите <Fonts:00_fonts.Xbox360_18pt>;<Fonts:/>"
+;OBSOLETE
+MainMenu="Главное меню"
+CampaignMode="Кампания"
+VersusMode="Противостояние"
+Weapons="Оружие"
+Options="Настройки"
+;OBSOLETE
+DownloadableContent="Загружаемый контент"
+Extras="Бонусы"
+Credits=Титры
+UnlockWeapon=Открыть оружие
+EnterCode=Ввести код
+EnterCodeDesc=Введите специальный код, чтобы открыть оружие
+PS3AutoSaveWarning_Title=Автосохранение
+PS3AutoSaveWarning_Message=Игра автоматически сохраняет данные в определенных местах. Не выключайте питание, когда мигает индикатор доступа к жесткому диску.
+;OBSOLETE
+PS3OSKeyboardInitText="Введите имя игрока"
+PS3Player1ProfileManagementWarning_Title=Управление профилями
+PS3Player1ProfileManagementWarning_Message="При возврате в меню управления профилями текущий профиль игрока 1 будет выгружен.  Продолжить?"
+[Shell_Campaign]
+SinglePlayer="Одиночная игра"
+Splitscreen="Разделенный экран"
+HostOpenGame="Открытая игра"
+HostPrivateGame="Закрытая игра"
+Join="Присоединиться к игре"
+[Shell_SinglePlayer]
+NewCampaign="Новая кампания"
+ContinueFromCheckpoint="Продолжить"
+SelectMission="Выбрать миссию"
+[Shell_HostGame]
+NewMission="Новая миссия"
+Friends="Друзья"
+KickPlayer="Исключить игрока"
+StartGame="Начать игру"
+[Shell_JoinGame]
+Lobby="Лобби"
+HostName="Имя хоста"
+Operation="Операция"
+Difficulty="Сложность"
+ConnectionRank="Качество связи"
+[Shell_Options]
+Options1=Настройки игрока 1
+Options2=Настройки игрока 2
+GameplayOptions="Настройки игры"
+Controls="Управление"
+AVOptions="Звук/изображение"
+Gameplay_FadingHealth="Скрывать здоровье"
+Gameplay_FadingAmmo="Скрывать боезапас"
+Gameplay_Subtitles="Субтитры"
+Controls_Vibration="Вибрация"
+Controls_AimSensitivity="Чувствительность прицела"
+Controls_InvertY="Инверсия оси Y"
+AV_Brightness="Яркость"
+AV_TVType="Тип телевизора"
+AV_DialogueVolume="Громкость диалогов"
+AV_MusicVolume="Громкость музыки"
+AV_FXVolume="Громкость эффектов"
+SixAxis="Датчик движения"
+AutoConnect="Автоподключение к EA Online"
+[Shell_Weapons]
+PrimaryWeapons="Основное оружие"
+SecondaryWeapons="Дополнительное оружие"
+SpecialWeapons="Особое оружие"
+Armor="Броня"
+WouldYouLike="Экипировать"
+InInventorySlot="в ячейку инвентаря"
+Yes="да"
+No="нет"
+Masks="Маски"
+BodyArmor="Бронежилет"
+Shop1="Магазин игрока 1"
+Shop2="Магазин игрока 2"
+TotalCash="Всего денег"
+CashRemaining="Осталось денег"
+WeaponPurchased="Оружие куплено!"
+WouldYouLikeToUpgradeNow="Прокачать сейчас?"
+Damage="Урон"
+Spread="Точность"
+Ammo="Боезапас"
+Aggro="Агро"
+[Online]
+ToS="Условия использования EA Online"
+InfoShare="Обмен информацией"
+FinishReg="Чтобы завершить регистрацию в EA, ответьте на вопросы:"
+ShareEA="Сообщать мне о продуктах, новостях и событиях EA?"
+ShareExternal="Передавать мои данные избранным партнерам EA?"
+EAMumboJumbo=Если вам 13 лет или больше, для игры по сети нужна учетная запись EA. Нажимая «Отправить», вы соглашаетесь с тем, что Microsoft передаст данные вашей учетной записи Xbox через Интернет компании Electronic Arts в США для создания учетной записи EA"
+ConnectingToPlasma_Message="Подключение к серверам EA..."
+ConnectingToPlasma_Title="Подключение"
+EnteringGameSetup_Message="Переход к экрану настройки игры..."
+EnteringGameSetup_Title="Настройка игры"
+EnteringReadyRoom_Message="Переход в комнату ожидания..."
+ReadyRoom=Комната ожидания
+[Shell_Versus]
+CustomMatch="Свой матч"
+QuickMatch="Быстрый матч"
+Leaderboards="Таблицы лидеров"
+;OBSOLETE
+FriendsOnly="Только друзья"
+GlobalRankings="Общая таблица лидеров"
+PlayNow="Играть"
+JoinMatch="Присоединиться"
+Host=Хост:
+GameType=Режим:
+HostOpenMatch="Создать открытый матч"
+HostPrivateMatch="Создать закрытый матч"
+;OBSOLETE
+HelpZone="Справка"
+Home="Статистика"
+Ranked="Рейтинговый"
+;OBSOLETE
+Unranked="Без рейтинга"
+MatchFind="Поиск игровой сессии..."
+ChooseMap="Карта"
+ChooseGame="Режим"
+SelectMapTitle="Выбор карты/режима"
+ChooseMapName="Выбрать карту"
+ChooseGameType="Выбрать режим"
+ChooseRoundLength="Длительность раунда"
+;OBSOLETE
+ChooseMoneyGoal="Цель по деньгам"
+;OBSOLETE
+ChooseAISettings="Настройки ИИ"
+CustomizeSkin="Настроить персонажа"
+VS="VS"
+Rankings="Таблицы лидеров"
+Achievements="Достижения"
+SelectMapOverlay="Выбрать карту"
+Standings="Итоги"
+Rank="Место"
+GamerTag="Тег игрока"
+OnlineID="Сетевое имя"
+Ready="Готов"
+CycleLeft=<Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Влево
+CycleRight=Вправо<Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>
+CycleMapLeft=<Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Карты
+CycleMapRight=Карты<Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>
+CycleGameTypeLeft=<Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>Режимы
+CycleGameTypeRight=Режимы<Fonts:00_fonts.Xbox360_18pt>`<Fonts:/>
+CycleStatLeft=<Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>Статистика
+CycleStatRight=Статистика<Fonts:00_fonts.Xbox360_18pt>`<Fonts:/>
+SelectGamerTags=Теги игроков<Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>
+SelectGameOptions=<Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Настройки игры
+MPMapName1="M01_map_world"
+MPMapName2="M02_map_world"
+MPMapName3="M03_map_world"
+MPMapName4="M04_map_world"
+;OBSOLETE VERIFY
+MPMapNameFriendly1="Ирак"
+;OBSOLETE VERIFY
+MPMapNameFriendly2="Китай"
+;OBSOLETE VERIFY
+MPMapNameFriendly3="Сетевая карта 3"
+;OBSOLETE VERIFY
+MPMapNameFriendly4="Сетевая карта 4"
+MPMapDescription1="Описание первой сетевой карты: захватите флаг."
+MPMapDescription2="Описание второй сетевой карты: убейте президента (NPC)"
+MPMapDescription3="Описание третьей сетевой карты: командный бой, убейте двух других парней"
+MPMapDescription4="Описание четвертой сетевой карты: честно, понятия не имею, что тут делать"
+MPMapObjectives1="Захватите флаг, убивайте людей"
+MPMapObjectives2="Убейте чувака-президента (NPC)"
+MPMapObjectives3="Убивайте двух %$#@$#@ из другой команды, пока они не заплачут. "
+MPMapObjectives4="Временные задачи, непонятно, что делать"
+MPAvailWeapons1="Оружие: M4A1, G36C, STINGER.  Транспорт:  танк, багги"
+MPAvailWeapons2="Оружие: AUG, G36C, SVD.  Транспорт:  танк, багги"
+MPAvailWeapons3="Оружие: AK47, Desert Eagle и т.д.   Транспорт:  танк, багги"
+MPAvailWeapons4="Оружие: M134, G36C, STINGER.  Транспорт:  танк, багги"
+MPStat1="Деньги"
+;OBSOLETE VERIFY
+MPStat2="Статистика 2"
+;OBSOLETE VERIFY
+MPStat3="Статистика 3"
+;OBSOLETE VERIFY
+MPStat4="Статистика 4"
+[Shell_PS3Friends]
+FriendName="Имя друга"
+InviteSent="Приглашение отправлено"
+InviteReceived="Получено приглашение"
+VoiceEnabled="Голос включен"
+[Shell_Difficulty]
+SelectDifficulty="Выбор сложности"
+Easy="Новобранец"
+Medium="Контрактник"
+Hard="Профессионал"
+Easy_description="Новичок в шутерах - пройдите этот режим, чтобы открыть все основное оружие и сложность «Профессионал»"
+Medium_description="Опытный игрок - пройдите этот режим, чтобы открыть все основное оружие и сложность «Профессионал»"
+Hard_description="Хардкорный игрок - пройдите этот режим, чтобы открыть все оставшееся оружие"
+[Demo]
+Demo=Демоверсия
+ExitDemo_Message=Вы действительно хотите выйти из демоверсии?
+ExitDemo_Title=Выход из демоверсии
+ExitDemo_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/> Выйти из демоверсии <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Отмена
+OnlineCoop=Кооператив по сети
+ControllerLT=Точный прицел
+ControllerLB=Выбор инвентаря
+ControllerLeftStick=Движение / присесть
+ControllerRightStick=Камера / прицел
+ControllerBack=GPS
+ControllerStart=Пауза
+ControllerDPad=Приказы / инвентарь
+ControllerRT=Огонь
+ControllerRB=Парные действия
+ControllerY=Кувырок / скольжение
+ControllerB=Отменить парное действие
+ControllerX=Перезарядка
+ControllerA=Использовать
+ControllerL3=Присесть
+DemoQuit=Спасибо, что сыграли в демоверсию Army of Two.
+DemoGameEnd=Вы дошли до конца демоверсии Army of Two.  Вы вернетесь в главное меню.
+QuitToMainMenuDemo_Message=Вы действительно хотите выйти?  Весь прогресс будет потерян.
+DemoLegalMumboJumbo=Эта демоверсия предназначена только для рекламных целей и не может продаваться, сдаваться в прокат или копироваться. Любое несанкционированное использование демоверсии запрещено законом.
+[AO2Character]
+AmmoReplenished=Боезапас пополнен
+Tutorial_PowerModeAvailable_OnFire_Title=ОВЕРКИЛЛ: АТАКА
+Tutorial_PowerModeAvailable_OnFire_Tutorial=Удерживайте агро достаточно долго, чтобы войти в режим ОВЕРКИЛЛ.\nВ этом режиме ваши навыки сильно возрастают.
+Tutorial_PowerModeAvailable_OnFire_Buttons=Удерживайте агро достаточно долго, чтобы войти в режим ОВЕРКИЛЛ.\nВ этом режиме ваши навыки сильно возрастают.
+Tutorial_PowerModeAvailable_Stealth_Title=ОВЕРКИЛЛ: СКРЫТНОСТЬ
+Tutorial_PowerModeAvailable_Stealth_Tutorial=Напарник несколько секунд держал полное агро, и теперь вы можете войти в режим ОВЕРКИЛЛ и стать невидимым для врагов.
+Tutorial_PowerModeAvailable_Stealth_Buttons=Напарник несколько секунд держал полное агро, и теперь вы можете войти в режим ОВЕРКИЛЛ и стать невидимым для врагов.
+Tutorial_PowerMode_OnFire_Title=ОВЕРКИЛЛ: АТАКА
+Tutorial_PowerMode_OnFire_Tutorial=Некоторое время вы наносите врагам двойной урон, но все враги сосредоточены на вас.
+Tutorial_PowerMode_OnFire_Buttons=Некоторое время вы наносите врагам двойной урон, но все враги сосредоточены на вас.
+Tutorial_PowerMode_Stealth_Title=ОВЕРКИЛЛ: СКРЫТНОСТЬ
+Tutorial_PowerMode_Stealth_Tutorial=Некоторое время вы невидимы для врагов, но выбор оружия ограничен.
+Tutorial_PowerMode_Stealth_Buttons=Некоторое время вы невидимы для врагов, но выбор оружия ограничен.
+Tutorial_FeignDeathAvailable_Title=ПРИТВОРИТЬСЯ МЕРТВЫМ
+Tutorial_FeignDeathAvailable_Tutorial=При низком здоровье можно притвориться мертвым.\nВраги поверят в это только один раз.
+Tutorial_FeignDeathAvailable_Buttons=При низком здоровье можно притвориться мертвым.\nВраги поверят в это только один раз.
+Tutorial_FeignDeath_Title=ПРИТВОРИТЬСЯ МЕРТВЫМ
+Tutorial_FeignDeath_Tutorial=Теперь вы выглядите мертвым. Все агро перешло на напарника, но группа врагов поверит в это только один раз.
+Tutorial_FeignDeath_Buttons=Теперь вы выглядите мертвым. Все агро перешло на напарника, но группа врагов поверит в это только один раз.
+Tutorial_BeforeChuteDriver_Title=УПРАВЛЕНИЕ ПАРАШЮТОМ
+Tutorial_BeforeChuteDriver_Tutorial=Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/>, чтобы управлять парашютом.
+Tutorial_BeforeChuteDriver_Buttons=Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/>, чтобы управлять парашютом.
+Tutorial_BeforeChuteDriver_Tutorial_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/>, чтобы управлять парашютом.
+Tutorial_BeforeChuteDriver_Buttons_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/>, чтобы управлять парашютом.
+Tutorial_BeforeChuteGunner_Title=СТРЕЛЬБА С ПАРАШЮТА
+Tutorial_BeforeChuteGunner_Tutorial=Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>, чтобы стрелять прицельно.
+Tutorial_BeforeChuteGunner_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>, чтобы стрелять прицельно.
+Tutorial_BeforeChuteGunner_Tutorial_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>, чтобы стрелять прицельно.
+Tutorial_BeforeChuteGunner_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>, чтобы стрелять прицельно.
+;OBSOLETE
+Tutorial_VehicleDriver_Title=ВОЖДЕНИЕ
+;OBSOLETE
+Tutorial_VehicleDriver_Tutorial=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ. Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ. Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для поворота. <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - обзор камерой.
+;OBSOLETE
+Tutorial_VehicleDriver_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ. Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ. Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для поворота. <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - обзор камерой.
+;OBSOLETE
+Tutorial_VehicleGunner_Title=СТРЕЛЬБА ИЗ ТРАНСПОРТА
+;OBSOLETE
+Tutorial_VehicleGunner_Tutorial=Так стреляют из транспорта.
+;OBSOLETE
+Tutorial_VehicleGunner_Buttons=Так стреляют из транспорта.
+Tutorial_ChuteDriver_Title=УПРАВЛЕНИЕ ПАРАШЮТОМ
+;OBSOLETE
+Tutorial_ChuteDriver_Tutorial=Наклоняйте контроллер вперед и назад, чтобы управлять скоростью. Наклоняйте контроллер влево и вправо, чтобы управлять направлением.
+Tutorial_ChuteDriver_Buttons=Наклоняйте беспроводной контроллер вперед и назад, чтобы управлять скоростью. Наклоняйте его влево и вправо, чтобы управлять направлением.
+[InGameMessages]
+PS3AutoConnect_Title=Автоматическое подключение
+PS3AutoConnect_Message=Чтобы играть по сети и получать приглашения от друзей, необходимо подключиться к EA Online.  Подключаться к EA Online автоматически при каждом запуске игры?
+SwapRequest_Title=Смена команды
+SwapRequest_Message=Вы отправили запрос на смену команды.   Если игрок из другой команды тоже отправит запрос, смена произойдет.  Продолжить?
+PS3PrivateInstructions_Message="Чтобы сыграть в закрытую сетевую игру, пригласите 3 друзей на экран настройки игры и перейдите в комнату готовности.  Незанятые места станут доступны другим игрокам после входа в комнату готовности."
+PS3PrivateInstructions_Title="Настройка игры"
+PrivateInstructions_Message="Чтобы сыграть в закрытую сетевую игру, пригласите 3 друзей на экран настройки игры и перейдите в комнату готовности.  Незанятые места станут доступны другим игрокам после входа в комнату готовности.  Чтобы играть с напарником на разделенном экране, выберите «Вход гостя» на экране настройки игры."
+PrivateInstructions_Title="Настройка игры"
+GuestSignInInstructions_Message="Чтобы играть с другом в сеансе Xbox LIVE на разделенном экране, войдите как гость с контроллера Xbox 360 друга, когда появится запрос."
+GuestSignInInstructions_Title="Вход гостя"
+NoHeaven_Line1="No Heaven"
+NoHeaven_Line2=Исполняет DJ Champion
+NoHeaven_Line3=Автор: Maxime Morin (SOCAN)
+NoHeaven_Line4=Издатель: Third Side Music Inc.
+NoHeaven_Line5=Запись предоставлена Saboteur
+MidMissionShopping_Title=Покупки на задании
+MidMissionShopping_Message=Перейти к покупкам во время задания?
+MidMissionEnter_Message=Переход к покупкам во время задания...
+MidMissionWaiting_Message=Ожидание, пока другой игрок завершит покупки, перед возвращением в игру.
+MidMissionWaiting_Buttons=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Выйти из игры
+Vehicle_Fallback_Title=ТРАНСПОРТ ПО УМОЛЧАНИЮ - Нет заголовка
+Vehicle_Fallback_Description=Этот транспорт настроен неправильно. Нет поля описания.
+Vehicle_Fallback_ButtonInfo=Этот транспорт настроен неправильно. Нет поля подсказок по кнопкам.
+DuneBuggy_Driver_Title=БАГГИ
+;OBSOLETE
+DuneBuggy_Driver_Description=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+;OBSOLETE
+DuneBuggy_Driver_Description_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+DuneBuggy_Driver_ButtonInfo=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+DuneBuggy_Driver_ButtonInfo_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+DuneBuggy_Gunner_Title=БАГГИ
+;OBSOLETE
+DuneBuggy_Gunner_Description=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+;OBSOLETE
+DuneBuggy_Gunner_Description_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+DuneBuggy_Gunner_ButtonInfo=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+DuneBuggy_Gunner_ButtonInfo_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+Tank_Driver_Title=ТАНК M1A2
+;OBSOLETE
+Tank_Driver_Description=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+;OBSOLETE
+Tank_Driver_Description_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Driver_ButtonInfo=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Driver_ButtonInfo_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Gunner_Title=ТАНК M1A2
+;OBSOLETE
+Tank_Gunner_Description=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+;OBSOLETE
+Tank_Gunner_Description_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Gunner_ButtonInfo=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Gunner_ButtonInfo_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Cannon_Title=ТАНК M1A2
+;OBSOLETE
+Tank_Cannon_Description=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+;OBSOLETE
+Tank_Cannon_Description_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Cannon_ButtonInfo=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Tank_Cannon_ButtonInfo_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы сменить место.
+Hovercraft_Driver_Title=ХОВЕРКРАФТ
+;OBSOLETE
+Hovercraft_Driver_Description=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ. Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД. Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления. <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры. Нажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+;OBSOLETE
+Hovercraft_Driver_Description_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ. Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД. Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления. <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры. Нажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+Hovercraft_Driver_ButtonInfo=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ. Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД. Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления. <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры. Нажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+Hovercraft_Driver_ButtonInfo_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ. Нажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД. Используйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления. <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры. Нажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+Hovercraft_Gunner_Title=ХОВЕРКРАФТ
+;OBSOLETE
+Hovercraft_Gunner_Description=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+;OBSOLETE
+Hovercraft_Gunner_Description_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+Hovercraft_Gunner_ButtonInfo=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+Hovercraft_Gunner_ButtonInfo_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.\nНажмите <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>, чтобы выйти, когда транспорт пришвартуется.
+;OBSOLETE UNTIL SEQUEL
+Landrover_Driver_Title=ЛЕНДРОВЕР
+;OBSOLETE
+Landrover_Driver_Description=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+;OBSOLETE
+Landrover_Driver_Description_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+;OBSOLETE UNTIL SEQUEL
+Landrover_Driver_ButtonInfo=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+;OBSOLETE UNTIL SEQUEL
+Landrover_Driver_ButtonInfo_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/> - ГАЗ.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> - ТОРМОЗ И ЗАДНИЙ ХОД.\nИспользуйте <Fonts:00_fonts.Xbox360_18pt>k<Fonts:/> для управления направлением.\n<Fonts:00_fonts.Xbox360_18pt>i<Fonts:/> - поворот камеры.
+;OBSOLETE UNTIL SEQUEL
+Landrover_Gunner_Title=ЛЕНДРОВЕР
+;OBSOLETE
+Landrover_Gunner_Description=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+;OBSOLETE
+Landrover_Gunner_Description_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+;OBSOLETE UNTIL SEQUEL
+Landrover_Gunner_ButtonInfo=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+;OBSOLETE UNTIL SEQUEL
+Landrover_Gunner_ButtonInfo_PS3=Используйте <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>, чтобы целиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять.\nНажмите <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> для режима точной стрельбы.
+Vaulting_Title=ПЕРЕПРЫГИВАНИЕ
+;OBSOLETE
+Vaulting_Tutorial=В бою можно перепрыгивать препятствия, перекатываться и скользить в укрытие.
+Vaulting_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>, чтобы перепрыгнуть через препятствие.
+DuckDown_Title=ПРИСЕДАНИЕ
+;OBSOLETE
+DuckDown_Tutorial=Чтобы уйти от вражеского огня, пригнитесь и укройтесь.
+DuckDown_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы пригнуться.
+DuckDown_Buttons_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы пригнуться.
+BlindFire_Title=ОГОНЬ НА ПОДАВЛЕНИЕ
+;OBSOLETE
+BlindFire_Tutorial=Из укрытия можно стрелять по врагам вслепую.
+BlindFire_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы пригнуться за объектом и занять укрытие.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять вслепую.
+BlindFire_Buttons_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>j<Fonts:/>, чтобы пригнуться за объектом и занять укрытие.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять вслепую.
+GetAggro_Title=АГРЕССИЯ
+;OBSOLETE
+GetAggro_Tutorial=Когда вы стреляете по врагу, вы набираете агро, отвлекаете внимание от напарника и светитесь красным.
+GetAggro_Buttons=Когда вы стреляете по врагу, вы набираете агро, отвлекаете внимание от напарника и светитесь красным.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять по турели, пока шкала агро не качнется в вашу сторону.
+GetAggro_Buttons_PS3=Когда вы стреляете по врагу, вы набираете агро, отвлекаете внимание от напарника и светитесь красным.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять по турели, пока шкала агро не качнется в вашу сторону.
+PartnerCommand_Aggressive_Advance_Title=ПРИКАЗЫ НАПАРНИКУ
+;OBSOLETE
+PartnerCommand_Aggressive_Advance_Tutorial=Действия напарника могут быть оборонительными (синий) или агрессивными (красный).\nПрикажите напарнику агрессивно идти вперед.
+PartnerCommand_Aggressive_Advance_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы выбрать «Вперед».\nНажимайте <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, пока он не перейдет в агрессивный режим (красный).
+PartnerCommand_Aggressive_Advance_Buttons_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы выбрать «Вперед».\nНажимайте <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, пока он не перейдет в агрессивный режим (красный).
+GetStealth_Title=ШКАЛА АГРО
+;OBSOLETE
+GetStealth_Tutorial=Пока напарник набирает агро, прекратите стрелять.
+GetStealth_Buttons=Когда напарник светится красным, вы становитесь незаметным и частично прозрачным.
+GetStealthAI_Title=ШКАЛА АГРО
+;OBSOLETE
+GetStealthAI_Tutorial=Прекратите стрелять. Прикажите напарнику агрессивно стоять на месте, чтобы враги сосредоточились на нем.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы выбрать «Стоять на месте».\nНажимайте <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, пока он не перейдет в агрессивный режим (красный).
+GetStealthAI_Buttons=Прекратите стрелять. Прикажите напарнику агрессивно стоять на месте, чтобы враги сосредоточились на нем.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы выбрать «Стоять на месте».\nНажимайте <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, пока он не перейдет в агрессивный режим (красный).
+GetStealthAI_Buttons_PS3=Прекратите стрелять. Прикажите напарнику агрессивно стоять на месте, чтобы враги сосредоточились на нем.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы выбрать «Стоять на месте».\nНажимайте <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, пока он не перейдет в агрессивный режим (красный).
+KillTurret_Title=УБЕЙТЕ СТРЕЛКА НА ТУРЕЛИ
+;OBSOLETE
+KillTurret_Tutorial=Примените изученную тактику, чтобы убить стрелка на турели.
+KillTurret_Buttons=Примените изученную тактику, чтобы убить стрелка на турели.
+CornerCover_Title=УКРЫТИЕ ЗА УГЛОМ
+;OBSOLETE
+CornerCover_Tutorial=Из-за угла большинства объектов можно стрелять вслепую.
+CornerCover_Buttons=Подойдите к углу штабеля ящиков.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять вслепую из-за угла.
+CornerCover_Buttons_PS3=Подойдите к углу штабеля ящиков.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять вслепую из-за угла.
+SlideIntoCover_Title=СКОЛЬЖЕНИЕ В УКРЫТИЕ
+;OBSOLETE
+SlideIntoCover_Tutorial=Чтобы быстро занять укрытие, скользните в него.
+SlideIntoCover_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>, чтобы скользнуть в укрытие.
+SwitchWeapon_Title=СНАРЯЖЕНИЕ
+;OBSOLETE
+SwitchWeapon_Tutorial=На задании вы получите основное и дополнительное оружие, гранаты, а также особое оружие.
+SwitchWeapon_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выбрать гранаты.
+SwitchWeapon_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выбрать гранаты.
+SwitchWeapon2_Title=СНАРЯЖЕНИЕ
+;OBSOLETE
+SwitchWeapon2_Tutorial=На задании вы получите основное и дополнительное оружие, гранаты, а также особое оружие.
+SwitchWeapon2_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы выбрать основное оружие.
+SwitchWeapon2_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы выбрать основное оружие.
+Grenade_Title=БРОСОК ГРАНАТ
+;OBSOLETE
+Grenade_Tutorial=Чтобы бросить гранату в открытую дверь, можно повысить точность.\nУбедитесь, что выбраны гранаты.
+Grenade_Buttons=Бросьте гранату в дверь. \nУдерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выбрать гранаты.\nУдерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>, чтобы прицелиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>.
+Grenade_Buttons_PS3=Бросьте гранату в дверь. Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выбрать гранаты.\nУдерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>, чтобы прицелиться.\nНажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>.
+FrontMount_Title=ПОДСТВОЛЬНИКИ
+;OBSOLETE
+FrontMount_Tutorial=Ваше основное оружие оснащено подствольником.\nЕго можно использовать в любой момент боя.
+FrontMount_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы переключаться между подствольником и обычным огнем.
+FrontMount_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы переключаться между подствольником и обычным огнем.
+PrecisionShooting_Title=ТОЧНАЯ СТРЕЛЬБА
+;OBSOLETE
+PrecisionShooting_Tutorial=В режиме точной стрельбы вы стреляете метче.
+PrecisionShooting_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять в режиме точной стрельбы.
+PrecisionShooting_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять в режиме точной стрельбы.
+OpenTheDoor_Title=КНОПКИ
+;OBSOLETE
+OpenTheDoor_Tutorial=Нажмите кнопку, чтобы освободить напарника и открыть дверь.
+OpenTheDoor_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/> позволяет нажимать кнопки и использовать предметы.
+OpenTheDoorAI_Title=КНОПКИ
+;OBSOLETE
+OpenTheDoorAI_Tutorial=Напарник нажмет кнопку и освободит вас из клетки.
+OpenTheDoorAI_Buttons=Напарник нажмет кнопку и освободит вас из клетки.
+GoodPartner_Title=ОДОБРЕНИЕ
+;OBSOLETE
+GoodPartner_Tutorial=Попробуйте выразить одобрение тому, что сделал напарник.
+GoodPartner_Buttons=Подойдите к напарнику и нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы выразить одобрение тому, что он сделал.
+BadPartner_Title=ГНЕВ
+;OBSOLETE
+BadPartner_Tutorial=Теперь попробуйте выразить агрессию по отношению к напарнику.
+BadPartner_Buttons=Подойдите к напарнику и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы выразить агрессию.
+BadPartner_Buttons_PS3=Подойдите к напарнику и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы выразить агрессию.
+HoldPosition_Title=ПРИКАЗЫ НАПАРНИКУ
+;OBSOLETE
+HoldPosition_Tutorial=Можно приказать напарнику агрессивно стоять на месте.\nПока он отвлекает врага, вы можете зайти тому за спину и убить его.
+HoldPosition_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы выбрать «Стоять на месте».\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/> еще раз, чтобы включить агрессивный режим (красный).
+HoldPosition_Buttons_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы выбрать «Стоять на месте».\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/> еще раз, чтобы включить агрессивный режим (красный).
+KillHeavy_Title=ТЯЖЕЛЫЕ СОЛДАТЫ
+;OBSOLETE
+KillHeavy_Tutorial=Тяжелых солдат можно убить только сзади. Примените кооперативную тактику, чтобы зайти врагу в тыл и убить его.
+KillHeavy_Buttons=Тяжелых солдат можно убить только сзади. Примените кооперативную тактику, чтобы зайти врагу в тыл и убить его.
+Regroup_Title=ПРИКАЗЫ НАПАРНИКУ
+;OBSOLETE
+Regroup_Tutorial=Можно приказать напарнику вернуться к вам и прикрывать вас.
+Regroup_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы выбрать «Ко мне» (пассивно).
+Regroup_Buttons_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы выбрать «Ко мне» (пассивно).
+CoOpSwapWeapon_Title=ОБМЕН ОРУЖИЕМ
+;OBSOLETE
+CoOpSwapWeapon_Tutorial=Находясь рядом с напарником, вы можете обменяться с ним оружием.
+CoOpSwapWeapon_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>, нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, затем отпустите <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>, чтобы взять основное оружие.\nУдерживайте <Fonts:00_fonts.Xbox360_18pt>`<Fonts:/>, нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, затем отпустите <Fonts:00_fonts.Xbox360_18pt>`<Fonts:/>, чтобы обменяться оружием с напарником.
+CoOpSwapWeapon_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>, нажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, затем отпустите <Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>, чтобы взять основное оружие.\nУдерживайте <Fonts:00_fonts.Xbox360_18pt>`<Fonts:/>, нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, затем отпустите <Fonts:00_fonts.Xbox360_18pt>`<Fonts:/>, чтобы обменяться оружием с напарником.
+UseGPS_Title=GPS
+;OBSOLETE
+UseGPS_Tutorial=GPS показывает ваши задачи и сведения о ближайшей местности.
+UseGPS_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>:<Fonts:/>, чтобы включить/выключить GPS.
+UseGPS_Buttons_PS3=Нажмите <Fonts:00_fonts.Xbox360_18pt>:<Fonts:/>, чтобы включить/выключить GPS.
+CoopSnipeC4_Title=ПАРНЫЙ СНАЙПИНГ
+;OBSOLETE
+CoopSnipeC4_Tutorial=Прикажите напарнику поразить мишени в конце коридора парным снайпингом.
+CoopSnipeC4_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>`<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы выбрать парный снайпинг.\nОтпустите обе кнопки, чтобы войти в режим, и поразите мишени в конце коридора.
+CoopSnipeC4_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>`<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы выбрать парный снайпинг.\nОтпустите обе кнопки, чтобы войти в режим, и поразите мишени в конце коридора.
+DragPartner_Title=ТАЩИТЬ НАПАРНИКА
+;OBSOLETE
+DragPartner_Tutorial=Если напарник ранен, вы можете оттащить его в безопасное место.
+DragPartner_Buttons=Подойдите к раненому напарнику и нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы оттащить его в безопасное место.
+DragPartnerBeingDragged_Title=ТАЩИТЬ НАПАРНИКА
+;OBSOLETE
+DragPartnerBeingDragged_Tutorial=Если вы ранены, напарник может оттащить вас в безопасное место. Пока вас тащат, вы можете прикрывать напарника огнем по врагам.
+DragPartnerBeingDragged_Buttons=Если вы ранены, напарник может оттащить вас в безопасное место. Пока вас тащат, вы можете прикрывать напарника огнем по врагам.
+BackToBack_Title=СПИНА К СПИНЕ
+;OBSOLETE
+BackToBack_Tutorial=Встаньте в центр круга, чтобы автоматически перейти в режим «Спина к спине».
+BackToBack_Buttons=Встаньте в центр круга, чтобы автоматически перейти в режим «Спина к спине».
+Tampon_Title=ЛЕЧЕНИЕ ТАМПОНОМ
+;OBSOLETE
+Tampon_Tutorial=В полевых условиях настоящие солдаты останавливают кровотечение из пулевых ран тампонами. Вы сделаете то же самое.\nНажимайте кнопки, которые появляются на экране, чтобы вылечить напарника тампоном.
+Tampon_Buttons=В полевых условиях настоящие солдаты останавливают кровотечение из пулевых ран тампонами. Вы сделаете то же самое.\nНажимайте кнопки, которые появляются на экране, чтобы вылечить напарника тампоном.
+StepJump_Title=ПОДСАДКА
+;OBSOLETE
+StepJump_Tutorial=С помощью подсадки вы или напарник можете забраться повыше. Найдите значок подсадки на GPS (кнопка <Fonts:00_fonts.Xbox360_18pt>:<Fonts:/>). Подойдите к нему.
+StepJump_Buttons=Найдите значок подсадки на GPS (кнопка <Fonts:00_fonts.Xbox360_18pt>:<Fonts:/>). Подойдите к нему.\nТеперь нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы запросить подсадку. Напарник должен подойти к вам, чтобы принять ее.
+StepJump_Buttons_PS3=Найдите значок подсадки на GPS (<Fonts:00_fonts.Xbox360_18pt>:<Fonts:/>). Подойдите к нему.\nТеперь нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы запросить подсадку. Напарник должен подойти к вам, чтобы принять ее.
+PullUp_Title=ПОДТЯНУТЬ НАВЕРХ
+;OBSOLETE
+PullUp_Tutorial=Не забудьте подтянуть напарника наверх после подсадки! Вернитесь к краю, на который забрались, и нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы предложить подтянуть его.
+PullUp_Buttons=Не забудьте подтянуть напарника наверх после подсадки! Вернитесь к краю, на который забрались, и нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы предложить подтянуть его. Напарник должен подойти под вас, чтобы принять.
+PullUp_Buttons_PS3=Не забудьте подтянуть напарника наверх после подсадки! Вернитесь к краю, на который забрались, и нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы предложить подтянуть его. Напарник должен подойти под вас, чтобы принять.
+RiotShield_Title=ИСПОЛЬЗОВАНИЕ ЩИТА
+;OBSOLETE
+RiotShield_Tutorial=Дверь машины можно использовать как щит. Напарник может укрыться за вами.
+RiotShield_Buttons=Подойдите к двери машины и нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы использовать ее как щит. Напарник может укрыться за вами.
+RiotShieldAI_Title=ПРИКАЗЫ НАПАРНИКУ
+;OBSOLETE
+RiotShieldAI_Tutorial=Напарник тоже может укрыться за щитом.
+RiotShieldAI_Buttons=Напарник тоже может укрыться за щитом.\nСо щитом в руках нажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы выбрать «Ко мне».\nНажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/> еще раз, чтобы перевести его в агрессивный режим (красный).
+RiotShieldAI_Buttons_PS3=Напарник тоже может укрыться за щитом.\nСо щитом в руках нажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы выбрать «Ко мне».\nНажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/> еще раз, чтобы перевести его в агрессивный режим (красный).
+PartnerView_Title=НАШЛЕМНАЯ КАМЕРА
+;OBSOLETE
+PartnerView=Вы можете смотреть через нашлемную камеру напарника.
+PartnerView_Buttons=Нажмите <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы включить/выключить изображение с камеры напарника.
+PartnerView_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы видеть изображение с камеры напарника.
+HealPartner_Title=ЛЕЧЕНИЕ НАПАРНИКА
+;OBSOLETE
+HealPartner=Вы можете вылечить напарника.
+HealPartner_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>, чтобы вылечить напарника.
+HealPartnerbeingwounded_Title=ЛЕЧЕНИЕ НАПАРНИКА
+;OBSOLETE
+HealPartnerbeingwounded_Tutorial=Если вы ранены, напарник может вас вылечить.
+HealPartnerbeingwounded_Buttons=Прикрывайте напарника, чтобы он мог вас вылечить.
+DragIntro_Title=ТАЩИТЬ НАПАРНИКА
+;OBSOLETE
+DragIntro_Tutorial=Если напарник ранен, вы можете оттащить его в укрытие.
+DragIntro_Buttons=Если напарник ранен, вы можете оттащить его в укрытие. При этом вы оба можете вести огонь прикрытия.
+PrecisionShooting2_Title=ТОЧНАЯ СТРЕЛЬБА
+;OBSOLETE
+PrecisionShooting2_Tutorial=В режиме точной стрельбы вы стреляете метче.
+PrecisionShooting2_Buttons=Удерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять в режиме точной стрельбы.
+PrecisionShooting2_Buttons_PS3=Удерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять в режиме точной стрельбы.
+PrecisionShooting3_Title=ТОЧНАЯ СТРЕЛЬБА
+;OBSOLETE
+PrecisionShooting3_Tutorial=В режиме точной стрельбы вы стреляете метче.
+PrecisionShooting3_Buttons=Поразите все ЧЕТЫРЕ мишени, чтобы перейти к следующему упражнению. \nУдерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять в режиме точной стрельбы.
+PrecisionShooting3_Buttons_PS3=Поразите все ЧЕТЫРЕ мишени, чтобы перейти к следующему упражнению. \nУдерживайте <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> и нажмите <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>, чтобы стрелять в режиме точной стрельбы.
+[ErrorMessages]
+NoConnection_Title=Нет подключения
+NoConnection_Message=Нет подключения к Xbox LIVE или серверам EA. Для доступа к сетевым функциям этой игры необходимо подключение к Xbox LIVE и серверам EA. Проверьте сетевой кабель, убедитесь, что вы вошли в Xbox LIVE, и повторите попытку.
+DLCCannotStartGame_Title=Не удалось начать игру
+DLCCannotStartGame_Message=Не удалось начать игру, так как выбранная карта есть не у всех игроков. Выберите другую карту и повторите попытку.
+DLCHostCantStart_Message=Организатору не удалось начать игру на загружаемой карте, так как она недоступна в этой системе.
+DLCCantJoin360_Title=Не удалось присоединиться
+DLCCantJoin360_Message=Не удалось присоединиться к игре: у вас нет необходимого загружаемого содержимого.
+DLCCantJoinPS3_Message=Не удалось присоединиться к игре: у вас нет необходимого пакета загружаемых данных.
+DLCNotAllHaveIt_Title=Нет содержимого
+DLCNotAllHaveIt_Message=Это загружаемое содержимое есть не у всех игроков.
+NoRestartFromSecondPlayer_Title=Перезапуск недоступен
+NoRestartFromSecondPlayer_Message=Функция «Перезапуск с контрольной точки» в режиме разделенного экрана доступна только первому игроку.
+NoRestartFromClient_Title=Перезапуск недоступен
+NoRestartFromClient_Message=Функция «Перезапуск с контрольной точки» доступна только организатору игры.
+NoRankedWithGuest_Title=Гости не допускаются
+NoRankedWithGuest_Message=Рейтинговые матчи недоступны, если выполнен вход гостя. Чтобы сыграть рейтинговый матч, выполните выход гостя.
+NoGuestWithRanked_Message=Вход гостя недоступен в рейтинговых матчах.
+NoGuestGameFull_Title=Игра заполнена
+NoGuestGameFull_Message=Невозможно выполнить вход гостя: игра заполнена.
+NoInvitesInRanked_Title=Приглашения недоступны
+NoInvitesInRanked_Message=Приглашения в игру недоступны в рейтинговых матчах.
+QuickMatchTimeOut_Title=Игры не найдены
+QuickMatchTimeOut_Message=Время быстрого поиска истекло, сетевые игры не найдены.
+QuickMatchTimeOut_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/> Искать снова <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/> Свой матч <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Отмена
+MPNeedMorePlayers_Title=Мало игроков
+MPNeedMorePlayers_Message=Игру нельзя начать, пока не подключатся и не будут готовы еще 3 игрока.
+MPNoSwapWithGuest_Title=Смена команд недоступна
+MPNoSwapWithGuest_Message=Смена команд недоступна, если в игре есть гость.
+CoopNeedMorePlayers_Title=Мало игроков
+CoopNeedMorePlayers_Message=Игру нельзя начать, пока не подключатся 2 игрока.
+;OBSOLETE VERIFY
+Options_Title=Требуется вход
+;OBSOLETE VERIFY
+Options_Message=Для доступа к настройкам необходимо войти хотя бы в один профиль игрока.
+LockedMissions_Title=Выбор миссии закрыт
+LockedMissions_Message=Выбор миссии станет доступен после прохождения хотя бы одной миссии. Начните новую кампанию.
+MPBack_Title=Внимание
+MPBack_Message=Если вы покинете экран настройки игры, подключение к серверам EA будет разорвано. Продолжить?
+MPBackPS3_Message=Вы действительно хотите покинуть сетевое лобби?
+CoopLobbyBack_Title=Внимание
+CoopLobbyBack_Message=Если вы покинете кооперативное лобби, подключение к серверам EA будет разорвано. Продолжить?
+CoopLobbyBackPS3_Message=Вы действительно хотите покинуть кооперативное лобби?
+EAAcctReq_Title="Требуется учетная запись EA"
+EAAcctReq_Message="Для сетевой игры необходима действующая учетная запись EA."
+EAAcctReq_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/> Создать учетную запись <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Назад
+EAToSMustAccept_Title=Внимание
+EAToSMustAccept_Message=Для сетевой игры необходимо принять условия использования EA.
+EAToSMustAccept_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/> К условиям <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Выход
+AO2NotEnoughCash_Title=Не хватает денег
+AO2NotEnoughCash_Message=У вас не хватает денег на эту покупку.
+AO2NotEnoughCash_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Продолжить <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Сбросить и выйти
+AO2LockedUpgrades_Title=Закрыто
+AO2LockedUpgrades_Message=Это улучшение пока закрыто, его нельзя купить. Чтобы открыть улучшения, купите все детали более низкого уровня.
+AO2LockedArmorMedium_Message=Среднюю броню можно надеть только после прохождения миссии «Афганистан».
+AO2LockedArmorHeavy_Message=Тяжелую броню можно надеть только после прохождения миссии «Авианосец».
+;OBSOLETE VERIFY
+StrictNAT_Title=Невозможно создать игру
+;OBSOLETE VERIFY
+StrictNAT_Message=Невозможно создать сетевую игру из-за настроек брандмауэра. Проверьте параметры безопасности брандмауэра.
+NewContent_Title=Доступно новое содержимое
+NewContent_Message=Доступно новое содержимое для загрузки. Перейти в Xbox LIVE Marketplace?
+NewContent_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>LIVE Marketplace <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+NoDevice_Title=Нет устройства хранения
+NoDevice_Message=Не выбрано устройство хранения для сохранения контрольных точек. Выбрать устройство хранения сейчас?
+NoDevice_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать устройство <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Продолжить без сохранения
+NoDeviceLoad_Title=Нет устройства хранения
+NoDeviceLoad_Message=Не выбрано устройство хранения для загрузки контрольных точек. Выбрать устройство хранения сейчас?
+NoDeviceLoad_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать устройство <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+NoMoreDevice_Title=Нет устройства хранения
+NoMoreDevice_Message=Конфигурация устройств хранения изменилась. Возможно, устройство хранения было подключено или отключено. Без выбранного устройства хранения контрольные точки сохраняться не будут. Выбрать устройство хранения сейчас?
+NoMoreDevice_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать устройство <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Продолжить без сохранения
+NoMoreDeviceLoad_Title=Нет устройства хранения
+NoMoreDeviceLoad_Message=Конфигурация устройств хранения изменилась. Возможно, устройство хранения было подключено или отключено. Выбрать устройство хранения сейчас?
+NoMoreDeviceLoad_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать устройство <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+NoMoreDeviceDURINGLoad_Title=Нет устройства хранения
+NoMoreDeviceDURINGLoad_Message=Не удалось загрузить контрольную точку: конфигурация устройств хранения изменилась. Возможно, устройство хранения было подключено или отключено. Верните устройство хранения, с которого загружались контрольные точки, и повторите попытку.
+ErrorSavingCheckpoint_Title=Ошибка сохранения
+ErrorSavingCheckpoint_Message=При сохранении контрольной точки произошла ошибка. Контрольная точка не сохранена.
+ErrorSavingCheckpointInvalidDevice_Title=Ошибка сохранения
+ErrorSavingCheckpointInvalidDevice_Message=При сохранении контрольной точки произошла ошибка. Устройство хранения, выбранное для сохранения контрольных точек, недоступно. Контрольная точка не сохранена.
+ErrorProfileCorrupted_Title=Игровой профиль поврежден
+ErrorProfileCorrupted_Message=Ваш игровой профиль Army of Two(TM) был поврежден и поэтому сброшен. Нажмите A, чтобы продолжить с новым игровым профилем Army of Two(TM).
+NotLoggedIn_Title=Вход не выполнен
+NotLoggedIn_Message=Вы не вошли в профиль игрока. Без входа в профиль игрока вы не сможете сохранять прогресс и настраивать оружие. Войти в профиль игрока сейчас?
+;OBSOLETE VERIFY
+NotLoggedIn_Message_PS3=Вход с сетевым идентификатором не выполнен. Без входа вы не сможете сохранять прогресс и настраивать оружие. Войти в профиль игрока сейчас?
+CannotShowFriends_Message_PS3=Вход с сетевым идентификатором не выполнен. Чтобы открыть список друзей, необходимо войти.
+NotLoggedIn_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Профили игроков  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Продолжить без сохранения
+NEEDLoggedIn_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Профили игроков <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+NotLoggedInContinue_Title=Вход не выполнен
+NotLoggedInContinue_Message=Вход в профиль игрока не выполнен. Чтобы продолжить кампанию с сохраненной контрольной точки, необходимо войти.
+;OBSOLETE VERIFY
+NotLoggedInContinue_Message_PS3=Вход с сетевым идентификатором не выполнен. Чтобы продолжить кампанию с сохраненной контрольной точки, необходимо войти.
+NotLoggedInForShopping_Message=Вы не вошли в профиль игрока. Без входа в профиль игрока покупки оружия и брони не будут сохранены. Войти в профиль игрока сейчас?
+;OBSOLETE VERIFY
+NotLoggedInForShopping_Message_PS3=Вход с сетевым идентификатором не выполнен. Чтобы сохранять покупки оружия и брони, необходимо войти.
+NotLoggedInForShoppingP1_Message=Игрок 1 не вошел в профиль. Без входа в профиль игрока покупки оружия и брони не будут сохранены. Войти в профиль игрока сейчас?
+NotLoggedInForShoppingP2_Message=Игрок 2 не вошел в профиль. Без входа в профиль игрока покупки оружия и брони не будут сохранены. Войти в профиль игрока сейчас?
+NeedTwoPlayers_Title=Нужно больше игроков
+NeedTwoPlayers_Message=Для игры на разделенном экране должны войти как минимум два игрока.
+NeedTwoPlayersPS3_Title=Нужны два беспроводных контроллера
+NeedTwoPlayersPS3_Message=Для режима разделенного экрана нужны два беспроводных контроллера.
+;OBSOLETE VERIFY
+NeedOneMap_Title=Список карт пуст
+;OBSOLETE VERIFY
+NeedOneMap_Message=В списке карт должна быть хотя бы одна карта.
+;OBSOLETE VERIFY
+FeaturesUnavailable_Title=Вход не выполнен
+;OBSOLETE VERIFY
+FeaturesUnavailable_Message=Сетевая игра недоступна: вход в профиль игрока не выполнен. Войдите в профиль игрока, чтобы играть по сети.
+;OBSOLETE VERIFY
+FeaturesUnavailable_Message_PS3=Сетевая игра недоступна: вход с сетевым идентификатором не выполнен. Войдите с сетевым идентификатором, чтобы играть по сети.
+ErrorLoadingGame_Title=Ошибка загрузки
+ErrorLoadingGame_Message=Контрольная точка повреждена и не может быть использована.
+NoSaveGame_Title=Нет контрольной точки
+NoSaveGame_Message=На текущем устройстве хранения нет сохраненной контрольной точки.
+NoSaveGamePS3_Message=На жестком диске нет сохраненной контрольной точки.
+NeedGoldTier_Title=Требуется Xbox LIVE
+NeedGoldTier_Message=Вы не вошли в профиль игрока. Для доступа к сетевым функциям этой игры войдите в профиль игрока с доступом к Xbox LIVE.
+NeedGoldHaveOther_Message=Вы не вошли в профиль игрока с доступом к Xbox LIVE. Для доступа к сетевым функциям этой игры войдите в профиль игрока с доступом к Xbox LIVE.
+;OBSOLETE VERIFY
+NeedProfileForMultiplayer_Title=Требуется профиль игрока
+;OBSOLETE VERIFY
+NeedProfileForMultiplayer_Title_PS3=Требуется сетевой идентификатор
+;OBSOLETE VERIFY
+NeedProfileForMultiplayer_Message=Для сетевой игры необходимо войти в профиль игрока.
+;OBSOLETE VERIFY
+NeedProfileForMultiplayer_Message_PS3=Для сетевой игры необходимо войти с сетевым идентификатором.
+NeedProfileForAchievements_Title=Требуется профиль игрока
+NeedProfileForAchievements_Title=Требуется сетевой идентификатор
+NeedProfileForAchievements_Message=Для просмотра достижений необходимо войти в профиль игрока.
+NeedProfileForAchievements_Message_PS3=Для просмотра достижений необходимо войти с сетевым идентификатором.
+NeedOnlinePermission_Title=Сетевая игра недоступна
+NeedOnlinePermission_Message=Для доступа к сетевым функциям этой игры необходимо войти в профиль игрока с доступом к Xbox LIVE.
+NeedOnlinePermission_Message_PS3=Сетевые функции отключены в вашей учетной записи PLAYSTATION®Network из-за ограничений родительского контроля.
+LivePermissionLimited_Message=Эта функция недоступна из-за ограничений Xbox LIVE.
+NeedOnlinePermission_Chat_Title_PS3=Чат отключен
+NeedOnlinePermission_Chat_Message_PS3=Чат отключен в вашей учетной записи PLAYSTATION®Network из-за ограничений родительского контроля.
+NeedProfilePeriod_Title=Профиль игрока изменен
+NeedProfilePeriod_Message=Вы сменили профиль игрока. Текущий сеанс завершен, вы вернетесь на экран «Нажмите START»
+WillNotSave_Title=Отмена изменений
+WillNotSave_Message=Внесенные изменения не будут сохранены. Продолжить без сохранения изменений?
+OptionsReset_Title=Сброс изменений
+OptionsReset_Message=При сбросе настроек по умолчанию все внесенные изменения будут потеряны. Сбросить все настройки по умолчанию?
+GuestSigninTooManyOnline_Title=Вход гостя
+GuestSigninTooManyOnline_Message=Должен быть активен второй контроллер, на котором не выполнен вход в профиль игрока с доступом к Xbox LIVE. Чтобы использовать функцию гостя, убедитесь, что второй контроллер подключен и на нем выполнен вход в профиль игрока без доступа к Xbox LIVE.
+GuestSigninNotEnough_Title=Вход гостя
+GuestSigninNeedSilver_Message=Должен быть активен второй контроллер, на котором не выполнен вход в профиль игрока с доступом к Xbox LIVE. Чтобы использовать функцию гостя, убедитесь, что второй контроллер подключен и на нем выполнен вход в профиль игрока без доступа к Xbox LIVE.
+GuestSigninNeedSilver_Title=Вход гостя
+;OBSOLETE VERIFY
+OnePlayerOnly_Title=Слишком много игроков
+;OBSOLETE VERIFY
+OnePlayerOnly_Message=В рейтинговом матче Xbox LIVE может играть только один профиль игрока. Чтобы продолжить, выполните выход из одного профиля.
+OnePlayerOnlyCoop_Title=Слишком много игроков
+OnePlayerOnlyCoop_Message=В кооперативе по локальной сети или Xbox LIVE может играть только один профиль игрока. Чтобы продолжить, выполните выход из одного профиля.
+;OBSOLETE VERIFY
+OnePlayerOnlySP_Title=Слишком много игроков
+;OBSOLETE VERIFY
+OnePlayerOnlySP_Message=В одиночной кампании может играть только один профиль игрока. Чтобы продолжить, выполните выход из одного профиля.
+TwoPlayersOnly_Title=Слишком много игроков
+TwoPlayersOnly_Message=На разделенном экране могут играть только два профиля игрока. Чтобы продолжить, выполните выход из лишних профилей.
+;OBSOLETE VERIFY
+NoLinkConnection_Title=Нет подключения к сети
+;OBSOLETE VERIFY
+NoLinkConnection_Message=Невозможно продолжить: консоль Xbox 360 не подключена к сети. Проверьте сетевые настройки.
+CreateAccountError_Title=Ошибка создания учетной записи
+CreateAccountError_Message=Не удалось создать учетную запись EA. Повторите попытку позже.
+InvalidBirthdate_Message=Указанный возраст пользователя меньше 13 лет. Для создания учетной записи EA пользователю должно быть не меньше 13 лет.
+NameAlreadyInUse_Message=Учетная запись EA с таким именем уже существует. Владелец учетной записи Xbox LIVE не сможет играть в игры EA по сети, пока не сменит тег игрока через службу поддержки Microsoft.
+NameAlreadyInUsePS3_Message=Учетная запись EA с таким сетевым идентификатором уже существует.
+EmailBlocked_Message=Указанный адрес электронной почты или адрес, предоставленный Microsoft для этого тега игрока, заблокирован EA для создания новых учетных записей EA.
+EmailBlockedPS3_Message=Указанный адрес электронной почты заблокирован EA для создания новых учетных записей EA.
+BillingNotAvailable_Message=Платежная система Xbox LIVE, передающая данные учетной записи в EA, недоступна. Создать учетную запись EA или Xbox 360 можно будет, когда платежная система снова станет доступна.
+XboxLive_Title=Xbox LIVE
+DuplicateSignin_Title=Выход из Xbox LIVE
+DuplicateSignin_Message=Вы вышли из Xbox LIVE, так как кто-то другой вошел с вашим профилем игрока.
+LostLiveConnection_Title=Подключение потеряно
+LostLiveConnection_Message=Подключение к серверам EA и текущему игровому сеансу потеряно. Вы вернетесь в главное меню.
+LostLinkEA_Title=Подключение потеряно
+LostLinkEA_Message=Подключение к серверам EA потеряно. Вы вернетесь в главное меню.
+LostLink_Title=Подключение потеряно
+LostLink_Message=Сетевое подключение консоли Xbox 360 потеряно. Проверьте сетевые настройки.
+CheckpointWarning_Title=Перезапись контрольной точки
+CheckpointWarning_Message=Новая кампания перезапишет сохраненную контрольную точку. Продолжить?
+;OBSOLETE VERIFY
+UnableToConnect_Title=Невозможно подключиться
+;OBSOLETE VERIFY
+UnableToConnect_Message=Не удалось подключиться к организатору. Повторите попытку.
+;OBSOLETE
+StartMPGameFailed_Title=Не удалось начать матч
+;OBSOLETE
+StartMPGameFailed_Message=Для начала матча нужно как минимум два игрока.
+;OBSOLETE
+StartRankedMPGameFailed_Title=Не удалось начать матч
+;OBSOLETE
+StartRankedMPGameFailed_Message=Для начала рейтингового матча нужно как минимум шесть игроков.
+;OBSOLETE VERIFY
+CoopSessionEnded_Title=Игрок вышел
+;OBSOLETE VERIFY
+CoopSessionEnded_Message=Кооперативный сеанс завершается, так как другой игрок вышел из игры.
+;OBSOLETE VERIFY
+DisableTutorials_Title=Обучение отключено
+;OBSOLETE VERIFY
+DisableTutorials_Message=Подсказки обучения больше не будут показываться, так как к игре присоединился второй игрок.
+;OBSOLETE VERIFY
+NoMatchesFound_Title=Матчи не найдены
+;OBSOLETE VERIFY
+NoMatchesFound_Message=Матчи не найдены. Создать игру?
+;OBSOLETE VERIFY
+NoMatchesFound_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Создать игру <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+;OBSOLETE VERIFY
+InviteHandlingFailed_Title=Ошибка приглашения
+;OBSOLETE VERIFY
+InviteHandlingFailed_Message=Ошибка приглашения в игру. Подключение к организатору не установлено.
+;OBSOLETE VERIFY
+NotAllPlayersCanJoin_Message=Не у всех вошедших игроков есть разрешение на сетевую игру.
+;OBSOLETE VERIFY
+NotEnoughSpaceToJoin_Message=Слишком много вошедших игроков, чтобы принять приглашение в игру.
+StorageDeviceFull_Title=Устройство хранения заполнено
+StorageDeviceFull_Message=Не удалось сохранить контрольную точку: выбранное устройство хранения заполнено. Без пригодного устройства хранения контрольные точки сохраняться не будут. Выбрать другое устройство хранения сейчас?
+StorageDeviceFull_ButtonLabel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать устройство <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Продолжить без сохранения
+;OBSOLETE VERIFY
+CoopQuitClient_Title=Выход из кооператива
+;OBSOLETE VERIFY
+CoopQuitClient_Message=Выход из кооперативной игры завершит сеанс, и вы потеряете прогресс с начала текущей главы. Выйти?
+;OBSOLETE VERIFY
+CoopQuitHost_Title=Выход из кооператива
+;OBSOLETE VERIFY
+CoopQuitHost_Message=Выход из кооперативной игры завершит сеанс, и присоединившийся игрок потеряет прогресс с начала текущей главы. Выйти?
+;OBSOLETE VERIFY
+StandbyError_Title=Ошибка подключения
+;OBSOLETE VERIFY
+StandbyError_Message=Качество подключения ко всем игрокам значительно ухудшилось. Можно подождать восстановления подключения или завершить игровой сеанс, нажав <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>.
+;OBSOLETE VERIFY
+StandbyError_Buttons=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Выйти из игры
+QuitToMainMenu_Title=Выход из игры
+QuitToMainMenu_Message="Вы действительно хотите выйти? Весь несохраненный прогресс будет потерян."
+QuitToMainMenuMP_Title=Выход из игры
+QuitToMainMenuMP_Message="Вы действительно хотите выйти? Выход до окончания раунда завершит текущую игру."
+RestartFromCheckpoint_Title=Перезапуск
+RestartFromCheckpoint_Message="Вы действительно хотите начать с последней контрольной точки? Весь несохраненный прогресс будет потерян."
+;OBSOLETE VERIFY
+CannotChangeProfile_Title=Ошибка профиля игрока
+;OBSOLETE VERIFY
+CannotChangeProfile_Message="Нельзя сменить профиль игрока на экране настройки оружия."
+GuestSigninNotAllowed_Title=Невозможно продолжить
+GuestSigninNotAllowed_Message=Для доступа к кампании необходимо выполнить выход гостя.
+NetworkGameEnd_Title=Сетевая игра окончена
+NetworkGameEnd_Message=Сетевая игра, в которой вы участвовали, окончена. Загрузить предыдущую контрольную точку с напарником под управлением ИИ?
+NetworkGameEnd_MP_Message=Сетевая игра, в которой вы участвовали, окончена.
+NetworkGameEnd_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Заново с ИИ <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Выход
+NetworkGameEnd_MP_Buttons=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Выход
+ConnectionLost_Title=Подключение потеряно
+ConnectionLost_Message=Подключение к игровому сеансу потеряно. Вы вернетесь в главное меню.
+ConnectionLostRestart_Message=Подключение к игровому сеансу потеряно. Загрузить предыдущую контрольную точку с напарником под управлением ИИ?
+PS3NetDown_Title=Подключение недоступно
+PS3NetDown_Message=Сетевое подключение системы недоступно. Проверьте сетевые настройки. Загрузить предыдущую контрольную точку с напарником под управлением ИИ?
+PS3NetDown_MP_Message=Сетевое подключение системы недоступно. Проверьте сетевые настройки.
+X360NetDown_Title=Подключение недоступно
+X360NetDown_Message=Не удалось подключиться к серверам EA. Повторите попытку позже.
+X360NetDown_MP_Message=Сетевое подключение системы недоступно. Проверьте сетевые настройки.
+NetworkGameDisconnected_Title=Игра прервана
+NetworkGameDisconnected_Message=Вы отключены от игры.
+NetworkGameDisconnected_Kicked_Message=Организатор исключил вас из игры.
+NetworkGameDisconnected_Lost_Message=Подключение к организатору игры потеряно.
+NetworkGameDisconnected_PlayerLeft=Игрок покинул игру, игровой сеанс завершен. Загрузить предыдущую контрольную точку с напарником под управлением ИИ?
+NetworkGameDisconnected_MP_PlayerLeft=Игрок покинул игру, игровой сеанс завершен. Вы вернетесь в главное меню.
+PS3Signin_Title=Профили игроков
+PS3SigninPlayer1_Message=Выберите профиль, в котором будет сохраняться прогресс игрока 1.
+PS3SigninPlayer2_Message=Выберите профиль, в котором будет сохраняться прогресс игрока 2.
+PS3Signin_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Загрузить <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Новый <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Удалить <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+PS3SigninNoBack_Buttons=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Загрузить <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Новый <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Удалить
+NeedNPAccount_Title=Требуется учетная запись PLAYSTATION®Network
+NeedNPAccount_Message=Для доступа к сетевым функциям необходима учетная запись PLAYSTATION®Network. Создать учетную запись можно, вернувшись в меню системы.
+EAOnlineDown_Title=Подключение недоступно
+EAOnlineDown_Message=Не удалось подключиться к EA Online. Проверьте сетевые настройки.
+PS3Splitscreen_Title=Разделенный экран
+PS3Splitscreen_Message=Для игры «Против» включен режим разделенного экрана.
+;OBSOLETE VERIFY
+RankedMatch_Title=Рейтинговый матч
+;OBSOLETE VERIFY
+RankedMatch_Message=Режим сетевой игры: рейтинговый матч.
+;OBSOLETE VERIFY
+PlayerMatch_Title=Нерейтинговый матч
+;OBSOLETE VERIFY
+PlayerMatch_Message=Режим сетевой игры: нерейтинговый матч.
+LocalInvite_Title=Приглашение отклонено
+LocalInvite_Message=Нельзя принять приглашение с локальной консоли Xbox 360.
+NonPlasmaLocalInvite_Message=Нельзя принять приглашение для локального игрока, не вошедшего в EA Online.
+CannotJoinGame_Title=Не удалось присоединиться
+CannotJoinGame_Message=Игра, к которой вы пытаетесь присоединиться, заполнена, больше не существует или недоступна для подключения.
+WrongRegion_Message=Игра между регионами не поддерживается.
+MapLocked_Message=Невозможно присоединиться к игре: у вас не открыта карта, выбранная организатором.
+HostTimeOut_Message=Игровой сервер сейчас недоступен. Повторите попытку позже.
+;OBSOLETE VERIFY
+UpdateRequired_Title=Требуется обновление
+;OBSOLETE VERIFY
+UpdateRequired_Message=Для сетевой игры необходимо обновление.
+DLCProblem_Title=Ошибка загружаемого содержимого
+DLCProblem_Permissions_PS3=Часть загруженного содержимого нельзя использовать: нет необходимых разрешений. Удалите и заново установите содержимое из списка загрузок PLAYSTATION®Store.
+DLCProblem_Corrupted_PS3=Часть загруженного содержимого нельзя использовать: файлы повреждены. Удалите и заново установите содержимое из списка загрузок PLAYSTATION®Store.
+[MapNames]
+Somalia=Сомали
+Afghanistan=Афганистан
+Iraq=Ирак
+Aircraft=Авианосец
+China=Китай
+Miami=Майами
+[MapLocations]
+MapLocation_01=МОГАДИШО, СОМАЛИ (1993)
+MapLocation_02=КХАНДУД, АФГАНИСТАН (2001)
+MapLocation_03=АЛЬ-ФАО, ИРАК (2003)
+MapLocation_04=USS CONSTELLATION, ФИЛИППИНЫ (2008)
+MapLocation_05=РЕКА ЛИЦЗЯН, КИТАЙ (2009)
+MapLocation_06=АЭРОПОРТ МАРАТОН, МАЙАМИ (2009)
+[ShellHelpText]
+DemoMainMenu=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/> Выйти из демоверсии
+Select=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать
+PS3Main=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Профили <Fonts:00_fonts.Xbox360_18pt>:<Fonts:/>Друзья
+PS3Main_NoNP=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Профили
+Back=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+SelectBack=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+DemoPause=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Схема контроллера Xbox 360
+ReadyRoom=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать/карточка игрока <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Сменить команду
+ReadyRoomOptBtn=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Сменить команду
+ReadyRoomPS3=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Сменить команду
+ReadyRoomPS3Client=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Сменить команду
+Rankings=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Карточка игрока <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Найти меня <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Все/друзья
+RankingsPS3=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Найти меня <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Все/друзья
+CustomMatch=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать/карточка игрока <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Пригласить <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/> Вход гостя
+CustomMatchPS3=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Пригласить
+CustomMatchPS3Client=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+CustomMatchOptBtn=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Пригласить <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/> Вход гостя
+CustomMatchOptBtnPS3=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Пригласить
+WeaponDealers=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+WeaponNotOwned=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Купить <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Характеристики <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Осмотреть оружие
+WeaponEquipped=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Прокачать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Характеристики
+WeaponOwned=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Прокачать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Характеристики <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Экипировать
+ArmorNotOwned=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Купить/экипировать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+WeaponUpgradesSub=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Установить <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Характеристики
+WeaponUpgradesEquipped=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Характеристики
+WeaponUpgrades=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/>Характеристики
+Options=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>По умолчанию <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Принять <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/> Сбросить и выйти
+Multiplayer=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Рейтинговый матч
+CoopLobbyClient=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Карточка игрока <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+CoopLobbyClientPS3=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+CoopLobbyHost=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать/карточка игрока <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+CoopLobbyHostPS3=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+MPStandings=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Карточка игрока <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+;OBSOLETE VERIFY
+MPStandingsPS3=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+MultiplayerPS3=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выбрать <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Разделенный экран <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Рейтинговый матч
+QuitGame=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Выйти из игры
+;OBSOLETE VERIFY
+MPQuitGame=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Карточка игрока <Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Отзыв об игроке <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Выйти
+MPQuitGame_PS3=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Выйти
+PS3FriendInvite=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Пригласить друга <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+PS3FriendAccept=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Принять приглашение <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+[XboxButtonLabels]
+;OBSOLETE VERIFY
+Go=ВПЕРЕД
+;OBSOLETE VERIFY
+Select=Выбрать
+Back=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+;OBSOLETE VERIFY
+Profiles=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Профили игроков
+Accept=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Принять
+;OBSOLETE VERIFY
+Create=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Создать
+;OBSOLETE VERIFY
+Join=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Присоединиться
+Show Gamer Card=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Карточка игрока
+;OBSOLETE VERIFY
+Refresh=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Обновить
+;OBSOLETE VERIFY
+Defaults=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>По умолчанию
+;OBSOLETE VERIFY
+ShowGamerCard=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Карточка игрока
+NewContent=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Загружаемый контент
+;OBSOLETE VERIFY
+Search=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Поиск
+;OBSOLETE VERIFY
+Diagram=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Схема
+Cancel=<Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+;OBSOLETE VERIFY
+FindMe=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Найти меня
+Details=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Подробнее
+;OBSOLETE VERIFY
+KickPlayer=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Исключить игрока
+;OBSOLETE VERIFY
+HostOptions=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Настройки хоста
+;OBSOLETE VERIFY
+ChangeCharacter=Сменить персонажа <Fonts:00_fonts.Xbox360_18pt>]<Fonts:/> <Fonts:00_fonts.Xbox360_18pt>^<Fonts:/>
+;OBSOLETE VERIFY
+PlayerReady=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Готов
+;OBSOLETE VERIFY
+PlayerUnReady=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Не готов
+;OBSOLETE VERIFY
+Friends=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Друзья
+;OBSOLETE VERIFY
+Players=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Игроки
+;OBSOLETE VERIFY
+YPlayers=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Игроки
+AcceptCancel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Принять  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+AcceptCancelScroll=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Принять  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена <Fonts:00_fonts.Xbox360_18pt>i<Fonts:/>Прокрутка
+SubmitCancel=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>ОТПРАВИТЬ  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Отмена
+YesNo=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Да  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Нет
+;OBSOLETE VERIFY
+AdminButtons=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Исключить  <Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Карточка игрока  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+OKButton=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Продолжить
+;OBSOLETE VERIFY
+AdminMenu=<Fonts:00_fonts.Xbox360_18pt>_<Fonts:/>Настройки хоста
+;OBSOLETE VERIFY
+Menu=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Меню
+;OBSOLETE VERIFY
+ScoreboardAnB=<Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>Меню  <Fonts:00_fonts.Xbox360_18pt>B<Fonts:/>Назад
+;OBSOLETE VERIFY
+IngameStats=<Fonts:00_fonts.Xbox360_18pt>X<Fonts:/>Статистика
+;OBSOLETE VERIFY
+YtoJoin=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/> Присоединиться
+;OBSOLETE VERIFY
+YtoSwitchProfile=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/> Сменить профиль
+;OBSOLETE VERIFY
+GuestSignin=<Fonts:00_fonts.Xbox360_18pt>Y<Fonts:/>Вход гостя
+;OBSOLETE VERIFY
+AtoContinue=Чтобы продолжить, нажмите <Fonts:00_fonts.Xbox360_18pt>A<Fonts:/>.
+;OBSOLETE VERIFY
+ChangeGameType=<Fonts:00_fonts.Xbox360_18pt>]^<Fonts:/>Сменить режим
+[AO2OnlineSettings]
+LocalizedSettingsMappings[0]=(ValueMappings=((Name="Сомали"),(Name="Афганистан"),(Name="Нефтяное месторождение"),(Name="Авианосец"),(Name="Китай"),(Name="Майами"),(Name="Загрузка 1"),(Name="Загрузка 2"),(Name="Загрузка 3"),(Name="Загрузка 4"),(Name="Загрузка 5"),(Name="Загрузка 6"),(Name="Загрузка 7"),(Name="Загрузка 8"),(Name="Загрузка 9"),(Name="Загрузка 10"),(Name="Загрузка 11"),(Name="Загрузка 12"),(Name="Загрузка 13"),(Name="Загрузка 14"),(Name="Загрузка 15"),(Name="Загрузка 16"),(Name="Загрузка 17"),(Name="Загрузка 18"),(Name="Загрузка 19"),(Name="Загрузка 20")))
+;ProfileSettingIds(3)=HudOnOff
+;ProfileSettingIds(4)=MatureLang
+;ProfileSettingIds(5)=AO2StickConfig
+;ProfileSettingIds(6)=AO2TriggerConfig
+;ProfileSettingIds(7)=Subtitles
+;ProfileSettingIds(8)=MusicVolume
+;ProfileSettingIds(9)=FxVolume
+;ProfileSettingIds(10)=DialogueVolume
+;ProfileSettingIds(11)=CogMPCharacter
+;ProfileSettingIds(12)=LocustMPCharacter
+;ProfileSettingIds(13)=Gore
+;ProfileSettingIds(14)=GameIntensity
+;ProfileSettingIds(15)=GammaSetting
+[AO2ProfileSettings]
+ProfileMappings[0]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[1]=(ValueMappings=((Name="Нет"),(Name="Да")))
+ProfileMappings[2]=(ValueMappings=((Name="Низкая"),(Name="Средняя"),(Name="Высокая"),(Name="Очень высокая")))
+ProfileMappings[3]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[4]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[5]=(ValueMappings=((Name="Стандарт"),(Name="Классика"),(Name="Для левши"),(Name="Классика для левши")))
+ProfileMappings[6]=(ValueMappings=((Name="Стандарт"),(Name="Для левши")))
+ProfileMappings[7]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[8]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[9]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[10]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[11]=(ValueMappings=((Name="Риос"),(Name="Сейлем")))
+ProfileMappings[23]=(ValueMappings=((Name="Нет"),(Name="Да")))
+ProfileMappings[44]=(ValueMappings=((Name="Стандарт"),(Name="Мягкая"),(Name="Светлая"),(Name="Яркая")))
+ProfileMappings[14]=(ValueMappings=((Name="Новобранец"),(Name="Контрактник"),(Name="Профессионал")))
+ProfileMappings[152]=(ValueMappings=((Name="Да"),(Name="Нет")))
+ProfileMappings[153]=(ValueMappings=((Name="Да"),(Name="Нет")))
+ProfileMappings[154]=(ValueMappings=((Name="Да"),(Name="Нет")))
+ProfileMappings[155]=(ValueMappings=((Name="Да"),(Name="Нет")))
+ProfileMappings[156]=(ValueMappings=((Name="Низкая"),(Name="Средняя"),(Name="Высокая"),(Name="Очень высокая")))
+ProfileMappings[183]=(ValueMappings=((Name="Рейтинговый матч"),(Name="Матч без рейтинга")))
+ProfileMappings[208]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+ProfileMappings[244]=(ValueMappings=((Name="Да"),(Name="Нет")))
+ProfileMappings[245]=(ValueMappings=((Name="Выкл."),(Name="Вкл.")))
+[Easy UIDataProvider_AO2Difficulty]
+FriendlyName="Новобранец"
+[Medium UIDataProvider_AO2Difficulty]
+FriendlyName="Контрактник"
+[Hard UIDataProvider_AO2Difficulty]
+FriendlyName="Профессионал"
+[Mission1 UIDataProvider_AO2Maps]
+FriendlyName="Сомали"
+[Mission2 UIDataProvider_AO2Maps]
+FriendlyName="Афганистан"
+[Mission3 UIDataProvider_AO2Maps]
+FriendlyName="Ирак"
+[Mission4 UIDataProvider_AO2Maps]
+FriendlyName="Авианосец"
+[Mission5 UIDataProvider_AO2Maps]
+FriendlyName="Китай"
+[Mission6 UIDataProvider_AO2Maps]
+FriendlyName="Майами"
+[MissionAny UIDataProvider_AO2Maps]
+FriendlyName="Любая"
+[MPMission1 UIDataProvider_AO2MPMaps]
+FriendlyName="Ирак"
+[MPMission2 UIDataProvider_AO2MPMaps]
+FriendlyName="Китай"
+[MPMission3 UIDataProvider_AO2MPMaps]
+FriendlyName="Афганистан"
+[MPMission4 UIDataProvider_AO2MPMaps]
+FriendlyName="Сомали"
+[Any UIDataProvider_AO2MPMaps]
+FriendlyName="Любая"
+[Warzone UIDataProvider_AO2MPGameTypes]
+FriendlyName="Зона боевых действий"
+[Bounties UIDataProvider_AO2MPGameTypes]
+FriendlyName="Награда за голову"
+[Extraction UIDataProvider_AO2MPGameTypes]
+FriendlyName="Эвакуация"
+[Any UIDataProvider_AO2MPGameTypes]
+FriendlyName="Любой"
+[Ten UIDataProvider_AO2MPRoundLength]
+FriendlyName="10 минут"
+[Fifteen UIDataProvider_AO2MPRoundLength]
+FriendlyName="15 минут"
+[Twenty UIDataProvider_AO2MPRoundLength]
+FriendlyName="20 минут"
+[Any UIDataProvider_AO2MPSkins]
+FriendlyName="Любой"
+[AlHabib UIDataProvider_AO2MPSkins]
+FriendlyName="Аль-Хабиб"
+[AfghanHeavy UIDataProvider_AO2MPSkins]
+FriendlyName="Афганец (тяжелый)"
+[Rios UIDataProvider_AO2MPSkins]
+FriendlyName="Риос"
+[Salem UIDataProvider_AO2MPSkins]
+FriendlyName="Сейлем"
+[ChinaElite UIDataProvider_AO2MPSkins]
+FriendlyName="Китаец (элита)"
+[ChinaHeavy UIDataProvider_AO2MPSkins]
+FriendlyName="Китаец (тяжелый)"
+[USSoldierHeavy UIDataProvider_AO2MPSkins]
+FriendlyName="Американец (тяжелый)"
+[IraqHeavy UIDataProvider_AO2MPSkins]
+FriendlyName="Иракец (тяжелый)"
+[Youssef UIDataProvider_AO2MPSkins]
+FriendlyName="Юсуф"
+[SSCElite UIDataProvider_AO2MPSkins]
+FriendlyName="SSC (элита)"
+[SSCHeavy UIDataProvider_AO2MPSkins]
+FriendlyName="SSC (тяжелый)"
+[SSCSmiley UIDataProvider_AO2MPSkins]
+FriendlyName="SSC Смайли"
+[SSCBodyguard1 UIDataProvider_AO2MPSkins]
+FriendlyName="Телохранитель SSC #1"
+[SSCBodyguard2 UIDataProvider_AO2MPSkins]
+FriendlyName="Телохранитель SSC #2"
+[SomaliNovak UIDataProvider_AO2MPSkins]
+FriendlyName="Риос (Сомали)"
+[SomaliRosco UIDataProvider_AO2MPSkins]
+FriendlyName="Сейлем (Сомали)"
+[Moalim UIDataProvider_AO2MPSkins]
+FriendlyName="Мо'Алим"
+[SomaliSSCSmiley UIDataProvider_AO2MPSkins]
+FriendlyName="Смайли (Сомали)"
+[SomaliEisenhower UIDataProvider_AO2MPSkins]
+FriendlyName="Эйзенхауэр (Сомали)"
+[SomaliPedro UIDataProvider_AO2MPSkins]
+FriendlyName="Педро (Сомали)"
+[AO2HudItem_PartnerLocator]
+PartnerGPSDescription = "Напарник"
+[AO2HudItem_MPLocators]
+OpponentGPSDescription = "Противник"
+BuyZoneGPSDescription = "Покупка оружия"
+EscortGPSDescription = "Задача: сопровождение"
+AssassinationGPSDescription = "Задача: ликвидация"
+DestroyGPSDescription = "Задача: уничтожение"
+ExtractionPointGPSDescription = "Точка эвакуации"
+DefendGPSDescription = "Задача: оборона"
+WaypointGPSDescription = "Путевая точка"
+[AO2HudItem_MPBuyZone]
+BuyZoneCancelText = "Отмена"
+BuyZonePurchaseText1 = "Купить"
+BuyZonePurchaseText2 = "оружие"
+BuyZoneCostText = "Цена"
+BuyZonePrimary = "Основное"
+BuyZoneSecondary = "Дополнительное"
+BuyZoneSpecial = "Особое"
+BuyZoneUpgradeArmorText = "Улучшить броню"
+BuyZoneAmmoText = "Купить патроны"
+BuyZoneMaxedOutText = "Максимум"
+BuyZoneEquippedText = "Экипировано"
+BuyZoneOwnedText = "Куплено"
+[AO2Partner]
+Tutorial_DyingAggressive_Title=НАПАРНИК ПРИ СМЕРТИ
+Tutorial_DyingAggressive_Tutorial=Напарник получает урон и скоро погибнет.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы приказать ему держать позицию в пассивном режиме (синий) и не отвлекать огонь врага на себя.
+Tutorial_DyingAggressive_Buttons=Напарник получает урон и скоро погибнет.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы приказать ему держать позицию в пассивном режиме (синий) и не отвлекать огонь врага на себя.
+Tutorial_DyingAggressive_Tutorial_PS3=Напарник получает урон и скоро погибнет.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы приказать ему держать позицию в пассивном режиме (синий) и не отвлекать огонь врага на себя.
+Tutorial_DyingAggressive_Buttons_PS3=Напарник получает урон и скоро погибнет.\nНажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы приказать ему держать позицию в пассивном режиме (синий) и не отвлекать огонь врага на себя.
+Tutorial_PlayerDyingPassive_Title=НАПАРНИК В ПАССИВНОМ РЕЖИМЕ
+Tutorial_PlayerDyingPassive_Tutorial=У вас мало здоровья. Переведите напарника в агрессивный режим, чтобы он отвлек врагов.\nНажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы включить ему агрессивный режим (красный).
+Tutorial_PlayerDyingPassive_Buttons=У вас мало здоровья. Переведите напарника в агрессивный режим, чтобы он отвлек врагов.\nНажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы включить ему агрессивный режим (красный).
+Tutorial_PlayerDyingPassive_Tutorial_PS3=У вас мало здоровья. Переведите напарника в агрессивный режим, чтобы он отвлек врагов.\nНажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы включить ему агрессивный режим (красный).
+Tutorial_PlayerDyingPassive_Buttons_PS3=У вас мало здоровья. Переведите напарника в агрессивный режим, чтобы он отвлек врагов.\nНажмите <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/>, чтобы включить ему агрессивный режим (красный).
+Tutorial_HeavyAttackManeuver_Title=НАПАРНИК: МАНЕВР ПРОТИВ ТЯЖЕЛЫХ
+Tutorial_HeavyAttackManeuver_Tutorial=Тяжелых солдат нужно убивать со спины.\nДважды нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы напарник агрессивно держал позицию (красный), пока вы заходите с фланга.
+Tutorial_HeavyAttackManeuver_Buttons=Тяжелых солдат нужно убивать со спины.\nДважды нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы напарник агрессивно держал позицию (красный), пока вы заходите с фланга.
+Tutorial_HeavyAttackManeuver_Tutorial_PS3=Тяжелых солдат нужно убивать со спины.\nДважды нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы напарник агрессивно держал позицию (красный), пока вы заходите с фланга.
+Tutorial_HeavyAttackManeuver_Buttons_PS3=Тяжелых солдат нужно убивать со спины.\nДважды нажмите <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы напарник агрессивно держал позицию (красный), пока вы заходите с фланга.
+Tutorial_AdvanceBlocked_Title=НАПАРНИК НЕ МОЖЕТ ПРОЙТИ
+Tutorial_AdvanceBlocked_Tutorial=Напарник не может продвинуться дальше.\nВпереди слишком много врагов, или он ждет вас.
+Tutorial_AdvanceBlocked_Buttons=Напарник не может продвинуться дальше.\nВпереди слишком много врагов, или он ждет вас.
+Tutorial_ParachuteOrders_Title=НАПАРНИК: ПРИКАЗЫ НА ПАРАШЮТЕ
+Tutorial_ParachuteOrders_Tutorial=Управляйте полетом напарника кнопками направлений.\nНажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы ускориться, <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/> или <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы сместиться вбок, или <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выровняться.
+Tutorial_ParachuteOrders_Buttons=Управляйте полетом напарника кнопками направлений.\nНажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы ускориться, <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/> или <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы сместиться вбок, или <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выровняться.
+Tutorial_ParachuteOrders_Tutorial_PS3=Управляйте полетом напарника кнопками направлений.\nНажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы ускориться, <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/> или <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы сместиться вбок, или <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выровняться.
+Tutorial_ParachuteOrders_Buttons_PS3=Управляйте полетом напарника кнопками направлений.\nНажмите <Fonts:00_fonts.Xbox360_18pt>m<Fonts:/>, чтобы ускориться, <Fonts:00_fonts.Xbox360_18pt>s<Fonts:/> или <Fonts:00_fonts.Xbox360_18pt>o<Fonts:/>, чтобы сместиться вбок, или <Fonts:00_fonts.Xbox360_18pt>q<Fonts:/>, чтобы выровняться.
+[Credits]
+01_01=<Styles:AO2NoBGButton>Производство Electronic Arts Montreal<Styles:/>
+01_02=
+01_03=<Styles:OptionButtonStyle>Вице-президент и генеральный менеджер студии<Styles:/>
+01_04=<Styles:AO2White>Alain Tascan<Styles:/>
+01_05=<Styles:OptionButtonStyle>Старший (ведущий) продюсер<Styles:/>
+01_06=<Styles:AO2White>Reid Schneider<Styles:/>
+01_07=<Styles:OptionButtonStyle>Ведущий руководитель разработки контента<Styles:/>
+01_08=<Styles:AO2White>Francois Pelland<Styles:/>
+01_09=<Styles:OptionButtonStyle>Помощник продюсера<Styles:/>
+01_10=<Styles:AO2White>Sarah Stewart<Styles:/>
+01_11=<Styles:OptionButtonStyle>Арт-директор<Styles:/>
+01_12=<Styles:AO2White>Hugo Dallaire<Styles:/>
+01_13=<Styles:OptionButtonStyle>Ведущий дизайнер<Styles:/>
+01_14=<Styles:AO2White>Chris Ferriera<Styles:/>
+01_15=<Styles:OptionButtonStyle>Руководитель дизайна<Styles:/>
+01_16=<Styles:AO2White>Vander Caballero<Styles:/>
+01_17=<Styles:OptionButtonStyle>Ведущий дизайнер уровней<Styles:/>
+01_18=<Styles:AO2White>Danny Belanger<Styles:/>
+01_19=<Styles:OptionButtonStyle>Руководитель анимации<Styles:/>
+01_20=<Styles:AO2White>Steve Dupont<Styles:/>
+01_21=<Styles:OptionButtonStyle>Ведущий аниматор<Styles:/>
+01_22=<Styles:AO2White>Francois Royer<Styles:/>
+01_23=<Styles:OptionButtonStyle>Руководитель разработки<Styles:/>
+01_24=<Styles:AO2White>Heather Alekson<Styles:/>
+01_25=<Styles:OptionButtonStyle>Менеджер разработки и руководитель локализации<Styles:/>
+01_26=<Styles:AO2White>Denis Gikunda<Styles:/>
+01_27=<Styles:OptionButtonStyle>Старшие руководители разработки (дополнительно)<Styles:/>
+01_28=<Styles:AO2White>Marcus Fielding<Styles:/>
+01_29=<Styles:AO2White>Gaivan Chang<Styles:/>
+01_31=<Styles:OptionButtonStyle>Сценаристы<Styles:/>
+01_32=<Styles:OptionButtonStyle>sekretagent Productions, Inc.<Styles:/>
+01_33=<Styles:AO2White>Dooma Wendschuh<Styles:/>
+01_34=<Styles:AO2White>Corey May<Styles:/>
+01_35=<Styles:OptionButtonStyle>Геймдизайнеры<Styles:/>
+01_36=<Styles:AO2White>Eric Pavone<Styles:/>
+01_37=<Styles:AO2White>Yann Pepin<Styles:/>
+01_38=<Styles:OptionButtonStyle>Координаторы производства<Styles:/>
+01_39=<Styles:AO2White>Marie-Josee Ouellette<Styles:/>
+01_40=<Styles:AO2White>Matthew Turner<Styles:/>
+01_41=
+02_01=<Styles:AO2NoBGButton>ПРОГРАММИСТЫ<Styles:/>
+02_02=<Styles:OptionButtonStyle>Ведущий программист<Styles:/>
+02_03=<Styles:AO2White>Dzmitry Miadzvedzeu<Styles:/>
+02_04=<Styles:OptionButtonStyle>Ведущий программист ИИ<Styles:/>
+02_05=<Styles:AO2White>Nathan Brierley<Styles:/>
+02_06=<Styles:OptionButtonStyle>Программирование ИИ<Styles:/>
+02_07=<Styles:AO2White>Alexis Palangie<Styles:/>
+02_08=<Styles:AO2White>Mathieu Courtemanche<Styles:/>
+02_09=<Styles:AO2White>Simon Cournoyer<Styles:/>
+02_10=<Styles:AO2White>Louis Paquin<Styles:/>
+02_11=<Styles:AO2White>Fred Dorosh<Styles:/>
+02_12=<Styles:AO2White>Paul Di Marco <Styles:/>
+02_13=
+02_14=<Styles:OptionButtonStyle>Ведущий программист рендеринга<Styles:/>
+02_15=<Styles:AO2White>Jean Sebastien Perrier<Styles:/>
+02_16=<Styles:OptionButtonStyle>Программисты рендеринга<Styles:/>
+02_17=<Styles:AO2White>Sevan Dalkian <Styles:/>
+02_18=<Styles:AO2White>Jianfeng Yin<Styles:/>
+02_19=
+02_20=<Styles:OptionButtonStyle>Ведущий программист геймплея/анимации<Styles:/>
+02_21=<Styles:AO2White>Alistair Milne<Styles:/>
+02_22=<Styles:OptionButtonStyle>Программисты анимации/геймплея<Styles:/>
+02_23=<Styles:AO2White>Antonio Maiorano <Styles:/>
+02_24=<Styles:AO2White>Benoit Laforest <Styles:/>
+02_25=<Styles:AO2White>Sean Walsh <Styles:/>
+02_26=<Styles:AO2White>Julien Barnoin<Styles:/>
+02_27=<Styles:AO2White>Frederic Hamel <Styles:/>
+02_28=<Styles:AO2White>Luis Sempe<Styles:/>
+02_29=<Styles:AO2White>Jean Francois Perusse<Styles:/>
+02_30=<Styles:AO2White>Raymond Barbiero <Styles:/>
+02_31=<Styles:AO2White>Yannick Simard<Styles:/>
+02_32=
+03_01=<Styles:OptionButtonStyle>Ведущий системный программист <Styles:/>
+03_02=<Styles:AO2White>Jon Laff<Styles:/>
+03_03=<Styles:OptionButtonStyle>Системные и сетевые программисты<Styles:/>
+03_04=<Styles:AO2White>Sylvain Martel <Styles:/>
+03_05=<Styles:AO2White>Sebastien Nicloux<Styles:/>
+03_06=<Styles:AO2White>David Crooks <Styles:/>
+03_07=<Styles:AO2White>Dmitri Prykhodko<Styles:/>
+03_08=
+03_09=<Styles:OptionButtonStyle>Ведущий платформенный программист <Styles:/>
+03_10=<Styles:AO2White>Sergei Savchenko<Styles:/>
+03_11=<Styles:OptionButtonStyle>Платформенные программисты<Styles:/>
+03_12=<Styles:AO2White>Liam Flookes<Styles:/>
+03_13=<Styles:AO2White>Nicolas Fonta<Styles:/>
+03_14=<Styles:AO2White>Yassine Riahi<Styles:/>
+03_15=<Styles:AO2White>Andrew Cooke<Styles:/>
+03_16=<Styles:AO2White>Frederic O'Reilly <Styles:/>
+03_17=<Styles:OptionButtonStyle>Дополнительное программирование<Styles:/>
+03_18=<Styles:AO2White>Rejean Charpentier<Styles:/>
+03_19=<Styles:AO2White>Charles-Andre Maille<Styles:/>
+03_20=<Styles:AO2White>David St-Germain<Styles:/>
+03_21=<Styles:AO2White>Julien Pelletier<Styles:/>
+03_22=<Styles:AO2White>Charles Savoie<Styles:/>
+03_23=
+04_01=<Styles:AO2NoBGButton>ГРАФИКА И ДИЗАЙН УРОВНЕЙ<Styles:/>
+04_02=<Styles:OptionButtonStyle>Руководитель по освещению<Styles:/>
+04_03=<Styles:AO2White>Marco Beauchemin<Styles:/>
+04_04=<Styles:OptionButtonStyle>Художник по освещению<Styles:/>
+04_05=<Styles:AO2White>Maxime Tremblay<Styles:/>
+04_06=<Styles:OptionButtonStyle>Ведущий художник по шейдерам<Styles:/>
+04_07=<Styles:AO2White>Alexandre Rodrigue<Styles:/>
+04_08=<Styles:OptionButtonStyle>Художники по шейдерам<Styles:/>
+04_09=<Styles:AO2White>Po Yuen Lam<Styles:/>
+04_10=<Styles:AO2White>Nancy Paulin<Styles:/>
+04_11=<Styles:AO2White>Travis Adkin<Styles:/>
+04_12=<Styles:OptionButtonStyle>Ведущие художники<Styles:/>
+04_13=<Styles:AO2White>Stuart Pharoah<Styles:/>
+04_14=<Styles:AO2White>Francois Bordez<Styles:/>
+04_15=<Styles:OptionButtonStyle>Художники окружения<Styles:/>
+04_16=<Styles:AO2White>Nicolas Viau<Styles:/>
+04_17=<Styles:AO2White>Xavier Deschenes<Styles:/>
+04_18=<Styles:AO2White>Alessandro Farina<Styles:/>
+04_19=<Styles:AO2White>Olaf Quinzanos<Styles:/>
+04_20=<Styles:AO2White>Kamran Chahkar<Styles:/>
+04_21=<Styles:AO2White>Roy Tuazon<Styles:/>
+04_22=<Styles:AO2White>Marc-Antoine Hamelin<Styles:/>
+04_23=<Styles:AO2White>Joel Pelletant<Styles:/>
+04_24=<Styles:AO2White>Julien Belley<Styles:/>
+04_25=
+05_01=<Styles:OptionButtonStyle>Дополнительные художники<Styles:/>
+05_02=<Styles:AO2White>Liam Flood<Styles:/>
+05_03=<Styles:AO2White>Louis-Martin Rivard<Styles:/>
+05_04=<Styles:OptionButtonStyle>Технический художник<Styles:/>
+05_05=<Styles:AO2White>Daniel Goupil<Styles:/>
+05_06=<Styles:OptionButtonStyle>Художник интерфейса<Styles:/>
+05_07=<Styles:AO2White>Benoit Tremblay<Styles:/>
+05_08=<Styles:OptionButtonStyle>Дизайнеры уровней<Styles:/>
+05_09=<Styles:AO2White>Julie Marchiori<Styles:/>
+05_10=<Styles:AO2White>Jean-Pierre Lajoie<Styles:/>
+05_11=<Styles:AO2White>Maxime Gervais<Styles:/>
+05_12=<Styles:AO2White>Joe Khoury<Styles:/>
+05_13=<Styles:AO2White>Pierre-Luc Gagnon<Styles:/>
+05_14=<Styles:OptionButtonStyle>Дополнительный дизайн уровней <Styles:/>
+05_15=<Styles:AO2White>Philip Tam<Styles:/>
+05_16=<Styles:AO2White>Marco Therrien<Styles:/>
+05_17=<Styles:OptionButtonStyle>Художники визуальных эффектов<Styles:/>
+05_18=<Styles:AO2White>Danny Bergeron<Styles:/>
+05_19=<Styles:AO2White>Denis Girard<Styles:/>
+05_20=<Styles:OptionButtonStyle>Ведущий художник персонажей<Styles:/>
+05_21=<Styles:AO2White>Matt Rennie<Styles:/>
+05_22=<Styles:OptionButtonStyle>Художник персонажей<Styles:/>
+05_23=<Styles:AO2White>Rodrigue Pralier<Styles:/>
+05_24=<Styles:AO2White>Joe Botardo<Styles:/>
+05_25=<Styles:AO2White>Henk Venter<Styles:/>
+05_26=
+05_27=<Styles:OptionButtonStyle>Дизайн персонажей Тайсона Риоса и Эллиота Сейлема <Styles:/>
+05_28=<Styles:AO2White>Martin Caya<Styles:/>
+05_29=<Styles:OptionButtonStyle>Старший концепт-художник<Styles:/>
+05_30=<Styles:AO2White>Stephane Belin<Styles:/>
+05_31=
+05_32=
+06_01=<Styles:AO2NoBGButton>АНИМАЦИЯ<Styles:/>
+06_02=<Styles:OptionButtonStyle>Руководитель анимации роликов на движке<Styles:/>
+06_03=<Styles:AO2White>Benoit Saumure<Styles:/>
+06_04=<Styles:OptionButtonStyle>Технический директор анимации<Styles:/>
+06_05=<Styles:AO2White>Alexandre Vinet<Styles:/>
+06_06=<Styles:OptionButtonStyle>Технический аниматор внутриигровых роликов<Styles:/>
+06_07=<Styles:AO2White>Philippe Ducharme<Styles:/>
+06_08=<Styles:OptionButtonStyle>Внутриигровая анимация<Styles:/>
+06_09=<Styles:AO2White>Jocelyn Amyot<Styles:/>
+06_10=<Styles:AO2White>Cyrille Domoraud<Styles:/>
+06_11=<Styles:AO2White>Takashi Fukuda<Styles:/>
+06_12=<Styles:AO2White>Etienne Jauvin<Styles:/>
+06_13=<Styles:AO2White>Eugene Jarvis<Styles:/>
+06_14=<Styles:AO2White>Dana O'Conner<Styles:/>
+06_15=<Styles:AO2White>Brian Theberge<Styles:/>
+06_16=<Styles:AO2White>Greg Wellwood<Styles:/>
+06_17=
+06_18=
+07_01=<Styles:AO2NoBGButton>ЗВУК<Styles:/>
+07_02=<Styles:OptionButtonStyle>Звукорежиссеры<Styles:/>
+07_03=<Styles:AO2White>Olivier Asselin<Styles:/>
+07_04=<Styles:AO2White>JF Tremblay<Styles:/>
+07_05=<Styles:AO2White>Rene Hidalgo<Styles:/>
+07_06=<Styles:OptionButtonStyle>Ведущий консультант по звуку<Styles:/>
+07_07=<Styles:AO2White>Mike Elman<Styles:/>
+07_08=<Styles:OptionButtonStyle>Композитор<Styles:/>
+07_09=<Styles:AO2White>Trevor Morris<Styles:/>
+07_10=<Styles:OptionButtonStyle>Запись диалогов - PCB Productions<Styles:/>
+07_11=<Styles:AO2White>Keith Arem <Styles:/>
+07_12=<Styles:OptionButtonStyle>Постпродакшн роликов<Styles:/>
+07_13=<Styles:OptionButtonStyle>Danetracks Inc<Styles:/>
+07_14=<Styles:AO2White>Bryan Watkins<Styles:/>
+07_15=<Styles:AO2White>Becky Allen<Styles:/>
+07_16=<Styles:OptionButtonStyle>Wave Generation<Styles:/>
+07_17=<Styles:OptionButtonStyle>Продюсер<Styles:/>
+07_18=<Styles:AO2White>Michael Elman<Styles:/>
+07_19=<Styles:OptionButtonStyle>Звуковой дизайн и монтаж озвучки<Styles:/>
+07_20=<Styles:AO2White>Michel Merchant<Styles:/>
+07_21=<Styles:OptionButtonStyle>Запись звуков техники<Styles:/>
+07_22=<Styles:AO2White>Nicolas Marquis, Alex Saba<Styles:/>
+07_23=<Styles:OptionButtonStyle>Координация производства<Styles:/>
+07_24=<Styles:AO2White>Noemie Dupuy, David Lipes<Styles:/>
+07_25=
+08_01=<Styles:AO2NoBGButton>ПРЕДРАССЧИТАННЫЕ РОЛИКИ<Styles:/>
+08_02=<Styles:OptionButtonStyle>Режиссер роликов<Styles:/>
+08_03=<Styles:AO2White>Nicolas Lebessis<Styles:/>
+08_04=<Styles:OptionButtonStyle>Руководитель компьютерной графики<Styles:/>
+08_05=<Styles:AO2White>Francois Pelletier<Styles:/>
+08_06=<Styles:OptionButtonStyle>Технический директор<Styles:/>
+08_07=<Styles:AO2White>Zacharie Dufault<Styles:/>
+08_08=<Styles:OptionButtonStyle>Анимация<Styles:/>
+08_09=<Styles:AO2White>Jamie Helman (Lead)<Styles:/>
+08_10=<Styles:AO2White>Jason Kreller<Styles:/>
+08_11=<Styles:AO2White>Nicolas Lamy<Styles:/>
+08_12=<Styles:AO2White>Gilles-Herve N'Takpe<Styles:/>
+08_13=<Styles:AO2White>Pascal Ruest (Lead)<Styles:/>
+08_14=<Styles:AO2White>Brian Theberge<Styles:/>
+08_15=<Styles:OptionButtonStyle>3D-художники<Styles:/>
+08_16=<Styles:OptionButtonStyle>Композитинг и текстурирование<Styles:/>
+08_17=<Styles:AO2White>Didier Arpin <Styles:/>
+08_18=<Styles:OptionButtonStyle>Моделирование, текстурирование и освещение<Styles:/>
+08_19=<Styles:AO2White>Gene Campbell<Styles:/>
+08_20=<Styles:AO2White>Yanick Desrosiers <Styles:/>
+08_21=<Styles:AO2White>Laurent Fortin<Styles:/>
+08_22=<Styles:AO2White>Patrick Berard<Styles:/>
+08_23=<Styles:OptionButtonStyle>Моделирование, текстурирование и настройка лицевой анимации<Styles:/>
+08_24=<Styles:AO2White>Stephen Dagg <Styles:/>
+08_25=<Styles:OptionButtonStyle>Эффекты<Styles:/>
+08_26=<Styles:AO2White>Dominic Belanger<Styles:/>
+08_27=<Styles:AO2White>Pierre Dufour<Styles:/>
+08_28=<Styles:OptionButtonStyle>Художник моушн-графики<Styles:/>
+08_29=<Styles:AO2White>Randy Humphries<Styles:/>
+08_30=<Styles:OptionButtonStyle>Ведущий по композитингу и эффектам<Styles:/>
+08_31=<Styles:AO2White>Louis-Alexandre Lord <Styles:/>
+08_32=<Styles:OptionButtonStyle>Моделирование, текстурирование и освещение<Styles:/>
+08_33=<Styles:AO2White>Daniel Lupien <Styles:/>
+08_34=<Styles:OptionButtonStyle>Видеомонтаж<Styles:/>
+08_35=<Styles:AO2White>Hugo Desautels <Styles:/>
+08_36=
+08_37=
+09_01=<Styles:AO2NoBGButton>СЕТЕВОЙ РЕЖИМ ПРОТИВОСТОЯНИЯ<Styles:/>
+09_02=<Styles:OptionButtonStyle>Threewave Software<Styles:/>
+09_03=<Styles:OptionButtonStyle>Продюсер<Styles:/>
+09_04=<Styles:AO2White>Mark Baxter<Styles:/>
+09_05=<Styles:OptionButtonStyle>Помощник продюсера<Styles:/>
+09_06=<Styles:AO2White>Geoff Gordon<Styles:/>
+09_07=<Styles:OptionButtonStyle>Руководитель геймдизайна<Styles:/>
+09_08=<Styles:AO2White>Michael Goodhead<Styles:/>
+09_09=<Styles:OptionButtonStyle>Арт-директор<Styles:/>
+09_10=<Styles:AO2White>Eduardo Gonzalez<Styles:/>
+09_11=<Styles:OptionButtonStyle>Художники<Styles:/>
+09_12=<Styles:AO2White>Brian Judhan<Styles:/>
+09_13=<Styles:AO2White>Christopher Rice<Styles:/>
+09_14=<Styles:AO2White>Jared Smith<Styles:/>
+09_15=<Styles:AO2White>Kevin Okada<Styles:/>
+09_16=<Styles:AO2White>Cesar Rizo<Styles:/>
+09_17=<Styles:AO2White>Stuart Ng<Styles:/>
+09_18=<Styles:OptionButtonStyle>Старший художник <Styles:/>
+09_19=<Styles:AO2White>Randolph Stayer<Styles:/>
+09_20=<Styles:OptionButtonStyle>Руководящий дизайнер<Styles:/>
+09_21=<Styles:AO2White>Raul Figueroa Cruz<Styles:/>
+09_22=<Styles:OptionButtonStyle>Старшие дизайнеры<Styles:/>
+09_23=<Styles:AO2White>Marc Brassard<Styles:/>
+09_24=<Styles:AO2White>Mark Lewis<Styles:/>
+09_25=<Styles:OptionButtonStyle>Дизайнеры<Styles:/>
+09_26=<Styles:AO2White>Caley Charchuk<Styles:/>
+09_27=<Styles:AO2White>Graham Jans<Styles:/>
+09_28=<Styles:AO2White>Quentin MacMillan<Styles:/>
+09_29=<Styles:OptionButtonStyle>Ведущий программист<Styles:/>
+09_30=<Styles:AO2White>Michael Labbe<Styles:/>
+09_31=<Styles:OptionButtonStyle>Программирование<Styles:/>
+09_32=<Styles:AO2White>Aaron Cox<Styles:/>
+09_33=<Styles:AO2White>Gordon Tisher<Styles:/>
+09_34=<Styles:AO2White>Richard Mitchell<Styles:/>
+09_35=<Styles:AO2White>Dieter Buys<Styles:/>
+09_36=<Styles:AO2White>Vladan Vidakovic<Styles:/>
+09_37=<Styles:OptionButtonStyle>Контроль качества<Styles:/>
+09_38=<Styles:OptionButtonStyle>Тестировщики<Styles:/>
+09_39=<Styles:AO2White>Sean Meek<Styles:/>
+09_40=<Styles:AO2White>Sam Kirvan<Styles:/>
+09_41=
+09_42=<Styles:OptionButtonStyle>Генеральный директор<Styles:/>
+09_43=<Styles:AO2White>Dan Irish<Styles:/>
+09_44=<Styles:OptionButtonStyle>Директор по разработке продуктов<Styles:/>
+09_45=<Styles:AO2White>Stephane Morichere-Matte<Styles:/>
+09_46=<Styles:OptionButtonStyle>Директор по персоналу<Styles:/>
+09_47=<Styles:AO2White>Kathy Gibson<Styles:/>
+09_48=<Styles:OptionButtonStyle>Специалист по персоналу<Styles:/>
+09_49=<Styles:AO2White>Natasha Montini<Styles:/>
+09_50=<Styles:OptionButtonStyle>Финансовый менеджер<Styles:/>
+09_51=<Styles:AO2White>Ian Crosby<Styles:/>
+09_52=<Styles:OptionButtonStyle>Ассистент производства<Styles:/>
+09_53=<Styles:AO2White>Middy Liao<Styles:/>
+09_54=
+09_55=
+09_56=
+10_01=<Styles:AO2NoBGButton>КОНТРОЛЬ КАЧЕСТВА<Styles:/>
+10_02=<Styles:OptionButtonStyle>Менеджер контроля качества<Styles:/>
+10_03=<Styles:AO2White>Frank Benton<Styles:/>
+10_04=<Styles:OptionButtonStyle>Руководитель группы тестирования<Styles:/>
+10_05=<Styles:AO2White>Franco Huard<Styles:/>
+10_06=<Styles:OptionButtonStyle>Программист тестирования<Styles:/>
+10_07=<Styles:AO2White>Bruno Loyer<Styles:/>
+10_08=<Styles:OptionButtonStyle>Отдел контроля качества<Styles:/>
+10_09=<Styles:AO2White>Brenda Puebla<Styles:/>
+10_10=<Styles:AO2White>Matthew Braithwaite<Styles:/>
+10_11=<Styles:AO2White>Tommy Chanchaleune<Styles:/>
+10_12=<Styles:AO2White>Travis Couch<Styles:/>
+10_13=<Styles:AO2White>Mathieu Desrosiers<Styles:/>
+10_14=<Styles:AO2White>Rene Garcia<Styles:/>
+10_15=<Styles:AO2White>Adam Grey<Styles:/>
+10_16=<Styles:AO2White>Silvia Haniger<Styles:/>
+10_17=<Styles:AO2White>Jesse Kalb<Styles:/>
+10_18=<Styles:AO2White>Albert Khawli<Styles:/>
+10_19=<Styles:AO2White>George Laberge<Styles:/>
+10_20=<Styles:AO2White>Francois Lafortune<Styles:/>
+10_21=<Styles:AO2White>James Lulham<Styles:/>
+10_22=<Styles:AO2White>Alfred Manasseh<Styles:/>
+10_23=<Styles:AO2White>Phil Mann<Styles:/>
+10_24=<Styles:AO2White>Nehemiah McKnight Monrose<Styles:/>
+10_25=<Styles:AO2White>Raphael Mendoza<Styles:/>
+10_26=<Styles:AO2White>Petar Moraliev<Styles:/>
+10_27=<Styles:AO2White>Janice Ng<Styles:/>
+10_28=<Styles:AO2White>Thomas Onion<Styles:/>
+10_29=<Styles:AO2White>Julie Ouellette<Styles:/>
+10_30=<Styles:AO2White>Tobias Paice<Styles:/>
+10_31=<Styles:AO2White>Phyllis Papoulias<Styles:/>
+10_32=<Styles:AO2White>Maxime Perreault<Styles:/>
+10_33=<Styles:AO2White>Sophie Perreault<Styles:/>
+10_34=<Styles:AO2White>Christopher Pintimalli<Styles:/>
+10_35=<Styles:AO2White>Daniele Pollutro<Styles:/>
+10_36=<Styles:AO2White>Pascal Prefontaine<Styles:/>
+10_37=<Styles:AO2White>Miguel Ruiz<Styles:/>
+10_38=<Styles:AO2White>Guillaume Savage<Styles:/>
+10_39=<Styles:AO2White>Sebastien Tardif<Styles:/>
+10_40=<Styles:AO2White>Brent Tighe<Styles:/>
+10_41=<Styles:AO2White>Josee Ria Tuvida<Styles:/>
+10_42=<Styles:AO2White>Alexandre Vincent<Styles:/>
+10_43=<Styles:AO2White>Lonny Goffman<Styles:/>
+10_44=
+11_01=<Styles:OptionButtonStyle>Сертификация и соответствие, Северная Америка (NASC)<Styles:/>
+11_02=<Styles:AO2White>Jason Collins<Styles:/>
+11_03=<Styles:AO2White>Tracy Jasperson<Styles:/>
+11_04=<Styles:AO2White>Darryl Jenkins<Styles:/>
+11_05=<Styles:AO2White>Mike Kushner<Styles:/>
+11_06=<Styles:AO2White>Russell Medeiros<Styles:/>
+11_07=<Styles:AO2White>Ryan Roque<Styles:/>
+11_08=<Styles:AO2White>Matthew Salazar<Styles:/>
+11_09=<Styles:AO2White>Rob Stiasny<Styles:/>
+11_10=<Styles:AO2White>Rosalie Vivanco<Styles:/>
+11_11=<Styles:OptionButtonStyle>Контроль качества для покупателей - Северная Америка (CQC-NA)<Styles:/>
+11_12=<Styles:AO2White>David Beck<Styles:/>
+11_13=<Styles:AO2White>Spencer Dore-Weaver<Styles:/>
+11_14=<Styles:AO2White>Wes Hendrix<Styles:/>
+11_15=<Styles:AO2White>Ryan Jacobson<Styles:/>
+11_16=<Styles:AO2White>Jeffrey Jimenez<Styles:/>
+11_17=<Styles:AO2White>Dave Jordan<Styles:/>
+11_18=<Styles:AO2White>Joseph Lee<Styles:/>
+11_19=<Styles:AO2White>Conrad Leiden<Styles:/>
+11_20=<Styles:AO2White>Paul Mollinedo<Styles:/>
+11_21=<Styles:AO2White>Adam Rivera<Styles:/>
+11_22=<Styles:AO2White>Chance Shiflett<Styles:/>
+11_23=<Styles:AO2White>Bobby Williams<Styles:/>
+11_24=
+11_25=
+12_01=<Styles:AO2NoBGButton>ЛОКАЛИЗАЦИЯ<Styles:/>
+12_02=<Styles:OptionButtonStyle>EISM European Integration Studio Madrid<Styles:/>
+12_03=<Styles:OptionButtonStyle>EISM: производство<Styles:/>
+12_04=<Styles:AO2White>David Courtin<Styles:/>
+12_05=<Styles:AO2White>Vicky Rose<Styles:/>
+12_06=<Styles:AO2White>Martin Zumarraga Gorostiza<Styles:/>
+12_07=<Styles:OptionButtonStyle>EISM: программисты<Styles:/>
+12_08=<Styles:AO2White>Mario Bergantinos  <Styles:/>
+12_09=<Styles:AO2White>Inigo Bermejo<Styles:/>
+12_10=<Styles:AO2White>Virginia Cano Abella       <Styles:/>
+12_11=<Styles:AO2White>Eduardo Cocero Torres <Styles:/>
+12_12=<Styles:AO2White>Gabriel de la Cruz Fortun<Styles:/>
+12_13=<Styles:AO2White>Felipe Gonzalez Lopez<Styles:/>
+12_14=<Styles:AO2White>Danilo Jose Guerrero Rodriguez<Styles:/>
+12_15=<Styles:AO2White>Jose Pablo Hernandez Cano<Styles:/>
+12_16=<Styles:AO2White>Cesar Puerta<Styles:/>
+12_17=<Styles:AO2White>Gonzalo Rodriguez <Styles:/>
+12_18=<Styles:AO2White>Miguel Angel Rodriguez Gonzalez<Styles:/>
+12_19=<Styles:AO2White>Fernando San Nicolas Serrano<Styles:/>
+12_20=<Styles:AO2White>Javier Santiago Ramos<Styles:/>
+12_21=<Styles:OptionButtonStyle>ESSC European Shared Services Centre<Styles:/>
+12_22=<Styles:OptionButtonStyle>ESSC: отдел тестирования<Styles:/>
+12_23=<Styles:OptionButtonStyle>ESSC: руководители<Styles:/>
+12_24=<Styles:AO2White>Ivan Barreras<Styles:/>
+12_25=<Styles:AO2White>Stefano Buffoli<Styles:/>
+12_26=<Styles:AO2White>Fausto Ceccarelli<Styles:/>
+12_27=<Styles:AO2White>Frederic Champ<Styles:/>
+12_28=<Styles:AO2White>Ismael Duran<Styles:/>
+12_29=<Styles:AO2White>Laurent Gibert<Styles:/>
+12_30=<Styles:AO2White>Andreas Grabner<Styles:/>
+12_31=<Styles:AO2White>Bernd Niemietz<Styles:/>
+12_32=<Styles:AO2White>Jerome Peter<Styles:/>
+12_33=<Styles:AO2White>Alexander Kornberg<Styles:/>
+12_34=<Styles:OptionButtonStyle>ESSC: тестировщики<Styles:/>
+12_35=<Styles:AO2White>Elodie Bourry<Styles:/>
+12_36=<Styles:AO2White>Alexander Bowman<Styles:/>
+12_37=<Styles:AO2White>Christian Garcia<Styles:/>
+12_38=<Styles:AO2White>Damien Haimovici<Styles:/>
+12_39=<Styles:AO2White>Paolo Bernagozzi<Styles:/>
+12_40=<Styles:AO2White>Marco Nicolino<Styles:/>
+12_41=<Styles:AO2White>Philipp Roth<Styles:/>
+12_42=<Styles:AO2White>Fabio Teixeira<Styles:/>
+12_43=<Styles:AO2White>Jarib Vazquez <Styles:/>
+12_44=<Styles:AO2White>Fabio Teixeira<Styles:/>
+12_45=<Styles:AO2White>Jarib Vazquez <Styles:/>
+12_46=
+13_01=<Styles:AO2NoBGButton>EA ИТАЛИЯ<Styles:/>
+13_02=<Styles:OptionButtonStyle>Менеджер локализации<Styles:/>
+13_03=<Styles:AO2White>Isabelle Martin<Styles:/>
+13_04=<Styles:OptionButtonStyle>Руководитель перевода<Styles:/>
+13_05=<Styles:AO2White>Alessandro Paglia<Styles:/>
+13_06=<Styles:OptionButtonStyle>Координатор локализации<Styles:/>
+13_07=<Styles:AO2White>Alfonsina Mossello<Styles:/>
+13_08=<Styles:OptionButtonStyle>Перевод<Styles:/>
+13_09=<Styles:AO2White>Synthesis International S.r.l., Luca Artoni<Styles:/>
+13_10=<Styles:OptionButtonStyle>Студия звукозаписи<Styles:/>
+13_11=<Styles:AO2White>Synthesis International S.r.l.<Styles:/>
+13_12=<Styles:OptionButtonStyle>Режиссер<Styles:/>
+13_13=<Styles:AO2White>Ilaria Fuse<Styles:/>
+13_14=<Styles:OptionButtonStyle>Актеры<Styles:/>
+13_15=<Styles:AO2White>Tyson Rios - Maurizio Desinan<Styles:/>
+13_16=<Styles:AO2White>Elliot Salem - Fabio Ingrosso<Styles:/>
+13_17=<Styles:AO2White>Alice Murray - Maura Marenghi<Styles:/>
+13_18=<Styles:AO2White>Phillip Clyde - Marco Pagani<Styles:/>
+13_19=<Styles:AO2White>Richard Dalton - Silvio Pandolfi<Styles:/>
+13_20=<Styles:AO2White>Alessandro Messina<Styles:/>
+13_21=<Styles:AO2White>Andrea Failla<Styles:/>
+13_22=<Styles:AO2White>Alberto Olivero<Styles:/>
+13_23=<Styles:AO2White>Lorella De Luca<Styles:/>
+13_24=<Styles:AO2White>Andrea Bolognini<Styles:/>
+13_25=<Styles:AO2White>Leonardo Gajo<Styles:/>
+13_26=<Styles:AO2White>Andrea De Nisco <Styles:/>
+13_27=<Styles:AO2White>Lorenzo Scattorin<Styles:/>
+13_28=
+14_01=<Styles:AO2NoBGButton>EA IBERIA (испанская версия)<Styles:/>
+14_02=<Styles:OptionButtonStyle>Руководитель перевода<Styles:/>
+14_03=<Styles:AO2White>Elixabete Aldama<Styles:/>
+14_04=<Styles:OptionButtonStyle>Координатор локализации<Styles:/>
+14_05=<Styles:AO2White>Ana Esther Rodriguez<Styles:/>
+14_06=<Styles:OptionButtonStyle>Перевод<Styles:/>
+14_07=<Styles:AO2White>More Than Translated Words S. L.<Styles:/>
+14_08=<Styles:OptionButtonStyle>Студия звукозаписи<Styles:/>
+14_09=<Styles:AO2White>ACG<Styles:/>
+14_10=<Styles:OptionButtonStyle>Режиссер<Styles:/>
+14_11=<Styles:AO2White>Salvador Aldeguer<Styles:/>
+14_12=<Styles:OptionButtonStyle>Актеры<Styles:/>
+14_13=<Styles:AO2White>Tyson Rios - Pablo Adan<Styles:/>
+14_14=<Styles:AO2White>Elliot Salem - David Robles<Styles:/>
+14_15=<Styles:AO2White>Alice Murray - Olga Velasco<Styles:/>
+14_16=<Styles:AO2White>Phillip Clyde - Fernando de Luis<Styles:/>
+14_17=<Styles:AO2White>Richard Dalton - Juan Perucho<Styles:/>
+14_18=<Styles:AO2White>Nacho Aldeguer<Styles:/>
+14_19=<Styles:AO2White>Nacho Barcelo<Styles:/>
+14_20=<Styles:AO2White>Eduardo Bosch<Styles:/>
+14_21=<Styles:AO2White>Jose A. Duque<Styles:/>
+14_22=<Styles:AO2White>Antonio Galvez<Styles:/>
+14_23=<Styles:AO2White>Javier Lorca<Styles:/>
+14_24=<Styles:AO2White>J. A. Moratalla<Styles:/>
+14_25=<Styles:AO2White>Abel Navarro<Styles:/>
+14_26=<Styles:AO2White>Ana G. Olivares<Styles:/>
+14_27=<Styles:AO2White>Luir Porcar<Styles:/>
+14_28=<Styles:AO2White>Julio Sanchidrian<Styles:/>
+14_29=<Styles:AO2White>Fco. Andres Valdivia<Styles:/>
+14_30=
+15_01=<Styles:AO2NoBGButton>EA ФРАНЦИЯ<Styles:/>
+15_02=<Styles:OptionButtonStyle>Менеджер локализации<Styles:/>
+15_03=<Styles:AO2White>Christine Jean<Styles:/>
+15_04=<Styles:OptionButtonStyle>Руководитель перевода<Styles:/>
+15_05=<Styles:AO2White>Nathalie Duret<Styles:/>
+15_06=<Styles:OptionButtonStyle>Координатор локализации<Styles:/>
+15_07=<Styles:AO2White>Nathalie Bonin<Styles:/>
+15_08=<Styles:AO2White>Stephane Lemelle<Styles:/>
+15_09=<Styles:OptionButtonStyle>Перевод<Styles:/>
+15_10=<Styles:AO2White>Around the Word<Styles:/>
+15_11=<Styles:OptionButtonStyle>Студия звукозаписи<Styles:/>
+15_12=<Styles:AO2White>Dune Sound<Styles:/>
+15_13=<Styles:OptionButtonStyle>Режиссер<Styles:/>
+15_14=<Styles:AO2White>Serge Thiriet <Styles:/>
+15_15=<Styles:OptionButtonStyle>Актеры<Styles:/>
+15_16=<Styles:AO2White>Tyson Rios - Luc Bernard <Styles:/>
+15_17=<Styles:AO2White>Elliot Salem - Christophe Lemoine<Styles:/>
+15_18=<Styles:AO2White>Alice Murray - Marie Chevallot<Styles:/>
+15_19=<Styles:AO2White>Phillip Clyde - Antoine Tome<Styles:/>
+15_20=<Styles:AO2White>Richard Dalton - Patrick Bethune<Styles:/>
+15_21=<Styles:AO2White>Thierry Mercier<Styles:/>
+15_22=<Styles:AO2White>Marc Alfos<Styles:/>
+15_23=<Styles:AO2White>Emmanuel Gradi<Styles:/>
+15_24=<Styles:AO2White>Serge Thiriet <Styles:/>
+15_25=<Styles:AO2White>David Kruger<Styles:/>
+15_26=<Styles:AO2White>Martial Leminoux<Styles:/>
+15_27=<Styles:AO2White>Jean-Pol Brissard<Styles:/>
+15_28=<Styles:AO2White>Marc Alfos<Styles:/>
+15_29=<Styles:AO2White>Florence Dumortier<Styles:/>
+15_30=<Styles:AO2White>Francois Jaubert<Styles:/>
+15_31=
+16_01=<Styles:AO2NoBGButton>ОСОБАЯ БЛАГОДАРНОСТЬ<Styles:/>
+16_02=<Styles:AO2White>Jonathan Dumont<Styles:/>
+16_03=<Styles:AO2White>Ricardo Viana<Styles:/>
+16_04=<Styles:AO2White>Nathalie Mathieu<Styles:/>
+16_05=<Styles:AO2White>Richard Burgess-Dawson<Styles:/>
+16_06=<Styles:AO2White>Jean-Philippe Rajotte<Styles:/>
+16_07=<Styles:AO2White>Emanuel Garcia<Styles:/>
+16_08=<Styles:AO2White>Chris James<Styles:/>
+16_09=<Styles:AO2White>Lee Haneman<Styles:/>
+16_10=<Styles:AO2White>Joel Desjardins<Styles:/>
+16_11=<Styles:AO2White>Thompson Plyler<Styles:/>
+16_12=<Styles:AO2White>Chris Hendricks<Styles:/>
+16_13=<Styles:AO2White>Carlo Campisi<Styles:/>
+16_14=<Styles:AO2White>Rubens Garabedian<Styles:/>
+16_15=<Styles:AO2White>Phil Tavel<Styles:/>
+16_16=<Styles:AO2White>Woodie Mister<Styles:/>
+16_17=<Styles:AO2White>Antoine Dodens<Styles:/>
+16_18=<Styles:AO2White>Don Mattrick<Styles:/>
+16_19=<Styles:AO2White>Bruce Mcmillan<Styles:/>
+16_20=<Styles:AO2White>Rory Armes<Styles:/>
+16_21=<Styles:AO2White>Frank Gibeau<Styles:/>
+16_22=<Styles:AO2White>Martin Gourdeau<Styles:/>
+16_23=<Styles:AO2White>Dan Calinescu<Styles:/>
+16_24=<Styles:AO2White>Sebastien Hould<Styles:/>
+16_25=<Styles:AO2White>Martine Poisson<Styles:/>
+16_26=<Styles:AO2White>Aurelia Burgarella<Styles:/>
+16_27=<Styles:AO2White>Danielle Thibaudeau<Styles:/>
+16_28=<Styles:AO2White>Anne Lacombe<Styles:/>
+16_29=<Styles:AO2White>Eric Chartrand<Styles:/>
+16_30=<Styles:AO2White>Sylvain Cerat<Styles:/>
+16_31=<Styles:AO2White>Bruno Le Duc<Styles:/>
+16_32=<Styles:AO2White>Derek Commeau<Styles:/>
+16_33=<Styles:AO2White>Keith Darvell<Styles:/>
+16_34=<Styles:AO2White>Sue Garfield<Styles:/>
+16_35=<Styles:AO2White>Marci Galea<Styles:/>
+16_36=<Styles:AO2White>Vijay Evani<Styles:/>
+16_37=<Styles:AO2White>Alnur Ismail<Styles:/>
+16_38=<Styles:AO2White>Maurizio Memoli<Styles:/>
+16_39=<Styles:AO2White>Mark Janzen <Styles:/>
+16_40=<Styles:AO2White>Gabriel Lassonde<Styles:/>
+16_41=<Styles:AO2White>Aaron Davey<Styles:/>
+16_42=<Styles:AO2White>John Brett<Styles:/>
+16_43=<Styles:AO2White>Charles Margosian<Styles:/>
+16_44=<Styles:AO2White>Craig Meyers<Styles:/>
+16_45=<Styles:AO2White>Colin Barre-Brisebois<Styles:/>
+16_46=<Styles:AO2White>Alvin Daniel<Styles:/>
+16_47=<Styles:AO2White>Corey Johnson<Styles:/>
+16_48=<Styles:AO2White>Ryan Butterfoss<Styles:/>
+16_49=<Styles:AO2White>Tobias Paice<Styles:/>
+16_50=<Styles:AO2White>Atul Mehra<Styles:/>
+16_51=<Styles:AO2White>Wojtek Mikulik<Styles:/>
+16_52=
+17_01=<Styles:AO2NoBGButton>АКТЕРЫ ОЗВУЧКИ (СЕВ. АМЕРИКА)<Styles:/>
+17_02=<Styles:OptionButtonStyle>Главные персонажи<Styles:/>
+17_03=<Styles:OptionButtonStyle>Тайсон Риос<Styles:/>
+17_04=<Styles:AO2White>Russel Hornsby <Styles:/>
+17_05=<Styles:OptionButtonStyle>Эллиот Сейлем<Styles:/>
+17_06=<Styles:AO2White>Josh Ryan <Styles:/>
+17_07=<Styles:OptionButtonStyle>Элис Мюррей<Styles:/>
+17_08=<Styles:AO2White>Tracey Rooney<Styles:/>
+17_09=<Styles:OptionButtonStyle>Ричард Далтон<Styles:/>
+17_10=<Styles:AO2White>Ed O'Ross<Styles:/>
+17_11=<Styles:OptionButtonStyle>Филлип Клайд<Styles:/>
+17_12=<Styles:AO2White>Noah Blake<Styles:/>
+17_13=<Styles:OptionButtonStyle>Второстепенные персонажи<Styles:/>
+17_14=<Styles:OptionButtonStyle>Сенатор Алекс Рихтер<Styles:/>
+17_15=<Styles:AO2White>Ed O'Ross<Styles:/>
+17_16=<Styles:OptionButtonStyle>Сенатор Ричард Уайтхорс<Styles:/>
+17_17=<Styles:AO2White>David Lodge<Styles:/>
+17_18=<Styles:OptionButtonStyle>Эрнест Стоквелл<Styles:/>
+17_19=<Styles:AO2White>David Lodge<Styles:/>
+17_20=<Styles:OptionButtonStyle>Сэмюэл Эйзенхауэр<Styles:/>
+17_21=<Styles:AO2White>Skyler Stone<Styles:/>
+17_22=<Styles:OptionButtonStyle>Педро Гутьеррес<Styles:/>
+17_23=<Styles:AO2White>Anthony Marquez<Styles:/>
+17_24=<Styles:OptionButtonStyle>Дженис Макдональд<Styles:/>
+17_25=<Styles:AO2White>Julianne Grossman<Styles:/>
+17_26=<Styles:OptionButtonStyle>Полковник Абуллахи Мо'Алим<Styles:/>
+17_27=<Styles:AO2White>David Lodge<Styles:/>
+17_28=<Styles:OptionButtonStyle>Мохаммед Аль-Хабиб<Styles:/>
+17_29=<Styles:AO2White>Joe Khoury<Styles:/>
+17_30=<Styles:OptionButtonStyle>Капитан Пол Харрис<Styles:/>
+17_31=<Styles:AO2White>David Lodge<Styles:/>
+17_32=<Styles:OptionButtonStyle>Брайан Хикс<Styles:/>
+17_33=<Styles:AO2White>Ennis Marus<Styles:/>
+17_34=
+18_01=<Styles:OptionButtonStyle>Торговцы оружием<Styles:/>
+18_02=<Styles:OptionButtonStyle>Ча Мин Су<Styles:/>
+18_03=<Styles:AO2White>Ming Lo<Styles:/>
+18_04=<Styles:OptionButtonStyle>Эпизодические персонажи<Styles:/>
+18_05=<Styles:OptionButtonStyle>Автоматический голос<Styles:/>
+18_06=<Styles:AO2White>Ed O'Ross<Styles:/>
+18_07=<Styles:OptionButtonStyle>Террорист<Styles:/>
+18_08=<Styles:AO2White>Ennis Marus<Styles:/>
+18_09=<Styles:OptionButtonStyle>Неузнаваемый голос <Styles:/>
+18_10=<Styles:AO2White>Ed O'Ross<Styles:/>
+18_11=<Styles:OptionButtonStyle>Охранник SSC<Styles:/>
+18_12=<Styles:AO2White>Skyler Stone<Styles:/>
+18_13=<Styles:OptionButtonStyle>Пилот Black Hawk 1<Styles:/>
+18_14=<Styles:AO2White>Ming Lo<Styles:/>
+18_15=<Styles:OptionButtonStyle>Рейнджеры 1, 2<Styles:/>
+18_16=<Styles:AO2White>David Lodge<Styles:/>
+18_17=<Styles:OptionButtonStyle>Рейнджер 3<Styles:/>
+18_18=<Styles:AO2White>Skyler Stone<Styles:/>
+18_19=<Styles:OptionButtonStyle>Рейнджер 4<Styles:/>
+18_20=<Styles:AO2White>Ming Lo<Styles:/>
+18_21=<Styles:OptionButtonStyle>Жена Риоса<Styles:/>
+18_22=<Styles:AO2White>Julianne Grossman<Styles:/>
+18_23=<Styles:OptionButtonStyle>Автоматический голос 2<Styles:/>
+18_24=<Styles:AO2White>Tracey Rooney<Styles:/>
+18_25=<Styles:OptionButtonStyle>Полковник<Styles:/>
+18_26=<Styles:AO2White>Ed O'Ross<Styles:/>
+18_27=<Styles:OptionButtonStyle>Лейтенант<Styles:/>
+18_28=<Styles:AO2White>Anthony Marquez<Styles:/>
+18_29=<Styles:OptionButtonStyle>Диктор новостей<Styles:/>
+18_30=<Styles:AO2White>Tracey Rooney<Styles:/>
+18_31=<Styles:OptionButtonStyle>Пилоты F18 1, 2<Styles:/>
+18_32=<Styles:AO2White>Ming Lo<Styles:/>
+18_33=<Styles:OptionButtonStyle>Истеричный зритель 11 сентября<Styles:/>
+18_34=<Styles:AO2White>Martine Poisson<Styles:/>
+18_35=
+19_01=<Styles:OptionButtonStyle>Противники<Styles:/>
+19_02=<Styles:OptionButtonStyle>Сомалийцы: элита, рядовые<Styles:/>
+19_03=<Styles:AO2White>David Lodge<Styles:/>
+19_04=<Styles:OptionButtonStyle>Афганцы: элита, рядовые<Styles:/>
+19_05=<Styles:AO2White>Joe Khoury<Styles:/>
+19_06=<Styles:OptionButtonStyle>Американцы: элита, рядовые<Styles:/>
+19_07=<Styles:AO2White>Skyler Stone<Styles:/>
+19_08=<Styles:OptionButtonStyle>Китайцы: элита, рядовые<Styles:/>
+19_09=<Styles:AO2White>Ming Lo<Styles:/>
+19_10=<Styles:AO2NoBGButton>СТОРОННИЕ РАЗРАБОТЧИКИ<Styles:/>
+19_11=<Styles:OptionButtonStyle>Unreal® является зарегистрированным товарным знаком Epic Games, Inc.<Styles:/>
+19_12=<Styles:OptionButtonStyle>Unreal® Engine, © 1998-2008 Epic Games, Inc. Все права защищены.<Styles:/>
+19_13=<Styles:OptionButtonStyle>Используется Bink Video. © 1997-2008 RAD Game Tools, Inc.<Styles:/>
+19_14=<Styles:OptionButtonStyle>Шрифт: House Industries.<Styles:/>
+19_15=<Styles:OptionButtonStyle>Код AI Implant © 2000-2008 Engenuity Technologies, Inc. и ее лицензиары.<Styles:/>
+19_16=<Styles:OptionButtonStyle>Ageia и PhysX, в стилизованном и нестилизованном написании, являются товарными знаками или зарегистрированными товарными знаками Ageia Technologies Inc. © 2008 Ageia Technologies Inc.<Styles:/>

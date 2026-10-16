@@ -1,0 +1,898 @@
+;; Exported by dgikunda at 8:15 PM on 9/13/2007
+;; script from CL # 04_sound_vo_main
+[1_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Чертовы «Ковбои» сегодня должны выиграть." , Time=0)
+[1_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Почему брифинг проводит Далтон? Где Элис?" , Time=0)
+[10_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Хватит гадать о всякой херне, сбей этот вертолет!" , Time=0)
+[109_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот парашют." , Time=0)
+[110_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: А если он не раскроется?" , Time=0)
+[111_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Есть только один способ узнать." , Time=0)
+[116_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Риос, Сейлем, как слышите?" , Time=0)
+[117_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Слышу тебя, босс." , Time=0)
+[118_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Сигнал с камер пропал, так что вы теперь сами по себе." , Time=0)
+[119_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Понял. Справимся." , Time=0)
+[119A_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это ракетный бункер. Нужно уничтожить все готовые к пуску ракеты, а также обычное и химическое оружие, которое можно зарядить в их боеголовки." , Time=0)
+[120_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Покиньте зону. Пуск ракеты через три минуты." , Time=0)
+[123_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Они готовят к пуску одну из ракет." , Time=0)
+[124_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Не дайте этой ракете взлететь, ясно? Живее!" , Time=0)
+[125_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Понял." , Time=0)
+[127_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Покиньте зону. Пуск ракеты через две минуты." , Time=0)
+[128_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Покиньте зону. Пуск ракеты через одну минуту." , Time=0)
+[129_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Немедленно покиньте зону. Пуск ракеты." , Time=0)
+[130_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Немедленно покиньте зону. Пуск ракеты через тридцать секунд." , Time=0)
+[133_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152408"
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Пуск ракеты через 20," , Time=0)
+Subtitles[1]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 19" , Time=2.6)
+Subtitles[10]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 10" , Time=16.2)
+Subtitles[11]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 9" , Time=17.3)
+Subtitles[12]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 8" , Time=18.5)
+Subtitles[13]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 7" , Time=19.4)
+Subtitles[14]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 6" , Time=20.7)
+Subtitles[15]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 5" , Time=22)
+Subtitles[16]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 4" , Time=23.2)
+Subtitles[17]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 3" , Time=24.2)
+Subtitles[18]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 2" , Time=25.5)
+Subtitles[19]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 1" , Time=26.7)
+Subtitles[2]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 18" , Time=4.3)
+Subtitles[20]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Пуск ракеты." , Time=28)
+Subtitles[3]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 17" , Time=5.8)
+Subtitles[4]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 16" , Time=7.5)
+Subtitles[5]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 15" , Time=9)
+Subtitles[6]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 14" , Time=10.7)
+Subtitles[7]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 13" , Time=12.2)
+Subtitles[8]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 12" , Time=13.8)
+Subtitles[9]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: 11" , Time=15)
+[14_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Давай, дружище. Стреляй по хвостовому винту!" , Time=0)
+[140_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Ракету мы уничтожили." , Time=0)
+[141_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Отличная работа. Где-то на объекте еще должны быть боеголовки. Их тоже нужно уничтожить." , Time=0)
+[147_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: У меня нет времени спорить. Продолжайте задание." , Time=0)
+[154_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Блять." , Time=0)
+[155_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Плохо, плохо, плохо..." , Time=0)
+[156_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Что это, черт возьми, было?" , Time=0)
+[157_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы пытались..." , Time=0)
+[158_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="ДАЛТОН: Пытались? Значит, плохо пытались," , Time=0)
+Subtitles[1]=(Text="ДАЛТОН: и я снимаю вас с задания!" , Time=3.13)
+[159_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Предельно ясно." , Time=0)
+[169_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Проверьте GPS." , Time=0)
+Subtitles[1]=(Text="ДАЛТОН: Вы должны быть достаточно близко, чтобы поймать сигнал Хикса. Прием." , Time=1.5)
+[176_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Так нельзя. Послать нас сюда даже без противогаза. Поговорю с Далтоном, когда вернемся." , Time=0)
+[178_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Сейлем - Далтону. Тут все заполнено каким-то газом. Прием." , Time=0)
+[179_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: ...с заданием. Повторяю... продолжайте задание. Прием." , Time=0)
+[180_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Продолжайте задание. Как слышите? Повторяю: продолжайте задание. Прием." , Time=0)
+[183_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вас не слышно. Прошу разрешения прервать задание. Помещение заполнено газом, а у нас нет нужного снаряжения. Прием." , Time=0)
+[184_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Отрицательно... Продолжайте... задание... Держитесь подальше... газа... почистят в штабе.... Конец связи." , Time=0)
+[185_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Отрицательно. Продолжайте задание. Просто держитесь подальше от газа. В штабе вас почистят. Конец связи." , Time=0)
+[188_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тогда поторопимся. Долго в этом газе нам нельзя." , Time=0)
+[19_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Надеюсь, мы найдем тут бен Ладена... Это же двадцать миллионов баксов..." , Time=0)
+[2_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Большая игра, да?" , Time=0)
+[2_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Уверен, с ней все в порядке. Позвонишь ей потом. А сейчас у нас есть работа." , Time=0)
+[20_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Они знают, где он, и чертовски не хотят, чтобы мы его нашли." , Time=0)
+[202_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Ты сказать мне, на кого работаешь." , Time=0)
+[203_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: Пошел нахуй." , Time=0)
+[206_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это Хикс." , Time=0)
+[207_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: А-А-А-А-Ааааа!" , Time=0)
+[209_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Вот тебе ебаный подарок, мой друг. Хочешь еще один, сука?" , Time=0)
+[21_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да ну?" , Time=0)
+[210_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: А-а-а. Блять. БЛЯТЬ! А-а. Я ничего не скажу." , Time=0)
+[211_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Они его пиздят по полной. Надо его вытаскивать." , Time=0)
+[212_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: (КРИЧИТ ОТ БОЛИ)" , Time=0)
+[213_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Ты говорить - мой друг... Всегда они говорить." , Time=0)
+[215_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Его тут нет. Это запись!" , Time=0)
+[216_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да неужели, блять, Шерлок." , Time=0)
+[217_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: А-а! Блять! А-а!" , Time=0)
+[22_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Найди его - и войне конец." , Time=0)
+Subtitles[1]=(Text="РИОС: Больше никакого повода забирать иракскую нефть." , Time=1.5)
+Subtitles[2]=(Text="РИОС: Президент не дурак, чувак. Он в нефтяном бизнесе." , Time=4.2)
+Subtitles[3]=(Text="РИОС: Ты подумай об этой херне." , Time=7.7)
+[222_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Думаешь, ты сильный - как Ганнибал из «Команды А». Но я ломать тебя... Я ломать тебя, мой друг." , Time=0)
+[223_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: А-а-а! Дерьмооо! А-А-А!" , Time=0)
+[226_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Ты готов говорить, мой друг?" , Time=0)
+[23_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Завязывай ты с этими теориями заговора, чувак." , Time=0)
+[23_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Вы двое уничтожили вертолет? Прием." , Time=0)
+[24_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Риос, Сейлем. У меня для вас новости." , Time=0)
+[24_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Так точно. Прием." , Time=0)
+[25_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="ДАЛТОН: Очень хорошо. Мне только что сообщили, что на борту был Нури Яссан, а Минобороны хотело его смерти. Вам полагается премия. Сейчас же оформлю выплату. Конец связи." , Time=0)
+[26_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Это прямо от Стоквелла. Пока не объявлено, так что держите при себе. Ясно?" , Time=0)
+[263_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Хикс, это ты?" , Time=0)
+[264_AFG_Hicks SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="ХИКС: К-кто здесь?" , Time=0)
+[265_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Тайсон Риос, SSC. Я тебя отсюда вытащу." , Time=0)
+[27_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Конечно." , Time=0)
+[270_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, Хикс, это ты?" , Time=0)
+[271_AFG_Hicks SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="ХИКС: К-кто здесь?" , Time=0)
+[272_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Спокойно, приятель. Я из Компании. Я тебя отсюда вытащу." , Time=0)
+[28_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Мы только что купили «Блэк Маунтин Индастриз». Теперь SSC - крупнейший подрядчик в мире." , Time=0)
+[28_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Вам удалось уничтожить вертолет? Прием." , Time=0)
+[280_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: Я нашел... боеголовки... Аль-Хабиб запер их в лаборатории... Второй этаж... Там цифровой замок... свяжитесь с s3kShUn8." , Time=0)
+[281_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Слышал, Тайс? Твой лучший друг." , Time=0)
+[282_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Откуда ты знаешь s3kShUn8?" , Time=0)
+[283_AFG_Hicks SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="ХИКС: Его... все знают." , Time=0)
+[284_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот блять. Что с ним такое?" , Time=0)
+[285_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Как слышишь?" , Time=0)
+[289_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: ...слышу вас..." , Time=0)
+[29_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: «Блэк Маунтин»? Эти ребята чуть не убили нас в Мексике." , Time=0)
+[29_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Нет. Мы промахнулись. Прием." , Time=0)
+[290_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Слышу вас." , Time=0)
+[292_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мы нашли Хикса. Он чем-то заражен." , Time=0)
+[3_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Я поставил десять штук с форой." , Time=0)
+[3_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Кстати, о \"работе\" - тебе бы сбить этот вертолет..." , Time=0)
+[30_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Они просто делали свою работу. В общем, не говорите Стоквеллу, что это я вам рассказал." , Time=0)
+[30_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Жаль. На борту был Нури Яссан, его хотят видеть мертвым. Была бы неплохая премия. В следующий раз не промахивайтесь. Конец связи." , Time=0)
+[302_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мне жаль, приятель." , Time=0)
+[31_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага, можно подумать, мы с ним каждый день болтаем..." , Time=0)
+[32_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Ладно, парни. Конец связи." , Time=0)
+[343_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Хочешь разгадывать тайны? Ладно, дома дам тебе поиграть в «Клуэдо». А пока думай о том, как выбраться отсюда живым и не подцепить какую-нибудь странную заразу." , Time=0)
+[347_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что будем делать с этим парнем?" , Time=0)
+[348_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Давай его уложим." , Time=0)
+[349_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Брайан, мы закончим задание, а потом придумаем, как тебя отсюда вытащить." , Time=0)
+[366_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Хорошо. А теперь заканчивайте задание и больше ни хуя не проебите! Конец связи." , Time=0)
+[369_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эй, Восьмерка. Как слышишь? Это Тайсон. Знаю, давно не общались, но нам нужна помощь со взломом цифрового замка." , Time=0)
+[369A_AFG_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: J0 -" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: 907 17.  17'2 4 54f3570R 900. 2001 M0D3L." , Time=0.5)
+Subtitles[2]=(Text="s3kShUn8: jU57 4 M1nU73 PH0R 73h 0V3rriD3 k0D3.  -S8" , Time=3)
+Subtitles[3]=(Text="s3kShUn8: -S8" , Time=4.5)
+[373_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Рад тебя слышать, дружище. Нам нужно взломать цифровой замок. Поможешь?" , Time=0)
+[38_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эй, слышал про засаду в Кабуле?" , Time=0)
+[381_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это он." , Time=0)
+[382_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Охуеть..." , Time=0)
+[382A_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Какого черта вы делаете в моей лаборатории?" , Time=0)
+[382B_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Сдохните, ебаные неверные!" , Time=0)
+[383_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Получай, сволочь!" , Time=0)
+[383B_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Что... вы.... все еще ... там? Мне нужно... Убейте Аль-Хабиба... уничтожьте ...взрывчатку или химикаты, которые.... в боеголовки." , Time=0)
+[384_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Как слышишь?" , Time=0)
+[385_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Слышу тебя, Тайс. Прием." , Time=0)
+[386_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мы убили Аль-Хабиба. Сейчас уничтожим хранилище боеголовок и уходим. Прием." , Time=0)
+[387_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="ДАЛТОН: Риос, Сейлем, мне только что сообщили, что Минобороны нужна информация о том, откуда эти ребята берут деньги. Так что ищите компьютер, картотеку или что-то в этом роде. Если что-нибудь найдете, получите жирную премию. Прием." , Time=0)
+[39_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага. Хорошо, что мы больше не в армии." , Time=0)
+[395_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Мы нашли ту информацию об источниках финансирования. Загружаю." , Time=0)
+[398_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Отличная работа. Оформлю вам выплату. Теперь заканчивайте и выбирайтесь оттуда. Конец связи." , Time=0)
+[4_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Год назад у тебя ни гроша за душой не было, а теперь ты спускаешь десять штук на ставки на спорт?" , Time=0)
+[40_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Там был отряд «Дельты», работавший без всякой связи." , Time=0)
+Subtitles[1]=(Text="РИОС: Откуда кто-то узнал, где они?" , Time=2.49)
+[402_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Сейлем - Далтону. Мы нашли ту информацию об источниках финансирования. Загружаю. Прием." , Time=0)
+[407_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что он говорит?" , Time=0)
+[408_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: У него есть год и номер модели. Он ищет заводской код сброса." , Time=0)
+[41_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Может, хватит переживать о херне, которая нас не касается, и сосредоточишься на задании?" , Time=0)
+[410_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Парень хорош, чувак." , Time=0)
+[411_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Спасибо, Восьмерка." , Time=0)
+[411A_AFG_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: J0 -" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: 7rY 769117845" , Time=0.5)
+Subtitles[2]=(Text="s3kShUn8: -S8" , Time=2.5)
+[416_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Охуеть." , Time=0)
+[417_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да тут полно боеголовок." , Time=0)
+[418_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Они все заполнены химическим оружием." , Time=0)
+[419_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Представляешь, если бы они все это применили?" , Time=0)
+[420_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Поэтому мы и уничтожим все это дерьмо, чувак. Чтобы его никогда не применили." , Time=0)
+[421_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тогда за дело." , Time=0)
+[423_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы сделали это, чувак!" , Time=0)
+[425_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Я об этой херне не думаю, чувак. Не знаю, зачем ты думаешь. А сейчас я просто хочу свалить нахуй отсюда и пройти дезактивацию." , Time=0)
+[434_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Блять, чувак. Он мертв." , Time=0)
+[46A_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Риос, Сейлем, мы только что запустили систему, которая позволяет делать покупки прямо во время задания. Через нее можно получить новое оружие и снаряжение - почти все, что нужно в поле. Конец связи." , Time=0)
+[47_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Что-то тут не так, чувак. Я хочу знать, в чем на самом деле суть этого задания." , Time=0)
+[47_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Смотри-ка. Это ракета M-11." , Time=0)
+[48_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Может, ты уже ЗАТКНЕШЬСЯ с этой херней? Думай о деле и не трать время на эту чушь!" , Time=0)
+[48_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять, это не шутки. Одна такая может натворить серьезных дел." , Time=0)
+[49_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Говорю тебе, чувак, тут что-то происходит." , Time=0)
+Subtitles[1]=(Text="РИОС: Почему этим заданием руководит Далтон?" , Time=2.28)
+[5_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Неважно. Если выиграю, смогу закрыть долги по кредиткам." , Time=0)
+[50_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Э-э... Кого это волнует?" , Time=0)
+[51_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Тебе не кажется, что это немного подозрительно?" , Time=0)
+[52_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Не забудьте уничтожить ракету." , Time=0)
+[6_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты спятил." , Time=0)
+[6_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Попробуй попасть в хвостовой винт!" , Time=0)
+[61_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Хорошая работа, парни. Так держать! Прием." , Time=0)
+[7_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы сейчас столько гребем, о каких деньгах ты переживаешь?" , Time=0)
+[71_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Что тут у нас?" , Time=0)
+[72_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что это?" , Time=0)
+[76_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="ХИКС: ...четыре миллиона... слишком много. Два миллиона.... Последнее предложение." , Time=0)
+[77_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="ХИКС: ... четыре миллиона - это слишком много. Два миллиона. Это мое последнее предложение." , Time=0)
+[78_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже, это наш парень..." , Time=0)
+[79_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Вы... проделали... долгий путь... тратить мое время. Я не люблю... когда время тратят." , Time=0)
+[8_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мы гребем деньги, потому что сейчас война. Закончится война - и ты не сможешь жить на такую широкую ногу." , Time=0)
+[80_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Вы проделали долгий путь, чтобы тратить мое время. Я не люблю, когда тратят мое время." , Time=0)
+[81_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="ХИКС: Это... честная цена.... агент... других источников." , Time=0)
+[82_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="ХИКС: Это честная цена. Я могу достать этот агент из других источников." , Time=0)
+[83_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: ...жаль, что вам не... такой возможности." , Time=0)
+[84_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: [Взять...!]" , Time=0)
+[85_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: Как жаль, что вам не дадут такой возможности." , Time=0)
+[86_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="АЛЬ-ХАБИБ: [Взять его!]" , Time=0)
+[87_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="ХИКС: Эй... стойте... Нет!" , Time=0)
+[88_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что это было?" , Time=0)
+[89_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Не знаю. Похоже, он пытался что-то купить." , Time=0)
+Subtitles[1]=(Text="РИОС: Какие-то агенты..." , Time=2.62)
+[9_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Расслабься, чувак. Эта война еще не скоро закончится." , Time=0)
+[9_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="РИОС: Что случилось с Мюрреем? Почему брифинг проводит Далтон?" , Time=0)
+[95_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Как слышишь?" , Time=0)
+[96_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Да, слышу тебя. Прием." , Time=0)
+[97_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Как нам спуститься на нижний уровень? Прием." , Time=0)
+[98_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Придется прыгать с парашютом." , Time=0)
+Subtitles[1]=(Text="ДАЛТОН: Хикс оставил запасной парашют на уступе впереди." , Time=1.3)
+Subtitles[2]=(Text="ДАЛТОН: Он должен быть еще в нормальном состоянии. Прием." , Time=4.5)
+[Hicks_tape_seq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="ХИКС: Четыре миллиона - это слишком много. Два миллиона. Это мое последнее предложение." , Time=0)
+Subtitles[1]=(Text="АЛЬ-ХАБИБ: ..Вы проделали долгий путь, чтобы тратить мое время." , Time=4.2)
+Subtitles[2]=(Text="АЛЬ-ХАБИБ: Я не люблю, когда тратят мое время." , Time=7.36)
+Subtitles[3]=(Text="ХИКС: ..Это честная цена. Я могу достать этот агент из других источников." , Time=9.8)
+Subtitles[4]=(Text="АЛЬ-ХАБИБ: ..Как жаль, что вам не дадут такой возможности." , Time=13.2)
+Subtitles[5]=(Text="АЛЬ-ХАБИБ: ..Взять его!" , Time=16)
+Subtitles[6]=(Text="ХИКС: ..Эй... стойте... Нет!" , Time=16.8)

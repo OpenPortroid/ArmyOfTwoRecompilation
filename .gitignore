@@ -1,0 +1,90 @@
+# Workspace C:\aot2 — в git только свои скрипты, инструменты и заметки.
+
+# --- Не входят в репозиторий ---
+# sdk — исходники ReXGlue (наши изменения — в sdk_changes/), ref — чужой код (np, XenosRecomp, UnleashedRecomp),
+# publish — старая заготовка пакета исходников
+/sdk/
+/ref/
+/publish/
+# aot/ (порт) исключает ассеты, сборки и сгенерированный код своим .gitignore
+/launcher/bin/
+
+# --- Файлы игры (ISO, распакованные ассеты, DLC, title update) ---
+/game/
+*.iso
+*.xex
+
+# --- Сборки, пакеты, рабочие папки экземпляров (work: runA, runB, save_backup) ---
+/dist/
+/work/
+out/
+build/
+*.zip
+*.7z
+
+# --- Логи и трассы ---
+*.log
+*.err
+frame_trace.txt
+gpu_draws.txt
+d3d_trace.txt
+input.script
+capture.trigger
+capture/
+shader_cache/
+shader_dump/
+
+# --- Бинарники и отладка ---
+*.exe
+*.dll
+*.pdb
+*.dmp
+*.bin
+# дампы микрокода шейдеров — входные данные xenos_hlsl_test
+!/tools/shaders/**
+*.pkl
+__pycache__/
+*.pyc
+
+# --- Результаты инструментов (скриншоты, бенчмарки, временные файлы) ---
+*.png
+!/aot/docs/*.png
+!/aot/assets/icon.png
+!/launcher/res/*.png
+/tools/bench/
+/tools/speed/
+/tools/menu/
+/tools/coop/shots/
+/tools/artifacts/
+/tools/shaders_failed/
+/tools/*.orig.cpp
+/tools/rr.txt
+/tools/stub_tail.txt
+/tools/imports.txt
+
+# --- IDE / ОС ---
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# --- Рабочие папки: базовый exe для сравнений, профили PGO, тестовый профиль ---
+/baseline/
+/pgo/
+/runT/
+/tools/coop/online_watch.txt
+
+# Заметки для Claude Code — только локально
+/CLAUDE.md
+tools/coop/results/
+tools/coop/local/
+tools/coop/local_tu2/
+# Личный список багов — только локально
+/Фиксы.txt
+
+# Скиллы Claude Code — только локально
+.claude/skills/
+
+# Worktrees Claude Code — только локально
+.claude/worktrees/

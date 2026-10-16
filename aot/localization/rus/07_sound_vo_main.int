@@ -1,0 +1,1068 @@
+;; Exported by dgikunda at 8:15 PM on 9/13/2007
+;; script from CL # 145912
+[1_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Знаешь, я рад, что мы уходим из SSC. Мы спасли Манилу от Армагеддона, а нам никакой благодарности. Даже не упоминают, что на авианосце были ядерные бомбы." , Time=0)
+[10_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Эллиот. Нас только что подставили под убийство американского сенатора." , Time=0)
+Subtitles[1]=(Text="РИОС: Нашей карьере конец, и речь идет о жизни и смерти." , Time=3.51)
+Subtitles[2]=(Text="РИОС: Какого хрена ты меня сейчас об этом дерьме спрашиваешь?" , Time=6.49)
+[10_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, вы пропустите кортеж Мохаммеда, если меньше чем через минуту не будете у того причала. Шевелитесь, черт возьми!" , Time=0)
+[100_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты неподражаем." , Time=0)
+[101_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Элис, вытащи нас отсюда. Прием." , Time=0)
+[102_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Не могу найти путь отхода. Буду искать дальше." , Time=0)
+[103_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Еще хорошие новости есть?" , Time=0)
+[104_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Хотела бы я... Конец связи." , Time=0)
+[105_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы не поверите, но этот взрыв пробил дыру" , Time=0)
+Subtitles[1]=(Text="в стене! С той стороны какой-то горно-обогатительный комбинат" , Time=2.49)
+Subtitles[2]=(Text="и железнодорожные пути. Проверяю расписание поездов." , Time=5.76)
+[106_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Понял. Идем к комбинату." , Time=0)
+[107_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Вам двоим надо идти к комбинату!" , Time=0)
+[108_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Что вы делаете? Идите к пролому в стене!" , Time=0)
+[109_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, уносите оттуда задницы! Идите к комбинату." , Time=0)
+[11_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Многие говорят, что это RZA, но мне вроде как нравится Ghost Face Killah. И... вообще-то, я, кажется, так и не слышал альбом U-God. А ты слышал?" , Time=0)
+[11_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, наверху лестницы будет хорошая позиция, чтобы взорвать мост. Конец связи." , Time=0)
+[110_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, ребята, я нашла расписание. Скоро к вам подойдет поезд. Запрыгивайте на него - другого способа выбраться оттуда я не вижу. Прием." , Time=0)
+[111_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Понял! Как нам добраться до путей? Прием." , Time=0)
+[112_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Заберитесь на крышу второго здания комбината. Конвейер перенесет вас через ущелье к третьему строению, прямо над путями. Прием." , Time=0)
+[113_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Заходите в то здание. Оттуда сможете пробраться наверх." , Time=0)
+[114_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Вам двоим надо зайти в то здание!" , Time=0)
+[115_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Заходите в здание!" , Time=0)
+[116_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Поторопитесь, мальчики, а то пропустите поезд. Конец связи." , Time=0)
+[117_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Быстрее, ребята, поезд идет быстро! Прием." , Time=0)
+[118_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, быстрее, а то пропустите поезд. Прием." , Time=0)
+[119_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: До прохода поезда десять минут. Прием." , Time=0)
+[12_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты можешь ЗАТКНУТЬСЯ со своей тупой хуйней и дать мне подумать?" , Time=0)
+[12_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Привет, Элис. Что там дома происходит?" , Time=0)
+[120_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Поезд пройдет примерно через пять минут, быстрее! Прием." , Time=0)
+[121_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Поезд будет через две минуты. Прием." , Time=0)
+[122_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Поезд почти у вас! Одна минута!" , Time=0)
+[123_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Быстрее, ребята, тридцать секунд до поезда!" , Time=0)
+[124_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это безумие." , Time=0)
+[125_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эти ребята никак не уймутся..." , Time=0)
+[125A_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Возьми этот промышленный подъемник и сними тот пулемет. Я его включу." , Time=0)
+[125B_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, бро, давай на этом лифте подберемся к пулеметчику. Я его включу." , Time=0)
+[126_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Не могу поверить, но похоже, ты прав. Приказы на эту миссию пришли прямо от Далтона. Это он вас подставил. Прием." , Time=0)
+[127_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Стоквелл тоже в деле?" , Time=0)
+[129_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Уверен, Папа Римский тоже в деле. Ты со своими теориями заговора." , Time=0)
+[13_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Остынь, мужик. Я понимаю. Мы оба на нервах. Ты справляешься по-своему, а я говорю про Wu-Tang." , Time=0)
+[13_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Скоро голосование по закону о приватизации армии." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Сенатор Уайтхорс активно выступает против." , Time=2.2)
+Subtitles[2]=(Text="МЮРРЕЙ: Не знаю, пройдет ли он. Прием." , Time=5.2)
+[130_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Посмотрю, что еще смогу найти. Конец связи." , Time=0)
+[131_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эта штука не работает." , Time=0)
+[132_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага, по-моему, в этом здании нет электричества." , Time=0)
+[133_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Может, надо найти рубильник?" , Time=0)
+[134_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ничего, мужик. Эта штука сдохла." , Time=0)
+[135_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ага. Во всем здании нет электричества." , Time=0)
+[136_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Может, найдем рубильник?" , Time=0)
+[137_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Класс!" , Time=0)
+[138_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот это другое дело." , Time=0)
+[139_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Зацени!" , Time=0)
+[14_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Если не заткнешься, будешь справляться с моей ногой в своей заднице." , Time=0)
+[14_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это деньги в наших карманах, детка. Надейся, что пройдет. Конец связи." , Time=0)
+[140_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже, ты не такой тупой, каким кажешься." , Time=0)
+[141_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Похоже на рубильник." , Time=0)
+[142_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Можно тут как-то включить электричество?" , Time=0)
+[143_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Бро, рубильник." , Time=0)
+[144_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ну и чего ты ждешь? Попробуй включить электричество." , Time=0)
+[145_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: В такие моменты жалею, что мы больше не в армии." , Time=0)
+[146_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы были бы на мели, а если этот закон о приватизации пройдет," , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: остались бы без работы." , Time=3.65)
+[147_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Да, но наш командир никогда бы не подставил нас на смерть." , Time=0)
+Subtitles[1]=(Text="РИОС: Не могу поверить, что Далтон сделал такую хрень." , Time=4.365)
+[148_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Знаешь, как говорят, мужик: власть развращает." , Time=0)
+[149_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Нельзя, чтобы ему это дерьмо сошло с рук." , Time=0)
+Subtitles[1]=(Text="РИОС: Надо разоблачить его, уничтожить." , Time=2.33)
+[14A_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Стой!" , Time=0)
+[14B_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Проверка допуска." , Time=0)
+[14C_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Предъявите документы." , Time=0)
+[14D_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Открывай ебаные ворота!" , Time=0)
+[15_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, ребята, готовьтесь к выстрелу. По нашей симуляции" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: вы оба должны попасть в центр моста одновременно -" , Time=2.9)
+Subtitles[2]=(Text="МЮРРЕЙ: ровно когда по нему пойдет колонна." , Time=5.74)
+[150_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Господи. Когда ты стал таким праведником? Это реальная жизнь," , Time=0)
+Subtitles[1]=(Text="а не какой-то боевик. Надо выбираться отсюда и спасать свою задницу!" , Time=4.9)
+Subtitles[2]=(Text="Вот и все. Никого мы не уничтожаем!" , Time=9.26)
+[151_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, ребята, поезд должен проходить прямо под вами. Ищите люк или другой способ спуститься." , Time=0)
+[152_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Ребята, ищите люк или другой способ спуститься к поезду! Прием." , Time=0)
+[153_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Что вы делаете? Ищите люк или другой путь вниз к поезду! Прием." , Time=0)
+[154_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Может, получится сорвать петли с люка. Можете на него что-нибудь сбросить? Прием." , Time=0)
+[155_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Может, получится запустить конвейер. Конец связи." , Time=0)
+[156_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Может, надо подать питание на конвейер." , Time=0)
+[157_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эй, зацени..." , Time=0)
+[158_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Жаль, что он пустой." , Time=0)
+[159_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Может, краном в соседнем помещении перетащим сюда камней и проломим этот люк." , Time=0)
+[159A_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: А может, я этой рукой дам тебе по башке... Ладно, какого черта. Давай попробуем." , Time=0)
+[159B_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Есть идея, бро: краном в соседнем помещении перетащим сюда камней и проломим этот люк." , Time=0)
+[159C_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ну ладно, Макгайвер. Попробуем." , Time=0)
+[16_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, готовьтесь к выстрелу. Кортеж уже в пути. У вас будет только один шанс." , Time=0)
+[160_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, помоги-ка с этим." , Time=0)
+[161_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Помоги столкнуть эту хрень на люк!" , Time=0)
+[162_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ох, БЛЯТЬ!" , Time=0)
+[163_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Не сработало." , Time=0)
+[164_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот дерьмо." , Time=0)
+[165_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ты нас угробить хочешь?" , Time=0)
+[166_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, вы там?" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Я тут копала под Далтона и Стоквелла -" , Time=1.34)
+[167_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй! Стойте!" , Time=0)
+[168_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: А-а-а! Не-е-е-ет!" , Time=0)
+[169_CHI_KIDNAPPER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152489"
+Subtitles[0]=(Text="НАЕМНИК: Пойдешь со мной." , Time=0)
+[17_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, готовьтесь стрелять! Цельтесь в центр моста. Конец связи." , Time=0)
+[170_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Они схватили Элис!" , Time=0)
+[171_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: ДА ПОШЛО ОНО ВСЕ НАХУЙ!" , Time=0)
+[172_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Валим отсюда." , Time=0)
+[173_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что нам, блять, теперь делать?" , Time=0)
+[174_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Возвращаемся в Майами. Надо спасать Мюррей." , Time=0)
+[175_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Сделаем." , Time=0)
+[18_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Дерьмо!" , Time=0)
+[19_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ох, блять!" , Time=0)
+[2_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Может, за этим тоже стоит Клайд. Может, это он достал ядерное оружие для Абу Сайяфа." , Time=0)
+[20_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что будем делать с данными, которые мы взяли у Клайда," , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: о том, что он вредил армии?" , Time=1.84)
+[20_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Что это было, черт возьми? Вы провалили миссию!" , Time=0)
+[21_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="РИОС: Надо показать их Стоквеллу." , Time=0)
+Subtitles[1]=(Text="РИОС: Узнать, в курсе ли он этой хрени." , Time=1.39)
+[21_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Миссия выполнена!" , Time=0)
+[22_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: А если он в курсе?" , Time=0)
+[22_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: А теперь валим отсюда к черту." , Time=0)
+[23_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Тогда отнесем федералам. Или в прессу, или еще куда." , Time=0)
+[23_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, уходите оттуда, черт возьми. Прием!" , Time=0)
+[24_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Чего ты вечно строишь из себя героя, мужик? Давай просто закопаем это и сохраним работу." , Time=0)
+[24_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, бегите! Уходите оттуда! Прием!" , Time=0)
+[25_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты знаешь, что так нельзя." , Time=0)
+[25_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это вертолет китайской армии. Какого черта они тут делают? Какого хуя они по нам стреляют?" , Time=0)
+[26_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="СЕЙЛЕМ: Нет, это ТЫ так не можешь." , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: Будь моя воля, мы бы так и сделали." , Time=1.9)
+[26_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну, дай подумать: мы только что взорвали их мост - может, они слегка разозлились?" , Time=0)
+[27_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Фу-у... Чем-то воняет, как из задницы." , Time=0)
+[27_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, возвращайтесь на судно на воздушной подушке и уходите оттуда. Конец связи." , Time=0)
+[28_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Виноват." , Time=0)
+[28_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Что тут, черт возьми, происходит, Элис?" , Time=0)
+Subtitles[1]=(Text="РИОС: Это не Абу Сайяф. Это китайские военные!" , Time=1.965)
+[29_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ох. Да ты что!" , Time=0)
+[29_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Не знаю!" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Сейчас пытаюсь найти ваш вертолет эвакуации" , Time=0.67)
+Subtitles[2]=(Text="МЮРРЕЙ: - он будто бесследно исчез. Прием." , Time=2.3)
+[3_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты совсем помешался на своих теориях заговора." , Time=0)
+[30_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Тихо, но смертельно, мужик. Фирменный прием Риоса." , Time=0)
+[30_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: То есть нам отсюда никак не выбраться?" , Time=0)
+[31_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: У тебя внутри что-то сдохло?" , Time=0)
+[31_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже на то. Слушайте, дайте мне что-нибудь придумать. Прием." , Time=0)
+[32_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Последняя миссия, да? Охуенная идея!" , Time=0)
+[33_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мог бы и отказаться." , Time=0)
+[34_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Пошел ты нахуй." , Time=0)
+[35_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Они повсюду вокруг нас." , Time=0)
+[36_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Заткнись к черту и стреляй." , Time=0)
+[37_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Противник приближается!" , Time=0)
+[38_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вижу, вижу!" , Time=0)
+[39_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Берегись вертолета!" , Time=0)
+[4_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Осторожно, а то вылетишь за борт." , Time=0)
+[40_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ох, блять!" , Time=0)
+[41_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Ребята, вы не поверите, но" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: на вас двоих объявлен контракт - вас разыскивают за убийство." , Time=2.01)
+[42_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Чего?" , Time=0)
+[43_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы никого не убивали... Ну, вообще-то... Мы убили кучу народу..." , Time=0)
+[44_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Награда огромная. Это наверняка какая-то ошибка. Я разберусь. Конец связи." , Time=0)
+[45_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Убийство?" , Time=0)
+[46_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Плохо дело, мужик... Очень плохо..." , Time=0)
+[47_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Боже мой. AP сообщает, что сенатор Ричард Уайтхорс убит корейскими террористами, когда переезжал мост через реку Лицзян." , Time=0)
+[48_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Какого...?" , Time=0)
+[49_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Дерьмо! Так вот кто был в том кортеже." , Time=0)
+[5_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Серьезно, бро, уверен, это был не Клайд. Это был этот мудак \"Себу Мохаммед\" или как его там. Но минут через десять мы его убьем, и мир будет в безопасности - больше никому не придется бояться, что террористы доберутся до ядерного оружия." , Time=0)
+[50_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это ты нас в это дерьмо втравила, Элис?" , Time=0)
+[51_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Отлично сработано, мужик: \"Еще одна миссия\"." , Time=0)
+[51_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Ты знаешь, что нет. Но кто-то подставил." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Я выясню, кто это был. Конец связи." , Time=2.19)
+[52_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно, ладно. Признаю. Идея была плохая." , Time=0)
+[52_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это все начинает очень дурно пахнуть." , Time=0)
+[53_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Только плохие идеи у тебя и бывают." , Time=0)
+[54_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага, например, идея стать твоим напарником." , Time=0)
+[55_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: И еще: я узнала, что за каждый военный вертолет и каждого хорошо вооруженного китайского солдата, которого вы уложите, есть награда. Удачи." , Time=0)
+[56_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага. Класс. Хоть деньжат поднимем! Мы в деле. Конец связи." , Time=0)
+[57_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Как ты можешь думать о деньгах в такой момент?" , Time=0)
+[58_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: В этом разница между нами, бро: я всегда думаю о деньгах." , Time=0)
+[59_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ага, тебе, наверное, приходится, ты же вечно на мели." , Time=0)
+[6_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ты знаешь, что так это не работает." , Time=0)
+[60_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это что, какая-то плотина?" , Time=0)
+[61_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Похоже на шлюз, как в Панамском канале. Надо понять, как его открыть." , Time=0)
+[62_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, ребята, вот как работает шлюз." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Поднимитесь наверх и откройте ворота шлюза." , Time=2.1)
+Subtitles[2]=(Text="МЮРРЕЙ: Потом заведите судно в камеру." , Time=4)
+Subtitles[3]=(Text="МЮРРЕЙ: Когда ворота закроются, можно заполнить шлюз водой." , Time=6.5)
+Subtitles[4]=(Text="МЮРРЕЙ: Когда он заполнится, откройте вторые ворота, и вы свободны." , Time=9.67)
+Subtitles[5]=(Text="МЮРРЕЙ: Все поняли?" , Time=12.68)
+[63_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: О да, мы уже на шаг впереди." , Time=0)
+[64_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Конечно. Сто раз так делали." , Time=0)
+[65_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Найдите пульт управления, чтобы открыть первые ворота. Прием!" , Time=0)
+[66_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Нашли пульт управления? Прием." , Time=0)
+[67_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Давайте, открывайте ворота! Прием." , Time=0)
+[68_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Заводите судно в камеру шлюза. Быстрее." , Time=0)
+[69_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Заводите судно в камеру! Прием." , Time=0)
+[7_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Заткнись, мужик." , Time=0)
+[70_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Вам нужно срочно завести судно в ту камеру. Конец связи." , Time=0)
+[71_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Теперь закройте ворота. Повторяю. Закройте ворота шлюза. Прием." , Time=0)
+[72_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Закройте ворота и начинайте заполнять камеру." , Time=0)
+[73_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Так. Закройте уже эти чертовы ворота. Прием." , Time=0)
+[74_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Нужно поднять уровень воды." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Найдите пульт управления. Прием." , Time=1.75)
+[75_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Нужно заполнить камеру шлюза водой." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Найдите какой-нибудь переключатель" , Time=1.75)
+[76_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Что вы делаете??!! Поднимите уровень воды! Прием." , Time=0)
+[76A_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, ребята. Уровень воды поднят." , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Теперь откройте вторые ворота." , Time=1.87)
+[76B_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Почти готово, ребята. Откройте последние ворота!" , Time=0)
+[76C_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Ребята! Откройте ворота!" , Time=0)
+[76D_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, выше по реке есть деревня. Укройтесь там, пока я ищу способ вытащить вас из этой передряги." , Time=0)
+[77_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы знаем, что им нужна была смерть Уайтхорса, чтобы прошел закон о приватизации армии." , Time=0)
+[78_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ага. И они знали, что мы знаем про Клайда, вот и решили убить двух зайцев одним выстрелом." , Time=0)
+[79_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Типичная SSC - ебаные жадные ублюдки." , Time=0)
+[8_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, впереди на берегу должен быть причал. Причаливайте и поднимайтесь по лестнице. Конец связи." , Time=0)
+[80_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Слушай, Элис, по-моему, нас подставили Далтон и Стоквелл." , Time=0)
+[81_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Стоквелл - возможно, но Далтон? Он вас любит, зачем ему это?" , Time=0)
+[82_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Когда мы были на авианосце, мы узнали, что Клайд сливал позиции войск нашим врагам. По-нашему, это заговор, чтобы выставить армию в дурном свете и SSC получила больше заказов. Прием." , Time=0)
+[83_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Что? Почему вы мне не сказали?" , Time=0)
+[84_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мы не были уверены, что тебе можно доверять." , Time=0)
+[85_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="МЮРРЕЙ: Не были уверены, можно ли мне доверять?" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: После всего, через что мы прошли? Пошли. Вы. Нахуй." , Time=1.43)
+[86_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Молодец, бро." , Time=0)
+[87_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Элис, как нам отсюда выбраться? Прием." , Time=0)
+[88_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Господи. Ладно. Прости, Элис. Прости." , Time=0)
+[89_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Я отдала вам тринадцать лет жизни, а вы подозреваете меня в этом дерьме?" , Time=0)
+[9_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, Тайс, кто, по-твоему, лучший рэпер в Wu-Tang Clan?" , Time=0)
+[9_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="МЮРРЕЙ: Давайте, ребята. Нет времени валять дурака. Причальте к тому пирсу. Конец связи." , Time=0)
+[90_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Прости. Слушай, как нам отсюда выбраться?" , Time=0)
+[91_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Не знаю. И похоже, к вам идет вся китайская армия. Пытаюсь что-нибудь придумать. Конец связи." , Time=0)
+[92_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Сейчас тут начнется полный пиздец. К вам летят несколько вертолетов и идет куча пехоты. Готовьтесь." , Time=0)
+[93_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Насчитываю от 20 до 50 пехотинцев плюс поддержка с воздуха. Готовьтесь!" , Time=0)
+[94_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мужик, их намного больше, чем нас..." , Time=0)
+[95_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: И не говори." , Time=0)
+[96_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152489"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос, Сейлем, слушайте. Знаю, у вас сейчас голова другим забита, но корейцы обновили контракт. По их данным, китайский агент, причастный к недавним нападениям, находится в этом районе со своим ноутбуком. Если принесете жесткий диск, вам хорошо заплатят." , Time=0)
+[97_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Поняли, Элис. Найти ноутбук. Займемся. Конец связи." , Time=0)
+[98_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Поверить не могу, что тебе охота выполнять эти контракты, когда нас только что подставили." , Time=0)
+[99_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, человеку надо есть." , Time=0)

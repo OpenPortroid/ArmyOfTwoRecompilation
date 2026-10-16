@@ -1,0 +1,134 @@
+# ArmyOfTwoRecomp - input mapping settings
+#
+# Loaded automatically at startup in addition to hardware.toml (see
+# OnConfigurePaths in src/armyoftworecomp_app.h.h). --flag on the command line and
+# REX_* environment variables always override values from this file.
+#
+# Gamepad button layouts (DualShock 4 / DualSense / Xbox / Switch Pro, etc.)
+# are auto-mapped to the Xbox 360 layout by SDL - there is nothing to
+# configure for that here. These three cvars only select/tune the backend.
+#
+# Flat key = value only
+
+# "" is rejected by this cvar's validator (logs a warning, falls back to
+# compiled default) - must be an explicit value: "sdl", "xinput", or "nop"
+# (input disabled). "sdl" is what's actually in use, confirmed via the
+# startup log line "SDL input driver initialized successfully".
+input_backend = "sdl"
+
+# Path to a custom HID remap file used to fill in gamepads SDL doesn't
+# already recognize, or "" to skip it. "gamecontrollerdb.txt" matches the
+# file CMakeLists.txt stages next to the exe from settings/gamecontrollerdb.txt
+# (sourced from https://github.com/mdqinc/SDL_GameControllerDB).
+hid_mappings_file = "gamecontrollerdb.txt"
+
+# Route the controller Guide/PS button to the guest.
+guide_button = true
+
+# Keyboard+mouse run in parallel with a physical gamepad, not instead of it -
+# the SDK always merges every assigned device's input for guest user 0
+# (see rex::input::MergeInto). mnk_mode turns on keyboard-as-controller;
+# mnk_mouse captures the mouse (hidden cursor, relative mode) while the game
+# window has focus.
+mnk_mode = true
+mnk_mouse = true
+# The mouse aims natively (src/mouse_aim.cpp) instead of acting as the right
+# stick; it only falls back to the stick where the on-foot camera isn't
+# running (vehicles, menus).
+mnk_mouse_to_stick = false
+mnk_sensitivity = 1.0
+
+# ─────────────────────────────────────────────────────────────
+# Split-screen (two players on one PC)
+# ─────────────────────────────────────────────────────────────
+# Player 2 is signed in while a controller is assigned to them (their own
+# profile and saves); the game's "need two players" check then passes.
+# 1 turns split-screen off (only player 1 is ever signed in).
+max_local_users = 2
+# false: pad 1 + keyboard/mouse are player 1, pad 2 is player 2. A pad
+#        switched on while the game runs is player 1's at once.
+# true:  keyboard/mouse are player 1 alone, pad 1 is player 2 (split-screen
+#        with one pad).
+keyboard_own_player = false
+
+# ─────────────────────────────────────────────────────────────
+# Native mouse aiming
+# ─────────────────────────────────────────────────────────────
+ao2_mouse_aim = true
+# Camera turn per mouse count = 0.022 deg x sensitivity (same scale as Source
+# games, so a value from CS/TF2 carries over).
+ao2_mouse_sensitivity = 2.0
+# Zooming in (precision aim, scope) slows the mouse down with the camera's
+# field of view; this multiplies the zoomed sensitivity on top of that.
+ao2_mouse_zoom_sensitivity = 1.0
+# The in-game "Invert Y" option applies to the mouse too; this flips it again.
+ao2_mouse_invert_y = false
+# Right-stick strength of the mouse where native aiming is unavailable.
+ao2_mouse_stick_sensitivity = 1.0
+
+# ─────────────────────────────────────────────────────────────
+# Button prompts
+# ─────────────────────────────────────────────────────────────
+# Every button picture of the game (tutorials, hints, menu button bars, HUD)
+# shows the first key of its bind below instead: a keycap with the key's name
+# or arrow, a mouse with the button lit. The left stick shows its four keys
+# (WASD), the right stick a mouse while mnk_mouse is on. The text around them
+# drops the controller's words ("left bumper", "D-pad up").
+# The prompts follow player 1's hands: the Xbox 360 buttons while a gamepad is
+# in use (or was just plugged in), the keys again on a key press or a mouse move.
+# false = the original Xbox 360 buttons always.
+ao2_keyboard_prompts = true
+
+# ─────────────────────────────────────────────────────────────
+# Keyboard bindings - third-person shooter layout
+# ─────────────────────────────────────────────────────────────
+# Format: comma-separated list of keys, optional modifiers (Shift+, Ctrl+, Alt+).
+# Mouse buttons: LMB, RMB, MMB. A key may appear in several binds: it then
+# presses all of those buttons at once (1-4 below = LB + D-pad).
+# A bind fires while its key and all of its modifiers are held; a bare key also
+# fires with extra modifiers held, unless the same key is bound with exactly
+# those modifiers.
+
+# Controller buttons (what the game uses them for)
+keybind_a = "E,Return"                 # A: use / heal / drag partner; menus: confirm
+keybind_b = "Q,Backspace"              # B: cancel co-op move; menus: back
+keybind_x = "R"                        # X: reload
+keybind_y = "Space"                    # Y: roll / slide into cover / vault
+
+# Driving a vehicle (the hovercraft) the game's gas and brake are the triggers;
+# with this W / S (left stick forward / back) press them too.
+ao2_vehicle_wasd = true
+
+# Triggers (analog)
+keybind_left_trigger = "RMB"           # LT: precision aim
+keybind_right_trigger = "LMB"          # RT: fire
+
+# Shoulder buttons
+keybind_left_shoulder = "Z,1,2,3,4,G"  # LB: inventory select (hold + D-pad)
+keybind_right_shoulder = "F"           # RB: co-op commands (hold + D-pad)
+
+# Left stick (analog)
+keybind_lstick_up = "W"                # Move
+keybind_lstick_down = "S"
+keybind_lstick_left = "A"
+keybind_lstick_right = "D"
+keybind_lstick_press = "Control,C"     # L3: crouch
+
+# Right stick (analog) - the mouse aims; keys left free
+keybind_rstick_up = ""
+keybind_rstick_down = ""
+keybind_rstick_left = ""
+keybind_rstick_right = ""
+keybind_rstick_press = "MMB"           # R3
+
+# D-pad: partner orders (up advance, left regroup, right hold position, down
+# partner view); with LB: weapons (1 primary, 2 secondary, 3 special, 4/G grenades)
+keybind_dpad_up = "Up,1"
+keybind_dpad_down = "Down,4,G"
+keybind_dpad_left = "Left,2"
+keybind_dpad_right = "Right,3"
+
+# Special buttons
+keybind_back = "Tab"                   # Back: GPS
+keybind_start = "Escape"               # Start: pause menu
+keybind_guide = ""                     # Guide button (empty = disabled)

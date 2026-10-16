@@ -1,0 +1,9 @@
+[AO2VWeap_M1A2Primary]
+ItemName="120mm M256"
+PickupMessage=""
+[AO2VWeap_VehicleMachineGun]
+ItemName=".50 M2 BMG"
+PickupMessage=""
+[AO2VWeap_HindPrimary]
+ItemName="AT-2 Swatters"
+PickupMessage=""

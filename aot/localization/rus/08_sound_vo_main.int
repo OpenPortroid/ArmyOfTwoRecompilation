@@ -1,0 +1,1430 @@
+;; Exported by dgikunda at 8:15 PM on 9/13/2007
+;; script from CL # 08_sound_vo_main
+[1_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Риос вызывает s3kShUn8. Мы в аэропорту Марафон. Далтон держит Мюррей в заложниках в штаб-квартире SSC. Как нам быстрее всего туда добраться?" , Time=0)
+[10_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Надеюсь, ты прав, чувак." , Time=0)
+[100_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: И на седьмой день Господь создал электричество - чтобы твой монорельс ездил." , Time=0)
+[100A_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Идем к монорельсу. Теперь он должен работать." , Time=0)
+[101_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Пошли!" , Time=0)
+[102_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Где эта чертова станция монорельса?" , Time=0)
+[103_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Если пойдем вдоль путей, то должны на нее выйти." , Time=0)
+[104_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот и станция монорельса." , Time=0)
+[105_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Почему эта штука не едет?" , Time=0)
+[106_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Похоже, вагон позади этого застрял." , Time=0)
+[107_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты абсолютно прав, чувак." , Time=0)
+[108_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Надо расцепить вагоны и одновременно нажать на запуск." , Time=0)
+[109_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Давай попробуем." , Time=0)
+[11_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже, тут ураган прошелся." , Time=0)
+[110_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эта штука разваливается!" , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: Не знаю, доберемся ли мы до башни." , Time=1.54)
+[111_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Может, и добрались бы, если бы ты" , Time=0)
+Subtitles[1]=(Text="РИОС: пристрелил хоть кого-то из этих мудаков!" , Time=1.61)
+[112_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Вы уже убили этого уебка Клайда?" , Time=0)
+[113_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Нет... Слушай, Ча..." , Time=0)
+[114_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Ха-ха-ха. Шучу. Я знаю, что вы еще не нашли Клайда. Знаете, откуда я знаю?" , Time=0)
+[115_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Э-э-э..." , Time=0)
+[116_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Я взломал камеры на ваших шлемах. Теперь я сам увижу, как вы убьете Клайда. Но если проебетесь - это я тоже увижу! До свидания." , Time=0)
+[117_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Зря ты соврал Ча Мин Су. Нам пиздец, когда он узнает, что Клайд погиб в авиакатастрофе." , Time=0)
+[118_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Расслабься, чувак. Что-нибудь придумаем." , Time=0)
+[119_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты всегда так говоришь... И никогда ничего не придумываем." , Time=0)
+[12_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Да ты прямо комик, Эллиот." , Time=0)
+[120_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Так. Наша остановка!" , Time=0)
+[121_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="ДАЛТОН: Ну что, парни, залезли в осиное гнездо?" , Time=0)
+Subtitles[1]=(Text="ДАЛТОН: Жаль, что все мои люди знают: вы взяли контракт" , Time=3.37)
+Subtitles[2]=(Text="ДАЛТОН: у террористов на убийство сенатора США." , Time=5.43)
+Subtitles[3]=(Text="ДАЛТОН: Видите ли, мои люди - хорошие ребята." , Time=8.24)
+Subtitles[4]=(Text="ДАЛТОН: Они не дадут таким убийцам, как вы," , Time=10.1)
+Subtitles[5]=(Text="ДАЛТОН: выйти из этого здания живыми." , Time=11.6)
+[122_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="ДАЛТОН: Мне жаль, что до этого дошло." , Time=0)
+Subtitles[1]=(Text="ДАЛТОН: Мне нравилось работать с вами обоими." , Time=2.7)
+Subtitles[2]=(Text="ДАЛТОН: Но вот что бывает -" , Time=5.01)
+Subtitles[3]=(Text="ДАЛТОН: когда пытаешься вершить правосудие сам." , Time=6.84)
+[123_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Поверить не могу, что он был нашим другом." , Time=0)
+[124_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Знаешь, как говорят - власть развращает." , Time=0)
+[125_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага - он обожает власть. Спорим на что угодно, он сидит на верхнем этаже за своим дорогущим столом в большом угловом кабинете и ждет нас." , Time=0)
+[126_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Сейчас узнаем." , Time=0)
+[127_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Наверх можно попасть только на лифте для руководства." , Time=0)
+[127a_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Вон еще двое личных охранников Клайда! Взять их! До свидания!" , Time=0)
+[127b_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Вон один из личных охранников Клайда." , Time=0)
+Subtitles[1]=(Text="ЧА МИН СУ: Лучше убейте его! До свидания!" , Time=2.17)
+[127c_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Вон еще один охранник Клайда!" , Time=0)
+Subtitles[1]=(Text="ЧА МИН СУ: Лучше достаньте его!" , Time=2.11)
+[128_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот лифт для руководства." , Time=0)
+[129_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Йо - вот лифт для руководства." , Time=0)
+[13_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152500"
+Subtitles[0]=(Text="РИОС: Это, видимо, и есть двойные двери" , Time=0)
+[130_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Не работает." , Time=0)
+[131_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: И как нам тогда подняться?" , Time=0)
+[132_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже, он сломан." , Time=0)
+[133_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Эй, Восьмерка. Мы в вестибюле башни SSC," , Time=0)
+Subtitles[1]=(Text="РИОС: нам нужен лифт для руководства," , Time=2.65)
+Subtitles[2]=(Text="РИОС: но он не работает. Поможешь?" , Time=4.52)
+[133A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 17'5 c0mp|1c473d.  F|1p 7h3 br34k3r 1n 7h3 3|3v470r" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: c0n7r0| r00m 0n 7h3 m3zz4n1n3 |3v3|. 7h3n, 3n73r 4 c0d3 47" , Time=1.5)
+Subtitles[2]=(Text="s3kShUn8: 7h3 53cur17y b007h 1n 7h3 |0bby." , Time=3)
+Subtitles[3]=(Text="s3kShUn8: 1'|| 574r7 |00k1n6 f0r 7h3 c0d3." , Time=4.5)
+Subtitles[4]=(Text="s3kShUn8: -S8" , Time=6)
+[134_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что он говорит?" , Time=0)
+[135_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Говорит, надо переключить рубильник в диспетчерской лифта на втором уровне. Потом ввести код на посту охраны в вестибюле." , Time=0)
+[136_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Может, нам еще на голове постоять и монетками поплевать заодно - а то ведь недостаточно сложно?" , Time=0)
+[137_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Почему ты вечно умничаешь?" , Time=0)
+[138_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это диспетчерская лифта." , Time=0)
+[139_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот диспетчерская лифта." , Time=0)
+[14_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Блять - заперто." , Time=0)
+[140_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Спускаемся к пульту охраны." , Time=0)
+[141_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да будет электричество!  Так, пора вводить код." , Time=0)
+[142_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос вызывает Восьмерку. Мы на месте. Какой код?" , Time=0)
+[142A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: C-1-6-8" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=1.5)
+[143_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Понял. Спасибо." , Time=0)
+[144_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тайс, какой код?" , Time=0)
+[145_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Риос вызывает Восьмерку. Мы на месте. Какой код?" , Time=0)
+[146_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Он говорит: \"C-один-шесть-восемь\"." , Time=0)
+[147_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Понял." , Time=0)
+[148_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это еще что за черт?" , Time=0)
+[149_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: И как нам теперь туда попасть?" , Time=0)
+[15_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Интересно, это путь в багажное отделение?" , Time=0)
+[150_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Надо скорее запрыгнуть на крышу лифта." , Time=0)
+[151_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Круто - прямо как в кино." , Time=0)
+[152_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Отсюда можно спрыгнуть на лифт." , Time=0)
+[152A_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Давай, валим этих парней и на лифт!" , Time=0)
+[153_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Отсюда можно прыгнуть на лифт." , Time=0)
+[154_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Так, Восьмерка. Мы на крыше лифта." , Time=0)
+Subtitles[1]=(Text="РИОС: Можешь поднять нас на верхний этаж?" , Time=1.98)
+[155_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Что происходит, Восьмерка? Почему мы стоим?" , Time=0)
+[156_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ну так верни контроль над лифтом. Быстрее! Конец связи." , Time=0)
+[157_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Собрались на верхние этажи? Не выйдет, если я могу помешать. Вы, парни, не понимаете, что ваша выходка - убийство сенатора - может бросить тень на SSC. А я никому не позволю бросить тень на SSC." , Time=0)
+[158_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять!" , Time=0)
+[159_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ну, начинается..." , Time=0)
+[16_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Чертова дверь заперта." , Time=0)
+[160_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эй, Восьмерка, запусти этот лифт немедленно!" , Time=0)
+[161_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Запусти уже этот лифт, ПОЖАЛУЙСТА!" , Time=0)
+[162_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Восьмерка, вытащи нас отсюда к чертям!" , Time=0)
+[163_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эй, Восьмерка. Можешь проверить камеры наблюдения на верхних этажах? Нам надо узнать, где сейчас Далтон." , Time=0)
+[164_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Он говорит, что не знает, где тот сейчас, но покажет нам запись, сделанную несколько минут назад." , Time=0)
+[165_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Кто это?" , Time=0)
+[166_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не знаю." , Time=0)
+[167_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Надеюсь, это не Стоквелл." , Time=0)
+[168_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Поверить не могу: столько лет, а мы так и не знали, кто такой Далтон." , Time=0)
+[169_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Знаешь, ты вечно стебал меня за всю эту херню с теориями заговора - а похоже, я был прав." , Time=0)
+[17_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эй, Восьмерка - мы у двойных дверей на четвертом этаже. На них какой-то магнитный замок. Можешь что-нибудь сделать?" , Time=0)
+[170_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно, ладно, ты был прав. Ты этого хочешь? Хочешь сказать: \"Я же говорил\"? Давай." , Time=0)
+[171_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Я же говорил." , Time=0)
+[172_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну вот. Сказал. И как ощущения?" , Time=0)
+[173_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Отличные." , Time=0)
+[174_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ладно, пошли." , Time=0)
+[175_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Кто здесь?" , Time=0)
+[176_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СТОКВЕЛЛ: Не стреляйте!" , Time=0)
+[177_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Кто мне теперь звонит?!" , Time=0)
+[179_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СТОКВЕЛЛ: Тайсон Риос, это Эрнест Стоквелл. Вытащите меня отсюда. Я заплачу, сколько захотите." , Time=0)
+[18_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Отлично. Спасибо. Конец связи." , Time=0)
+[180_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Мне не нужны ваши деньги." , Time=0)
+Subtitles[1]=(Text="РИОС: Помогите нам обелить наши имена." , Time=1.15)
+[181_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СТОКВЕЛЛ: Копии улик разбросаны по четырем серверам в архиве. Вы можете их выгрузить, но поторопитесь. Далтон наверху и пытается все уничтожить." , Time=0)
+[182_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ладно, и еще одно. Если вы хоть как-то замешаны в этом дерьме - вы должны сдаться. Убили наших друзей." , Time=0)
+[183_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СТОКВЕЛЛ: Сдамся, только вытащите меня отсюда." , Time=0)
+[184_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ладно. Разберемся с Далтоном и вернемся за вами." , Time=0)
+[185_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СТОКВЕЛЛ: Спасибо." , Time=0)
+[186_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="СЕЙЛЕМ: Идиот! Стоквелл предлагал нам деньги," , Time=0)
+Subtitles[1]=(Text="а ты такой: \"Нет, просто поступите правильно\". " , Time=2.975)
+Subtitles[2]=(Text="С каких пор ты такой чертов бойскаут??" , Time=4.8)
+[187_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Он сказал, что сдастся - вот что важно." , Time=0)
+[188_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага, конечно, так он и сделает. К рассвету этот тип будет в Венесуэле." , Time=0)
+[189_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Это архив." , Time=0)
+[19_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Все еще за что-то цепляется. Надо толкать вместе." , Time=0)
+[190_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ни хуя себе - сколько денег." , Time=0)
+[191_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Спорим, это помощник Стоквелла - далеко он не ушел." , Time=0)
+[192_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты идиот, Тайс. Все эти бабки могли быть нашими." , Time=0)
+[193_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Спускаемся туда и ищем Далтона." , Time=0)
+[194_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Разрешите открыть огонь, сэр?" , Time=0)
+[195_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: Убери их с глаз моих!" , Time=0)
+[196_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Поверить не могу. Он восстал из мертвых." , Time=0)
+[197_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Никто не мог выжить в той авиакатастрофе." , Time=0)
+[198_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Мы выжили." , Time=0)
+[199_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну, хотя бы Ча Мин Су теперь не будет на нас злиться..." , Time=0)
+[1A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 4c7u4||y 1 ju57 54w Murr4y 0n 4 53cur17y c4m3r4 f33d." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: 5h3'5 b31n6 h3|d 47" , Time=2)
+Subtitles[2]=(Text="s3kShUn8: M4r47h0n 41rp0r7 - 1n 7h3 |u66463 4r34." , Time=4)
+Subtitles[3]=(Text="s3kShUn8: -S8" , Time=5)
+[2_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Да ладно! Как нам до нее добраться?" , Time=0)
+[20_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ЧА МИН СУ: Вы разбили мой самолет!?? Вы убили моего пилота!?? Я делаю вам одолжение, и вот как вы мне отплатили?" , Time=0)
+[200_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Ну, чего вы ждете? Вон он. Убейте его. Пусть помучается! И его личную охрану тоже убейте!" , Time=0)
+[201_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Работаем над этим, Ча Мин. Просто ждем идеального момента для выстрела, понимаешь." , Time=0)
+[202_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Вы меня раздражаете... Вот поэтому я не работаю с наемниками." , Time=0)
+[203_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Контрактники, Ча Мин. Мы контрактники, а не наемники." , Time=0)
+[204_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Ладно. До свидания." , Time=0)
+[205_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это один из тех серверов, о которых говорил Стоквелл. Надо залить его резервную копию на наш FTP-сервер." , Time=0)
+[206_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, это один из тех серверов, о которых говорил Стоквелл. Залью его резервную копию на наш FTP." , Time=0)
+[207_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот еще один сервер." , Time=0)
+[208_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот еще один сервер, братишка." , Time=0)
+[209_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эй, вот еще один сервер." , Time=0)
+[21_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это не мы. Это Клайд. Он убил пилота и разбил самолет." , Time=0)
+[210_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот еще один из тех серверов. Залью данные." , Time=0)
+[211_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Вот последний сервер." , Time=0)
+[212_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот последний сервер, братишка." , Time=0)
+[212a_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Риос! Сейлем! Это один из личных охранников Клайда! Убейте его!" , Time=0)
+[212b_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Вот еще один из личных охранников Клайда! Убейте его!" , Time=0)
+[212c_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Риос! Сейлем! Еще один личный охранник Клайда! Убейте его!" , Time=0)
+[212d_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Достаньте этого охранника! Достаньте его! Ну же! Убейте его!" , Time=0)
+[213_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Хотите получить? Ну давай, иди сюда, жопорылый." , Time=0)
+[213a_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Хотите получить? Ну давайте, идите сюда!" , Time=0)
+[214_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: \"Жопорылый?\" Кто так вообще говорит?" , Time=0)
+[214a_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Клайд полный психопат!" , Time=0)
+[215_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Не знаю, что с этим парнем не так, мужик." , Time=0)
+[216_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Что, думали, вам медаль дадут за то, что сдали меня и Далтона? Хуй там, все, что вы получите, - это ебаную пулю в вашу ебаную башку." , Time=0)
+[217_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="КЛАЙД: Я вас так отделаю," , Time=0)
+Subtitles[1]=(Text="КЛАЙД: что родная мамка не узнает." , Time=2.19)
+[218_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, мою маму не трогай." , Time=0)
+[219_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Я убью вас обоих, вскрою и пойду на аэробику в ваших кишках вместо гетр!" , Time=0)
+[219a_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Я с огромным удовольствием вас прикончу!" , Time=0)
+[22_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Клайд? Кто такой Клайд?" , Time=0)
+[220_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Нет, ну это вообще имеет смысл?" , Time=0)
+[221_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Я убью вас обоих. Потом выпущу из вас всю кровь, выну кости, посажу ваши тела в большое кресло с эльфами и оленями, сяду вам на колени и расскажу, какое крутое дерьмо хочу на Рождество." , Time=0)
+[221a_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Когда я с вами закончу, вас, двух уебков, вся королевская конница и вся королевская рать обратно не соберут!" , Time=0)
+[222_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: У этого парня явно было паршивое детство." , Time=0)
+[223_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Думаешь?" , Time=0)
+[223A_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="КЛАЙД: Это еще не конец!" , Time=0)
+[224_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Хотел бы я посмотреть, как он от такого оправится." , Time=0)
+[225_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Братишка, без шансов. Он МЕРТВ." , Time=0)
+[226_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Наконец-то. Вы убили его. Я переведу вам кое-что особенное на банковский счет в знак благодарности. До свидания." , Time=0)
+[227_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Теперь осталось только достать Далтона!" , Time=0)
+[228_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Далтон прямо за этими дверями. Готов?" , Time=0)
+[229_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага. Готов." , Time=0)
+[23_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Филлип Клайд. Работает на SSC." , Time=0)
+[230_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Готов прикончить Далтона?" , Time=0)
+[231_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ага. Пошли." , Time=0)
+[232_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять. Он уходит." , Time=0)
+[233_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Нет. Не уйдет. Давай." , Time=0)
+[234_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ДАЛТОН: Помните Сомали? Весь наш отряд был прижат огнем. Люди Мо'Алима шли нас добивать. Это был единственный раз в жизни, когда я по-настоящему потерял надежду, когда мне было по-настоящему страшно. Но вы двое... Думаю, вы так и не поняли, сколько жизней спасли в тот день, что вы сделали для нашего отряда и как я вами гордился. И я смотрю на вас сейчас, после всего этого..." , Time=0)
+[235_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="ДАЛТОН: И я знаю, вы сильно повзрослели за эти пятнадцать лет. Но вы все еще мои ребята. Вы все еще лучшие из лучших, потому что я научил вас быть лучшими. Мы через многое прошли втроем. И мне... мне будет вас не хватать." , Time=0)
+[236_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Может, уложим его?" , Time=0)
+[237_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СТОКВЕЛЛ: Вы дали ему уйти. Это была большая ошибка." , Time=0)
+[238_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Опрос показал:" , Time=0)
+[239_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты труп." , Time=0)
+[24_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Ох... Ненавижу этого уебка." , Time=0)
+[240_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Давай, валим отсюда." , Time=0)
+[25_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="ЧА МИН СУ: Вот что. Я пришлю вертолет, он заберет вас с крыши аэропорта. Найдите на вертолете этого уебка Клайда и убейте его для меня. И еще: если увидите личных охранников Клайда, их тоже убейте!" , Time=0)
+[26_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Но Клайд..." , Time=0)
+[27_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: ...смоется. Мы его тебе достанем." , Time=0)
+[28_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Ах да... Если и мой вертолет разобьете, я вам лично ваши ебаные яйца отрежу. До свидания." , Time=0)
+[28a_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="ЧА МИН СУ: Ах да... Если и мой вертолет разобьете, я убью вас голыми руками. Медленно... До свидания." , Time=0)
+[29_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ты что делаешь, мужик? Клайд погиб в авиакатастрофе." , Time=0)
+[2A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: |00k f0r 73h doub|3 d00r5 0n 7eh 70p f|00r." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=2)
+[3_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Он сказал, Мюррей держат здесь, в аэропорту. Она в багажном отделении. Нам надо искать двустворчатые двери на верхнем этаже." , Time=0)
+[30_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Расслабься, мужик. Все будет нормально." , Time=0)
+[31_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты глянь! Похоже, Далтон" , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: натравил на нас всю компанию." , Time=1.43)
+[32_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Скажи спасибо, что нам пока не пришлось драться ни с кем из друзей." , Time=0)
+[33_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага. Это был бы отстой." , Time=0)
+[34_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эй, Восьмой. Слышишь меня? Ворота в багажное отделение закрыты. Можешь что-нибудь сделать?" , Time=0)
+[34A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 1 c4n 0p3n 7h3m r3m073|y. H4n6 0n." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=2)
+[35_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Он откроет ворота удаленно." , Time=0)
+[36_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Риос! Сейлем! Я здесь, наверху!" , Time=0)
+[37_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Элис. Ты в порядке?" , Time=0)
+[38_MIA_SSC_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="НАЕМНИК: Заткнись, сука!" , Time=0)
+[39_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Поднимайтесь сюда, черт возьми! Скорее, прошу!" , Time=0)
+[4_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Верхний этаж, двустворчатые двери. Понял." , Time=0)
+[40_MIA_SSC_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="НАЕМНИК: Я сказал, заткни пасть!" , Time=0)
+[41_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: А-а-а!! Блять! Блять! Блять!" , Time=0)
+[42_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Давайте, ребята!" , Time=0)
+Subtitles[1]=(Text="МЮРРЕЙ: Надо подтолкнуть трап к этой камере." , Time=1.25)
+[43_MIA_SSC_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="НАЕМНИК: Сдохнуть хочешь, сука?" , Time=0)
+[44_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Сука, трап уперся в ту дверь." , Time=0)
+[45_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тогда давай попробуем сдвинуть дверь!" , Time=0)
+[45A_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Дверь вон там, наверху!" , Time=0)
+[45B_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Дверь впереди, за мной." , Time=0)
+[46_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Порядок. Дверь больше не мешает. Давай вместе толкать трап." , Time=0)
+[47_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Элис. Ты в порядке? Что они с тобой сделали?" , Time=0)
+[48_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ого, Элис. Что они с тобой сделали?" , Time=0)
+[49_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Лучше вам не знать." , Time=0)
+[5_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мужик, Ча Мин Су будет в бешенстве," , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: когда узнает, что мы разбили его самолет." , Time=2.1)
+[50_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Вытащите меня отсюда?!" , Time=0)
+[51_08_hint_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Давай снимем этих двух охранников одновременно." , Time=0)
+[51_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Ну же, ребята, вытащите меня отсюда!" , Time=0)
+[52_08_hint_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Видишь тех охранников? Давай снимем их вместе." , Time=0)
+[52_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Вытащите меня отсюда к черту, ребята!" , Time=0)
+[53_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Спасибо." , Time=0)
+[54_MIA_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Все всегда говорили, что если бы я не пошел в SSC, то давно бы сидел в тюрьме. Мама так гордилась, что я получил эту работу, зарабатываю деньги. А теперь мы, наверное, все равно сядем в тюрьму из-за этой истории с Уайтхорсом." , Time=0)
+[54_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Я не могу встать. Кто-нибудь из вас может меня понести?" , Time=0)
+[55_MIA_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Найдем выход. Стоквелл нас прикроет." , Time=0)
+[55_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Держу тебя. Все будет хорошо." , Time=0)
+[56_MIA_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты с ним и парой слов не перекинулся. С чего ты взял, что он нам поможет?" , Time=0)
+[56_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Держу тебя, Элис." , Time=0)
+[56a_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, я не успела вам сказать," , Time=0)
+Subtitles[1]=(Text="но когда я во всем разобралась," , Time=3.6)
+Subtitles[2]=(Text="я перевела часть денег SSC для вас на офшорный счет." , Time=4.8)
+Subtitles[3]=(Text="Что-то вроде прощального подарка от компании." , Time=8.7)
+Subtitles[4]=(Text="Как только доберусь до Интернета," , Time=11.1)
+Subtitles[5]=(Text="переведу их на ваши счета." , Time=13.3)
+Subtitles[6]=(Text="Вы их заслужили!" , Time=15.2)
+[57_MIA_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Обязан. Иначе нам пиздец." , Time=0)
+[57_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эй, Восьмой, нам надо открыть эти ворота!" , Time=0)
+[57A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: W0rk1n9 0n 17!" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=1)
+[58_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Спасибо, мужик." , Time=0)
+[59_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы должны остановить Далтона. Он собирается убить Стоквелла." , Time=0)
+[6_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Этот самолет стоил двадцать миллионов баксов, не меньше. Он нас закажет." , Time=0)
+[60_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Какая нам разница, убьет он Стоквелла или нет? Этот тип нас подставил." , Time=0)
+[61_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="МЮРРЕЙ: Нет. Это был не он. Стоквелл, может, и знал, что Далтон" , Time=0)
+Subtitles[1]=(Text="нарушает кое-какие правила, но не знал, что тот подвергает опасности войска США," , Time=2.88)
+Subtitles[2]=(Text="чтобы SSC хорошо выглядела. Когда убили сенатора Уайтхорса," , Time=6.7)
+Subtitles[3]=(Text="Стоквелл все узнал и попытался сдать Далтона федералам." , Time=10.78)
+[62_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Хочешь сказать, Далтон - главный мозг всего этого?" , Time=0)
+[63_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Да. Он выдавал позиции войск и лоббировал в Конгрессе приватизацию армии. Стоквелла он держит при себе только для того, чтобы тот принял удар на себя, если кто-нибудь узнает." , Time=0)
+[64_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: И что будет, если этот закон примут" , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: и армию правда приватизируют?" , Time=1.69)
+[65_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: SSC станет самой мощной военной силой в мире. Далтон убьет Стоквелла и выставит все как несчастный случай. А потом сам возглавит SSC и будет творить ужасные вещи." , Time=0)
+[66_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Например?" , Time=0)
+[67_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: Держать страны в заложниках, развязывать войны ради прибыли - все, что захочет." , Time=0)
+[68_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы должны спасти Стоквелла. Только он может доказать, что вы невиновны. А Далтона вы должны убить, иначе он убьет вас." , Time=0)
+[69_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ладно. Сделаем." , Time=0)
+[69a_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это один из личных охранников Клайда." , Time=0)
+[69b_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Разве Ча Мин Су не говорил, что заплатит нам, если мы уберем этих парней?" , Time=0)
+[69c_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ага. Говорил." , Time=0)
+[69d_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, этот парень из личной охраны Клайда." , Time=0)
+[69e_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: А, точно - Ча Мин Су обещал заплатить нам за этих ребят." , Time=0)
+[7_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да ну, брось. Он бы так не поступил." , Time=0)
+[70_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Помоги с воротами." , Time=0)
+[71_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эллиот - помоги с воротами!" , Time=0)
+[72_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Давай, приятель. Помоги с этими чертовыми воротами!" , Time=0)
+[73_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Помоги поднять ворота!" , Time=0)
+[74_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Подсоби с воротами, приятель - давай." , Time=0)
+[75_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну давай же! Помоги поднять ворота!" , Time=0)
+[76_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Так, Элис, нас высадят недалеко от штаба, а тебя отвезут в больницу." , Time=0)
+[77_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Недалеко? Давай сядем на крышу." , Time=0)
+[78_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Это вертолет Ча Мин Су, я не буду так рисковать." , Time=0)
+[79_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="МЮРРЕЙ: Если вы не достанете Далтона, он придет за мной." , Time=0)
+[8_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Этот тип - торговец оружием на черном рынке. Он, наверное, каждый день кого-нибудь заказывает." , Time=0)
+[80_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не волнуйся. Мы его достанем." , Time=0)
+[81_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="МЮРРЕЙ: И не дайте ему убить Стоквелла!" , Time=0)
+[82_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Нам нужно попасть в башню." , Time=0)
+[83_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже, придется искать другой путь внутрь." , Time=0)
+[84_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Другого пути внутрь нет." , Time=0)
+[85_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да ладно тебе. Кто ищет, тот всегда найдет - может, на монорельсе?" , Time=0)
+[86_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Я думал об этом. Но монорельс обесточен." , Time=0)
+[87_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Можно пойти на электростанцию и снова включить питание." , Time=0)
+[88_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Электростанция, говоришь. Ладно. Попробуем." , Time=0)
+[89_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вон электростанция!" , Time=0)
+[9_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да, но он же наш парень. Мы с ним близки. Он не пойдет на такие крайности." , Time=0)
+[90_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Осторожно - глянь-ка туда." , Time=0)
+[91_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять. Надо отключить питание." , Time=0)
+[92_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Не могу добраться до рубильников монорельса - в воде провода. Отключи питание, чтобы я смог пройти." , Time=0)
+[93_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот дерьмо, приятель. В воде провода. Отключи питание, чтобы я смог перебраться и найти рубильник монорельса." , Time=0)
+[93A_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Эй, Эллиот! Мне нужно питание, чтобы открыть дверь! Можешь снова его включить?" , Time=0)
+[93B_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тайс, мне нужно питание, чтобы открыть дверь. Можешь снова его включить?" , Time=0)
+[94_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Нашел рубильник?" , Time=0)
+[95_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Ищу, ищу." , Time=0)
+[96_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Нашел!" , Time=0)
+[97_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Монорельс! Монорельс! Монорельс!" , Time=0)
+[97A_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Идем к монорельсу. Теперь он должен работать." , Time=0)
+[98_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="РИОС: Чего ты так долго?" , Time=0)
+[99_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ищу рубильник. Дай мне минуту." , Time=0)

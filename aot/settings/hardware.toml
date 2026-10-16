@@ -1,0 +1,105 @@
+# armyoftworecomp - hardware / rendering settings
+#
+# Loaded automatically at startup (see OnConfigurePaths in
+# src/armyoftworecomp_app.h) and rewritten by the in-game Settings
+# overlay's "Save to config" button. --flag on the command line and REX_*
+# environment variables always override values from this file - see
+# ../settings/README.md.
+#
+# Flat key = value only
+
+gpu_plugin = "xenos"
+
+# "any" (d3d12 - win default, vulkan - lin default)
+# "d3d12" / "vulkan"
+graphics_backend = "any"
+vsync = false
+resolution_scale = 2
+async_shader_compilation = true
+native_2x_msaa = false
+anisotropic_override = 3
+
+texture_cache_memory_limit_soft = 1024
+texture_cache_memory_limit_hard = 4096
+clear_memory_page_state = true
+readback_memexport = true
+readback_memexport_fast = true
+host_present_from_non_ui_thread	= true
+
+window_width = 1920
+window_height = 1080
+fullscreen = true
+monitor = 0
+resolution = "1920x1080"
+
+render_target_path_d3d12 = "rtv"
+store_shaders = true
+present_letterbox = true
+  
+d3d12_adapter = -1
+d3d12_allow_variable_refresh_rate_and_tearing = true
+d3d12_bindless = true
+d3d12_break_on_error = false
+d3d12_break_on_warning = false
+d3d12_debug = false
+d3d12_dxbc_disasm = false
+d3d12_dxbc_disasm_dxilconv = false
+d3d12_pipeline_creation_threads = -1
+d3d12_queue_priority = 2
+d3d12_submit_on_primary_buffer_end = true
+d3d12_tessellation_wireframe = false
+
+render_target_path_vulkan = "fbo"
+vulkan_log_debug_messages = false
+vulkan_allow_present_mode_immediate = true
+vulkan_allow_present_mode_fifo_relaxed = false
+vulkan_allow_present_mode_mailbox = false
+
+headless = false
+
+# trace, debug, info, warn, error
+log_level = "critical"
+
+gpu_allow_invalid_fetch_constants = true
+
+# Perf CSV log path (per-frame metrics). Empty = disabled.
+# Only works when REXGLUE_ENABLE_PERF_COUNTERS is defined (non-Release).
+#perf_log_csv = "benchmark.csv"
+
+# Enable runtime debug tools (stub sweep, missing function scan).
+# Produces logs/missed_functions.txt and logs/stub_sweep.txt.
+dev_debug_runtime = false
+
+# Ported from xenia-canary game-patches for Army of Two (4541084C)
+# https://github.com/xenia-canary/game-patches/blob/main/patches/4541084C%20-%20Army%20of%20Two%20(Europe).patch.toml
+# "Unlock FPS": game speed is tied to FPS, kicks in above ~90FPS.
+ao2_fps_unlock = true
+# 0=unlimited, 1=60FPS, 2=30FPS. Only applies when ao2_fps_unlock is true
+# and ao2_fps_target is 0.
+ao2_fps_unlock_mode = 1
+# Frame-rate cap (0 = from ao2_fps_unlock_mode, i.e. unlimited up to 240). Co-op: the same on both PCs.
+ao2_fps_target = 120
+ao2_decouple = true
+# Co-op desync hunt: coop_debug.log + per-frame sync_trace.log (compare with tools/sync_diff.py).
+# Costly in fights (every rand() call and every pawn, each frame): off for playing.
+ao2_coop_debug = false
+ao2_coop_sync_trace = false
+# "Black Shading Fix": disables MSAA.
+ao2_disable_msaa = true
+ao2_anisotropic_16x = true
+
+# Debug cheat: the player takes no damage (UE3 god mode; off in online co-op).
+ao2_god_mode = false
+
+# Log files: the runtime log (logs/armyoftworecomp_NNN.log), net.log, krnl.log and the
+# port's own *.log (native_gpu.log, coop_debug.log, sync_trace.log, ...). false = none at all.
+log_to_files = false
+
+# Language of the game: "auto" (the language of Windows when the game has it, else English), "en",
+# "ru" (text only, English voices; localization/rus/*.int), "fr", "de", "es", "it" (text and voices).
+# Co-op partners need the same voices: "en" and "ru" go together, the others only with the same language.
+ao2_game_language = "auto"
+ao2_native_gpu_resolution_scale = 2
+ao2_aspect_ratio = "auto"
+ao2_fps_overlay = 1
+ao2_native_gpu_vsync = false

@@ -1,0 +1,1527 @@
+;; Exported by dgikunda at 8:15 PM on 9/13/2007
+;; script from CL # 01_sound_vo_main
+[1_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Так, тут начинается настоящий пиздец." , Time=0)
+Subtitles[1]=(Text="Они наняли какого-то крутого наемника по имени \"Филлип Клайд\"," , Time=3)
+Subtitles[2]=(Text="чтобы убрать Мо'Алима вместо нас." , Time=5.7)
+Subtitles[3]=(Text="Он лучший из лучших - но немного неуравновешенный." , Time=8.3)
+Subtitles[4]=(Text="Так что встретьтесь с ним у старого отеля «Континенталь»" , Time=12)
+Subtitles[5]=(Text="и проследите, чтобы он действительно убрал Мо'Алима, как положено." , Time=15)
+Subtitles[6]=(Text="Если придется - сделайте это сами!" , Time=19.2)
+[10_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ага - пришлем тебе открытку." , Time=0)
+[100_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Не знаю! Похоже, мы сами по себе!" , Time=0)
+[100_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос - ты должен защищать Сейлема - атакуй врагов. Прием." , Time=0)
+[101_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Отсюда мы его не достанем." , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: Надо как-то забраться на тот балкон." , Time=1.21)
+[101_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Сейлем - защищай напарника! Прием." , Time=0)
+[102_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: И как мы это сделаем?" , Time=0)
+[102_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Эллиот - не подпускай врагов к Риосу." , Time=0)
+[103_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не знаю, чувак. Должен быть способ." , Time=0)
+[103_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Эллиот - защищай Риоса - атакуй врагов. Прием." , Time=0)
+[104_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Может, раз мы не можем забраться на балкон," , Time=0)
+Subtitles[1]=(Text="РИОС: опустим балкон к себе этой цепью." , Time=1.7)
+[104_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Если враги наступают с разных сторон, вставайте спина к спине. Прием." , Time=0)
+[105_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Слушай, может, стянем балкон" , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: к себе этой цепью." , Time=1.86)
+[105_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос, Сейлем, встаньте спиной друг к другу и атакуйте врагов. Прием." , Time=0)
+[106_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Эй, Сейлем, помоги стянуть эту штуку." , Time=0)
+[106_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Спина к спине. Встаньте спиной друг к другу." , Time=0)
+[107_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Рядовой Сейлем! Помоги с цепью!" , Time=0)
+[107_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Неплохо!" , Time=0)
+[108_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Рядовой Сейлем, мне нужна твоя помощь с цепью!" , Time=0)
+[108_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Отлично, братва!" , Time=0)
+[109_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, давай, Риос. Помоги потянуть." , Time=0)
+[109_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Вот так работают рейнджеры! Отлично. Осталось научить вас одному, но предупреждаю: будет больно." , Time=0)
+[109A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ха-ха! Вот это было круто! Так, Риос - твой напарник ранен. Сделай ему реанимацию, чтобы спасти его." , Time=0)
+[109B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ха-ха! Вот это было круто! Так, Сейлем - твой напарник ранен, так что сделай ему реанимацию, чтобы спасти его." , Time=0)
+[11_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Эй, Эллиот - если не вернешься," , Time=0)
+Subtitles[1]=(Text="ЭЙЗЕНХАУЭР: можно мне твой CD-плеер?" , Time=1.5)
+Subtitles[2]=(Text="ЭЙЗЕНХАУЭР: [Смеется]" , Time=3.5)
+[110_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Братан - помоги потянуть цепь!" , Time=0)
+[110_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Отличная работа, рейнджеры. Учебный бой вы прошли хорошо." , Time=0)
+Subtitles[1]=(Text="ПЕДРО: Теперь посмотрим, как вы покажете себя в настоящем бою." , Time=3.4)
+Subtitles[2]=(Text="ПЕДРО: Встретимся на площадке с полковником Далтоном. Ура!" , Time=6)
+[111_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Давай, Риос - помоги стянуть этот балкон." , Time=0)
+[111_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ура!" , Time=0)
+[112_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: А вот так мы прощаемся в нашей стране, сука!" , Time=0)
+[112_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ура!" , Time=0)
+[113_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Добьем его!" , Time=0)
+[116_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Ебаные дилетанты. Поверить не могу, сколько вы возились." , Time=0)
+[117_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ты о чем, блять, говоришь? Мы только что сделали за тебя твою работу." , Time=0)
+[119_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Неблагодарный кусок дерьма!" , Time=0)
+[12_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Есть, братан." , Time=0)
+[120_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="КЛАЙД: Клайд - Ричарду Далтону. Задание выполнено." , Time=0)
+Subtitles[1]=(Text="КЛАЙД: Переведите вторую половину гонорара на мой счет." , Time=2.48)
+[121_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Да, оба здесь. Возьму их с собой к точке эвакуации." , Time=0)
+[123_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Вам двоим лучше бежать!" , Time=0)
+[124_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: А-А-А! Блять!" , Time=0)
+[124A_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты как, нормально?" , Time=0)
+[125_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: [Смеется]" , Time=0)
+[126_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ничего смешного. Нас могли убить.")
+[127_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Хватит ныть, обойдите здание с другой стороны. Надо зачистить рынок, чтобы Далтон мог посадить вертолет для эвакуации." , Time=0)
+[128_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Надо поговорить с Далтоном. Этот тип - конченый мудак." , Time=0)
+[129_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Знаю." , Time=0)
+Subtitles[1]=(Text="РИОС: Я пытался ему сказать, но он и слушать не стал." , Time=1.2)
+[13_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Класс. Берите тот багги. Если повезет, прикроем вас, пока не выйдете из зоны. Удачи там - Ура!" , Time=0)
+[13_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="ПЕДРО: Педро - Риосу и Сейлему." , Time=0)
+Subtitles[1]=(Text="ПЕДРО: Ну что, дамочки, готовы?" , Time=2.41)
+Subtitles[2]=(Text="ПЕДРО: В этой тренировке мы используем резиновые пули," , Time=4.13)
+Subtitles[3]=(Text="ПЕДРО: так что никто не умрет. Но если в вас попадут," , Time=6.7)
+Subtitles[4]=(Text="ПЕДРО: будет чертовски больно. Ясно?" , Time=10.29)
+[130_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот что в армии паршиво. Мы не выбираем ни задания, ни с кем работать. Просто выполняем приказы." , Time=0)
+[131_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ты только сейчас это понял?" , Time=0)
+[132_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="КЛАЙД: Используйте парный снайпинг, чтобы взорвать тот бензобак." , Time=0)
+Subtitles[1]=(Text="КЛАЙД: Взрыв убьет охрану." , Time=3.7)
+[135_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: А, да, нас этому учили." , Time=0)
+[136_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="КЛАЙД: Ну так делайте, нахуй!" , Time=0)
+[137_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Ладно." , Time=0)
+[138_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Тогда убирайте их! И не за что за подсказку." , Time=0)
+[139_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Вы что творите? Стрелять надо одновременно!" , Time=0)
+[14_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ура!" , Time=0)
+[14_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага - в нас не попадут! Прием." , Time=0)
+[140_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Нет! Стрелять надо обоим одновременно!" , Time=0)
+[141_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Вот так - уже учитесь." , Time=0)
+[142_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Даже не знаю, что сказать. Либо это есть, либо нет. У вас двоих - нет." , Time=0)
+[143_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что он делает? Он заставляет нас воевать за него." , Time=0)
+[144_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Может, не хочет тратить патроны." , Time=0)
+[145_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: По-моему, этому психу просто нравится смотреть, как мы корчимся!" , Time=0)
+[146_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Как слышите?" , Time=0)
+[147_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Слышу вас, капрал. Что у вас? Прием." , Time=0)
+[148_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Мы на рынке, сэр. Когда будет эвакуация? Прием." , Time=0)
+[149_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Отрицательно. Зачистите район. Там еще слишком жарко, чтобы сажать вертолет. Прием." , Time=0)
+[15_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ура!" , Time=0)
+[15_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Это ты так думаешь, амиго. После вашей вчерашней выходки в столовой я сказал своим парням - без поблажек! Вам двоим надерут задницы. Прием." , Time=0)
+[150_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Вам двоим лучше подняться на тот балкон и встать за пулеметы!" , Time=0)
+[151_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Что? Зачем?" , Time=0)
+[152_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Помнится, Далтон велел вам зачистить район. Думаете, справитесь отсюда со своими сраными пукалками?" , Time=0)
+[153_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Как же я его ненавижу." , Time=0)
+[154_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Да, но он, наверное, прав. Надо подняться." , Time=0)
+[155_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="КЛАЙД: Какого черта вы двое ждете?" , Time=0)
+Subtitles[1]=(Text="КЛАЙД: Поднимайтесь и помогите мне удержать позицию!" , Time=1.82)
+[156_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Если вы, придурки, хотите выбраться отсюда живыми, пиздуйте нахуй наверх и за пулеметы!" , Time=0)
+[157_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Пусть один подсадит другого на балкон. Потом тот, кто на балконе, затащит второго." , Time=0)
+[158_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Ну же! Пусть один из вас, клоунов, подсадит другого на балкон. Потом затащите того, кто внизу." , Time=0)
+[159_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ебать - они повсюду!" , Time=0)
+[15A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Перелезь через забор." , Time=0)
+[15B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Пролезь под теми воротами." , Time=0)
+[16_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Эй, спасибо за магнитофон, лошара!" , Time=0)
+[16_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Так. Главное здесь - огонь на подавление. Сидите в укрытии и стреляйте вслепую. Прием." , Time=0)
+[160_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: БЛЯТЬ! Блять! Их ДОХРЕНА больше!" , Time=0)
+[161_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Добро пожаловать в армию, солдат!" , Time=0)
+[162_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Риос - Далтону. Район зачищен. Повторяю, район зачищен. Можете начинать эвакуацию. Прием." , Time=0)
+[163_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Вас понял, Риос. Вылетаю. Скоро буду. Конец связи." , Time=0)
+[16A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Каждый из вас должен отвлечь пулеметчика на себя. По одному. По очереди. Начинайте думать тактически. Когда один под огнем, другой ведет огонь на подавление, чтобы отвлечь врага на себя." , Time=0)
+[17_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Далтон - Гутьерресу. Когда ваше подразделение будет готово к эвакуации? Прием." , Time=0)
+[17_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: В чем дело? Боитесь резиновых пуль? Один должен зайти пулеметчику с фланга. Другой - прикрывать огнем. Давайте. Быстрее! Прием." , Time=0)
+[18_SOM_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Дела плохи, сэр. Прием." , Time=0)
+[19_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Что значит «дела плохи»?" , Time=0)
+Subtitles[1]=(Text="ДАЛТОН: Переключитесь на защищенный канал UHF. Прием." , Time=2)
+[20_SOM_BLACKHAWK_PILOT_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="СУПЕР-6-3: Мэйдэй! Мэйдэй! «Супер-6-3» падает! Повторяю! Мэйдэй! Нас подбили! Шесть-три падает -" , Time=0)
+[20_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: А-а! Блять! Больно!" , Time=0)
+[21_SOM_RANGER_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭННИС: Шесть-три, ваши координаты? Повторяю, координаты? Прием." , Time=0)
+[21_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Говорил же - больно." , Time=0)
+[22_SOM_RANGER_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭННИС: Шесть-три, шесть-три, ответьте. Ваши координаты? Ответьте! Прием." , Time=0)
+[22_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять, больно!" , Time=0)
+[23_SOM_RANGER_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ЭННИС: Кто-нибудь на земле видит «Супер-6-3»? Прием." , Time=0)
+[23_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Говорил же, братан. В настоящем бою ты бы уже был мертв." , Time=0)
+[24_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Эйзенхауэр - «Супер-6-1». Как слышите?" , Time=0)
+[24_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Так, братва, хорошо. Теперь уберите пулеметчика!" , Time=0)
+[25_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Понял, Эйзенхауэр. Прием." , Time=0)
+[25_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Неплохо - вот так это делается." , Time=0)
+[26_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Прошу срочную медэвакуацию, сэр. Двое раненых - один истекает кровью. Прием." , Time=0)
+[27_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ДАЛТОН: Отрицательно, Эйзенхауэр." , Time=0)
+Subtitles[1]=(Text="У нас сбиты два Black Hawk, и я не могу рисковать еще одним." , Time=1.46)
+Subtitles[2]=(Text="Высылаем бронемашину, чтобы вытащить вас и ваше подразделение. Прием." , Time=4.47)
+[28_SOM_RANGER_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_2: Эннис - командованию группы 4. Сержант убит. Почти вся C-3 выбита. Остались только я и Феррис. Больше стрелять некому, сэр." , Time=0)
+[29_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_3: Понял. Ваша позиция? Прием." , Time=0)
+[29_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Отлично, рейнджеры! Деритесь так в бою, и, может, ваши кишки не разбросает по всему Могадишо." , Time=0)
+[29A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Сейчас потренируемся бросать гранаты." , Time=0)
+Subtitles[1]=(Text="ПЕДРО: Забросьте гранату в ту дверь." , Time=2.3)
+[29B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Молодцы. Теперь у кого-то из вас - не помню, у кого - подствольный дробовик. У кого он есть - сбейте из дробовика те металлические мишени." , Time=0)
+[29C_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Теперь попробуйте забросить ее в ту дверь. Она должна взорваться по ту сторону двери. Не облажайтесь!" , Time=0)
+[29D_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Теперь идите на стрельбище, возле фасада того здания." , Time=0)
+Subtitles[1]=(Text="ПЕДРО: Нам еще много чего надо пройти. Прием." , Time=3.2)
+[30_SOM_RANGER_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_2: Мы все еще на складе, сэр. Прием." , Time=0)
+[30_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Эй, Педро, а что там на следующей площадке?" , Time=0)
+[31_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_3: Что? Я послал C-1 помочь вам с эвакуацией." , Time=0)
+[31_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Скажем так, это мой маленький сюрприз. Кое-что особенное, что я приготовил специально для вас двоих. Прием." , Time=0)
+[32_SOM_RANGER_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_2: Пока их не видели, сэр. Прием." , Time=0)
+[32_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Что-то мне это не нравится." , Time=0)
+[33_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_3: Черт! Держитесь, Эннис. Конец связи." , Time=0)
+[33_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: И что нам делать, чувак?" , Time=0)
+[34_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_3: C-1, где вас черти носят? Вы должны были эвакуировать C-3." , Time=0)
+[34_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Не знаю. Осмотрись." , Time=0)
+[35_SOM_RANGER_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_4: Нас прижали, сэр. Не можем двинуться!" , Time=0)
+[35_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Блять, чувак. Я застрял. Как мне отсюда выбраться?" , Time=0)
+[36_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_3: Так прорывайтесь, черт возьми. Как слышите?" , Time=0)
+[36_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Не ожидали такого, а? Выбраться оттуда можно только одним способом - освоив основы совместного боя. Риос, тебе нужно пройти по полю и нажать на переключатель в его конце, чтобы освободить Сейлема. Если попробуешь в одиночку, словишь пару пуль. Сейлем, ты должен отвлекать огонь противников на себя, чтобы Риос мог продвигаться. Только не перестарайся, иначе тебе конец. Так что вам обоим придется по очереди отвлекать огонь друг от друга. Понятно?" , Time=0)
+[37_SOM_RANGER_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕР_4: Есть, сэр. Будет сделано, сэр." , Time=0)
+[37_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вроде да." , Time=0)
+[38_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Всем подразделениям, слушать сюда. Знаю, тут творится полный пиздец, но нам надо держать себя в руках. Мы рейнджеры. Мы лучшие из лучших и должны вести себя соответственно! Мы все отсюда выберемся - и выберемся вместе." , Time=0)
+[38_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Есть, сэр!" , Time=0)
+[39_SOM_VARIOUS_RANGERS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РЕЙНДЖЕРЫ: У-а!" , Time=0)
+[39_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Хорошо. Тогда за дело. Прием." , Time=0)
+[40_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ты видишь то же, что и я?" , Time=0)
+[40_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Блять, чувак. Я застрял." , Time=0)
+[41_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Предлагаю прыгать!" , Time=0)
+[41_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Что такое? Застрял? Признай, такого ты не ожидал. Выбраться оттуда можно только одним способом - освоив основы совместного боя. Сейлем, тебе нужно пройти по полю и нажать на переключатель в его конце, чтобы освободить Риоса. Если попробуешь в одиночку, словишь пару пуль. Риос, ты должен отвлекать огонь противников на себя, чтобы Сейлем мог продвигаться. Только не перестарайся, иначе тебе конец. Так что вам обоим придется по очереди отвлекать огонь друг от друга. Понятно?" , Time=0)
+[42_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Погоди!" , Time=0)
+[42_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вроде да." , Time=0)
+[43_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Есть, сэр!" , Time=0)
+[44_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Это было круто!" , Time=0)
+[44_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Хорошо. Тогда за дело. Прием." , Time=0)
+[45_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Это ужасно." , Time=0)
+[45_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давай, Риос. Отвлеки огонь от Сейлема. Не давай ему делать всю работу. Прием." , Time=0)
+[46_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: О нет. Ты глянь." , Time=0)
+[46_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос, ты потеряешь напарника, если не отвлечешь огонь от него. Прием." , Time=0)
+[47_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эйзенхауэр был прав. Здесь сущий ад." , Time=0)
+[47_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос, Сейлему слишком жарко. Отвлеки от него огонь! Прием." , Time=0)
+[48_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: НЕЕЕТ!!!!" , Time=0)
+[48_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Сейлем, Риосу слишком жарко. Отвлеки от него огонь. Прием." , Time=0)
+[49_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: ВОТ ДЕРЬМООООООО!!!" , Time=0)
+[49_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Сейлем, отвлеки-ка огонь от Риоса! Прием." , Time=0)
+[50_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Ты в порядке, чувак?" , Time=0)
+[50_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давай, Сейлем, Риосу слишком жарко. Отвлеки от него огонь. Прием." , Time=0)
+[51_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="hard wrap"
+Subtitles[0]=(Text="СЕЙЛЕМ: Бро, вся жизнь перед глазами пронеслась - я видел свет в конце туннеля.  Там была бабуля, мама, мой старый питбуль Чарли.  Но я вернулся, чувак. Я вернулся ради тебя. Потому что знал, что без меня ты ни за что не закончишь эту миссию!" , Time=0)
+[51_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Так, Сейлем. Риос отвлек их внимание. Вперед!" , Time=0)
+[52_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Чувак, заткнись, черт возьми." , Time=0)
+[52_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Сейлем, вперед! Давай!" , Time=0)
+[53_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="СЕЙЛЕМ: Да ладно, чувак. На минуту я тебя провел, признай!" , Time=0)
+[53_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Вперед, Сейлем! Риос отвлек их внимание. Прием." , Time=0)
+[53A_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Стой. Я слышу там наверху врагов." , Time=0)
+Subtitles[1]=(Text="РИОС: Я тебя подсажу, а ты их снимешь." , Time=2.1)
+[53B_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно. Тихо и аккуратно. Стоп, вот здесь." , Time=0)
+[53C_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Молодец" , Time=0)
+[53D_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Теперь подтягивайся." , Time=0)
+[53E_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Отлично, теперь помоги мне подняться!" , Time=0)
+[53F_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Йо, там наверху враги." , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: Я тебя подниму, а ты их снимешь." , Time=1.3)
+[53G_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Эй, отлично. Они мои." , Time=0)
+[53H_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Красава, бро" , Time=0)
+[53I_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Э-э, ты не то чтобы легкий, бро. Подтягивайся!" , Time=0)
+[53J_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Отлично, теперь помоги мне подняться!" , Time=0)
+[54_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Где мы должны встретить этого типа?" , Time=0)
+[54_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Так, Риос. Сейлем отвлек их внимание. Вперед!" , Time=0)
+[55_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: В старом отеле «Континенталь»." , Time=0)
+[55_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос, вперед! Давай!" , Time=0)
+[56_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: И где это, черт возьми?" , Time=0)
+[56_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Вперед, Риос! Сейлем отвлек их внимание. Прием." , Time=0)
+[57_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Там, впереди, нам сюда." , Time=0)
+[57_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Отличная работа, вот так это делается! Прием." , Time=0)
+[58_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="СЕЙЛЕМ: Хорошо, что ты знаешь, куда идти." , Time=0)
+Subtitles[1]=(Text="СЕЙЛЕМ: По мне, вся эта херня одинаковая." , Time=1)
+[58_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Хорошая работа.  Теперь до вас доходит!" , Time=0)
+[58A_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Осторожно!" , Time=0)
+[59_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Блять, чувак, нас прижали." , Time=0)
+[59_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Отлично, рейнджеры! У-а!" , Time=0)
+[59A_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Осторожно!" , Time=0)
+[60_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Знаю. Не могу даже выстрелить." , Time=0)
+[60_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: У-у-а!" , Time=0)
+[61_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Плохо дело, чувак. Очень плохо." , Time=0)
+[61_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: У-а!" , Time=0)
+[61A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: На поле боя вам может понадобиться разное оружие. Так что я решил заставить вас менять оружие и на этой тренировке. Достаньте дополнительное оружие." , Time=0)
+[62_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Да кем этот тип себя возомнил?" , Time=0)
+[62_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Это армия, братишки. Если кто-то из нас не справляется в одиночку, мы работаем вместе. Прием." , Time=0)
+[63_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Бро, это было офигенно. Тебе о таких навыках только мечтать." , Time=0)
+[63_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Что с вами не так? Поднимайте ворота вместе. Прием." , Time=0)
+[64_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Я капрал Тайсон Риос, а это рядовой первого класса Эллиот Сейлем, четвертое подразделение, рейнджеры армии США. Вы Филлип Клайд?" , Time=0)
+[64_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давайте. Если ворота слишком тяжелые, поднимите их вдвоем." , Time=0)
+[65_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: А ты, блять, как думаешь?" , Time=0)
+[65_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Мы прошли примерно половину, так что считайте это промежуточным экзаменом. Используйте навыки, которые мы только что отработали, чтобы убрать этого парня.  У него бронежилет и лучшее оружие, так что будет непросто. Прием." , Time=0)
+[65A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Вспомните, чему мы научились." , Time=0)
+Subtitles[1]=(Text="ПЕДРО: Убить этого парня можно, только зайдя ему за спину." , Time=1.7)
+[65B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давайте, работайте как команда. Если один из вас идет вперед, пусть скажет другому стоять на месте!" , Time=0)
+[66_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Бро. Мы должны помочь тебе убрать полковника Мо'Алима." , Time=0)
+[66_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давайте, рейнджеры. Используйте совместный бой, о котором я вам говорил. Пусть один из вас отвлекает его на себя, а другой продвигается. Прием." , Time=0)
+[67_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="КЛАЙД: Во-первых, я тебе не бро, бро." , Time=0)
+Subtitles[1]=(Text="Во-вторых, не тебе говорить мне ждать. Это я говорю вам, что делать." , Time=3.05)
+Subtitles[2]=(Text="И в-последних, если думаешь, что мне нужна ваша помощь в этом -" , Time=7.06)
+Subtitles[3]=(Text="или в чем-то еще, - то ты идиот." , Time=9.86)
+Subtitles[4]=(Text="Раз уж мы с этим разобрались, почему бы вам не заткнуться нахуй" , Time=13.27)
+Subtitles[5]=(Text="и не посмотреть, как работает настоящий профессионал." , Time=16.16)
+Subtitles[6]=(Text="Может, чему-нибудь научитесь." , Time=18.21)
+[67_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: По очереди отвлекайте его внимание и заходите для убийства. Прием." , Time=0)
+[68_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="РИОС: Ладно, профессор." , Time=0)
+Subtitles[1]=(Text="РИОС: Может, для начала научишь нас, где прячется Мо'Алим?" , Time=1.69)
+[68_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Помните, чему я вас учил. Один отвлекает его, пока другой продвигается. Попробуйте подкрасться к нему." , Time=0)
+[69_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="КЛАЙД: Он прямо здесь, в отеле «Континенталь»." , Time=0)
+Subtitles[1]=(Text="КЛАЙД: А ты думал, зачем я назначил встречу тут?" , Time=3.25)
+[69_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Так, Риос. Открой заградительный огонь. Прием." , Time=0)
+[7_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: У-а!" , Time=0)
+[70_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Риос, Сейлем, вы уже встретились с Клайдом? Прием." , Time=0)
+[70_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос, прикрой Сейлема огнем. Давай." , Time=0)
+[71_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Так точно, сэр. Канал защищен, сэр?" , Time=0)
+[71_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Вспомни, чему мы учились, Риос. Тебе нужно открыть заградительный огонь для Эллиота." , Time=0)
+[72_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Да, защищен. В чем проблема? Прием." , Time=0)
+[72_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Сейлем! Открой заградительный огонь для Риоса." , Time=0)
+[73_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Видите ли, сэр, просто он вроде как... мудак, сэр. Прием." , Time=0)
+[73_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давай, Сейлем. Вспомни, что мы только что отрабатывали. Прикрой Риоса огнем." , Time=0)
+[74_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Ну, тогда не приглашайте его на ужин, когда вернетесь домой. А до тех пор выполняйте его приказы и завершите миссию. Если не убьете Мо'Алима, наши люди, застрявшие по всему городу, считай что покойники. Ясно?" , Time=0)
+[74_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Сейлем! Прикрой огнем!" , Time=0)
+[75_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Так точно, сэр." , Time=0)
+[75_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Отличная работа, рейнджеры!" , Time=0)
+[76_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ДАЛТОН: Хорошо. Конец связи." , Time=0)
+[76_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="ПЕДРО: Вот так! Вот так! Так держать!" , Time=0)
+[77_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Их слишком много. Надо найти укрытие." , Time=0)
+[77_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Теперь вы набиваете руку! Так держать!" , Time=0)
+[78_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="КЛАЙД: Так, научу-ка я вас одному фокусу." , Time=0)
+Subtitles[1]=(Text="КЛАЙД: Кто-нибудь из вас, оторвите дверь у той машины." , Time=2.66)
+[78_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Да! Вот как мы это делаем. Теперь идите на следующую тренировочную площадку, и побыстрее. Пора вам двоим в настоящий бой! Прием." , Time=0)
+[79_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Что?" , Time=0)
+[79_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Как думаешь, как нам туда забраться?" , Time=0)
+[8_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: У-а!" , Time=0)
+[80_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: Вы меня слышали." , Time=0)
+[80_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Без понятия." , Time=0)
+[81_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Ты меня, блять, разозлить пытаешься? Я сказал, отстрелите дверь у той машины." , Time=0)
+[81_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ну же, это не ракетостроение. Пусть один подсадит другого. Потом тот, кто наверху, затащит второго. Прием." , Time=0)
+[82_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Ладно. Даю вам еще один шанс. Кто-нибудь, отстрелите дверь с этой чертовой машины." , Time=0)
+[82_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ну же, используйте подсадку. Пусть один подсадит другого. Потом тот, кто наверху, затащит второго. Прием." , Time=0)
+[83_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Очень хорошо. Теперь поднимите ее и используйте как штурмовой щит. Можете оба присесть за ней. Передний держит щит, задний стреляет." , Time=0)
+[83_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Если хотите стать рейнджерами, учитесь работать вместе. Пусть один подсадит другого. Потом тот, кто наверху, затащит второго. Прием." , Time=0)
+[84_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: В чем дело? Глухонемые? Один берет дверь, другой встает сзади и стреляет." , Time=0)
+[84_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: Хорошая командная работа, рейнджеры." , Time=0)
+[84A_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Так, мы закончили. Куда дальше?" , Time=0)
+[84B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="ПЕДРО: Хорошо, что спросил. Одна из важнейших вещей" , Time=0)
+Subtitles[1]=(Text="в снаряжении армейского рейнджера в поле - GPS. Почему бы" , Time=4.2)
+Subtitles[2]=(Text="вам не взглянуть на свои и не разобраться самим?" , Time=7.52)
+[84C_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Почему он вечно такой умник?" , Time=0)
+[84D_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага. Педро тот еще козел." , Time=0)
+[84E_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Эй, и еще. Привыкайте меняться оружием в поле. Не хочу, чтобы вам снесли голову, пока вы тянетесь за пушкой напарника. Потренируйтесь сейчас. Просто обменяйтесь оружием." , Time=0)
+[84F_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ПЕДРО: А ну стоять. Видите ловушку впереди?" , Time=0)
+[84G_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Какую ловушку?" , Time=0)
+[84H_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="ПЕДРО: Не видите, да?" , Time=0)
+Subtitles[1]=(Text="ПЕДРО: Вот поэтому надо постоянно проверять GPS." , Time=1.65)
+[84I_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: GPS? Я думал, он только направление показывает." , Time=0)
+[84J_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Наш GPS много чего умеет. Он показывает цели для снайпинга, задачи миссии и куда идти. Теперь проверьте GPS и уничтожьте ловушку. Любой объект, отмеченный на GPS, можно снять парным снайпингом." , Time=0)
+[84K_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Парным снайпингом?" , Time=0)
+[84L_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ага. Это когда вы оба стреляете одновременно." , Time=0)
+[84M_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ладно. Молодцы - но спорим, вы не готовы к тому, что я приготовил дальше." , Time=0)
+[84N_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ха-ха! Риос, похоже, твоего напарника задело взрывом. Быстро оттащи его в безопасное место, где сможешь оказать первую помощь." , Time=0)
+[84O_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ха-ха! Сейлем, похоже, твоему напарнику худо. Быстро оттащи его в безопасное место, где сможешь оказать первую помощь." , Time=0)
+[84P_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Эй, Риос - знаю, ты ранен, но если не будешь защищаться, тебе конец. Продолжай стрелять, пока тебя тащат." , Time=0)
+[84Q_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Эй, Сейлем - знаю, ты ранен, братан, но если не будешь защищаться, тебе конец. Продолжай стрелять, пока тебя тащат." , Time=0)
+[84R_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ПЕДРО: Так, Риос, теперь окажи Сейлему первую помощь." , Time=0)
+[84S_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ПЕДРО: Так, Сейлем, теперь окажи Риосу первую помощь." , Time=0)
+[84T_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давай, Риос - ты его теряешь! Блять. Теперь придется делать реанимацию, чтобы вернуть его к жизни!" , Time=0)
+[84U_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Давай, Сейлем - ты его теряешь! Блять. Теперь придется делать реанимацию, чтобы вернуть его к жизни!" , Time=0)
+[84V_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Молодец, Сейлем - ты спас напарнику жизнь. Так, Риос - то, что тебя вырубило, называется мина с датчиком приближения. Рядом есть еще одна. Лучше расстреляй ее, если не хочешь снова подорваться." , Time=0)
+[84W_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Молодец, Риос - ты спас напарнику жизнь. Так, Сейлем - то, что тебя вырубило, называется мина с датчиком приближения. Рядом есть еще одна. Лучше расстреляй ее, если не хочешь снова подорваться." , Time=0)
+[85_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот это круто. Классный трюк, приятель." , Time=0)
+[85_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Итак, раз вы освоили главную наступательную тактику, теперь потренируем оборону. Видите круг на земле?" , Time=0)
+[86_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="КЛАЙД: И я тебе не приятель, братан, так что давай без этих ласковых прозвищ, лады?" , Time=0)
+[86_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага, и что с ним?" , Time=0)
+[87_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, Клайд - откуда у тебя вся новейшая броня и оружие?" , Time=0)
+[87_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Ну, рядовой первого класса Сейлем, раз уж ты спросил - вам нужно удерживать зону одну минуту. И при этом защищать друг друга. УКРЫТИЙ НЕТ, так что думайте об обороне. Ясно?" , Time=0)
+[88_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Я зарабатываю дохуя денег, и если мне что-то нужно, я это покупаю." , Time=0)
+[88_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага. Вроде да." , Time=0)
+[89_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Так хорошо платят - частному военному подрядчику?" , Time=0)
+[89_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Хорошо. Если в круг прорвутся больше пяти врагов, начинаем сначала - и так снова и снова, пока не сделаете как надо. Но у меня нет целого дня, так что постарайтесь не облажаться, ладно? Прием." , Time=0)
+[9_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="ЭЙЗЕНХАУЭР: Риос, Сейлем - слышал, вы едете в самую жопу." , Time=0)
+[90_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Подрядчик? Зови меня наемником. Я буду работать на кого угодно за хорошую цену." , Time=0)
+[90_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Держитесь вместе - когда вы порознь, напарника толком не защитить. Прием." , Time=0)
+[91_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="РИОС: Вот как, значит? Все продается тому, кто больше заплатит?" , Time=0)
+[91_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Держитесь вместе, рейнджеры! Защищайте круг и друг друга! Прием." , Time=0)
+[92_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="КЛАЙД: Знаешь, как говорят. Деньги решают все." , Time=0)
+[92_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Держите круг! Не расходитесь!" , Time=0)
+[93_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Где Клайд?" , Time=0)
+[93_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Один враг прорвал оборону - чтоб больше такого не было. Прием." , Time=0)
+[94_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мне-то откуда знать, черт возьми?" , Time=0)
+[94_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Второй враг прошел через оборону. Соберитесь, братва!" , Time=0)
+[95_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Этот тип меня пугает. Не люблю не знать, где он." , Time=0)
+[95_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Уже трое врагов прошли мимо вас. Защищайте круг! Прием." , Time=0)
+[96_SOM_MO_ALIM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="МО'АЛИМ: [Смеется] Ну, посмотрите, кто тут - Джонни-американец." , Time=0)
+Subtitles[1]=(Text="МО'АЛИМ: Вы думаете, что весь мир ваш -" , Time=6)
+Subtitles[2]=(Text="МО'АЛИМ: что можете идти куда хотите и брать что хотите." , Time=8.2)
+Subtitles[3]=(Text="МО'АЛИМ: Но это не ваша страна. Это наша страна." , Time=12.37)
+Subtitles[4]=(Text="МО'АЛИМ: А вот так мы здороваемся в нашей стране!" , Time=15.78)
+[96_SOM_MO_ALLIM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="МО'АЛИМ: [Смеется] Ну, посмотрите, кто тут - Джонни-американец." , Time=0)
+Subtitles[1]=(Text="МО'АЛИМ: Вы думаете, что весь мир ваш -" , Time=6)
+Subtitles[2]=(Text="МО'АЛИМ: что можете идти куда хотите и брать что хотите." , Time=8.2)
+Subtitles[3]=(Text="МО'АЛИМ: Но это не ваша страна. Это наша страна." , Time=12.37)
+Subtitles[4]=(Text="МО'АЛИМ: А вот так мы здороваемся в нашей стране!" , Time=15.78)
+[96_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Четверо врагов прорвали периметр. Еще один - и игра окончена." , Time=0)
+[97_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну и фрукт этот тип." , Time=0)
+[97_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Блять! Вы пропустили пятерых. Значит, начинаем сначала. В этот раз не облажайтесь! Держитесь рядом и защищайте круг! Прием." , Time=0)
+[98_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="РИОС: Они всегда такие." , Time=0)
+[98_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос - защищай напарника!" , Time=0)
+[99_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="СЕЙЛЕМ: Где, черт возьми, Клайд? Я думал, ему платят, чтобы он убрал этого типа." , Time=0)
+[99_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="ПЕДРО: Риос - не подпускай врагов к Сейлему. Прием." , Time=0)

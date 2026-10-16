@@ -1,0 +1,42 @@
+// mouse_aim.h - Native mouse aiming (see mouse_aim.cpp).
+#pragma once
+
+#include <cstdint>
+
+namespace rex::ui
+{
+  class Window;
+}
+
+namespace ao2::mouse
+{
+  // Starts taking mouse movement from the window (UI thread).
+  void Attach(rex::ui::Window *window);
+
+  // Adds movement in mouse counts as if the mouse moved (scripted input).
+  void InjectDelta(float dx, float dy);
+
+  // Local camera prediction: the mouse turn of `controller` (rotation units)
+  // that the drawn view should add because the simulation has not applied
+  // it yet. `step` / `alpha` / `interpolated`: the drawn view's step and how
+  // far it is placed past the previous one (interp_camera.cpp). False when
+  // there is nothing to add (also during cutscenes).
+  bool PredictedTurn(const uint8_t *base, uint32_t controller, uint32_t step, double alpha, bool interpolated,
+                     float &pitch, float &yaw);
+
+  // Online co-op: this machine's player (0 while not known), and a turn of
+  // its view towards a point `yaw` / `pitch` rotation units away, at most
+  // `max_step` per call - sent through the lockstep input like the mouse, so
+  // both machines apply it. Turns already on their way count as done. Game
+  // thread (the autopilot's aimbot).
+  uint32_t LockstepController();
+  void TurnTowards(float yaw, float pitch, float max_step);
+
+  // This machine's player is driving a vehicle (at the wheel of the
+  // hovercraft - not on a turret, not a vehicle's gunner). Any thread.
+  bool Driving();
+
+  // Right stick from the mouse while native aiming is idle (vehicles, menus).
+  // False when there is nothing to add.
+  bool TakeStickFallback(int32_t &rx, int32_t &ry);
+} // namespace ao2::mouse

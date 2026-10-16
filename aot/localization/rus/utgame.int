@@ -1,0 +1,576 @@
+[UTGameObjective]
+LocationPrefix=Около
+ObjectiveName=Цель
+[UTOnslaughtObjective]
+ObjectiveStringSuffix=" энергоядро"
+[UTOnslaughtPowernode]
+NeutralString="Нейтральный энергоузел"
+ConstructingString=" строит энергоузел"
+ObjectiveStringSuffix=" энергоузел"
+[UTOnslaughtBunker]
+NeutralString="Нейтральный канал"
+ObjectiveStringSuffix=" канал"
+[UTPlayerController]
+MsgPlayerNotFound="Игрок не найден!"
+[UTSquadAI]
+SupportString=поддерживает
+DefendString=обороняет
+AttackString=атакует
+HoldString=удерживает
+FreelanceString=Зачистка
+[UTVehicle]
+VehiclePositionString="в машине"
+VehicleNameString=Машина
+[UTVehicle_Raptor]
+VehiclePositionString="в Raptor"
+VehicleNameString=Raptor
+[UTVehicle_Cicada]
+VehiclePositionString="в Cicada"
+VehicleNameString=Cicada
+[UTVehicle_Goliath]
+VehiclePositionString="в Goliath"
+VehicleNameString=Goliath
+[UTVehicle_Paladin]
+VehiclePositionString="в Paladin"
+VehicleNameString="Paladin"
+[UTTeamGame]
+Description="Две команды бьются за превосходство на поле боя.  Побеждает команда с наибольшим числом фрагов."
+GameName="Командный бой насмерть"
+[UTDeathmatch]
+Description="Каждый сам за себя: убей или будь убит.  Побеждает игрок с наибольшим числом фрагов."
+GameName="Бой насмерть"
+[UTWeap_Translocator]
+ItemName=Транслокатор
+PickupMessage="Вы подобрали транслокатор"
+[UTTeamInfo]
+TeamColorNames[0]=Красные
+TeamColorNames[1]=Синие
+TeamColorNames[2]=Зеленые
+TeamColorNames[3]=Золотые
+[UTWeap_SniperRifle]
+ItemName="Снайперская винтовка"
+PickupMessage="Вы подобрали снайперскую винтовку"
+[UTOnslaughtGame]
+Description="Ваша команда должна захватывать энергоузлы по цепочке, чтобы проложить прямую линию к вражескому энергоядру. Установив связь со следующим энергоузлом, вы можете уничтожить его, если он принадлежит врагу. Чтобы захватить энергоузел для своей команды, коснитесь его и начните строительство (альтернативный огонь линк-гана ускоряет процесс). Когда у вашей команды будет связь с вражеским энергоядром, атакуйте и уничтожьте его."
+GameName=Натиск
+[UTSpecialObjective]
+DestructionMessage="Цель выведена из строя!"
+[UTSimpleConsole]
+LevelActionMessages="("","Загрузка...","Сохранение...","Подключение к...","!! Предзагрузка !!")"
+[UTCTFGame]
+Description="Ваша команда должна захватывать флаги: заберите вражеский флаг с базы противника и доставьте его к своему флагу.  Если носителя флага убьют, флаг упадет на землю, и подобрать его сможет любой.  Если ваш флаг украден, его нужно вернуть (коснувшись его после того, как его уронят), прежде чем ваша команда сможет захватить флаг."
+GameName="Захват флага"
+[UTLockWarningMessage]
+MissileLockOnString="Ракета навелась!"
+AvrilLockOnString="Летит AVRiL!"
+SPMAAcquiredString="SPMA захвачена"
+RadarLockString="Захват вражеским радаром!"
+[UTOnslaughtMessage]
+RedTeamDominatesString="Красные одержали победу!"
+BlueTeamDominatesString="Синие одержали победу!"
+RedTeamPowerCoreString="Красные построили энергоузел!"
+BlueTeamPowerCoreString="Синие построили энергоузел!"
+VehicleLockedString="Машина заблокирована!"
+InvincibleCoreString="Нельзя повредить несвязанный энергоузел!"
+UnattainableNodeString="Нельзя захватить несвязанный энергоузел!"
+RedPowerCoreAttackedString="Энергоядро красных атаковано!"
+BluePowerCoreAttackedString="Энергоядро синих атаковано!"
+RedPowerNodeAttackedString="Энергоузел красных атакован!"
+BluePowerNodeAttackedString="Энергоузел синих атакован!"
+InWayOfVehicleSpawnString="Вы мешаете появлению машины!"
+UnpoweredString="Турель обесточена!"
+RedPowerCoreDestroyedString="Энергоядро красных уничтожено"
+BluePowerCoreDestroyedString="Энергоядро синих уничтожено"
+RedPowerNodeDestroyedString="Энергоузел красных уничтожен"
+BluePowerNodeDestroyedString="Энергоузел синих уничтожен"
+RedPowerCoreCriticalString="Энергоядро красных в критическом состоянии!"
+BluePowerCoreCriticalString="Энергоядро синих в критическом состоянии!"
+PressUseToTeleportString="Нажмите «Использовать», чтобы телепортироваться к другому узлу"
+RedPowerCoreVulnerableString="Энергоядро красных уязвимо!"
+BluePowerCoreVulnerableString="Энергоядро синих уязвимо!"
+RedPowerNodeUnderConstructionString="Энергоузел красных строится!"
+BluePowerNodeUnderConstructionString="Энергоузел синих строится!"
+RedPowerCoreDamagedString="Энергоядро красных на 50%!"
+BluePowerCoreDamagedString="Энергоядро синих на 50%!"
+RedPowerNodeSeveredString="Энергоузел красных отрезан!"
+BluePowerNodeSeveredString="Энергоузел синих отрезан!"
+PowerCoresAreDrainingString="Энергоядра истощаются!"
+UnhealablePowerCoreString="Нельзя чинить свое энергоядро!"
+CameraDeploy="Нажмите альт. огонь, чтобы выпустить камеру!"
+RedConduitConstructedString="Красные построили канал!"
+BlueConduitConstructedString="Синие построили канал!"
+RedConduitDestroyedString="Канал красных уничтожен"
+BlueConduitDestroyedString="Канал синих уничтожен"
+[UTDeathMessage]
+KilledString="убит игроком"
+SomeoneString=кто-то
+[UTWeap_LinkGun]
+ItemName="Линк-ган"
+PickupMessage="Вы подобрали линк-ган"
+[UTWeaponLocker]
+LockerString="Оружейный шкаф"
+[UTCTFMessage]
+ReturnBlue="возвращает синий флаг!"
+ReturnRed="возвращает красный флаг!"
+ReturnedBlue="Синий флаг возвращен!"
+ReturnedRed="Красный флаг возвращен!"
+CaptureBlue="захватывает синий флаг!"
+CaptureRed="захватывает красный флаг!"
+DroppedBlue="роняет синий флаг!"
+DroppedRed="роняет красный флаг!"
+HasBlue="забирает синий флаг!"
+HasRed="забирает красный флаг!"
+UseToPickup="Нажмите «Использовать», чтобы подобрать флаг."
+[UTOnslaughtOrbMessage]
+ReturnBlue="уничтожает синюю сферу!"
+ReturnRed="уничтожает красную сферу!"
+ReturnedBlue="Синий флаг уничтожен!"
+ReturnedRed="Красный флаг уничтожен!"
+CaptureBlue="доставляет синюю сферу!"
+CaptureRed="доставляет красную сферу!"
+DroppedBlue="роняет синюю сферу!"
+DroppedRed="роняет красную сферу!"
+HasBlue="забирает синюю сферу!"
+HasRed="забирает красную сферу!"
+UseToPickup="Нажмите «Использовать», чтобы подобрать сферу."
+[UTWeap_RocketLauncher]
+ItemName="Ракетомет"
+PickupMessage="Вы подобрали ракетомет"
+[UTAmmoPickupFactory]
+PickupMessage="Вы подобрали патроны."
+[UTWeap_SpiderMineLauncher]
+ItemName="Пускатель мин-пауков"
+PickupMessage="Вы подобрали пускатель мин-пауков"
+[UTWeap_ShockRifle]
+ItemName="Шоковая винтовка"
+PickupMessage="Вы подобрали шоковую винтовку"
+[UTWeap_InstagibRifle]
+ItemName="Инстагиб-винтовка"
+PickupMessage="Вы подобрали супершоковую винтовку"
+[UTWeap_Avril]
+ItemName=A.V.R.I.L.
+PickupMessage="Вы подобрали A.V.R.I.L."
+[UTSurvivalGame]
+Description="Стойте и сражайтесь до последнего.  Сколько волн вы переживете?"
+GameName=Выживание
+[UTVWeap_CicadaMissileLauncher]
+ItemName="Ракетная установка Cicada"
+[UTVWeap_ScorpionTurret]
+ItemName="Турель Scorpion"
+[UTUDamage]
+PickupMessage="ДВОЙНОЙ УРОН!"
+[UTInvulnerability]
+PickupMessage="НЕУЯЗВИМОСТЬ!"
+[UTBerserk]
+PickupMessage="БЕРСЕРК!"
+[UTInvisibility]
+PickupMessage="НЕВИДИМОСТЬ!"
+[UTWeap_ImpactHammer]
+ItemName="Ударный молот"
+PickupMessage="Время молота!"
+[UTWeap_Physicsgun]
+ItemName="Физическая пушка"
+PickupMessage="Вы подобрали физическую пушку"
+[UTWeap_TargetPainter]
+ItemName="Целеуказатель"
+PickupMessage="Вы подобрали целеуказатель"
+[UTWeap_FlakCannon]
+ItemName="Флак-пушка"
+PickupMessage="Вы подобрали флак-пушку"
+[UTStartupMessage]
+Stage[0]="Ожидание других игроков."
+Stage[1]="Ожидание готовности. Вы ГОТОВЫ."
+Stage[2]="Матч вот-вот начнется...3"
+Stage[3]="Матч вот-вот начнется...2"
+Stage[4]="Матч вот-вот начнется...1"
+Stage[5]="Матч начался!"
+Stage[6]="Матч начался!"
+Stage[7]="ДОПОЛНИТЕЛЬНОЕ ВРЕМЯ!"
+NotReady="Вы НЕ ГОТОВЫ. Нажмите «Огонь»!"
+SinglePlayer="Нажмите «ОГОНЬ», чтобы начать!"
+[UTWeap_BioRifle]
+ItemName="Биовинтовка"
+PickupMessage="Вы подобрали биовинтовку"
+[UTArmorPickup_ShieldBelt]
+PickupMessage="Вы подобрали щитовой пояс."
+[UTArmorPickup_Helmet]
+PickupMessage="Вы подобрали шлем."
+[UTArmorPickup_Vest]
+PickupMessage="Вы подобрали бронежилет."
+[UTArmorPickup_thighpads]
+PickupMessage="Вы подобрали набедренники."
+[UTArmorPickupFactory]
+PickupMessage="Вы подобрали броню."
+[UTHealthPickupFactory]
+PickupMessage="Вы подобрали аптечку."
+[UTDmgType_ScorpionSelfDestruct]
+DeathString="%o оказался слишком близко к самоуничтожению Scorpion игрока %k."
+FemaleSuicide="%o поджарилась при самоуничтожении своего Scorpion."
+MaleSuicide="%o поджарился при самоуничтожении своего Scorpion."
+[UTDmgType_RanOver]
+DeathString="%k переехал %o"
+FemaleSuicide="%o переехала сама себя."
+MaleSuicide="%o переехал сам себя."
+[UTDmgType_Pancake]
+DeathString="%o раздавлен игроком %k"
+FemaleSuicide="%o раздавлена."
+MaleSuicide="%o раздавлен."
+[UTKillingSpreeMessage]
+EndSpreeNote=": серию убийств прервал"
+EndSelfSpree="неплохо шел, пока не убил сам себя!"
+EndFemaleSpree="неплохо шла, пока не убила сама себя!"
+SpreeNote[0]="устраивает серию убийств!"
+SpreeNote[1]="буйствует!"
+SpreeNote[2]="доминирует!"
+SpreeNote[3]="неудержим!"
+SpreeNote[4]="богоподобен!"
+SpreeNote[5]="просто ЗВЕРЬ!"
+SelfSpreeNote[0]="Серия убийств!"
+SelfSpreeNote[1]=Буйство!
+SelfSpreeNote[2]=Доминирование!
+SelfSpreeNote[3]=Неудержимый!
+SelfSpreeNote[4]=БОГОПОДОБНЫЙ!
+SelfSpreeNote[5]="ПРОСТО ЗВЕРЬ!"
+[UTWeap_MiniGun]
+ItemName=Миниган
+PickupMessage="Вы подобрали миниган"
+[UTDmgType_Drowned]
+DeathString="%o забыл всплыть за воздухом."
+FemaleSuicide="%o забыла всплыть за воздухом."
+MaleSuicide="%o забыл всплыть за воздухом."
+[UTDmgType_Encroached]
+DeathString="Атомы %o заменены атомами %k."
+FemaleSuicide="%o телепортировалась в твердый предмет."
+MaleSuicide="%o телепортировался в твердый предмет."
+[UTJumpBoots]
+RanOutText="Прыжковые ботинки разрядились."
+PickupMessage="Вы подобрали прыжковые ботинки."
+[UTDmgType_SniperHeadShot]
+DeathString="%k вышиб мозги игроку %o."
+FemaleSuicide="%o упала на свое оружие и выстрелила себе в голову"
+MaleSuicide="%o упал на свое оружие и выстрелил себе в голову."
+[UTKillerMessage]
+YouKilled="Вы убили"
+[UTFirstBloodMessage]
+FirstBloodString="проливает первую кровь!"
+[UTWeap_Enforcer]
+ItemName=Энфорсер
+PickupMessage="Вы подобрали энфорсер"
+[UTDmgType_MinigunPrimary]
+DeathString="%o скошен миниганом игрока %k."
+FemaleSuicide="%o направила миниган на себя."
+MaleSuicide="%o направил миниган на себя."
+[UTVehicleKillMessage]
+KillString[0]="Дорожное убийство!"
+KillString[1]="Сбил и уехал!"
+KillString[2]="Дорожная ярость!"
+KillString[3]="Автоубийство!"
+KillString[4]=Блин!
+KillString[5]="Орлиный глаз!"
+KillString[6]="Лучший пилот!"
+KillString[7]="Легкое ДТП!"
+KillString[8]="Дорожный разгул!"
+[UTVWeap_RaptorGun]
+ItemName="Плазменный бластер Raptor"
+[UTVWeap_GoliathTurret]
+ItemName="Турель Goliath"
+[UTLastSecondMessage]
+LastSecondRed="Красные спасли в последнюю секунду!"
+LastSecondBlue="Синие спасли в последнюю секунду!"
+[UTDmgType_FlakShard]
+DeathString="%o разорван флак-пушкой игрока %k."
+MaleSuicide="%o изрешетил себя своим же флаком."
+FemaleSuicide="%o изрешетила себя своим же флаком."
+[UTDmgType_ShockCombo]
+DeathString="%o не увернулся от шокового комбо игрока %k."
+FemaleSuicide="%o допустила тактическую ошибку со своим шоковым комбо."
+MaleSuicide="%o допустил тактическую ошибку со своим шоковым комбо."
+[UTWeaponRewardMessage]
+RewardString[0]="В голову!"
+RewardString[1]="Флак-мартышка!"
+RewardString[2]="Охотник за головами!"
+RewardString[3]="Шлюха комбо!"
+[UTDmgType_Rocket]
+DeathString="%o улетел в небытие на ракете игрока %k."
+FemaleSuicide="%o выпустила ракету раньше времени."
+MaleSuicide="%o выпустил ракету раньше времени."
+[UTDmgType_ScorpionBolo]
+DeathString="%o получил добавку плазмы от игрока %k."
+FemaleSuicide="%o поджарилась своим же плазменным зарядом."
+MaleSuicide="%o поджарился своим же плазменным зарядом."
+[UTMultiKillMessage]
+KillString[0]="Двойное убийство!"
+KillString[1]="Мультиубийство!"
+KillString[2]="Мегаубийство!!"
+KillString[3]="УЛЬТРАУБИЙСТВО!!"
+KillString[4]="М О Н С Т Р - У Б И Й С Т В О !!!"
+KillString[5]="Б Е З У М И Е !!!"
+KillString[6]="Ч Е Р Т   П О Б Е Р И !"
+[UTVictimMessage]
+YouWereKilledBy="Вас убил"
+KilledByTrailer=!
+[UTDmgType_MantaBolt]
+DeathString="Manta игрока %k выпотрошила %o горячей плазмой."
+FemaleSuicide="%o выстрелила раньше времени."
+MaleSuicide="%o выстрелил раньше времени."
+[UTVWeap_GoliathMachineGun]
+ItemName="Мини-турель Goliath"
+[UTSuperHealthPickup]
+PickupMessage="Вы подобрали большой бочонок здоровья."
+[UTDmgType_ScorpionBlade]
+DeathString="%o срезан клинком игрока %k."
+FemaleSuicide="%o срезана."
+MaleSuicide="%o срезан."
+[UTHealthVialPickup]
+PickupMessage="Вы подобрали флакон здоровья"
+[UTSmallArmorPickup]
+PickupMessage="Вы подобрали малую броню."
+[UTLargeArmorPickup]
+PickupMessage="Вы подобрали суперброню."
+[UTAmmo_SniperRifle]
+PickupMessage="Вы подобрали снайперские патроны."
+[UTAmmo_ShockRifle]
+PickupMessage="Вы подобрали шоковое ядро."
+[UTAmmo_RocketLauncher]
+PickupMessage="Вы подобрали кассету ракет."
+[UTAmmo_MiniGun]
+PickupMessage="Вы подобрали 50 патронов."
+[UTAmmo_LinkGun]
+PickupMessage="Вы подобрали заряды линк-гана."
+[UTWeap_Redeemer]
+ItemName=Редимер
+PickupMessage="Вы подобрали редимер"
+[UTAmmo_FlakCannon]
+PickupMessage="Вы подобрали 10 флак-снарядов."
+[UTDmgType_Instagib]
+DeathString="%o инстагибнут (tm) шоковым лучом игрока %k."
+FemaleSuicide="%o как-то умудрилась застрелиться из шоковой винтовки."
+MaleSuicide="%o как-то умудрился застрелиться из шоковой винтовки."
+[UTAmmo_Enforcer]
+PickupMessage="Вы подобрали обоймы для энфорсера"
+[UTAmmo_BioRifle]
+PickupMessage="Вы подобрали заряды для биовинтовки"
+[UTDmgType_RaptorBolt]
+DeathString="Raptor игрока %k накачал %o плазмой."
+FemaleSuicide="%o поджарилась своим же плазменным зарядом."
+MaleSuicide="%o поджарился своим же плазменным зарядом."
+[UTDmgType_RaptorRocket]
+DeathString="%o не увернулся от ракеты «воздух-воздух» игрока %k."
+FemaleSuicide="%o сбила сама себя."
+MaleSuicide="%o сбил сам себя."
+[UTDmgType_TankShell]
+DeathString="Танковый снаряд игрока %k разнес %o на горящие куски."
+FemaleSuicide="%o выпустила ракету раньше времени."
+MaleSuicide="%o выпустил ракету раньше времени."
+[UTDmgType_NecrisTankShell]
+DeathString="%o испепелен танковым снарядом игрока %k."
+FemaleSuicide="%o испепелила сама себя."
+MaleSuicide="%o испепелил сам себя."
+[UTCTFBlueFlagBase]
+ObjectiveName="Синий флаг"
+[UTCTFRedFlagBase]
+ObjectiveName="Красный флаг"
+[UTVWeap_MantaGun]
+ItemName="Плазменный бластер Manta"
+[UTVWeap_ViperGun]
+ItemName="Плазменный бластер Viper"
+[UTDmgType_ImpactHammer]
+DeathString="%o расплющен молотом игрока %k."
+FemaleSuicide="%o расплющила сама себя."
+MaleSuicide="%o расплющил сам себя."
+[UTDmgType_Enforcer]
+DeathString="%k изрешетил %o из энфорсера."
+FemaleSuicide="%o совершила невозможное."
+MaleSuicide="%o совершил невозможное."
+[UTDmgType_SniperPrimary]
+DeathString="%o снят игроком %k."
+FemaleSuicide="%o упала на свое оружие и выстрелила себе в грудь"
+MaleSuicide="%o упал на свое оружие и выстрелил себе в грудь."
+[UTDmgType_LinkBeam]
+DeathString="%o изрезан зеленым лучом игрока %k."
+FemaleSuicide="%o подстрелила сама себя."
+MaleSuicide="%o подстрелил сам себя."
+[UTCTFHUDMessage]
+YouHaveFlagString="Флаг у вас, возвращайтесь на базу!"
+EnemyHasFlagString="Враг забрал ваш флаг, верните его!"
+[UTOnslaughtHUDMessage]
+OnslaughtHUDString[0]="Энергосфера у вас!"
+OnslaughtHUDString[1]="Сфера у вас, несите ее к каналу!"
+OnslaughtHUDString[2]="Вражеский носитель сферы у канала!"
+[UTDmgType_GoliathMachineGun]
+DeathString="%o скошен пулеметной турелью игрока %k."
+FemaleSuicide="%o направила миниган на себя."
+MaleSuicide="%o направил миниган на себя."
+[UTDmgType_MinigunSecondary]
+DeathString="%o выпотрошен миниганом игрока %k."
+FemaleSuicide="%o направила миниган на себя."
+MaleSuicide="%o направил миниган на себя."
+[UTDmgType_ShockPrimary]
+DeathString="%o смертельно просвещен шоковым лучом игрока %k."
+FemaleSuicide="%o как-то умудрилась застрелиться из шоковой винтовки."
+MaleSuicide="%o как-то умудрился застрелиться из шоковой винтовки."
+[UTDmgType_Telefrag]
+DeathString="Атомы %o заменены атомами %k."
+FemaleSuicide="%o сбила свой транслокатор."
+MaleSuicide="%o сбил свой транслокатор."
+[UTDmgType_FailedTranslocation]
+DeathString="Транслокацию %o сорвал %k."
+FemaleSuicide="%o сбила свой транслокатор."
+MaleSuicide="%o сбил свой транслокатор."
+[UTDmgType_StickyGrenade]
+DeathString="%o поиграл с веселым мячиком игрока %k..."
+FemaleSuicide="Глупышка %o, гранаты - для врагов..."
+MaleSuicide="Глупыш %o, гранаты - для врагов..."
+[UTDmgType_SpiderMine]
+DeathString="%o вторгся на территорию игрока %k"
+FemaleSuicide="%o испытала свою же мину... сработало!"
+MaleSuicide="%o испытал свою же мину... сработало!"
+[UTDmgType_ShockBall]
+DeathString="%o уничтожен шоковым ядром игрока %k."
+FemaleSuicide="%o прикончила себя шоковым ядром."
+MaleSuicide="%o прикончил себя шоковым ядром."
+[UTDmgType_Redeemer]
+DeathString="%o РАСПЫЛЕН игроком %k!"
+FemaleSuicide="%o РАСПЫЛЕНА!"
+MaleSuicide="%o РАСПЫЛЕН!"
+[UTDmgType_LinkPlasma]
+DeathString="%o получил добавку плазмы от игрока %k."
+FemaleSuicide="%o поджарилась своим же плазменным зарядом."
+MaleSuicide="%o поджарился своим же плазменным зарядом."
+[UTDmgType_FlakShell]
+DeathString="%o разорван в клочья шрапнелью игрока %k."
+FemaleSuicide="%o подорвала себя флак-снарядом."
+MaleSuicide="%o подорвал себя флак-снарядом."
+[UTDmgType_CicadaRocket]
+DeathString="%k разнес %o на куски."
+FemaleSuicide="%o знатно себя подорвала."
+MaleSuicide="%o знатно себя подорвал."
+[UTDmgType_BioGoo]
+DeathString="%o облеплен биослизью игрока %k."
+FemaleSuicide="%o задохнулась в своей же слизи."
+MaleSuicide="%o задохнулся в своей же слизи."
+[UTDmgType_AvrilRocket]
+DeathString="%k снес %o из AVRiL."
+FemaleSuicide="%o направила оружие не в ту сторону."
+MaleSuicide="%o направил оружие не в ту сторону."
+[UTVehicleCTFGame]
+Description="Классический захват флага, только с техникой! Нести флаг может только наземная техника."
+GameName="Захват флага на технике"
+[UTDmgType_CicadaLaser]
+DeathString="Бластер игрока %k ужалил %o."
+FemaleSuicide="%o применила бластер на себе."
+MaleSuicide="%o применил бластер на себе."
+[UTWeap_TarydiumRifle]
+ItemName="Стингер"
+PickupMessage="Вы подобрали миниган «Стингер»."
+[UTDmgType_TarydiumShard]
+DeathString="%o проткнут осколком игрока %k."
+MaleSuicide="%o проткнул сам себя."
+FemaleSuicide="%o проткнула сама себя."
+[UTDmgType_HellBenderPrimary]
+DeathString="%o дезинтегрирован лучом игрока %k."
+MaleSuicide="%o дезинтегрировал сам себя."
+FemaleSuicide="%o дезинтегрировала сама себя."
+[UTDmgType_TurretPrimary]
+DeathString="%o разорван в клочья лучом игрока %k."
+MaleSuicide="%o подорвал сам себя."
+FemaleSuicide="%o подорвала сама себя."
+[UTDmgType_PaladinProximityExplosion]
+DeathString="%o подобрался слишком близко к Paladin игрока %k."
+[UTDmgType_PaladinEnergyBolt]
+DeathString="%o не увернулся от выстрела Paladin игрока %k."
+[UTGameViewportClient]
+LevelActionMessages[0]=""
+LevelActionMessages[1]="Пауза..."
+LevelActionMessages[2]="Загрузка..."
+LevelActionMessages[3]="Сохранение..."
+LevelActionMessages[4]="Подключение к..."
+LevelActionMessages[5]="!! Предзагрузка !!"
+[UTSPMAMessage]
+MessageText="!! Нельзя развернуть на ходу !!"
+[UTDmgType_SPMACameraCrush]
+DeathString="%o раздавлен камерой игрока %k, упавшей с неба!"
+MaleSuicide="Небо падает... на ТЕБЯ!"
+FemaleSuicide="Небо падает... на ТЕБЯ!"
+[UTDmgType_SPMAShell]
+DeathString="%o раздавлен прямым попаданием SPMA игрока %k!"
+MaleSuicide="%o убил себя из SPMA!"
+FemaleSuicide="%o убила себя из SPMA!"
+[UTDmgType_SPMASmallShell]
+DeathString="%k испортил %o весь праздник."
+MaleSuicide="%o погиб от артиллерийского удара."
+FemaleSuicide="%o погибла от артиллерийского удара."
+[UTAirVehicle]
+RadarLock="Захват радаром!"
+[UTDeployableSensor]
+ItemName="Переносной датчик"
+PickupMessage="Вы подобрали переносной датчик"
+[UTDeployableSpiderMineTrap]
+ItemName="Переносная ловушка с минами-пауками"
+PickupMessage="Вы подобрали переносную ловушку с минами-пауками"
+[UTDeployableSlowVolume]
+ItemName="Переносное поле замедления"
+PickupMessage="Вы подобрали переносное поле замедления"
+[UTDmgType_VehicleCollision]
+DeathString="%o попал в аварию."
+MaleSuicide="%o попал в аварию."
+FemaleSuicide="%o попала в аварию."
+[UTDmgType_LeviathanBeam]
+DeathString="%o разнес себя на куски."
+MaleSuicide="%k разнес %o на куски."
+FemaleSuicide="%k разнес %o на куски."
+[UTDmgType_LeviathanShockBall]
+DeathString="%o получил слишком сильный разряд."
+MaleSuicide="%k поджарил током %o."
+FemaleSuicide="%k поджарил током %o."
+[UTDmgType_LeviathanShard]
+DeathString="%o погиб."
+MaleSuicide="%k пронзил %o."
+FemaleSuicide="%k пронзил %o."
+[UTDmgType_LeviathanRocket]
+DeathString="%k обрушил огонь на %o."
+MaleSuicide="%o взорвался."
+FemaleSuicide="%o взорвалась."
+[UTDmgType_ScorpionFire]
+DeathString="%k сжег %o."
+MaleSuicide="%k не выдержал жара."
+FemaleSuicide="%k не выдержала жара."
+[UTDmgType_VehicleExplosion]
+DeathString="%k уничтожил %o взрывом машины."
+MaleSuicide="%o стоял слишком близко к машине, которую взорвал."
+FemaleSuicide="%o стояла слишком близко к машине, которую взорвала."
+[UTDmgType_WidowMakerEnergyShell]
+DeathString="%o разнесен вдребезги из WidowMaker игрока %k."
+MaleSuicide="%o разнес себя вдребезги из WidowMaker."
+FemaleSuicide="%o разнесла себя вдребезги из WidowMaker."
+[UTTeamGameMessage]
+RequestTeamSwapPrefix=""
+RequestTeamSwapPostfix="просит поменяться командами."
+[UTDmgType_DarkWalkerTurretBeam]
+DeathString="%o дезинтегрирован лучом игрока %k."
+MaleSuicide="%o дезинтегрировал сам себя."
+FemaleSuicide="%o дезинтегрировала сама себя."
+[UTDmgType_DarkWalkerTurretBeamFinal]
+DeathString="%o дезинтегрирован лучом игрока %k."
+MaleSuicide="%o дезинтегрировал сам себя."
+FemaleSuicide="%o дезинтегрировала сама себя."
+[UTDmgType_DarkWalkerBolt]
+DeathString="Dark Walker игрока %k выпотрошил %o горячей плазмой."
+FemaleSuicide="%o выстрелила раньше времени."
+MaleSuicide="%o выстрелил раньше времени."
+[UTDmgType_LeviathanBolt]
+DeathString="Leviathan игрока %k накачал %o плазмой."
+FemaleSuicide="%o поджарилась своим же плазменным зарядом."
+MaleSuicide="%o поджарился своим же плазменным зарядом."
+[UTDmgType_VehicleShockBall]
+DeathString="%o налетел на небесную мину игрока %k."
+MaleSuicide="%o налетел на свою же небесную мину."
+FemaleSuicide="%o налетела на свою же небесную мину."
+[UTDmgType_VehicleShockChain]
+DeathString="%o не ушел от потрясающей мощи комбо небесных мин игрока %k."
+MaleSuicide="%o поторопился с подрывом своих небесных мин."
+FemaleSuicide="%o поторопилась с подрывом своих небесных мин."
+[UTDmgType_VehicleShockBeam]
+DeathString="Лазер игрока %k поразил %o."
+MaleSuicide="%o применил лазер на себе."
+FemaleSuicide="%o применила лазер на себе."

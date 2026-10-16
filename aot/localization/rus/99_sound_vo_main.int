@@ -1,0 +1,1797 @@
+;; Exported by dgikunda at 11:02 AM on 9/11/2007
+;; script from CL # 99_sound_vo_main
+[Murray_average_day_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вот так мы это делаем, парни!" , Time=0)
+[Murray_better_2_do_8 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Если, конечно, у вас нет дел поважнее." , Time=0)
+[Murray_cmnt_back_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, я вернулся." , Time=0)
+[Murray_cmnt_back_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я вернулся. Скучали?" , Time=0)
+[Murray_cmnt_back_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, на чем мы остановились?" , Time=0)
+[Murray_cmnt_close_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Это будет несложно." , Time=0)
+[Murray_cmnt_close_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Удачи, парни." , Time=0)
+[Murray_cmnt_close_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы справитесь." , Time=0)
+[Murray_cmnt_close_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Идите и надерите им задницы!" , Time=0)
+[Murray_cmnt_close_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Без проблем, да, парни?" , Time=0)
+[Murray_cmnt_close_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Проще простого, да?" , Time=0)
+[Murray_cmnt_good_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Хорошая работа, парни." , Time=0)
+[Murray_cmnt_good_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Хорошая работа!" , Time=0)
+[Murray_cmnt_good_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отлично!" , Time=0)
+[Murray_cmnt_gps_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Проверьте GPS." , Time=0)
+[Murray_cmnt_gps_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я обновил ваш GPS." , Time=0)
+[Murray_cmnt_gps_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Посмотрите на GPS." , Time=0)
+[Murray_cmnt_gps_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Гляньте в GPS." , Time=0)
+[Murray_cmnt_gps_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я отметил его на вашем GPS." , Time=0)
+[Murray_cmnt_gps_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я отметил это на вашем GPS." , Time=0)
+[Murray_cmnt_gps_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я обновил данные на вашем GPS." , Time=0)
+[Murray_cmnt_heli_bring_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Доставьте заложника к вертолету!" , Time=0)
+[Murray_cmnt_heli_bring_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Тащите его к вертушке." , Time=0)
+[Murray_cmnt_heli_go_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Быстрее! К вертолету!" , Time=0)
+[Murray_cmnt_heli_go_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Скорее! К вертушке." , Time=0)
+[Murray_cmnt_hurry_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Давайте, шевелитесь!" , Time=0)
+[Murray_cmnt_hurry_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Сегодня, парни, сегодня." , Time=0)
+[Murray_cmnt_hurry_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Если бы я вас не знал, сказал бы, что вы не торопитесь." , Time=0)
+[Murray_cmnt_hurry_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы это сегодня сделаете или как?" , Time=0)
+[Murray_cmnt_hurry_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ну коне-е-ечно, не спешите." , Time=0)
+[Murray_cmnt_hurry_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Нельзя терять время. Пошевеливайтесь." , Time=0)
+[Murray_cmnt_hurry_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У нас нет на это целого дня. Двигайтесь!" , Time=0)
+[Murray_cmnt_next_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Следующее задание." , Time=0)
+[Murray_cmnt_next_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Готовы?" , Time=0)
+[Murray_cmnt_next_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У меня для вас кое-что есть." , Time=0)
+[Murray_cmnt_next_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, парни, слушайте." , Time=0)
+[Murray_cmnt_next_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Внимание, парни." , Time=0)
+[Murray_cmnt_next_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, что у нас дальше по меню." , Time=0)
+[Murray_cmnt_open_jobs_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Надеюсь, вы с этим справитесь." , Time=0)
+[Murray_cmnt_open_jobs_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, тут будут проблемы. Берегите себя." , Time=0)
+[Murray_cmnt_open_jobs_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отличное место для отпуска, а? Жаль, у нас работа." , Time=0)
+[Murray_cmnt_open_jobs_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Здесь просто золотая жила, куча целей!" , Time=0)
+[Murray_cmnt_open_jobs_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы двое справитесь." , Time=0)
+[Murray_cmnt_othr_team_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Не понимаю, что происходит. Похоже, компания прислала вторую группу. Сегодня придется попотеть ради денег!" , Time=0)
+[Murray_cmnt_othr_team_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, ебаный Далтон прислал вторую группу! Я же говорила ему, что вы справитесь! Что ж, лучше вам их опередить!" , Time=0)
+[Murray_cmnt_othr_team_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Не могу поверить! Я сказал Далтону, что вы справитесь сами, а он прислал еще одну группу. Не дайте им закончить задание раньше вас!" , Time=0)
+[Murray_cmnt_wait_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, подождите секунду!" , Time=0)
+[Murray_cmnt_wait_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Погодите." , Time=0)
+[Murray_cmnt_wait_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Посмотрим, что дальше." , Time=0)
+[Murray_cmnt_wait_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Держитесь, я найду другую цель." , Time=0)
+[Murray_dont_look_now_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Не оборачивайтесь, но..." , Time=0)
+[Murray_heard_that_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: О, а то!" , Time=0)
+[Murray_info_obj_1cpt2xtrc_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, вы все охотитесь за одной целью. Кто первым доберется до своей точки эвакуации, тот и получит деньги." , Time=0)
+[Murray_info_obj_1cpt2xtrc_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, на эту работу прислали две группы. Доберитесь до точки эвакуации первыми, и деньги ваши." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, похоже, другая группа тоже охотится за этой наградой. Хотите денег - доставьте заложника к своей точке эвакуации." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: За одним заложником прислали две группы. Кто первым доберется до своей точки эвакуации, получит приз." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, парни, другая группа хочет забрать того же заложника. Доберитесь до него первыми и доставьте к точке эвакуации." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Нам только что сообщили, что другая группа идет за тем же заложником. Доберитесь до него первыми и доставьте к своей точке эвакуации." , Time=0)
+[Murray_info_obj_1cpt2xtrc_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: За одним объектом прислали две группы. Кто первым доберется до своей точки эвакуации, получит приз." , Time=0)
+[Murray_info_obj_1cpt2xtrc_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, похоже, другая группа тоже охотится за этой наградой. Хотите денег - доставьте объект к своей точке эвакуации." , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Пора добавить остроты и немного посоревноваться. Кто первым доставит своего заложника к вертушке, получит деньги." , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, парни. Посмотрим, как вы умеете соревноваться. Кто первым доставит заложника, получит деньги. Другие не получат ничего!" , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У вас мало времени. Кто вернет своего заложника, тот и получит деньги, и все." , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Немного меняем правила, парни. Первая группа, вернувшаяся к вертушке, получит деньги. Другой не повезет. Поторопитесь." , Time=0)
+[Murray_info_obj_aiesc_def_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы должны доставить сопровождаемого в точку, отмеченную на GPS. Не дайте никому вас остановить." , Time=0)
+[Murray_info_obj_aiesc_def_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Человек с вами - наш агент, его нужно в целости доставить в точку, отмеченную на GPS. Другие попытаются вам помешать." , Time=0)
+[Murray_info_obj_aiesc_def_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Доставьте своего спутника целым в отмеченную мной точку. Он должен выжить любой ценой." , Time=0)
+[Murray_info_obj_assn_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, проверьте GPS, я нашел для вас еще одну цель." , Time=0)
+[Murray_info_obj_assn_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Рядом с вами военный командир, которого Минобороны хочет убрать. Награда солидная. Я отметил его на GPS. Вы знаете, что делать." , Time=0)
+[Murray_info_obj_assn_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, парни, я отметил для вас еще одну цель. Эта будет несложной. Прикончите его и вернетесь домой немного богаче!" , Time=0)
+[Murray_info_obj_assn_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Посмотрите на GPS, там отмечено, где цель. Это не займет много времени." , Time=0)
+[Murray_info_obj_assn_gen_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я добавил на ваш GPS еще один заработок. Этот тип - настоящий мясник. Похоже, он собирается уходить, так что поторопитесь!" , Time=0)
+[Murray_info_obj_assn_gen_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вам это понравится. За голову этого парня назначена огромная награда, но он смертельно опасен. Как раз такой вызов, какой вы любите!" , Time=0)
+[Murray_info_obj_assn_gen_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вот еще одна цель. Осторожно, этот тип - худший из худших. Мы уже потеряли нескольких контрактников, которые за ним охотились." , Time=0)
+[Murray_info_obj_assn_mult_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У меня для вас серия целей. Первая уже должна быть на GPS. Все стоят одинаково, вам заплатят за каждое убийство." , Time=0)
+[Murray_info_obj_assn_mult_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: На следующем задании вам нужно ликвидировать несколько целей. За каждую вы получите деньги, но другая группа хочет того же, так что успейте первыми! Первая цель на GPS, вперед." , Time=0)
+[Murray_info_obj_assn_mult_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Это задание - ликвидация серии целей, за каждое убийство вам заплатят. Но другая группа охотится за теми же целями, так что будьте первыми." , Time=0)
+[Murray_info_obj_assn_mult_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: На следующей работе нужно ликвидировать серию целей. Каждая стоит денег. Но и для другой группы тоже. Уберите цель раньше них. Цель номер один уже на GPS." , Time=0)
+[Murray_info_obj_assn_next_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вот следующий. Уберите его." , Time=0)
+[Murray_info_obj_assn_next_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, ищите следующую цель на GPS и уберите ее." , Time=0)
+[Murray_info_obj_assn_next_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Найдите следующую цель. Давайте, время уходит." , Time=0)
+[Murray_info_obj_assn_next_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Следующая цель на GPS. Найдите его и уберите." , Time=0)
+[Murray_info_obj_assn_next_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Следующий, кого надо убрать, уже на GPS. Двигайтесь." , Time=0)
+[Murray_info_obj_cmpl_team_fail_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Какого черта вы творите? Вы провалили задание!" , Time=0)
+[Murray_info_obj_cmpl_team_fail_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Да ладно, парни, я ждал от вас большего!" , Time=0)
+[Murray_info_obj_cmpl_team_fail_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы провалили задание! Невероятно." , Time=0)
+[Murray_info_obj_cmpl_team_fail_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Да уж, проебались вы по полной." , Time=0)
+[Murray_info_obj_cmpl_team_fail_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ловко, парни. Ну о-о-очень ловко." , Time=0)
+[Murray_info_obj_cmpl_team_fail_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Это было ужасно." , Time=0)
+[Murray_info_obj_cmpl_team_succ_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отлично, парни! Задание выполнено." , Time=0)
+[Murray_info_obj_cmpl_team_succ_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Хорошая работа, парни, я знал, что вы справитесь!" , Time=0)
+[Murray_info_obj_cmpl_team_succ_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Получилось! Отличная работа, парни." , Time=0)
+[Murray_info_obj_cmpl_team_succ_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Перевожу деньги на ваш счет! Молодцы." , Time=0)
+[Murray_info_obj_cmpl_team_succ_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Молодцы, парни." , Time=0)
+[Murray_info_obj_cmpl_team_succ_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вот как надо, парни!" , Time=0)
+[Murray_info_obj_coll_chem_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Если добудете образец любых химикатов, над которыми работают на этом объекте, вам хорошо заплатят." , Time=0)
+[Murray_info_obj_coll_chem_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, Минобороны нужен образец химикатов, с которыми они работают. Будьте очень осторожны, но если добудете образец, это хорошие деньги!" , Time=0)
+[Murray_info_obj_coll_chem_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Добудьте образец химикатов, которые они производят. Мы за него заплатим, но будьте осторожны!" , Time=0)
+[Murray_info_obj_coll_docs_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Мы ищем кое-какую информацию в этом районе. Если найдете важные на вид документы, заберите их." , Time=0)
+[Murray_info_obj_coll_docs_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни! Поищите документы. Минобороны за них заплатит." , Time=0)
+[Murray_info_obj_coll_docs_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, поищите документы! Заплатим, если принесете полезную информацию." , Time=0)
+[Murray_info_obj_coll_drv_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, увидите флешку - хватайте!" , Time=0)
+[Murray_info_obj_coll_drv_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Там должна быть флешка. Принесите ее, и мы заплатим." , Time=0)
+[Murray_info_obj_coll_lapt_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй. Где-то рядом должен быть ноутбук. Заберите его, информация на нем стоит дорого." , Time=0)
+[Murray_info_obj_coll_lapt_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Любые найденные ноутбуки стоят денег." , Time=0)
+[Murray_info_obj_coll_lapt_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, если найдете один из их ноутбуков, получите от меня большую премию!" , Time=0)
+[Murray_info_obj_coll_maps_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, поищите карты! Заплатим, если принесете!" , Time=0)
+[Murray_info_obj_coll_maps_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Хватайте все карты, что увидите поблизости. Мы хорошо за них заплатим!" , Time=0)
+[Murray_info_obj_coll_maps_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ищите карты местности. Заплатим, если добудете!" , Time=0)
+[Murray_info_obj_coll_plan_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, если подберете планы, за них хорошо заплатят." , Time=0)
+[Murray_info_obj_coll_plan_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Там должны быть планы. Если заберете, получите хорошую премию!" , Time=0)
+[Murray_info_obj_coll_plan_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, любые планы или чертежи, найденные в этом районе, стоят денег." , Time=0)
+[Murray_info_obj_def_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, защищайте этот объект до прибытия эвакуации. Не подпускайте к нему другую группу." , Time=0)
+[Murray_info_obj_def_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вас ждет сладкая премия, если удержите этот объект до прибытия эвакуации. Не подпускайте другую команду ни к себе, ни к ящику." , Time=0)
+[Murray_info_obj_def_obj_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Этот объект должны вывезти отсюда. Просто сберегите его в целости до прилета вертушки. Не подпускайте к нему другую команду." , Time=0)
+[Murray_info_obj_dstr_driver_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель пытается сбежать на машине. Уничтожьте машину - и получите хорошие деньги." , Time=0)
+[Murray_info_obj_dstr_driver_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ваши следующие цели в машине. Уничтожьте машину и прикончите их." , Time=0)
+[Murray_info_obj_dstr_driver_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: На этом задании нужно уничтожить машину, которая здорово всем мешает. Уберите ее - и неплохо заработаете." , Time=0)
+[Murray_info_obj_dstr_driver_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Следующая цель сидит за рулем очень опасной машины. Взорвете ее - получите большую награду." , Time=0)
+[Murray_info_obj_dstr_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, парни. Я отметила цель на GPS. Уничтожьте ее и сматывайтесь оттуда к черту!" , Time=0)
+[Murray_info_obj_dstr_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Знаю, вам никогда не надоедает взрывать всякое за деньги, так что я отметил на GPS еще одну цель. Уничтожьте ее!" , Time=0)
+[Murray_info_obj_dstr_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я отметил цель на вашем GPS. Ее нужно взорвать." , Time=0)
+[Murray_info_obj_dstr_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: От вас требуется только добраться до цели, отмеченной на GPS, и уничтожить ее!" , Time=0)
+[Murray_info_obj_dstr_gen_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Слушайте сюда, дамочки. Я отметил на GPS вашу следующую цель. Найдите и уничтожьте ее!" , Time=0)
+[Murray_info_obj_dstr_heli_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Сюда летит вертолет с целью на устранение. Собьете его - не пожалеете. Возле посадочной площадки есть запас РПГ, можете им воспользоваться." , Time=0)
+[Murray_info_obj_dstr_heli_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Не дайте этому вертолету сесть. Возле посадочной площадки есть РПГ, ими можно его сбить." , Time=0)
+[Murray_info_obj_dstr_heli_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Идите к вертолетной площадке, там есть РПГ. Сбейте из него подлетающую вертушку!" , Time=0)
+[Murray_info_obj_dstr_heli_rem_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Сбейте этот вертолет!" , Time=0)
+[Murray_info_obj_dstr_heli_rem_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Сбейте вертолет из РПГ!" , Time=0)
+[Murray_info_obj_dstr_mult_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У меня для вас серия целей на уничтожение. Первая уже должна быть у вас на GPS. Все они стоят одинаково, и вам заплатят за каждую уничтоженную цель. Учтите, тут будет конкуренция. За этими целями охотится другая команда." , Time=0)
+[Murray_info_obj_dstr_mult_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: На этом задании нужно уничтожить несколько целей. Вам заплатят за каждую. Еще вы будете соревноваться с другой командой, так что пошевеливайтесь." , Time=0)
+[Murray_info_obj_dstr_mult_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Тут несколько целей на уничтожение. За каждую получите деньги. С вами будет соперничать другая команда, так что поторопитесь." , Time=0)
+[Murray_info_obj_dstr_mult_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Мы только что узнали, что другая команда идет за тем же заложником. Доберитесь до него первыми и доставьте к вашей точке эвакуации." , Time=0)
+[Murray_info_obj_dstr_next_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Уничтожьте следующую цель." , Time=0)
+[Murray_info_obj_dstr_next_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Двигайте дальше и бейте следующую цель." , Time=0)
+[Murray_info_obj_dstr_next_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так, парни, переходите к следующей цели." , Time=0)
+[Murray_info_obj_dstr_next_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Двигайтесь к следующей цели на GPS." , Time=0)
+[Murray_info_obj_dstr_next_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Следующая цель - на вашем GPS." , Time=0)
+[Murray_info_obj_dstr_next_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Найдите следующую цель на GPS и вперед!" , Time=0)
+[Murray_info_obj_dstr_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, уничтожьте этот объект, пока его не вывезли отсюда. И не дайте другой команде вам помешать." , Time=0)
+[Murray_info_obj_dstr_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Этот объект нужно уничтожить любой ценой. Транспорт уже в пути. Не дайте его вывезти!" , Time=0)
+[Murray_info_obj_dstr_obj_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Объект на вашем GPS нужно уничтожить до прибытия транспорта. Не доверяйте другой команде, у них могут быть свои планы." , Time=0)
+[Murray_info_obj_esct_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, гляньте на GPS. Я отметил, где заложник. Доставьте его к точке эвакуации." , Time=0)
+[Murray_info_obj_esct_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, я только что отметил на GPS заложника. Этот парень стоит целое состояние. Доставьте его к точке эвакуации." , Time=0)
+[Murray_info_obj_esct_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я добавил вам на GPS еще одного заложника. Вытащите его отсюда - и будете купаться в деньгах!" , Time=0)
+[Murray_info_obj_esct_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отметил на GPS еще одного заложника. Хоть этот тип и не стоит того, чтобы его спасать, за него вам светит хороший бонус." , Time=0)
+[Murray_info_obj_esct_gen_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Когда закончите валять дурака, тут еще кое-кого нужно спасти. Гляньте на GPS." , Time=0)
+[Murray_info_obj_esct_gen_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: На вашем GPS отмечен еще один заложник. Похоже, его хорошо охраняют, но вы справитесь." , Time=0)
+[Murray_info_obj_flee_ai_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель пытается сбежать на вертолете. Не дайте ему добраться до точки эвакуации." , Time=0)
+[Murray_info_obj_flee_ai_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: На следующем задании нужно нейтрализовать цель, пока она не скрылась. Ее местоположение у вас на GPS." , Time=0)
+[Murray_info_obj_flee_ai_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Следующая цель на ходу. Найдите и уберите его, пока он не добрался до вертолетной площадки и не смылся." , Time=0)
+[Murray_info_obj_flee_ai_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Скорее, следующая цель пытается улететь на вертолете. Смотрите GPS и прикончите его, пока не ушел!" , Time=0)
+[Murray_info_obj_heli_now_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка уже почти должна быть видна. Недолго осталось, парни." , Time=0)
+[Murray_info_obj_heli_now_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка подлетает к вашей позиции. Держитесь." , Time=0)
+[Murray_info_obj_heli_now_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка должна быть у вас прямо сейчас." , Time=0)
+[Murray_info_obj_opp_hstg_prev_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, вы должны любой ценой помешать другой команде спасти заложника." , Time=0)
+[Murray_info_obj_opp_hstg_prev_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Если заложник оттуда выберется, полетят головы. Вам платят за то, чтобы его не вывезли. Сами знаете, что делать!" , Time=0)
+[Murray_info_obj_opp_hstg_resc_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Доставьте заложника к точке эвакуации. Учтите, в районе другая команда, и она попытается вам помешать." , Time=0)
+[Murray_info_obj_opp_hstg_resc_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник должен добраться до безопасного места. Сметайте любое сопротивление на пути." , Time=0)
+[Murray_info_obj_opp_obj_prev_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Наемники попытаются отнять у вас этот объект - убейте их!" , Time=0)
+[Murray_info_obj_opp_obj_prev_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни. За то, чтобы объект не попал не в те руки, положена большая награда. Не спускайте с него глаз." , Time=0)
+[Murray_info_obj_opp_obj_xtrc_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Доберитесь до объекта, отмеченного на GPS, и доставьте его к точке эвакуации. Ничто не должно вас остановить." , Time=0)
+[Murray_info_obj_opp_obj_xtrc_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, вам нужно доставить этот объект к точке эвакуации. Наемники могут попытаться вас остановить - не дайте им!" , Time=0)
+[Murray_info_obj_opp_tgt_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, ваша задача - ликвидировать цель. Учтите, другую команду послали, чтобы этому помешать." , Time=0)
+[Murray_info_obj_opp_tgt_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ребята, ликвидируйте цель. Любое сопротивление - уничтожить." , Time=0)
+[Murray_info_obj_opp_tgt_assn_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Нужно ликвидировать цель, пока другая команда его не вывезла. Лучше поторопитесь." , Time=0)
+[Murray_info_obj_opp_tgt_def_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, другой команде поручили ликвидировать цель. Ваша задача - не допустить этого." , Time=0)
+[Murray_info_obj_opp_tgt_def_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Не дайте убить цель. Защищайте его от наемников любой ценой." , Time=0)
+[Murray_info_obj_opp_tgt_def_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Защищайте цель любой ценой. Другая команда охотится за ним, так что не зевайте." , Time=0)
+[Murray_info_obj_reach_loc_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, доберитесь до точки, отмеченной на GPS, и ждите дальнейших указаний. Первая команда, которая туда доберется, получит премию." , Time=0)
+[Murray_info_obj_reach_loc_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Есть для вас работа. Первая команда на месте получает бонус. Попробуйте успеть." , Time=0)
+[Murray_info_obj_reach_loc_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Если первыми доберетесь до точки, отмеченной на GPS, получите бонус и новое задание." , Time=0)
+[Murray_info_obj_rmnd_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У меня для вас еще одна цель. Подробности на GPS." , Time=0)
+[Murray_info_obj_rmnd_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я добавил вам на GPS еще одну цель." , Time=0)
+[Murray_info_obj_rmnd_hstg_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Рядом заложник, которого нужно эвакуировать. Подробности на GPS!" , Time=0)
+[Murray_info_obj_rmnd_hstg_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Я отметил на GPS, где заложник. Вытащите его оттуда." , Time=0)
+[Murray_info_obj_rmnd_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Есть для вас еще одна легкая работенка. Я отметил на GPS объект. Принесите его - и получите деньги." , Time=0)
+[Murray_info_obj_rmnd_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Гляньте на GPS. Нужно забрать еще кое-что." , Time=0)
+[Murray_info_obj_rmnd_time_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, у вас кончается время. Давайте заканчивать." , Time=0)
+[Murray_info_obj_rmnd_time_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Шевелитесь. Время на исходе!" , Time=0)
+[Murray_info_obj_subsq_fail_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Так себе вышло, парни. Я видел, как вы работаете лучше." , Time=0)
+[Murray_info_obj_subsq_fail_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Слабо, парни. Очень слабо." , Time=0)
+[Murray_info_obj_subsq_fail_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Понятия не имею, чего вы добивались, но ни черта у вас не вышло." , Time=0)
+[Murray_info_obj_subsq_fail_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Серьезно, парни, моя мама справилась бы лучше вас." , Time=0)
+[Murray_info_obj_subsq_fail_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: В следующий раз повезет, парни." , Time=0)
+[Murray_info_obj_subsq_hit_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отлично, вы его сделали!" , Time=0)
+[Murray_info_obj_subsq_hit_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Хорошая работа, парни!" , Time=0)
+[Murray_info_obj_subsq_hit_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Чисто сработано!" , Time=0)
+[Murray_info_obj_subsq_hit_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Молодцы! Цель уничтожена." , Time=0)
+[Murray_info_obj_subsq_hit_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Класс - за это вам светит сладкая награда." , Time=0)
+[Murray_info_obj_subsq_hit_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У вас двоих все выглядит так просто!" , Time=0)
+[Murray_info_obj_subsq_miss_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда вас опередила. Чтобы больше такого не было!" , Time=0)
+[Murray_info_obj_subsq_miss_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда убрала цель первой. Чтобы победить, вам нужно убрать больше, чем они." , Time=0)
+[Murray_info_obj_subsq_miss_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Блять. Другая команда увела у вас это убийство. В следующий раз старайтесь лучше!" , Time=0)
+[Murray_info_obj_subsq_miss_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда убрала цель первой. Моя МАМА убрала бы цель первой. Ну же, парни." , Time=0)
+[Murray_info_obj_subsq_miss_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Сожалею, парни, другая команда прикончила цель раньше вас." , Time=0)
+[Murray_info_obj_subsq_miss_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Пока вы, дамочки, делали маникюр, другая команда убрала цель. Если так пойдет и дальше, денег вы не увидите." , Time=0)
+[Murray_info_obj_subsq_succ_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отличная работа, парни. Вы обошли другую команду!" , Time=0)
+[Murray_info_obj_subsq_succ_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Чисто сработано, ребята. Вы обошли другую команду." , Time=0)
+[Murray_info_obj_subsq_succ_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Хорошая работа. Вы им показали, как надо." , Time=0)
+[Murray_info_obj_they2_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда взяла своего заложника и идет к точке эвакуации. Поднажмите, парни!" , Time=0)
+[Murray_info_obj_they2_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, другая команда забрала своего заложника. Пора двигаться!" , Time=0)
+[Murray_info_obj_they2_acq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник другой команды в пути. Опередите их у точки эвакуации." , Time=0)
+[Murray_info_obj_they2_acq_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Они взяли своего заложника и уже в пути. Не дайте им первыми добраться до эвакуации." , Time=0)
+[Murray_info_obj_they2_acq_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда забрала своего заложника." , Time=0)
+[Murray_info_obj_they2_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда бросила своего заложника. Вы можете опередить их у точки эвакуации." , Time=0)
+[Murray_info_obj_they2_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, другая команда бросила своего заложника. Быстрее - опередите их у точки эвакуации!" , Time=0)
+[Murray_info_obj_they2_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другого заложника бросили. Действуйте сейчас и опередите их у эвакуации." , Time=0)
+[Murray_info_obj_they2_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, в этот раз вам повезет. Они бросили своего заложника." , Time=0)
+[Murray_info_obj_they2_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда бросила своего заложника." , Time=0)
+[Murray_info_obj_time_1min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка эвакуации будет через минуту. Держитесь до ее прилета." , Time=0)
+[Murray_info_obj_time_1min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка всего в 60 секундах. Держитесь!" , Time=0)
+[Murray_info_obj_time_2min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка эвакуации будет через две минуты. Держитесь до ее прилета." , Time=0)
+[Murray_info_obj_time_2min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка будет через две минуты. Держитесь." , Time=0)
+[Murray_info_obj_time_30sec_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Тридцать секунд до прилета вертушки. Еще чуть-чуть!" , Time=0)
+[Murray_info_obj_time_30sec_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка эвакуации будет через 30 секунд." , Time=0)
+[Murray_info_obj_time_3min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертушка эвакуации будет через три минуты. Держитесь до ее прилета." , Time=0)
+[Murray_info_obj_time_3min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертолет будет через три минуты. Держитесь, парни." , Time=0)
+[Murray_info_obj_time_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, ваш эвакуационный вертолет задерживается. Придется держаться, пока он не прилетит." , Time=0)
+[Murray_info_obj_time_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Транспорт в пути, но придется подождать несколько минут. Держитесь, парни." , Time=0)
+[Murray_info_obj_time_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вертолет для эвакуации летит, но это займет несколько минут. Держитесь." , Time=0)
+[Murray_info_obj_trans_now_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Бегите к вертолетной площадке, там есть РПГ. Сбейте из него приближающийся вертолет!" , Time=0)
+[Murray_info_obj_trans_now_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Транспорт приближается к вашей позиции. Держитесь." , Time=0)
+[Murray_info_obj_trans_now_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Транспорт уже должен подлетать к вашей позиции." , Time=0)
+[Murray_info_obj_u2_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, вы уронили заложника. Подберите его и доберитесь до точки эвакуации раньше них." , Time=0)
+[Murray_info_obj_u2_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Что происходит, парни? Вы уронили заложника. Подберите его и пошевеливайтесь!" , Time=0)
+[Murray_info_obj_u2_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, ваш заложник брошен. У вас мало времени, чтобы опередить их у точки эвакуации." , Time=0)
+[Murray_info_obj_u2_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вам нужно подобрать заложника и доставить его к точке эвакуации." , Time=0)
+[Murray_info_obj_u2_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы уронили заложника." , Time=0)
+[Murray_info_obj_updt_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель захвачена и перемещается." , Time=0)
+[Murray_info_obj_updt_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Кто-то забрал цель. Это вы, парни?" , Time=0)
+[Murray_info_obj_updt_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель бесхозная. Подберите ее, парни." , Time=0)
+[Murray_info_obj_updt_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Они упустили цель. Лучше подберите ее, парни!" , Time=0)
+[Murray_info_obj_updt_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель брошена. Теперь любой может ее взять." , Time=0)
+[Murray_info_obj_updt_reacq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель подобрана." , Time=0)
+[Murray_info_obj_updt_reacq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель снова в движении." , Time=0)
+[Murray_info_obj_updt_reacq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Цель опять перемещается." , Time=0)
+[Murray_info_obj_updt_they_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у них. Перехватите их до точки эвакуации." , Time=0)
+[Murray_info_obj_updt_they_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда подобрала заложника. Не дайте им добраться до точки эвакуации." , Time=0)
+[Murray_info_obj_updt_they_acq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложника уводят. Отрежьте их, пока они его не доставили." , Time=0)
+[Murray_info_obj_updt_they_acq_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вижу движение заложника. Перехватите его до точки эвакуации." , Time=0)
+[Murray_info_obj_updt_they_acq_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у них, но вы еще успеете отбить его и доставить сами." , Time=0)
+[Murray_info_obj_updt_they_acq_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у них! Попробуйте его отбить!" , Time=0)
+[Murray_info_obj_updt_they_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Они уронили заложника. Это ваш шанс его подобрать!" , Time=0)
+[Murray_info_obj_updt_they_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другой отряд упустил заложника. Подберите его." , Time=0)
+[Murray_info_obj_updt_they_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда уронила заложника. Подберите его и уводите оттуда." , Time=0)
+[Murray_info_obj_updt_they_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник на земле. Вперед, доставьте его к точке эвакуации." , Time=0)
+[Murray_info_obj_updt_they_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, они уронили заложника. Хватайте его, пока они не подобрали его снова." , Time=0)
+[Murray_info_obj_updt_they_drop_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Они уронили заложника." , Time=0)
+[Murray_info_obj_updt_u_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у вас, парни, ведите его к точке эвакуации." , Time=0)
+[Murray_info_obj_updt_u_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у вашей команды. Доставьте его к точке эвакуации." , Time=0)
+[Murray_info_obj_updt_u_acq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у вас. Идите к точке эвакуации." , Time=0)
+[Murray_info_obj_updt_u_acq_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ваша команда подобрала заложника. Выведите его оттуда целым." , Time=0)
+[Murray_info_obj_updt_u_acq_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у вас. Доставьте его к точке эвакуации." , Time=0)
+[Murray_info_obj_updt_u_acq_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник у вашей команды." , Time=0)
+[Murray_info_obj_updt_u_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы уронили заложника. Не дайте другой команде его забрать!" , Time=0)
+[Murray_info_obj_updt_u_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, вы уронили заложника. Подберите его и уводите оттуда." , Time=0)
+[Murray_info_obj_updt_u_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Что происходит, парни? Вы уронили заложника. Доставьте его к точке эвакуации." , Time=0)
+[Murray_info_obj_updt_u_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Заложник должен добраться до точки эвакуации. Подберите его и вперед." , Time=0)
+[Murray_info_obj_updt_u_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Похоже, вы уронили заложника. Что не так, парни? Вам нужно вытащить его оттуда." , Time=0)
+[Murray_info_obj_updt_u_drop_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы уронили заложника." , Time=0)
+[Murray_info_stat_obj_still_avail_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы сегодня с этим справитесь или как?" , Time=0)
+[Murray_info_stat_obj_still_avail_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Алло? Вы меня слышите? Выполните задачу!" , Time=0)
+[Murray_info_stat_obj_still_avail_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Моя мама справилась бы с задачей быстрее вас двоих. Давайте!" , Time=0)
+[Murray_info_stat_obj_still_avail_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: За безделье вам не заплатят. Шевелитесь!" , Time=0)
+[Murray_info_stat_rnd_end_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Все, парни! Пора домой." , Time=0)
+[Murray_info_stat_rnd_end_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Время вышло, парни. Вытащим вас оттуда!" , Time=0)
+[Murray_info_stat_rnd_end_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ладно, вы закончили. Пора уходить оттуда." , Time=0)
+[Murray_info_stat_rnd_end_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Ладно, мы закончили. Пора сворачиваться." , Time=0)
+[Murray_info_stat_rnd_end_count_1_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Один" , Time=0)
+[Murray_info_stat_rnd_end_count_2_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Два" , Time=0)
+[Murray_info_stat_rnd_end_count_3_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Три" , Time=0)
+[Murray_info_stat_rnd_end_count_4_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Четыре" , Time=0)
+[Murray_info_stat_rnd_end_count_5_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Пять" , Time=0)
+[Murray_info_stat_rnd_end_note_1min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Осталась одна минута! Готовьтесь к эвакуации!" , Time=0)
+[Murray_info_stat_rnd_end_note_1min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Осталась всего минута. Заканчивайте и уходите оттуда." , Time=0)
+[Murray_info_stat_rnd_end_note_1min_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Давайте, парни, у вас всего 60 секунд!" , Time=0)
+[Murray_info_stat_rnd_end_note_30sec_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Тридцать секунд, парни! Живее!" , Time=0)
+[Murray_info_stat_rnd_end_note_5min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Осталось пять минут. Готовьтесь к эвакуации!" , Time=0)
+[Murray_info_stat_rnd_end_note_5min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: У вас пять минут, чтобы выполнить задачи и убраться оттуда." , Time=0)
+[Murray_info_stat_rnd_end_note_5min_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Осталось всего пять минут. Прибавьте ходу!" , Time=0)
+[Murray_info_stat_rnd_start_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы на месте. Пора заработать деньжат." , Time=0)
+[Murray_info_stat_rnd_start_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы на месте. Переходим к делу!" , Time=0)
+[Murray_info_stat_rnd_start_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Готовы, парни? Начинаем." , Time=0)
+[Murray_info_stat_rnd_start_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Все выглядит хорошо. Поехали." , Time=0)
+[Murray_info_stat_updt_obj_othr_near_succ_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, если они вас опередят, деньги получат они, а не вы." , Time=0)
+[Murray_info_stat_updt_obj_othr_near_succ_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Другая команда приближается к точке эвакуации." , Time=0)
+[Murray_info_stat_updt_obj_othr_near_succ_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Они идут на добивание!" , Time=0)
+[Murray_info_stat_updt_team_lead_lost_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы потеряли лидерство." , Time=0)
+[Murray_info_stat_updt_team_lead_lost_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Прибавьте темп, парни, другая команда вырвалась вперед!" , Time=0)
+[Murray_info_stat_updt_team_lead_lost_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Дерьмо, парни, другая команда только что вырвалась вперед." , Time=0)
+[Murray_info_stat_updt_team_lead_take_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы вышли вперед." , Time=0)
+[Murray_info_stat_updt_team_lead_take_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Отлично, парни, теперь деньги ваши." , Time=0)
+[Murray_info_stat_updt_team_lead_take_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вы опережаете другую команду. Так держать!" , Time=0)
+[Murray_lot_of_activity_9 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вижу очень много активности в вашем районе." , Time=0)
+[Murray_oh_snap_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: О, блять!" , Time=0)
+[Murray_oh_yeah_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: О да..." , Time=0)
+[Murray_thats_got_it_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Вот так! Получилось!" , Time=0)
+[Murray_what_was_that_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="МЮРРЕЙ: Что это было?" , Time=0)
+[Rios_emo_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Ты труп, придурок!" , Time=0)
+[Rios_emo_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: О. Ты, блять, покойник!" , Time=0)
+[Rios_emo_assn_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Последнее слово, уебок?" , Time=0)
+[Rios_emo_assn_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Тебе будет НАМНОГО больнее, чем мне." , Time=0)
+[Rios_emo_conf_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Ничего, с чем бы мы не справились." , Time=0)
+[Rios_emo_conf_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Обычный рабочий день." , Time=0)
+[Rios_emo_esct_carry_cmnt_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Похоже, его придется нести." , Time=0)
+[Rios_emo_esct_carry_req_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Ты его неси." , Time=0)
+[Rios_emo_esct_enco_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Давай, вытащим тебя отсюда." , Time=0)
+[Rios_emo_esct_enco_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: К нам летит вертолет. Пошли!" , Time=0)
+[Rios_emo_tmate_far_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Эй, ты где?" , Time=0)
+[Rios_emo_tmate_far_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Где тебя черти носят?" , Time=0)
+[Rios_emo_tmate_far_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Где ты, блять?" , Time=0)
+[Rios_emo_tmate_far_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Ты в команде или как? Давай сюда!" , Time=0)
+[Rios_emo_tmate_far_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Эй!! Ты куда?!" , Time=0)
+[Rios_emo_tmate_near_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Я с тобой, дружище" , Time=0)
+[Rios_emo_tmate_near_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Здорово, бро. Готов зажигать?" , Time=0)
+[Rios_emo_tmate_near_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Я скучал, дружище. Ну, не очень." , Time=0)
+[Rios_emo_tmate_near_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Я тебя прикрою." , Time=0)
+[Rios_emo_tmate_near_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Я тебя прикрываю." , Time=0)
+[Rios_taunt_team_v_ai_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Готовьтесь сдохнуть, сучки!" , Time=0)
+[Rios_taunt_team_v_ai_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Вам конец!" , Time=0)
+[Rios_taunt_team_v_ai_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Ты, блять, труп, понял?" , Time=0)
+[Rios_taunt_team_v_othr_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Это все, на что ты способен?" , Time=0)
+[Rios_taunt_team_v_othr_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Где вы учились стрелять? В школе для слепых?" , Time=0)
+[Rios_taunt_team_v_othr_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Ха-ха! Мимо!" , Time=0)
+[Rios_taunt_tmate_v_tmate_focus_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Эй! Соберись!" , Time=0)
+[Rios_taunt_tmate_v_tmate_good_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Отлично!" , Time=0)
+[Rios_taunt_tmate_v_tmate_good_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Вот это другое дело!" , Time=0)
+[Rios_taunt_tmate_v_tmate_help_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="РИОС: Помогите-ка мне тут!" , Time=0)
+[Salem_emo_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты труп, придурок!" , Time=0)
+[Salem_emo_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: О. Тебе, сука, конец!" , Time=0)
+[Salem_emo_assn_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Последнее слово, мудила?" , Time=0)
+[Salem_emo_assn_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тебе будет НАМНОГО больнее, чем мне." , Time=0)
+[Salem_emo_conf_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ничего, с чем бы мы не справились." , Time=0)
+[Salem_emo_conf_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Обычный рабочий день." , Time=0)
+[Salem_emo_esct_carry_cmnt_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже, его придется нести." , Time=0)
+[Salem_emo_esct_carry_req_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты его неси." , Time=0)
+[Salem_emo_esct_enco_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Давай, вытащим тебя отсюда." , Time=0)
+[Salem_emo_esct_enco_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: К нам летит вертолет. Пошли!" , Time=0)
+[Salem_emo_tmate_far_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, ты где?" , Time=0)
+[Salem_emo_tmate_far_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Где тебя черти носят?" , Time=0)
+[Salem_emo_tmate_far_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Где ты, нахер, прячешься?" , Time=0)
+[Salem_emo_tmate_far_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ты в команде или как? Давай сюда!" , Time=0)
+[Salem_emo_tmate_far_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй!! Ты куда?!" , Time=0)
+[Salem_emo_tmate_near_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Я с тобой, приятель" , Time=0)
+[Salem_emo_tmate_near_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, бро. Готов зажечь?" , Time=0)
+[Salem_emo_tmate_near_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Я скучал по тебе, приятель. Ну, не очень." , Time=0)
+[Salem_emo_tmate_near_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Я тебя прикрою." , Time=0)
+[Salem_emo_tmate_near_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Прикрываю тебя." , Time=0)
+[Salem_taunt_team_v_ai_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Готовьтесь сдохнуть, суки!" , Time=0)
+[Salem_taunt_team_v_ai_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вам конец!" , Time=0)
+[Salem_taunt_team_v_ai_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Тебе пиздец, понял?" , Time=0)
+[Salem_taunt_team_v_othr_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: И это все, на что вы способны?" , Time=0)
+[Salem_taunt_team_v_othr_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Где вы учились стрелять? В школе для слепых?" , Time=0)
+[Salem_taunt_team_v_othr_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Ха-ха! Мимо!" , Time=0)
+[Salem_taunt_tmate_v_tmate_focus_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй! Не отвлекайся!" , Time=0)
+[Salem_taunt_tmate_v_tmate_good_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Отлично!" , Time=0)
+[Salem_taunt_tmate_v_tmate_good_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот это другой разговор!" , Time=0)
+[Salem_taunt_tmate_v_tmate_help_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="СЕЙЛЕМ: Мне тут помощь не помешает!" , Time=0)

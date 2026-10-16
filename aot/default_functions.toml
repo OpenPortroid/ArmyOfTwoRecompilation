@@ -1,0 +1,338 @@
+# Manual function boundaries for addresses that the auto-analyzer didn't
+# discover as functions on its own (only reached via plain `b`, not `bl`,
+# so no call-graph edge pointed at them). Leaving the table empty lets
+# codegen find the natural boundaries itself (size=0 -> discover via region).
+#
+# Found via: rexglue codegen (UnresolvedCall errors during Validate phase).
+#
+# TU2 branch: addresses are those of Title Update 2 (assets/default.xex +
+# default.xexp); "# v1 0x..." is the same function in the original
+# executable (see docs/tu2.md).
+
+[functions]
+0x827FBA38 = {}  # v1 0x82734628
+0x82C8F280 = {}  # v1 0x82BC3110
+0x82D77F70 = {}  # v1 0x82CAB898
+
+
+# stub sweep
+0x82C1A220 = {}  # v1 0x82B50E98
+0x82C23640 = {}  # v1 0x82B568B0
+0x82EA3638 = {}  # v1 0x82DD6D18
+0x82407698 = {}  # v1 0x823FE280
+0x82408D60 = {}  # v1 0x823FF908
+0x82898B40 = {}  # v1 0x827D2F70
+0x82412A70 = {}  # v1 0x82409618
+0x8308C4B0 = {}  # v1 0x82FBF030
+
+# reached main menu
+0x825E9148 = {}  # v1 0x82521360
+0x82C26890 = {}  # v1 0x82B59B28
+0x82753B68 = {}  # v1 0x8268C2A8
+0x82313C90 = {}  # v1 0x8230F148
+0x82A5F040 = {}  # v1 0x829921A0
+0x82663F48 = {}  # v1 0x8259C758
+0x826544E0 = {}  # v1 0x8258C8F0
+
+# loading campaign
+0x82FA2470 = {}  # v1 0x82ED5878
+0x82AF2408 = {}  # v1 0x82A25B00
+0x82800A58 = {}  # v1 0x827396D0
+0x82FCFBD8 = {}  # v1 0x82F03170
+0x82FD0600 = {}  # v1 0x82F03B98
+0x8308C4A8 = {}  # v1 0x82FBF028
+0x8308C4A0 = {}  # v1 0x82FBF020
+# online co-op (virtual methods reached only in network play)
+0x8223A180 = {}  # v1 0x822372E8
+
+# Referenced only through function pointers (lis/addi callbacks, vtables,
+# dispatch tables) and therefore never recompiled: an indirect call to one
+# aborts the game (e.g. v1 0x82275258 when leaving the co-op menus).
+# Found by tools/scan_missing_funcs.py --data (2026-10-04).
+0x8222DF78 = {}  # v1 0x8222B318
+0x82239CA8 = {}  # v1 0x82236E00
+0x82239FD0 = {}  # v1 0x82237160
+0x8224BF98 = {}  # v1 0x82248EF8 (code match)
+0x82261638 = {}  # v1 0x82248EF8 (code match)
+0x82250280 = {}  # v1 0x8224D178
+0x82266950 = {}  # v1 0x82263600
+0x822772C8 = {}  # v1 0x82274430
+0x82277E88 = {}  # v1 0x82275008
+0x822780A0 = {}  # v1 0x82275308
+0x822782E8 = {}  # v1 0x82275550
+0x82278328 = {}  # v1 0x82275590
+0x8227C888 = {}  # v1 0x82279B00
+0x823EBAE0 = {}  # v1 0x823E2770
+0x823EBB90 = {}  # v1 0x823E2820
+0x823EBCD8 = {}  # v1 0x823E2968
+0x824590F0 = {}  # v1 0x8244F9D8
+0x824606E0 = {}  # v1 0x824569F0
+0x82574A10 = {}  # v1 0x824AC348
+0x8259EE40 = {}  # v1 0x824D6480
+0x825B12C0 = {}  # v1 0x824E9110
+0x825B1378 = {}  # v1 0x824E91C8
+0x825B13E8 = {}  # v1 0x824E9238
+0x825B1550 = {}  # v1 0x824E93A0
+0x825B1828 = {}  # v1 0x824E9678
+0x825B18E8 = {}  # v1 0x824E9738
+0x825B1920 = {}  # v1 0x824E9770
+0x825B2D00 = {}  # v1 0x824EAB50
+0x825EA868 = {}  # v1 0x82522AA0
+0x826529D0 = {}  # v1 0x8258AD58
+0x82654598 = {}  # v1 0x8258C9A8
+0x826620A8 = {}  # v1 0x8259A880
+0x8273E068 = {}  # v1 0x82676610
+0x82752398 = {}  # v1 0x8268AAD8
+0x82753BA0 = {}  # v1 0x8268C2E0
+0x8278F500 = {}  # v1 0x826C7E28
+0x827DF098 = {}  # v1 0x82717C50
+0x827DF130 = {}  # v1 0x82717CE8
+0x827DF198 = {}  # v1 0x82717D50
+0x827DF230 = {}  # v1 0x82717DE8
+0x827DF268 = {}  # v1 0x82717E20
+0x827E0440 = {}  # v1 0x82718FF8
+0x827E0458 = {}  # v1 0x82719010
+0x827E1020 = {}  # v1 0x82719BD8
+0x827E1040 = {}  # v1 0x82719BF8
+0x827E1068 = {}  # v1 0x82719C20
+0x827E1080 = {}  # v1 0x82719C38
+0x827E1628 = {}  # v1 0x8271A1E0
+0x827E1D20 = {}  # v1 0x8271A8D8
+0x827E2658 = {}  # v1 0x8271B210
+0x827E2EC8 = {}  # v1 0x8271BA80
+0x827E46B8 = {}  # v1 0x8271D270
+0x827E4750 = {}  # v1 0x8271D308
+0x827E4798 = {}  # v1 0x8271D350
+0x827E4868 = {}  # v1 0x8271D420
+0x827F8B30 = {}  # v1 0x82731708
+0x8289C728 = {}  # v1 0x827D6B58
+0x8295DF38 = {}  # v1 0x82898210
+0x8295FCC0 = {}  # v1 0x82899F98
+0x829664C0 = {}  # v1 0x828A0798
+0x82A03368 = {}  # v1 0x8293CAD8
+0x82A04690 = {}  # v1 0x8293DD68
+0x82A14D98 = {}  # v1 0x8294CC80
+0x82A79DF0 = {}  # v1 0x829AD080
+0x82AAC898 = {}  # v1 0x829DFEF8
+0x82AAC8A0 = {}  # v1 0x829DFF00
+0x82AF18E8 = {}  # v1 0x82A24FE0
+0x82AF1928 = {}  # v1 0x82A25020
+0x82AF23A8 = {}  # v1 0x82A25AA0
+0x82AF2458 = {}  # v1 0x82A25B50
+0x82B09058 = {}  # v1 0x82A3C2D8
+0x82B0E470 = { share_registers = true }  # v1 0x82A416F0 (reads the caller's r22 r31)
+0x82B0E480 = { share_registers = true }  # v1 0x82A41700 (reads the caller's r31)
+0x82B940C8 = {}  # v1 0x82AC72F8
+0x82B943F8 = {}  # v1 0x82AC7638
+0x82B948A0 = {}  # v1 0x82AC7AE0
+0x82C01F80 = {}  # v1 0x82B351B8
+0x82C268D8 = {}  # v1 0x82B59B70
+0x82C2B350 = {}  # v1 0x82B5E550
+0x82C2B358 = {}  # v1 0x82B5E558
+0x82C2C398 = {}  # v1 0x82B5F598
+0x82C2D588 = {}  # v1 0x82B60788
+0x82C2B300 = {}  # v1 0x82B607A0
+0x82C2D5A0 = {}  # v1 0x82B607A8
+0x82C2D5A8 = {}  # v1 0x82B607C0
+0x82C2D5B0 = {}  # v1 0x82B607C8
+0x82C2D5B8 = {}  # v1 0x82B607D0
+0x82C2D5C8 = {}  # v1 0x82B607E0
+0x82C5DA90 = {}  # v1 0x82B90CC0
+0x82C5DF80 = {}  # v1 0x82B91198
+0x82C67FC8 = {}  # v1 0x82B9B1C8
+0x82C72600 = {}  # v1 0x82BA60E8
+0x82C824A8 = {}  # v1 0x82BB5FC8
+0x82CAD7A0 = {}  # v1 0x82BE11B8
+0x82CB3704 = {}  # v1 0x82BE7024
+0x82CB41C4 = {}  # v1 0x82BE7AE4
+0x82CD8C18 = {}  # v1 0x82C0C538
+0x82CDC620 = {}  # v1 0x82C0FF40
+0x82D0C420 = {}  # v1 0x82C3FD48
+0x82D15230 = {}  # v1 0x82C48B58
+0x82D28560 = {}  # v1 0x82C5BE88
+0x82D2D738 = {}  # v1 0x82C61060
+0x82D46CB8 = {}  # v1 0x82C7A5E0
+0x82D4BC20 = {}  # v1 0x82C7F548
+0x82DA7408 = {}  # v1 0x82CDAFD8
+0x82DAAA48 = {}  # v1 0x82CDE6E8
+0x82DC1450 = {}  # v1 0x82CF5238
+0x82DC7B10 = {}  # v1 0x82CFBAA8
+0x82DEFB08 = {}  # v1 0x82D22F30
+0x82DF56B8 = {}  # v1 0x82D28AF8
+0x82E00E38 = {}  # v1 0x82D34278
+0x82E02230 = {}  # v1 0x82D356D8
+0x82E13A70 = {}  # v1 0x82D47088
+0x82E272C8 = {}  # v1 0x82D5A928
+0x82F1C4E8 = {}  # v1 0x82E4F9C8
+0x82F6A038 = {}  # v1 0x82E9D640
+0x82F6A098 = {}  # v1 0x82E9D6A0
+0x82F6A0C8 = {}  # v1 0x82E9D6D0
+0x82F6A0E8 = {}  # v1 0x82E9D6F0
+0x82F6A0F0 = {}  # v1 0x82E9D6F8
+0x82F6A0F8 = {}  # v1 0x82E9D700
+0x82F6A100 = {}  # v1 0x82E9D708
+0x82F6A110 = {}  # v1 0x82E9D718
+0x82F6A120 = {}  # v1 0x82E9D728
+0x82F6A130 = {}  # v1 0x82E9D738
+0x82F6A140 = {}  # v1 0x82E9D748
+0x82F6A150 = {}  # v1 0x82E9D758
+0x82F6A160 = {}  # v1 0x82E9D768
+0x82F6A170 = {}  # v1 0x82E9D778
+0x82F6A180 = {}  # v1 0x82E9D788
+0x82F6A1C0 = {}  # v1 0x82E9D7C8
+0x82F6A1C8 = {}  # v1 0x82E9D7D0
+0x82F6A1D0 = {}  # v1 0x82E9D7D8
+0x82F6A1D8 = {}  # v1 0x82E9D7E0
+0x82F6A200 = {}  # v1 0x82E9D808
+0x82F6A250 = {}  # v1 0x82E9D858
+0x82F6A268 = {}  # v1 0x82E9D870
+0x82F6A2A0 = {}  # v1 0x82E9D8A8
+0x82F6A2D0 = {}  # v1 0x82E9D8D8
+0x82F6A2E8 = {}  # v1 0x82E9D8F0
+0x82F6A300 = {}  # v1 0x82E9D908
+0x82F6A338 = {}  # v1 0x82E9D940
+0x82F8F910 = {}  # v1 0x82EC2CE8
+0x82F9E578 = {}  # v1 0x82ED1810
+0x82FA28D0 = {}  # v1 0x82ED5CD8
+0x82FC3020 = {}  # v1 0x82EF65B0
+0x82FD6500 = {}  # v1 0x82F09AB8
+0x83016500 = {}  # v1 0x82F49AD0
+0x83016560 = {}  # v1 0x82F49B30
+0x8301B278 = {}  # v1 0x82F4E7B8
+0x8301B3C8 = {}  # v1 0x82F4E908
+0x8301D5F0 = {}  # v1 0x82F50B30
+0x8301D760 = {}  # v1 0x82F50CA0
+0x8308C498 = {}  # v1 0x82FBF018
+0x830F0250 = {}  # v1 0x830231E0
+0x830F0898 = {}  # v1 0x83023828
+0x830F1A38 = {}  # v1 0x830249C8
+0x83100600 = {}  # v1 0x83033590
+0x83102DD8 = {}  # v1 0x830360B8
+
+# Second pass: entries after a tail call (bctr) and code GapFill had appended
+# to the previous function (e.g. v1 0x82236E18, called when a co-op join
+# completes).
+0x82239CC0 = {}  # v1 0x82236E18
+0x82239FE8 = {}  # v1 0x82237178
+0x8223A000 = {}  # v1 0x82237190
+0x8223A018 = {}  # v1 0x822371A8
+0x82250298 = {}  # v1 0x8224D190
+0x82278300 = {}  # v1 0x82275568
+0x82278348 = {}  # v1 0x822755B0
+0x82278360 = {}  # v1 0x822755C8
+0x82278378 = {}  # v1 0x822755E0
+0x825B1398 = {}  # v1 0x824E91E8
+0x825B1848 = {}  # v1 0x824E9698
+0x827DF140 = {}  # v1 0x82717CF8
+0x827DF240 = {}  # v1 0x82717DF8
+0x827E0468 = {}  # v1 0x82719020
+0x827E4760 = {}  # v1 0x8271D318
+0x827E47A8 = {}  # v1 0x8271D360
+0x82AF23C8 = {}  # v1 0x82A25AC0
+0x82AF23E8 = {}  # v1 0x82A25AE0
+0x82B94420 = {}  # v1 0x82AC7660
+0x82B94448 = {}  # v1 0x82AC7688
+0x82B94470 = {}  # v1 0x82AC76B0
+0x82B948C0 = {}  # v1 0x82AC7B00
+0x82B948D0 = {}  # v1 0x82AC7B10
+0x82B948E0 = {}  # v1 0x82AC7B20
+0x82B948F0 = {}  # v1 0x82AC7B30
+0x82B94900 = {}  # v1 0x82AC7B40
+0x82B94910 = {}  # v1 0x82AC7B50
+0x82B94920 = {}  # v1 0x82AC7B60
+0x82B94930 = {}  # v1 0x82AC7B70
+0x82B94940 = {}  # v1 0x82AC7B80
+0x82B94950 = {}  # v1 0x82AC7B90
+0x82C5DF90 = {}  # v1 0x82B911A8
+0x82F1C398 = {}  # v1 0x82E4FA18
+0x8301D610 = {}  # v1 0x82F50B50
+0x8301D790 = {}  # v1 0x82F50CD0
+0x8301D7C0 = {}  # v1 0x82F50D00
+
+# TU2: tail-call targets from codegen UnresolvedCall errors.
+0x82C23628 = {}  # b from 0x82C2B2F4
+0x82C2D1E0 = {}  # b from 0x82C2D5C4
+
+# TU2: referenced only through function pointers, found by
+# tools/scan_missing_funcs.py --data on the TU2 code (the computed-jump labels
+# of sub_8232F0A8 / sub_8232F7C8 it also lists are left out).
+0x82232E40 = {}  # data@821AA4A0
+0x82232E58 = {}  # data@821AA220
+0x82232E98 = {}  # data@821AA734
+0x822383D8 = {}  # data@821AAD08
+0x822383F0 = {}  # data@821AA9D4
+0x8223A1D0 = {}  # data@821AB5C0
+0x82260B88 = {}  # data@821AB6E4
+0x82260B98 = {}  # data@821AB4B0
+0x82260BB0 = {}  # data@821AB7C8
+0x82260BC8 = {}  # data@821AB4B8
+0x82260BE0 = {}  # data@821ABAD8
+0x82260C00 = {}  # data@821AB9CC
+0x82260C30 = {}  # 0x82248B10 0x82271470
+0x82260C40 = {}  # data@821AB9E0
+0x82260C58 = {}  # data@821AB624
+0x82260C60 = {}  # 0x8224C288 0x8224C430
+0x82260C70 = {}  # data@821AB6F4 data@821AB9DC
+0x82260C98 = {}  # data@821AB800
+0x82260CB0 = {}  # data@821AB63C
+0x82260CD8 = {}  # data@821AB678
+0x82260CE0 = {}  # data@821AB620
+0x8226A910 = {}  # 0x8226E878
+0x82277FC8 = {}  # data@821AC280
+0x82277FF0 = {}  # data@821AC290
+0x82278010 = {}  # data@821AC658
+0x8227D158 = {}  # data@821AC91C
+0x82883520 = {}  # data@820C2104
+0x82C1DCD8 = {}  # data@8214153C data@82141674
+0x82C2B308 = {}  # data@82142830
+0x82C2B320 = {}  # data@82142844 data@8214294C
+0x82C2B328 = {}  # data@8214281C data@82142924
+0x82C2B330 = {}  # data@82142838
+0x82C2D590 = {}  # data@8214290C
+0x82C2D598 = {}  # data@82142950
+0x82C67AA0 = {}  # data@8214C314
+0x82DA0C70 = {}  # data@82163238
+0x82DC7B00 = {}  # data@82166888
+0x82DCAB28 = {}  # data@82166CA4
+0x82E13460 = {}  # data@8216B390
+0x82F4BA70 = {}  # data@8217FB78 data@8217FB98
+0x82FF4F18 = {}  # data@82196894
+
+# Code that reads a caller's non-volatile registers (r14-r31) without setting
+# them: D3D's SEH / epilogue fragments on the frame of the function they belong
+# to and the C runtime's __finally / __except funclets (frame in r12, the
+# owner's r28-r31). With non_volatile_as_local they keep those registers on ctx
+# and callers hand theirs over around the call. Found by
+# tools/nonvolatile_liveins.py --toml (0x82B0E470 / 0x82B0E480 are above).
+0x82B0D94C = { share_registers = true }  # r22 r27
+0x82B0DC34 = { share_registers = true }  # r25 r30
+0x82B0E4C4 = { share_registers = true }  # r22
+0x82E2B904 = { share_registers = true }  # r30
+0x82E2BE70 = { share_registers = true }  # r28 r30
+0x82E2BF9C = { share_registers = true }  # r30
+0x82E2C5C0 = { share_registers = true }  # r28
+0x82E2C7A4 = { share_registers = true }  # r30
+0x82E2CB6C = { share_registers = true }  # r30
+0x82E2CF0C = { share_registers = true }  # r30
+0x82E2D53C = { share_registers = true }  # r30
+0x82E2D724 = { share_registers = true }  # r30
+0x82E2DB4C = { share_registers = true }  # r30
+0x82E2DDC4 = { share_registers = true }  # r30
+0x82E2E094 = { share_registers = true }  # r30
+0x82E2EA58 = { share_registers = true }  # r28
+0x82E3039C = { share_registers = true }  # r29
+0x82E326E0 = { share_registers = true }  # r30
+0x82E36AF0 = { share_registers = true }  # r30
+0x82E36F30 = { share_registers = true }  # r30
+0x82E370BC = { share_registers = true }  # r27
+0x82E38A24 = { share_registers = true }  # r30
+0x82E39288 = { share_registers = true }  # r30
+0x82E394D0 = { share_registers = true }  # r30
+0x82E3995C = { share_registers = true }  # r30
+0x82E39AFC = { share_registers = true }  # r30
+0x82E39E14 = { share_registers = true }  # r28
+0x82E3A470 = { share_registers = true }  # r29 r30
+0x82E3AB20 = { share_registers = true }  # r30
+0x82E3EB7C = { share_registers = true }  # r30
+0x82E3EFB8 = { share_registers = true }  # r31
+0x82E3F254 = { share_registers = true }  # r31

@@ -1,0 +1,382 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows.Forms;
+
+namespace AO2Launcher
+{
+    // Everything about the game itself: where it is, the command line built
+    // from the launcher settings, starting it.
+    static class Game
+    {
+        public const string ExeName = "armyoftworecomp.exe";
+        public const string LobbyServerName = "ao2_lobby_server.exe";
+        const string FirewallRule = "Army of Two (recomp)";
+        // ao2_game_language's values besides "auto".
+        static readonly string[] Languages = { "en", "ru", "fr", "de", "es", "it" };
+
+        // The launcher's own folder first (the usual place: next to the game),
+        // then the remembered path, then a few folders around the launcher.
+        public static string Find(Settings s)
+        {
+            var candidates = new List<string>();
+            string own = AppDomain.CurrentDomain.BaseDirectory;
+            candidates.Add(Path.Combine(own, ExeName));
+            if (s["game_path"].Length > 0)
+            {
+                candidates.Add(s["game_path"]);
+            }
+            try
+            {
+                var dir = new DirectoryInfo(own);
+                for (int i = 0; i < 3 && dir != null; i++, dir = dir.Parent)
+                {
+                    candidates.Add(Path.Combine(dir.FullName, ExeName));
+                    candidates.Add(Path.Combine(dir.FullName, "ArmyOfTwo", ExeName));
+                    candidates.Add(Path.Combine(dir.FullName, "Army of Two", ExeName));
+                }
+            }
+            catch
+            {
+            }
+            foreach (string c in candidates)
+            {
+                try
+                {
+                    if (File.Exists(c))
+                    {
+                        return Path.GetFullPath(c);
+                    }
+                }
+                catch
+                {
+                }
+            }
+            return null;
+        }
+
+        public static bool IsRunning()
+        {
+            try
+            {
+                return Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ExeName)).Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        static string Flag(string name, bool on)
+        {
+            return on ? "--" + name : "--no-" + name;
+        }
+
+        static string Num(double v)
+        {
+            return v.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        public static string Quote(string arg)
+        {
+            if (arg.Length > 0 && arg.IndexOfAny(new[] { ' ', '\t', '"' }) < 0)
+            {
+                return arg;
+            }
+            // CommandLineToArgvW rules: backslashes are literal unless they
+            // precede a quote.
+            var sb = new StringBuilder("\"");
+            int slashes = 0;
+            foreach (char c in arg)
+            {
+                if (c == '\\')
+                {
+                    slashes++;
+                    continue;
+                }
+                if (c == '"')
+                {
+                    sb.Append('\\', slashes * 2 + 1);
+                }
+                else
+                {
+                    sb.Append('\\', slashes);
+                }
+                slashes = 0;
+                sb.Append(c);
+            }
+            sb.Append('\\', slashes * 2);
+            sb.Append('"');
+            return sb.ToString();
+        }
+
+        public static List<string> BuildArgs(Settings s, string hostIp)
+        {
+            var a = new List<string>();
+
+            bool fullscreen = s.Bool("fullscreen");
+            a.Add(Flag("fullscreen", fullscreen));
+            int monitor = s.Int("monitor");
+            a.Add("--monitor=" + monitor);
+            if (!fullscreen)
+            {
+                int w, h;
+                if (ParseSize(s["window_size"], out w, out h))
+                {
+                    // The game sizes its window in logical pixels (scaled by the
+                    // monitor's DPI), the launcher offers physical pixels.
+                    double dpi = Display.MonitorScale(monitor);
+                    a.Add("--window_width=" + (int)Math.Round(w / dpi));
+                    a.Add("--window_height=" + (int)Math.Round(h / dpi));
+                }
+            }
+            a.Add("--ao2_aspect_ratio=" + s["aspect_ratio"]);
+            a.Add("--ao2_native_gpu_resolution_scale=" + Num(Math.Max(1.0, Math.Min(4.0, s.Double("render_scale")))));
+            a.Add("--ao2_fps_unlock");
+            a.Add("--ao2_fps_target=" + s.Int("fps"));
+            a.Add("--ao2_fps_overlay=" + Math.Max(0, Math.Min(2, s.Int("fps_overlay"))));
+            a.Add(Flag("ao2_anisotropic_16x", s.Bool("aniso")));
+            a.Add(Flag("ao2_native_gpu_vsync", s.Bool("vsync")));
+            // The game's MSAA stays off: with it some surfaces show dark artifacts.
+            a.Add(Flag("ao2_disable_msaa", true));
+            string lang = s["language"];
+            a.Add("--ao2_game_language=" + (Array.IndexOf(Languages, lang) >= 0 ? lang : "auto"));
+
+            a.Add(Flag("ao2_mouse_aim", s.Bool("mouse_aim")));
+            a.Add("--ao2_mouse_sensitivity=" + Num(s.Double("mouse_sens")));
+            a.Add("--ao2_mouse_zoom_sensitivity=" + Num(s.Double("mouse_zoom")));
+            a.Add(Flag("ao2_mouse_invert_y", s.Bool("invert_y")));
+            a.Add("--ao2_mouse_stick_sensitivity=" + Num(s.Double("stick_sens")));
+
+            a.Add(Flag("ao2_skip_cutscenes", s.Bool("skip_cutscenes")));
+            a.Add(Flag("ao2_skip_unskippable", s.Bool("skip_unskippable")));
+            a.Add(Flag("ao2_god_mode", s.Bool("god_mode")));
+
+            if (!string.IsNullOrEmpty(hostIp))
+            {
+                a.Add("--no-ao2_coop_server");
+                a.Add("--ao2_coop_host=" + hostIp);
+            }
+            else
+            {
+                a.Add("--ao2_coop_server");
+            }
+            if (s.Bool("coop_debug"))
+            {
+                a.Add("--ao2_coop_debug");
+            }
+            string tag = s["gamertag"].Trim();
+            if (tag.Length > 0)
+            {
+                a.Add("--net_gamertag=" + tag);
+            }
+            a.Add("--ao2_coop_input_margin_ms=" + s.Int("input_margin"));
+            // The game's Graphics page (Options) saves its changes here too.
+            a.Add("--ao2_launcher_settings=" + s.FilePath);
+            return a;
+        }
+
+        public static string CommandLine(Settings s, string hostIp)
+        {
+            string line = string.Join(" ", BuildArgs(s, hostIp).Select(Quote));
+            string extra = s["extra_args"].Trim();
+            if (extra.Length > 0)
+            {
+                line += " " + extra;
+            }
+            return line;
+        }
+
+        public static bool ParseSize(string text, out int w, out int h)
+        {
+            w = h = 0;
+            string[] p = (text ?? "").ToLowerInvariant().Split('x');
+            return p.Length == 2 && int.TryParse(p[0], out w) && int.TryParse(p[1], out h) && w > 0 && h > 0;
+        }
+
+        public static void Start(string exe, Settings s, string hostIp)
+        {
+            var psi = new ProcessStartInfo(exe, CommandLine(s, hostIp))
+            {
+                WorkingDirectory = Path.GetDirectoryName(exe),
+                UseShellExecute = false,
+            };
+            Process.Start(psi);
+        }
+
+        // IPv4 addresses of this PC the partner could reach (LAN, Radmin VPN...).
+        public static List<KeyValuePair<string, string>> LocalAddresses()
+        {
+            var list = new List<KeyValuePair<string, string>>();
+            try
+            {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up ||
+                        ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    {
+                        continue;
+                    }
+                    foreach (var ua in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
+                        {
+                            continue;
+                        }
+                        string ip = ua.Address.ToString();
+                        if (ip.StartsWith("127.") || ip.StartsWith("169.254."))
+                        {
+                            continue;
+                        }
+                        list.Add(new KeyValuePair<string, string>(ip, ni.Name));
+                    }
+                }
+            }
+            catch
+            {
+            }
+            // VPN (Radmin 26.x) first: that's the one to give out over the internet.
+            return list.OrderBy(kv => kv.Key.StartsWith("26.") ? 0 : 1).ToList();
+        }
+
+        // Local IPv4 unicast addresses (with masks) of Up, non-loopback adapters.
+        public static List<KeyValuePair<IPAddress, IPAddress>> LocalSubnets()
+        {
+            var list = new List<KeyValuePair<IPAddress, IPAddress>>();
+            try
+            {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up ||
+                        ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    {
+                        continue;
+                    }
+                    foreach (var ua in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
+                        {
+                            continue;
+                        }
+                        string ip = ua.Address.ToString();
+                        if (ip.StartsWith("127.") || ip.StartsWith("169.254."))
+                        {
+                            continue;
+                        }
+                        list.Add(new KeyValuePair<IPAddress, IPAddress>(ua.Address, ua.IPv4Mask));
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
+
+        // Same rules as the dist's "Allow through firewall" batch file, one UAC prompt.
+        public static bool AllowThroughFirewall(string exe)
+        {
+            string dir = Path.GetDirectoryName(exe);
+            string lobby = Path.Combine(dir, LobbyServerName);
+            var cmd = new StringBuilder();
+            cmd.AppendFormat("netsh advfirewall firewall delete rule name=\"{0}\" >nul 2>&1", FirewallRule);
+            cmd.AppendFormat(" & netsh advfirewall firewall add rule name=\"{0}\" dir=in action=allow program=\"{1}\" enable=yes profile=any",
+                FirewallRule, exe);
+            if (File.Exists(lobby))
+            {
+                cmd.AppendFormat(" & netsh advfirewall firewall add rule name=\"{0}\" dir=in action=allow program=\"{1}\" enable=yes profile=any",
+                    FirewallRule, lobby);
+            }
+            var psi = new ProcessStartInfo("cmd.exe", "/s /c \"" + cmd + "\"")
+            {
+                Verb = "runas",
+                UseShellExecute = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+            try
+            {
+                using (var p = Process.Start(psi))
+                {
+                    p.WaitForExit(15000);
+                    return p.HasExited && p.ExitCode == 0;
+                }
+            }
+            catch
+            {
+                // UAC declined.
+                return false;
+            }
+        }
+
+        public static string SavesFolder()
+        {
+            string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string tu2 = Path.Combine(docs, "armyoftworecomp_tu2");
+            return Directory.Exists(tu2) ? tu2 : Path.Combine(docs, "armyoftworecomp");
+        }
+
+        public static void OpenFolder(string path)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", Quote(path)) { UseShellExecute = true });
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    static class Display
+    {
+        [DllImport("user32.dll")]
+        static extern IntPtr MonitorFromPoint(POINT pt, uint flags);
+
+        [DllImport("shcore.dll")]
+        static extern int GetDpiForMonitor(IntPtr monitor, int type, out uint dpiX, out uint dpiY);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct POINT
+        {
+            public int X, Y;
+        }
+
+        // The game's "monitor" setting: 0 = default (primary), N = N-th display.
+        public static Screen ScreenFor(int monitor)
+        {
+            Screen[] all = Screen.AllScreens;
+            if (monitor >= 1 && monitor <= all.Length)
+            {
+                return all[monitor - 1];
+            }
+            return Screen.PrimaryScreen;
+        }
+
+        public static double MonitorScale(int monitor)
+        {
+            try
+            {
+                Screen sc = ScreenFor(monitor);
+                var pt = new POINT { X = sc.Bounds.Left + sc.Bounds.Width / 2, Y = sc.Bounds.Top + sc.Bounds.Height / 2 };
+                IntPtr mon = MonitorFromPoint(pt, 2);
+                uint dx, dy;
+                if (GetDpiForMonitor(mon, 0, out dx, out dy) == 0 && dx > 0)
+                {
+                    return dx / 96.0;
+                }
+            }
+            catch
+            {
+            }
+            return 1.0;
+        }
+    }
+}

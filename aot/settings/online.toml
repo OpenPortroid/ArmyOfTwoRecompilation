@@ -1,0 +1,46 @@
+# armyoftworecomp - online co-op (Campaign Mode -> Public / Private Co-op Game)
+#
+# Loaded at startup like hardware.toml; --flags on the command line override
+# these. Flat `key = value` only. Details: docs/online_coop.md.
+#
+# One player hosts: the game then also runs the EA lobby server that Army of
+# Two needs (EA shut the real one down). The other player points their game at
+# the host's IP address. Over the internet put both PCs on one virtual network
+# (Radmin VPN, ZeroTier, Tailscale...) and use the host's address in it; on a
+# LAN use the host's LAN address. Both players need the same build of the game
+# (co-op is a lockstep simulation: both PCs must compute identical results).
+#
+# Host:    TCP 18480, 18485, 13505 in, UDP 18490 in (LAN discovery), UDP 1000 both ways.
+# Partner: UDP 1000 both ways.
+# Allow armyoftworecomp.exe when Windows Firewall asks.
+# The launcher finds a running host via UDP 18490 and sets ao2_coop_server /
+# ao2_coop_host automatically, so these keys normally stay as they are.
+
+# Host: true. Partner: false.
+ao2_coop_server = false
+
+# Partner: the host's IP address, e.g. "26.12.34.56". Host: leave empty.
+ao2_coop_host = ""
+
+# The name the other player sees (empty = this computer's name, max 15).
+net_gamertag = ""
+
+# Invites (Campaign Mode -> Private Co-op Game): the lobby's Invite button
+# opens the players window - everyone running the game on the LAN or the same
+# VPN is found automatically (UDP 18491). The invited player gets a notice and
+# accepts with F6; F8 opens the window at any time (invites, add a player by
+# address). Friends found only by address (over the internet without a VPN):
+# their IPs here, comma separated, e.g. "203.0.113.7, 26.1.2.3".
+ao2_friends = ""
+
+# Extra input delay in ms on top of the network latency. The game runs up
+# to latency + 4 ms + one frame ahead of the partner (at 120 FPS on a LAN
+# 2-3 frames, ~25 ms); raise this (e.g. 8-30) if the game still waits for
+# the partner on a jittery connection (FPS drops in co-op only). 50 = the
+# game's own rule.
+ao2_coop_input_margin_ms = 25
+# The same skeletal LOD for every pawn on both PCs (off = desync). Picked by the
+# distance to the nearest player; the scale: higher = full detail farther away
+# (0 = every pawn at full detail, slow in fights). Both: the same on both PCs.
+ao2_coop_force_lod = true
+ao2_coop_lod_scale = 2.0

@@ -1,0 +1,18 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "user-env",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "rexglue/win-amd64"
+            }
+        },
+        { "name": "local-win-debug", "inherits": ["win-amd64-debug", "user-env"] },
+        { "name": "local-win-release", "inherits": ["win-amd64-release", "user-env"] },
+        { "name": "local-win-relwithdebinfo", "inherits": ["win-amd64-relwithdebinfo", "user-env"] },
+        { "name": "local-lin-debug", "inherits": ["linux-amd64-debug", "user-env"] },
+        { "name": "local-lin-release", "inherits": ["linux-amd64-release", "user-env"] },
+        { "name": "local-lin-relwithdebinfo", "inherits": ["linux-amd64-relwithdebinfo", "user-env"] }
+    ]
+}
