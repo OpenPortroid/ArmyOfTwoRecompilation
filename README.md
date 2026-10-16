@@ -16,12 +16,6 @@ to C++ with the ReXGlue SDK and built as a Windows x64 executable.
 The whole game is finishable in solo or co-op without crashes. Tested on NVIDIA GeForce RTX 2060 and RTX 4060,
 stable 144 FPS.
 
-> [!IMPORTANT]
-> The whole campaign can be finished in solo and in co-op. Still, you may encounter bugs, crashes and
-> visual glitches. Please report them in [issues](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues):
-> what happened and where in the game, your GPU and settings, a screenshot for visual problems, and the
-> `crash_*.txt` / `crash_*.dmp` files from the game folder if the game crashed.
-
 The repository contains no game files. You need your own copy of the game.
 
 Found a bug or have a suggestion? Please open an [issue](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues).
