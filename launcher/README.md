@@ -32,8 +32,12 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 
 - **Updates** (`src\Updates.cs`). On start the launcher asks the GitHub API for the latest release of
   OpenPortroid/ArmyOfTwoRecompilation (off the UI thread, 6 s timeout). The version under Play reads `v1.0 · up to date`,
-  or `v1.0 · update available: v1.1`, and then a window offers to download the new archive (the browser downloads
-  the release's `.zip`). Offline only the version is shown. `Updates.Current` is the package's version: bump it before
+  or `v1.0 · update available: v1.1`, and then a window offers to update. UPDATE downloads the release's `.zip` to
+  `update.tmp` next to the launcher, unpacks it there, checks it is a release of the port and copies it over the
+  package, with a progress bar for each step; then the new launcher is started. The user's `settings\*.toml` are kept;
+  the running launcher is renamed to `ArmyOfTwoLauncher.exe.old` (a running exe cannot be overwritten) and removed by
+  the next start. Without a release layout (no `armyoftworecomp.exe` next to the launcher) the browser downloads the
+  archive instead. Offline only the version is shown. `Updates.Version` is the package's version: bump it before
   every release, the tag is `v` + it.
 
 Build: `build.cmd` (Roslyn from Visual Studio / Build Tools, or the csc that ships with Windows). The pictures
@@ -47,4 +51,7 @@ as if a host had been found); `--snapshot=<png> [--screen=main|settings|install]
 the window to a file without showing it; `--probe=<file>` runs the host search and writes the found IP or
 `none`; `--install=<log> --src=<path>[;<path>...]` installs from the given sources without the window;
 `--check-update=<file>` asks GitHub for the latest release and writes `<version> <url> newer|current` or `none`;
-`--latest=<tag>` takes this tag as the latest release instead of asking GitHub (with `--snapshot`: the update window).
+`--latest=<tag>` takes this tag as the latest release instead of asking GitHub (with `--snapshot`: the update window);
+`--pretend-version=<ver>` makes the launcher think it is version `<ver>`, to test the update against the real GitHub;
+`--self-update=<log>` downloads and installs the latest release over this package without the window;
+`--update-ui=downloading|installing|failed[:<0..1>]` (with `--snapshot --latest=<tag>`) draws the update window in that state.

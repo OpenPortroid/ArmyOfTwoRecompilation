@@ -16,6 +16,7 @@ if not exist bin mkdir bin
   -out:bin\ArmyOfTwoLauncher.exe -win32icon:res\app.ico ^
   -r:"%FW%\mscorlib.dll" -r:"%FW%\System.dll" -r:"%FW%\System.Core.dll" ^
   -r:"%FW%\System.Drawing.dll" -r:"%FW%\System.Windows.Forms.dll" ^
+  -r:"%FW%\System.IO.Compression.dll" -r:"%FW%\System.IO.Compression.FileSystem.dll" ^
   -resource:res\bg.jpg,AO2Launcher.bg.jpg -resource:res\bg_dim.jpg,AO2Launcher.bg_dim.jpg ^
   -resource:res\logo.png,AO2Launcher.logo.png -resource:res\app.ico,AO2Launcher.app.ico ^
   src\*.cs

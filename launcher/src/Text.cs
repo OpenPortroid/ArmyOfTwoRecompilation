@@ -81,20 +81,51 @@ namespace AO2Launcher
               "{0} · Update verfügbar: {1}", "{0} · actualización disponible: {1}", "{0} · aggiornamento disponibile: {1}");
             a("UPDATE AVAILABLE", "ДОСТУПНО ОБНОВЛЕНИЕ", "MISE À JOUR DISPONIBLE", "UPDATE VERFÜGBAR", "ACTUALIZACIÓN DISPONIBLE",
               "AGGIORNAMENTO DISPONIBILE");
-            a("Version {0} is out, you have {1}. Download it now?",
-              "Вышла версия {0}, у вас {1}. Скачать сейчас?",
-              "La version {0} est sortie, vous avez la {1}. La télécharger maintenant ?",
-              "Version {0} ist erschienen, Sie haben {1}. Jetzt herunterladen?",
-              "Ya está disponible la versión {0}; tienes la {1}. ¿Descargarla ahora?",
-              "È uscita la versione {0}, hai la {1}. Scaricarla ora?");
-            a("Extract the archive over this folder: settings and saves are kept.",
-              "Распакуйте архив поверх этой папки: настройки и сохранения останутся.",
-              "Extrayez l'archive par-dessus ce dossier : paramètres et sauvegardes sont conservés.",
-              "Entpacken Sie das Archiv über diesen Ordner: Einstellungen und Spielstände bleiben erhalten.",
-              "Extrae el archivo sobre esta carpeta: se conservan los ajustes y las partidas.",
-              "Estrai l'archivio sopra questa cartella: impostazioni e salvataggi restano.");
-            a("DOWNLOAD", "СКАЧАТЬ", "TÉLÉCHARGER", "HERUNTERLADEN", "DESCARGAR", "SCARICA");
+            a("Version {0} is out, you have {1}. Update now?",
+              "Вышла версия {0}, у вас {1}. Обновить сейчас?",
+              "La version {0} est sortie, vous avez la {1}. Mettre à jour maintenant ?",
+              "Version {0} ist erschienen, Sie haben {1}. Jetzt aktualisieren?",
+              "Ya está disponible la versión {0}; tienes la {1}. ¿Actualizar ahora?",
+              "È uscita la versione {0}, hai la {1}. Aggiornare ora?");
+            a("The launcher downloads and installs it by itself. Your game files, settings and saves are kept.",
+              "Лаунчер сам скачает и установит её. Файлы игры, настройки и сохранения останутся.",
+              "Le lanceur la télécharge et l'installe lui-même. Fichiers du jeu, paramètres et sauvegardes sont conservés.",
+              "Der Launcher lädt und installiert sie selbst. Spieldateien, Einstellungen und Spielstände bleiben erhalten.",
+              "El lanzador la descarga e instala solo. Se conservan los archivos del juego, los ajustes y las partidas.",
+              "Il launcher la scarica e la installa da solo. File del gioco, impostazioni e salvataggi restano.");
+            a("UPDATE", "ОБНОВИТЬ", "METTRE À JOUR", "AKTUALISIEREN", "ACTUALIZAR", "AGGIORNA");
             a("LATER", "ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
+            a("RETRY", "ПОВТОРИТЬ", "RÉESSAYER", "WIEDERHOLEN", "REINTENTAR", "RIPROVA");
+            a("UPDATING TO {0}", "ОБНОВЛЕНИЕ ДО {0}", "MISE À JOUR VERS {0}", "UPDATE AUF {0}", "ACTUALIZANDO A {0}", "AGGIORNAMENTO A {0}");
+            a("Downloading: {0:0.0} of {1:0.0} MB", "Загрузка: {0:0.0} из {1:0.0} МБ", "Téléchargement : {0:0.0} sur {1:0.0} Mo",
+              "Download: {0:0.0} von {1:0.0} MB", "Descargando: {0:0.0} de {1:0.0} MB", "Download: {0:0.0} di {1:0.0} MB");
+            a("Downloading: {0:0.0} MB", "Загрузка: {0:0.0} МБ", "Téléchargement : {0:0.0} Mo", "Download: {0:0.0} MB",
+              "Descargando: {0:0.0} MB", "Download: {0:0.0} MB");
+            a("Installing: {0:0}%", "Установка: {0:0}%", "Installation : {0:0} %", "Installation: {0:0} %", "Instalando: {0:0} %",
+              "Installazione: {0:0}%");
+            a("The launcher restarts by itself when the update is installed.",
+              "Когда обновление установится, лаунчер перезапустится сам.",
+              "Le lanceur redémarre de lui-même une fois la mise à jour installée.",
+              "Der Launcher startet nach der Installation von selbst neu.",
+              "El lanzador se reinicia solo cuando la actualización esté instalada.",
+              "Il launcher si riavvia da solo a installazione completata.");
+            a("Do not close the launcher.", "Не закрывайте лаунчер.", "Ne fermez pas le lanceur.", "Schließen Sie den Launcher nicht.",
+              "No cierres el lanzador.", "Non chiudere il launcher.");
+            a("UPDATE FAILED", "ОБНОВЛЕНИЕ НЕ УДАЛОСЬ", "ÉCHEC DE LA MISE À JOUR", "UPDATE FEHLGESCHLAGEN", "LA ACTUALIZACIÓN FALLÓ",
+              "AGGIORNAMENTO NON RIUSCITO");
+            a("Try again, or download the archive from GitHub and extract it over this folder.",
+              "Попробуйте ещё раз или скачайте архив с GitHub и распакуйте поверх этой папки.",
+              "Réessayez, ou téléchargez l'archive sur GitHub et extrayez-la par-dessus ce dossier.",
+              "Erneut versuchen oder das Archiv von GitHub laden und über diesen Ordner entpacken.",
+              "Inténtalo de nuevo o descarga el archivo de GitHub y extráelo sobre esta carpeta.",
+              "Riprova, oppure scarica l'archivio da GitHub ed estrailo sopra questa cartella.");
+            a("Close the game first.", "Сначала закройте игру.", "Fermez d'abord le jeu.", "Schließen Sie zuerst das Spiel.",
+              "Cierra primero el juego.", "Chiudi prima il gioco.");
+            a("Update cancelled", "Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
+              "Aggiornamento annullato");
+            a("Updated to {0}. Start the launcher again: {1}", "Обновлено до {0}. Запустите лаунчер заново: {1}",
+              "Mis à jour vers {0}. Relancez le lanceur : {1}", "Auf {0} aktualisiert. Starten Sie den Launcher neu: {1}",
+              "Actualizado a {0}. Vuelve a abrir el lanzador: {1}", "Aggiornato a {0}. Riavvia il launcher: {1}");
             a("Could not open the browser: {0}", "Не удалось открыть браузер: {0}", "Impossible d'ouvrir le navigateur : {0}",
               "Browser konnte nicht geöffnet werden: {0}", "No se pudo abrir el navegador: {0}", "Impossibile aprire il browser: {0}");
 

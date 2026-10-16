@@ -169,7 +169,7 @@ namespace AO2Launcher
             timer.Tick += (s, e) =>
             {
                 pad.Poll(Form.ActiveForm == this);
-                if (pad.Connected != padConnected || installing)
+                if (pad.Connected != padConnected || installing || UpdateBusy)
                 {
                     // Installing: the progress bar's stripes move.
                     padConnected = pad.Connected;
@@ -187,6 +187,21 @@ namespace AO2Launcher
             };
             timer.Start();
             LayoutRows();
+            // After an update the previous launcher may still be exiting: retry for a few seconds.
+            Updates.CleanUp();
+            if (Updates.LeftOver)
+            {
+                var clean = new System.Threading.Thread(() =>
+                {
+                    for (int i = 0; i < 20 && Updates.LeftOver; i++)
+                    {
+                        System.Threading.Thread.Sleep(500);
+                        Updates.CleanUp();
+                    }
+                });
+                clean.IsBackground = true;
+                clean.Start();
+            }
             CheckForUpdate();
         }
 
@@ -240,36 +255,172 @@ namespace AO2Launcher
             get { return updatePrompt && screen == UiScreen.Main && !installing; }
         }
 
-        void DownloadUpdate()
+        // The update window's state: the question, the download, the installation, or an error.
+        public enum UpdState { Ask, Downloading, Installing, Failed }
+        UpdState updState;
+        long updDone, updTotal;   // download: bytes so far, archive size (-1: unknown)
+        double updProgress;       // installation: 0..1
+        string updError;
+        volatile bool cancelUpdate;
+        bool restarting;
+
+        bool UpdateBusy
         {
-            updatePrompt = false;
+            get { return updatePrompt && (updState == UpdState.Downloading || updState == UpdState.Installing); }
+        }
+
+        // UPDATE: download and install in place; without a release layout (the launcher is not next to the
+        // game) or an archive in the release, the browser opens the download instead.
+        void StartUpdate()
+        {
+            if (!Updates.CanSelfUpdate(latest))
+            {
+                updatePrompt = false;
+                try
+                {
+                    System.Diagnostics.Process.Start(latest.Url);
+                }
+                catch (Exception ex)
+                {
+                    ShowToast(L.F("Could not open the browser: {0}", ex.Message), true);
+                }
+                Invalidate();
+                return;
+            }
+            if (Game.IsRunning())
+            {
+                updState = UpdState.Failed;
+                updError = L.T("Close the game first.");
+                Invalidate();
+                return;
+            }
+            updState = UpdState.Downloading;
+            updDone = 0;
+            updTotal = -1;
+            updProgress = 0;
+            updError = null;
+            cancelUpdate = false;
+            Updates.Release r = latest;
+            var th = new System.Threading.Thread(() =>
+            {
+                string error = null;
+                bool cancelled = false;
+                try
+                {
+                    string zip = Updates.Download(r, (done, total) =>
+                    {
+                        System.Threading.Interlocked.Exchange(ref updDone, done);
+                        System.Threading.Interlocked.Exchange(ref updTotal, total);
+                    }, () => cancelUpdate);
+                    UiDo(() => updState = UpdState.Installing);
+                    Updates.Install(zip, p => updProgress = p);
+                }
+                catch (OperationCanceledException)
+                {
+                    cancelled = true;
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                }
+                UiDo(() => FinishUpdate(error, cancelled));
+            });
+            th.IsBackground = true;
+            th.Start();
+        }
+
+        void UiDo(Action a)
+        {
             try
             {
-                System.Diagnostics.Process.Start(latest.Url);
+                BeginInvoke(a);
+            }
+            catch (InvalidOperationException)
+            {
+                // The form was closed meanwhile.
+            }
+        }
+
+        void FinishUpdate(string error, bool cancelled)
+        {
+            if (cancelled)
+            {
+                Updates.CleanUp();
+                updState = UpdState.Ask;
+                updatePrompt = false;
+                ShowToast(L.T("Update cancelled"), true);
+                return;
+            }
+            if (error != null)
+            {
+                updState = UpdState.Failed;
+                updError = error;
+                promptSel = 0;
+                Invalidate();
+                return;
+            }
+            // The new launcher takes over; it removes the old one and update.tmp when it starts.
+            restarting = true;
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Application.ExecutablePath)
+                {
+                    WorkingDirectory = Updates.Dir,
+                    UseShellExecute = false,
+                });
             }
             catch (Exception ex)
             {
-                ShowToast(L.F("Could not open the browser: {0}", ex.Message), true);
+                ShowToast(L.F("Updated to {0}. Start the launcher again: {1}", "v" + latest.Version, ex.Message), true);
+                updatePrompt = false;
+                return;
             }
-            Invalidate();
+            Close();
         }
 
         void ClosePrompt()
         {
+            if (UpdateBusy)
+            {
+                if (updState == UpdState.Downloading)
+                {
+                    cancelUpdate = true; // the download thread stops and closes the window
+                }
+                return;
+            }
             updatePrompt = false;
+            updState = UpdState.Ask;
             Invalidate();
         }
 
         void PromptActivate()
         {
-            if (promptSel == 0)
+            if (UpdateBusy)
             {
-                DownloadUpdate();
+                ClosePrompt(); // the only button while downloading: CANCEL
+            }
+            else if (promptSel == 0)
+            {
+                StartUpdate();
             }
             else
             {
                 ClosePrompt();
             }
+        }
+
+        // Debug (--snapshot with --latest): the update window in a given state.
+        public void SnapshotUpdate(UpdState st, double p)
+        {
+            if (!updatePrompt)
+            {
+                return;
+            }
+            updState = st;
+            updTotal = 34 << 20;
+            updDone = (long)(updTotal * p);
+            updProgress = p;
+            updError = st == UpdState.Failed ? "The remote server returned an error: (404) Not Found." : null;
         }
 
         public void Snapshot(string path, int t, int s, UiScreen scr)
@@ -340,7 +491,14 @@ namespace AO2Launcher
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            if (!restarting && updatePrompt && updState == UpdState.Installing)
+            {
+                // Files are being replaced: closing now would leave a half-updated package.
+                e.Cancel = true;
+                return;
+            }
             cancelInstall = true;
+            cancelUpdate = true;
             S["tab"] = tab.ToString(CultureInfo.InvariantCulture);
             S.Save();
             base.OnFormClosing(e);
@@ -1683,19 +1841,64 @@ namespace AO2Launcher
             Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
             var box = new RectangleF((W - 520) / 2, 196, 520, 210);
             Panel(g, box);
-            Caps(g, L.T("UPDATE AVAILABLE"), fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
             var text = new StringFormat { Alignment = StringAlignment.Center };
-            DrawText(g, L.F("Version {0} is out, you have {1}. Download it now?", "v" + latest.Version, "v" + Updates.Current),
-                fLabel, TextLight, new RectangleF(box.X + 30, box.Y + 62, box.Width - 60, 42), text);
-            DrawText(g, L.T("Extract the archive over this folder: settings and saves are kept."),
-                fSmall, TextDim, new RectangleF(box.X + 30, box.Y + 98, box.Width - 60, 36), text);
+            var line1 = new RectangleF(box.X + 30, box.Y + 62, box.Width - 60, 42);
+            var line2 = new RectangleF(box.X + 30, box.Y + 98, box.Width - 60, 36);
+            string ver = "v" + latest.Version;
 
-            var dl = new RectangleF(box.X + box.Width / 2 - 10 - 180, box.Bottom - 66, 180, 42);
+            if (updState == UpdState.Downloading || updState == UpdState.Installing)
+            {
+                Caps(g, L.F("UPDATING TO {0}", ver), fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+                bool dl = updState == UpdState.Downloading;
+                float t;
+                string status;
+                if (dl)
+                {
+                    long total = System.Threading.Interlocked.Read(ref updTotal), done = System.Threading.Interlocked.Read(ref updDone);
+                    t = total > 0 ? (float)done / total : 0;
+                    status = total > 0
+                        ? L.F("Downloading: {0:0.0} of {1:0.0} MB", done / 1048576.0, total / 1048576.0)
+                        : L.F("Downloading: {0:0.0} MB", done / 1048576.0);
+                }
+                else
+                {
+                    t = (float)updProgress;
+                    status = L.F("Installing: {0:0}%", updProgress * 100);
+                }
+                DrawText(g, status, fLabel, TextLight, line1, text);
+                Progress(g, new RectangleF(box.X + 40, box.Y + 104, box.Width - 80, 4), t);
+                DrawText(g, L.T(dl ? "The launcher restarts by itself when the update is installed." : "Do not close the launcher."),
+                    fSmall, TextDim, new RectangleF(box.X + 30, box.Y + 118, box.Width - 60, 22), text);
+                if (dl)
+                {
+                    var cancel = new RectangleF(box.X + (box.Width - 180) / 2, box.Bottom - 60, 180, 38);
+                    FlatButton(g, cancel, L.T(cancelUpdate ? "CANCELLING…" : "CANCEL"), fBtn, false, !cancelUpdate, cancelUpdate);
+                    AddHot(cancel, "upd_cancel", ClosePrompt);
+                }
+                return;
+            }
+
+            bool failed = updState == UpdState.Failed;
+            Caps(g, L.T(failed ? "UPDATE FAILED" : "UPDATE AVAILABLE"), fTitle, failed ? Crimson : PaperHi,
+                new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+            if (failed)
+            {
+                DrawText(g, updError, fLabel, TextLight, line1, text);
+                DrawText(g, L.T("Try again, or download the archive from GitHub and extract it over this folder."), fSmall, TextDim, line2, text);
+            }
+            else
+            {
+                DrawText(g, L.F("Version {0} is out, you have {1}. Update now?", ver, "v" + Updates.Current), fLabel, TextLight, line1, text);
+                DrawText(g, L.T("The launcher downloads and installs it by itself. Your game files, settings and saves are kept."),
+                    fSmall, TextDim, line2, text);
+            }
+
+            var go = new RectangleF(box.X + box.Width / 2 - 10 - 180, box.Bottom - 66, 180, 42);
             var later = new RectangleF(box.X + box.Width / 2 + 10, box.Bottom - 66, 180, 42);
-            bool onButton = IsHover("upd_dl") || IsHover("upd_later");
-            FlatButton(g, dl, L.T("DOWNLOAD"), fBtn, true, IsHover("upd_dl") || (!onButton && promptSel == 0), false);
+            bool onButton = IsHover("upd_go") || IsHover("upd_later");
+            FlatButton(g, go, L.T(failed ? "RETRY" : "UPDATE"), fBtn, true, IsHover("upd_go") || (!onButton && promptSel == 0), false);
             FlatButton(g, later, L.T("LATER"), fBtn, false, IsHover("upd_later") || (!onButton && promptSel == 1), false);
-            AddHot(dl, "upd_dl", DownloadUpdate);
+            AddHot(go, "upd_go", StartUpdate);
             AddHot(later, "upd_later", ClosePrompt);
         }
 
@@ -1980,6 +2183,11 @@ namespace AO2Launcher
             // host search and writes the found IP (or "none").
             string[] args = Environment.GetCommandLineArgs();
             Func<string, string> opt = name => args.Where(a => a.StartsWith("--" + name + "=")).Select(a => a.Substring(name.Length + 3)).FirstOrDefault();
+            // --pretend-version=<ver>: this package's version as if it were <ver>, to see the update window.
+            if (opt("pretend-version") != null)
+            {
+                Updates.Current = opt("pretend-version").TrimStart('v', 'V');
+            }
             string snap = opt("snapshot");
             string dump = opt("dump-args");
             string probe = opt("probe");
@@ -1995,6 +2203,49 @@ namespace AO2Launcher
                 Updates.Release r = Updates.Latest();
                 File.WriteAllText(check, r == null ? "none" : r.Version + " " + r.Url +
                     (Updates.Newer(r.Version, Updates.Current) ? " newer" : " current"));
+                return;
+            }
+            // --self-update=<log>: downloads and installs the latest release over this package without the
+            // window (debug: the update path end to end), logging the steps.
+            string selfUpdate = opt("self-update");
+            if (selfUpdate != null)
+            {
+                Action<string> log = s => File.AppendAllText(selfUpdate, s + "\r\n");
+                try
+                {
+                    Updates.Release r = Updates.Latest();
+                    log("latest: " + (r == null ? "none" : r.Version + " " + r.Url) + ", current " + Updates.Current);
+                    if (r == null || !Updates.Newer(r.Version, Updates.Current) || !Updates.CanSelfUpdate(r))
+                    {
+                        log("nothing to do");
+                        return;
+                    }
+                    int lastPct = -1;
+                    string zip = Updates.Download(r, (done, total) =>
+                    {
+                        int pct = total > 0 ? (int)(done * 10 / total) * 10 : -1;
+                        if (pct != lastPct)
+                        {
+                            lastPct = pct;
+                            log("download " + pct + "% (" + done + " of " + total + ")");
+                        }
+                    }, () => false);
+                    lastPct = -1;
+                    Updates.Install(zip, p =>
+                    {
+                        int pct = (int)(p * 10) * 10;
+                        if (pct != lastPct)
+                        {
+                            lastPct = pct;
+                            log("install " + pct + "%");
+                        }
+                    });
+                    log("OK");
+                }
+                catch (Exception ex)
+                {
+                    log("ERROR " + ex);
+                }
                 return;
             }
             if (probe != null)
@@ -2052,6 +2303,19 @@ namespace AO2Launcher
                 int t = 0, sl = 0;
                 int.TryParse(opt("tab"), out t);
                 int.TryParse(opt("sel"), out sl);
+                // --update-ui=downloading|installing|failed[:<0..1>] (with --latest): the update window in that state.
+                string ui = opt("update-ui");
+                if (ui != null)
+                {
+                    string[] parts = ui.Split(':');
+                    double p = 0.4;
+                    if (parts.Length > 1)
+                    {
+                        double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out p);
+                    }
+                    form.SnapshotUpdate(parts[0] == "installing" ? LauncherForm.UpdState.Installing
+                        : parts[0] == "failed" ? LauncherForm.UpdState.Failed : LauncherForm.UpdState.Downloading, p);
+                }
                 UiScreen scr = opt("screen") == "settings" ? UiScreen.Settings : opt("screen") == "install" ? UiScreen.Install : UiScreen.Main;
                 form.Snapshot(snap, t, sl, scr);
                 return;
