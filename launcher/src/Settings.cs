@@ -34,6 +34,14 @@ namespace AO2Launcher
             { "god_mode", "0" },
             { "host_ip", "" },
             { "gamertag", "" },
+            { "split_screen", "0" },
+            { "gamertag2", "" },
+            { "p1_input", "keyboard" },
+            { "p2_input", "pads" },
+            { "pad_left_stick", "LS" },
+            { "pad_right_stick", "RS" },
+            { "pad_invert_left_y", "0" },
+            { "pad_invert_right_y", "0" },
             { "input_margin", "0" },
             { "coop_debug", "0" },
             { "extra_args", "" },
@@ -42,6 +50,19 @@ namespace AO2Launcher
             { "game_path", "" },
             { "tab", "0" },
         };
+
+        // Key and gamepad bindings: kb_<name> / pad_<name> (Bindings.cs).
+        static Settings()
+        {
+            foreach (var b in Bindings.Keyboard)
+            {
+                Defaults[b.KbKey] = b.Default;
+            }
+            foreach (var b in Bindings.Pad)
+            {
+                Defaults[b.PadKey] = b.Default;
+            }
+        }
 
         readonly Dictionary<string, string> values = new Dictionary<string, string>(Defaults);
         public string FilePath { get; private set; }

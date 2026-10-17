@@ -9,6 +9,7 @@ namespace AO2Launcher
         public const int DpadUp = 0x0001, DpadDown = 0x0002, DpadLeft = 0x0004, DpadRight = 0x0008;
         public const int Start = 0x0010, Back = 0x0020, LB = 0x0100, RB = 0x0200;
         public const int A = 0x1000, B = 0x2000, X = 0x4000, Y = 0x8000;
+        public const int L3 = 0x0040, R3 = 0x0080, LT = 0x10000, RT = 0x20000; // RawPressed only
 
         [StructLayout(LayoutKind.Sequential)]
         struct XINPUT_GAMEPAD
@@ -41,6 +42,10 @@ namespace AO2Launcher
         // Fires for each newly pressed button; direction buttons (D-pad and left
         // stick) repeat while held.
         public event Action<int> Pressed;
+        // Fires for each newly pressed control as it is (no stick as D-pad, the triggers as LT / RT):
+        // assigning a gamepad button. Before Pressed for the same press.
+        public event Action<int> RawPressed;
+        int lastRaw;
 
         public bool Connected
         {
@@ -98,7 +103,24 @@ namespace AO2Launcher
                 if (pad < 0)
                 {
                     last = 0;
+                    lastRaw = 0;
                     return;
+                }
+            }
+
+            int raw = st.Gamepad.wButtons;
+            if (st.Gamepad.bLeftTrigger > 60) raw |= LT;
+            if (st.Gamepad.bRightTrigger > 60) raw |= RT;
+            int rawPressed = raw & ~lastRaw;
+            lastRaw = raw;
+            if (active && RawPressed != null)
+            {
+                for (int bit = 1; bit <= RT; bit <<= 1)
+                {
+                    if ((rawPressed & bit) != 0)
+                    {
+                        RawPressed(bit);
+                    }
                 }
             }
 

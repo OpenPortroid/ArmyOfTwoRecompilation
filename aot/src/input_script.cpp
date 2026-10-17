@@ -315,22 +315,27 @@ extern "C" REX_FUNC(sub_82B07AF0)
   uint32_t user = ctx.r3.u32;
   uint32_t state = ctx.r4.u32;
   __imp__sub_82B07AF0(ctx, base);
-  if ((user & 0xFF) != 0 || !state)
+  user &= 0xFF;
+  // Scripted input and the autopilot drive player 1; the mouse (the right
+  // stick where it does not aim) and W / S at the wheel go to the player with
+  // the keyboard - another one in split-screen.
+  bool keyboard = user == ao2::mouse::KeyboardUser();
+  if ((user != 0 && !keyboard) || !state)
   {
     return;
   }
   uint32_t inputs = 0;
-  bool scripted = CurrentInputs(inputs);
+  bool scripted = user == 0 && CurrentInputs(inputs);
   int32_t rx = 0, ry = 0;
-  bool mouse = ctx.r3.u32 == 0 && ao2::mouse::TakeStickFallback(rx, ry);
+  bool mouse = keyboard && ctx.r3.u32 == 0 && ao2::mouse::TakeStickFallback(rx, ry);
   ao2::autopilot::Pad pilot{};
-  bool autopilot = ao2::autopilot::CurrentPad(pilot);
+  bool autopilot = user == 0 && ao2::autopilot::CurrentPad(pilot);
   // XINPUT_STATE: dwPacketNumber, wButtons, triggers, thumbsticks (big-endian).
   uint8_t *p = base + state;
   // At the wheel the game takes the gas and the brake from the triggers
   // (the mouse buttons); the left stick forward / back - W / S - presses
   // them too.
-  if (ctx.r3.u32 == 0 && REXCVAR_GET(ao2_vehicle_wasd) && ao2::mouse::Driving())
+  if (keyboard && ctx.r3.u32 == 0 && REXCVAR_GET(ao2_vehicle_wasd) && ao2::mouse::Driving())
   {
     int32_t ly = int16_t((p[10] << 8) | p[11]);
     constexpr int32_t kDeadZone = 8000;
@@ -347,7 +352,7 @@ extern "C" REX_FUNC(sub_82B07AF0)
   // "Press START" takes only Start (Esc); A there (Enter, E, the pad's A)
   // presses it too. Nothing else listens to A on that screen.
   constexpr uint16_t kButtonA = 0x1000, kButtonStart = 0x0010;
-  if (ctx.r3.u32 == 0 && (p[4] << 8 | p[5]) & kButtonA && PressStartOnTop(base))
+  if (user == 0 && ctx.r3.u32 == 0 && (p[4] << 8 | p[5]) & kButtonA && PressStartOnTop(base))
   {
     Store16(p + 4, uint16_t((p[4] << 8 | p[5]) | kButtonStart));
   }

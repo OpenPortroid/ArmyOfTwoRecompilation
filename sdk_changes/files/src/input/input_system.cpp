@@ -11,6 +11,9 @@
 
 #include <algorithm>
 #include <atomic>
+#include <bit>
+#include <string_view>
+#include <utility>
 #include <cmath>
 
 #include <rex/dbg.h>
@@ -29,6 +32,39 @@ REXCVAR_DEFINE_STRING(input_backend, "sdl", "Input", "Input backend: sdl, xinput
     .allowed({"sdl", "xinput"});
 
 REXCVAR_DEFINE_BOOL(guide_button, false, "Input", "Enable guide button pass-through");
+
+// Gamepad remapping: each Xbox 360 control of the guest takes the physical
+// controls listed (comma-separated; empty = never pressed). Names: A, B, X,
+// Y, LB, RB, LT, RT, L3, R3, Up, Down, Left, Right, Back, Start. A trigger
+// as a button is pressed past the XInput threshold, a button as a trigger is
+// fully pulled. Keyboard and mouse are not affected (keybind_*).
+#define PADBIND(name, def, desc) \
+  REXCVAR_DEFINE_STRING(padbind_##name, def, "Input/Padbinds", desc)
+PADBIND(a, "A", "A button");
+PADBIND(b, "B", "B button");
+PADBIND(x, "X", "X button");
+PADBIND(y, "Y", "Y button");
+PADBIND(left_shoulder, "LB", "Left shoulder");
+PADBIND(right_shoulder, "RB", "Right shoulder");
+PADBIND(left_trigger, "LT", "Left trigger");
+PADBIND(right_trigger, "RT", "Right trigger");
+PADBIND(lstick_press, "L3", "Left stick press");
+PADBIND(rstick_press, "R3", "Right stick press");
+PADBIND(dpad_up, "Up", "D-pad up");
+PADBIND(dpad_down, "Down", "D-pad down");
+PADBIND(dpad_left, "Left", "D-pad left");
+PADBIND(dpad_right, "Right", "D-pad right");
+PADBIND(back, "Back", "Back button");
+PADBIND(start, "Start", "Start button");
+#undef PADBIND
+REXCVAR_DEFINE_STRING(padbind_left_stick, "LS", "Input/Padbinds",
+                      "Physical stick acting as the left stick: LS or RS");
+REXCVAR_DEFINE_STRING(padbind_right_stick, "RS", "Input/Padbinds",
+                      "Physical stick acting as the right stick: LS or RS");
+REXCVAR_DEFINE_BOOL(pad_invert_left_y, false, "Input/Padbinds", "Invert the left stick's Y axis");
+REXCVAR_DEFINE_BOOL(pad_invert_right_y, false, "Input/Padbinds",
+                    "Invert the right stick's Y axis");
+
 namespace rex::input {
 
 namespace {
@@ -47,8 +83,150 @@ void NoteLastInput(LastInput kind) {
 }
 
 LastInput GetLastInput() {
+  // Player 1 without the keyboard (split-screen) always has a pad in hand.
+  if (KeyboardUser() != 0) {
+    return LastInput::kGamepad;
+  }
   return static_cast<LastInput>(g_last_input.load(std::memory_order_relaxed));
 }
+
+namespace {
+
+// Physical controls a guest control can be bound to: a button bit, or a
+// trigger.
+constexpr uint32_t kLeftTrigger = 0x10000;
+constexpr uint32_t kRightTrigger = 0x20000;
+constexpr uint8_t kTriggerThreshold = 30;  // XINPUT_GAMEPAD_TRIGGER_THRESHOLD
+
+uint32_t PadSource(std::string_view name) {
+  static constexpr std::pair<std::string_view, uint32_t> kNames[] = {
+      {"Up", 0x0001},  {"Down", 0x0002}, {"Left", 0x0004}, {"Right", 0x0008},
+      {"Start", 0x0010}, {"Back", 0x0020}, {"L3", 0x0040},  {"R3", 0x0080},
+      {"LB", 0x0100},  {"RB", 0x0200},   {"A", 0x1000},    {"B", 0x2000},
+      {"X", 0x4000},   {"Y", 0x8000},    {"LT", kLeftTrigger}, {"RT", kRightTrigger},
+  };
+  for (const auto& [n, bits] : kNames) {
+    if (n == name) {
+      return bits;
+    }
+  }
+  return 0;
+}
+
+uint32_t PadSources(const std::string& value) {
+  uint32_t mask = 0;
+  std::string_view rest = value;
+  while (!rest.empty()) {
+    size_t comma = rest.find(',');
+    std::string_view token = rest.substr(0, comma);
+    rest = comma == std::string_view::npos ? std::string_view{} : rest.substr(comma + 1);
+    while (!token.empty() && token.front() == ' ') {
+      token.remove_prefix(1);
+    }
+    while (!token.empty() && token.back() == ' ') {
+      token.remove_suffix(1);
+    }
+    mask |= PadSource(token);
+  }
+  return mask;
+}
+
+struct PadRemap {
+  bool identity = true;
+  uint32_t buttons[16] = {};  // sources of guest button bit i (Guide, bit 10, passes through)
+  uint32_t left_trigger = kLeftTrigger;
+  uint32_t right_trigger = kRightTrigger;
+  bool left_from_right = false;  // the left stick reads the physical right one
+  bool right_from_left = false;  // the right stick reads the physical left one
+  bool invert_left_y = false;
+  bool invert_right_y = false;
+};
+
+// The cvars come from the command line and the settings files before the
+// guest polls, so they are read once.
+const PadRemap& Remap() {
+  static const PadRemap remap = [] {
+    PadRemap r;
+    const std::pair<uint32_t, std::string> buttons[] = {
+        {0x0001, REXCVAR_GET(padbind_dpad_up)},
+        {0x0002, REXCVAR_GET(padbind_dpad_down)},
+        {0x0004, REXCVAR_GET(padbind_dpad_left)},
+        {0x0008, REXCVAR_GET(padbind_dpad_right)},
+        {0x0010, REXCVAR_GET(padbind_start)},
+        {0x0020, REXCVAR_GET(padbind_back)},
+        {0x0040, REXCVAR_GET(padbind_lstick_press)},
+        {0x0080, REXCVAR_GET(padbind_rstick_press)},
+        {0x0100, REXCVAR_GET(padbind_left_shoulder)},
+        {0x0200, REXCVAR_GET(padbind_right_shoulder)},
+        {0x1000, REXCVAR_GET(padbind_a)},
+        {0x2000, REXCVAR_GET(padbind_b)},
+        {0x4000, REXCVAR_GET(padbind_x)},
+        {0x8000, REXCVAR_GET(padbind_y)},
+    };
+    for (const auto& [bit, value] : buttons) {
+      uint32_t sources = PadSources(value);
+      r.buttons[std::countr_zero(bit)] = sources;
+      r.identity &= sources == bit;
+    }
+    r.left_trigger = PadSources(REXCVAR_GET(padbind_left_trigger));
+    r.right_trigger = PadSources(REXCVAR_GET(padbind_right_trigger));
+    r.left_from_right = REXCVAR_GET(padbind_left_stick) == "RS";
+    r.right_from_left = REXCVAR_GET(padbind_right_stick) == "LS";
+    r.invert_left_y = REXCVAR_GET(pad_invert_left_y);
+    r.invert_right_y = REXCVAR_GET(pad_invert_right_y);
+    r.identity &= r.left_trigger == kLeftTrigger && r.right_trigger == kRightTrigger &&
+                  !r.left_from_right && !r.right_from_left && !r.invert_left_y &&
+                  !r.invert_right_y;
+    return r;
+  }();
+  return remap;
+}
+
+// A physical pad's state as the guest's controls (padbind_*).
+void RemapPad(X_INPUT_GAMEPAD& pad) {
+  const PadRemap& r = Remap();
+  if (r.identity) {
+    return;
+  }
+  uint16_t in_buttons = pad.buttons;
+  uint8_t in_lt = pad.left_trigger, in_rt = pad.right_trigger;
+  int16_t lx = pad.thumb_lx, ly = pad.thumb_ly, rx = pad.thumb_rx, ry = pad.thumb_ry;
+
+  auto pressed = [&](uint32_t sources) {
+    return (in_buttons & sources & 0xFFFF) != 0 ||
+           ((sources & kLeftTrigger) && in_lt > kTriggerThreshold) ||
+           ((sources & kRightTrigger) && in_rt > kTriggerThreshold);
+  };
+  auto pulled = [&](uint32_t sources) {
+    uint8_t v = (in_buttons & sources & 0xFFFF) ? 255 : 0;
+    if (sources & kLeftTrigger) {
+      v = std::max(v, in_lt);
+    }
+    if (sources & kRightTrigger) {
+      v = std::max(v, in_rt);
+    }
+    return v;
+  };
+  auto flip = [](int16_t v) { return int16_t(std::min(-int32_t(v), 32767)); };
+
+  uint16_t out = in_buttons & 0x0400;
+  for (uint32_t i = 0; i < 16; ++i) {
+    if (r.buttons[i] && pressed(r.buttons[i])) {
+      out |= uint16_t(1u << i);
+    }
+  }
+  pad.buttons = out;
+  pad.left_trigger = pulled(r.left_trigger);
+  pad.right_trigger = pulled(r.right_trigger);
+  int16_t new_ly = r.left_from_right ? ry : ly;
+  int16_t new_ry = r.right_from_left ? ly : ry;
+  pad.thumb_lx = r.left_from_right ? rx : lx;
+  pad.thumb_ly = r.invert_left_y ? flip(new_ly) : new_ly;
+  pad.thumb_rx = r.right_from_left ? lx : rx;
+  pad.thumb_ry = r.invert_right_y ? flip(new_ry) : new_ry;
+}
+
+}  // namespace
 
 InputSystem::InputSystem(rex::ui::Window* window) : window_(window) {}
 
@@ -271,12 +449,14 @@ X_RESULT InputSystem::GetState(uint32_t user_index, X_INPUT_STATE* out_state) {
     if (driver->GetDeviceState(id, &state) != X_ERROR_SUCCESS) {
       continue;
     }
+    const DeviceInfo* info = DeviceInfoFor(id);
+    bool pad = info && !info->synthetic;
+    if (pad) {
+      RemapPad(state.gamepad);
+    }
     active_devices_.Observe(user_index, id, state.gamepad);
-    if (user_index == 0 && !IsNeutral(state.gamepad)) {
-      const DeviceInfo* info = DeviceInfoFor(id);
-      if (info && !info->synthetic) {
-        NoteLastInput(LastInput::kGamepad);
-      }
+    if (user_index == 0 && pad && !IsNeutral(state.gamepad)) {
+      NoteLastInput(LastInput::kGamepad);
     }
     if (!any) {
       merged = state;

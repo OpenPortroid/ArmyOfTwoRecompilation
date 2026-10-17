@@ -80,6 +80,12 @@ enum class LastInput : uint32_t { kNone = 0, kKeyboardMouse = 1, kGamepad = 2 };
 void NoteLastInput(LastInput kind);
 LastInput GetLastInput();
 
+/// No guest user (KeyboardUser when no player has the keyboard).
+constexpr uint32_t kNoUser = 0xFFFFFFFF;
+/// The guest user the keyboard and mouse belong to (input_player1/2), or
+/// kNoUser.
+uint32_t KeyboardUser();
+
 /// Create a default InputSystem with SDL + NOP drivers.
 /// In tool mode, only the NOP driver is added.
 std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode);
@@ -89,3 +95,6 @@ std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode);
 /// GetLastInput for the game, by name (GetProcAddress): 0 none yet,
 /// 1 keyboard / mouse, 2 gamepad.
 extern "C" uint32_t rex_input_last_input();
+
+/// KeyboardUser for the game, by name (GetProcAddress): 0xFFFFFFFF = nobody.
+extern "C" uint32_t rex_input_keyboard_user();

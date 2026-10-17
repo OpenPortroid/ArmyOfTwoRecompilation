@@ -7,7 +7,7 @@ What the changes cover:
 
 - **Online co-op**: `xam_net.cpp`, `xlive_net.cpp/.h` (XNet, sessions), `xsocket.*` (sockets, traffic counters),
   `xgi_app.cpp`, `xlivebase_app.cpp`, `xam_user.cpp`
-- **Keyboard and mouse**: `mnk_input_driver.cpp` (modifiers, mouse without the right stick), `input_system.*`
+- **Keyboard, mouse and split-screen**: `mnk_input_driver.cpp` (modifiers, mouse without the right stick, mouse buttons 4-5), `keybinds.cpp` (their names), `input_system.*` (gamepad remapping, `padbind_*`), `device_assignment.cpp` (the players' devices, `input_player1/2`), `xam_user.cpp` (second player's gamertag)
 - **Graphics**: GPU hooks for the native renderer (`command_processor.*`, `xboxkrnl_video.cpp`), high-performance
   adapter choice (`d3d12_provider.cpp`), `rex_app.cpp`
 - **Filesystem**: `virtual_file_system.cpp` picks the device with the longest matching mount path, so a folder can be

@@ -179,6 +179,42 @@ namespace AO2Launcher
                 a.Add("--net_gamertag=" + tag);
             }
             a.Add("--ao2_coop_input_margin_ms=" + s.Int("input_margin"));
+
+            // Split-screen: the players' devices and the second one's name. Off, every device is player 1's
+            // and nobody else signs in.
+            if (s.Bool("split_screen"))
+            {
+                a.Add("--max_local_users=2");
+                a.Add("--input_player1=" + s["p1_input"]);
+                a.Add("--input_player2=" + s["p2_input"]);
+                string tag2 = s["gamertag2"].Trim();
+                if (tag2.Length > 0)
+                {
+                    a.Add("--user_gamertag_2=" + tag2);
+                }
+            }
+            else
+            {
+                a.Add("--max_local_users=1");
+                a.Add("--input_player1=keyboard,pads");
+                a.Add("--input_player2=none");
+            }
+
+            // Bindings: all of them, so the launcher's page is what the game uses. A flag needs a value:
+            // "none" binds nothing.
+            Func<string, string> bind = v => v.Trim().Length > 0 ? v.Trim() : "none";
+            foreach (var b in Bindings.Keyboard)
+            {
+                a.Add("--keybind_" + b.Name + "=" + bind(s[b.KbKey]));
+            }
+            foreach (var b in Bindings.Pad)
+            {
+                a.Add("--padbind_" + b.Name + "=" + bind(s[b.PadKey]));
+            }
+            a.Add("--padbind_left_stick=" + s["pad_left_stick"]);
+            a.Add("--padbind_right_stick=" + s["pad_right_stick"]);
+            a.Add(Flag("pad_invert_left_y", s.Bool("pad_invert_left_y")));
+            a.Add(Flag("pad_invert_right_y", s.Bool("pad_invert_right_y")));
             // The game's Graphics page (Options) saves its changes here too.
             a.Add("--ao2_launcher_settings=" + s.FilePath);
             return a;

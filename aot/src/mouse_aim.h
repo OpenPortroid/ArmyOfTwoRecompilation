@@ -36,6 +36,11 @@ namespace ao2::mouse
   // hovercraft - not on a turret, not a vehicle's gunner). Any thread.
   bool Driving();
 
+  // The guest user the keyboard and mouse belong to (rexruntime.dll's
+  // rex_input_keyboard_user): 0 unless split-screen gives them to another
+  // player, 0xFFFFFFFF when nobody has them; 0 from a runtime without it.
+  uint32_t KeyboardUser();
+
   // Right stick from the mouse while native aiming is idle (vehicles, menus).
   // False when there is nothing to add.
   bool TakeStickFallback(int32_t &rx, int32_t &ry);

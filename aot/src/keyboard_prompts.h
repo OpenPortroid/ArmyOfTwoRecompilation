@@ -25,6 +25,14 @@ namespace ao2::prompts
   // Renderer: changes whenever the pictures switch between the keys and the
   // controller's buttons; the textures below are then looked at again.
   uint32_t Generation();
+
+  // Renderer: split-screen between a keyboard player and a gamepad player.
+  // A draw that samples a button picture is then drawn by parts: in `keys`
+  // with our picture, in `pad` with the guest's own texture (x0, y0, x1, y1
+  // as fractions of the screen); one the players share (across both, or in
+  // neither) twice side by side where it was. False when not split so.
+  bool SplitActive();
+  bool SplitRegions(float keys[4], float pad[4]);
   // Renderer: whether a texture of this shape can be one of the button
   // pictures, keys shown or not.
   bool MayBeButton(uint32_t format, uint32_t width, uint32_t height);

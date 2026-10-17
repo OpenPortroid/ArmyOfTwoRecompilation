@@ -50,6 +50,15 @@ max_local_users = 2
 # true:  keyboard/mouse are player 1 alone, pad 1 is player 2 (split-screen
 #        with one pad).
 keyboard_own_player = false
+# Or name each player's devices (the launcher's Split-Screen page does):
+# comma-separated "keyboard", "pad1".."pad4" (gamepads in the order they
+# were found), "pads" (every gamepad the other player does not name) or
+# "none". "auto" for both = the two lines above. The mouse aims for the
+# player with the keyboard.
+input_player1 = "auto"
+input_player2 = "auto"
+# Player 2's gamertag ("" = player 1's with "(1)" after it).
+user_gamertag_2 = ""
 
 # ─────────────────────────────────────────────────────────────
 # Native mouse aiming
@@ -83,7 +92,7 @@ ao2_keyboard_prompts = true
 # Keyboard bindings - third-person shooter layout
 # ─────────────────────────────────────────────────────────────
 # Format: comma-separated list of keys, optional modifiers (Shift+, Ctrl+, Alt+).
-# Mouse buttons: LMB, RMB, MMB. A key may appear in several binds: it then
+# Mouse buttons: LMB, RMB, MMB, MB4, MB5. A key may appear in several binds: it then
 # presses all of those buttons at once (1-4 below = LB + D-pad).
 # A bind fires while its key and all of its modifiers are held; a bare key also
 # fires with extra modifiers held, unless the same key is bound with exactly
@@ -132,3 +141,32 @@ keybind_dpad_right = "Right,3"
 keybind_back = "Tab"                   # Back: GPS
 keybind_start = "Escape"               # Start: pause menu
 keybind_guide = ""                     # Guide button (empty = disabled)
+
+# ─────────────────────────────────────────────────────────────
+# Gamepad remapping
+# ─────────────────────────────────────────────────────────────
+# Which physical controls press each button of the game (every gamepad, not
+# the keyboard): A, B, X, Y, LB, RB, LT, RT, L3, R3, Up, Down, Left, Right,
+# Back, Start; comma-separated, "" or "none" = never. The game's button
+# pictures stay the Xbox ones.
+padbind_a = "A"
+padbind_b = "B"
+padbind_x = "X"
+padbind_y = "Y"
+padbind_left_trigger = "LT"
+padbind_right_trigger = "RT"
+padbind_left_shoulder = "LB"
+padbind_right_shoulder = "RB"
+padbind_lstick_press = "L3"
+padbind_rstick_press = "R3"
+padbind_dpad_up = "Up"
+padbind_dpad_down = "Down"
+padbind_dpad_left = "Left"
+padbind_dpad_right = "Right"
+padbind_back = "Back"
+padbind_start = "Start"
+# The physical stick (LS / RS) acting as the game's left / right stick.
+padbind_left_stick = "LS"
+padbind_right_stick = "RS"
+pad_invert_left_y = false
+pad_invert_right_y = false

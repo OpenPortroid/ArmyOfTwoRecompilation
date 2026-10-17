@@ -50,6 +50,7 @@
 #include "shader_cache.h"
 #include "texture_loader.h"
 #include "../../cyrillic_fonts.h"
+#include "../../aspect_ratio.h"
 #include "../../keyboard_prompts.h"
 #include "../../precise_sleep.h"
 
@@ -62,6 +63,8 @@ REXCVAR_DECLARE(int32_t, ao2_native_gpu_capture_frame);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_writeback_texels);
 REXCVAR_DECLARE(bool, ao2_native_gpu_debug_layer);
 REXCVAR_DECLARE(bool, ao2_native_gpu_async_pipelines);
+REXCVAR_DEFINE_BOOL(ao2_prompts_debug, false, "Debug",
+                    "Log where split-screen button pictures are drawn (native_gpu.log)");
 REXCVAR_DECLARE(double, ao2_native_gpu_resolution_scale);
 REXCVAR_DECLARE(bool, ao2_native_gpu_vsync);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_small_target_width);
@@ -244,7 +247,11 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint64_t validated_frame = UINT64_MAX;
       bool loaded = false, failed = false, cube = false;
       bool replaced = false; // our picture, not the guest's (keyboard_prompts)
+      bool prompt = false;   // ...and that picture is a button's (not a font page's letters)
       uint32_t prompts_generation = 0; // keyboard_prompts' switch it was looked at for
+      // Split-screen: the guest's own picture of a replaced button, for the
+      // gamepad player's part of the screen (see keyboard_prompts.h).
+      std::unique_ptr<CachedTexture> guest;
     };
 
     struct PipelineKey
@@ -3514,6 +3521,192 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       return true;
     }
 
+    // Split-screen button pictures (keyboard_prompts.h): the draw's triangles
+    // grouped by where they are - 0 in the keyboard player's part of the
+    // screen, 1 in the gamepad player's, 2 across both (a prompt the players
+    // share) - with each group's box in guest pixels. UE3's canvas gives each
+    // player's HUD its own pixels and moves them to the player's part of the
+    // screen with its vertex shader's matrix (SimpleElement: the vertex times
+    // the 4 constants c0-c3), so the position is the vertex through those
+    // constants, either way round, whichever lands every vertex in clip
+    // space. False when it cannot be worked out (the draw is then clipped to
+    // the two parts instead).
+    struct PromptRun
+    {
+      uint32_t start = 0, count = 0; // vertices (or indices) of the host draw
+      int part = 0;
+      float box[4] = {};
+    };
+    bool PromptRuns(const CompiledShader *vs, const RegisterFile &r, bool index_fetch,
+                    const std::vector<uint32_t> &indices, uint32_t draw_count, D3D12_PRIMITIVE_TOPOLOGY topology,
+                    const Viewport &vp, const float keys[4], const float pad[4], std::vector<PromptRun> &runs)
+    {
+      runs.clear();
+      if (index_fetch || topology != D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST || draw_count % 3 || draw_count > 6144)
+      {
+        return false;
+      }
+      const auto &bindings = vs->shader->vertex_bindings();
+      if (bindings.empty() || bindings[0].attributes.empty())
+      {
+        return false;
+      }
+      const auto *position = &bindings[0].attributes[0].fetch_instr.attributes;
+      for (const auto &a : bindings[0].attributes)
+      {
+        if (a.fetch_instr.attributes.offset < position->offset)
+        {
+          position = &a.fetch_instr.attributes;
+        }
+      }
+      if (position->data_format != xenos::VertexFormat::k_32_32_FLOAT &&
+          position->data_format != xenos::VertexFormat::k_32_32_32_FLOAT &&
+          position->data_format != xenos::VertexFormat::k_32_32_32_32_FLOAT)
+      {
+        return false;
+      }
+      xenos::xe_gpu_vertex_fetch_t fetch;
+      std::memcpy(&fetch, &r.v[0x4800 + bindings[0].fetch_constant * 2], sizeof(fetch));
+      uint32_t base = (fetch.address << 2) & 0x1FFFFFFF;
+      uint32_t stride = bindings[0].stride_words * 4;
+      uint32_t first = r.v[XE_GPU_REG_VGT_INDX_OFFSET];
+      if (!stride)
+      {
+        return false;
+      }
+      uint32_t words = position->data_format == xenos::VertexFormat::k_32_32_FLOAT       ? 2
+                       : position->data_format == xenos::VertexFormat::k_32_32_32_FLOAT ? 3
+                                                                                          : 4;
+      // The matrix: VS constants c0-c3.
+      float m[4][4];
+      uint32_t const_base = std::min(r.v[XE_GPU_REG_SQ_VS_CONST] & 0x1FF, 252u);
+      for (uint32_t row = 0; row < 4; ++row)
+      {
+        for (uint32_t c = 0; c < 4; ++c)
+        {
+          m[row][c] = std::bit_cast<float>(r.v[0x4000 + (const_base + row) * 4 + c]);
+        }
+      }
+      static thread_local std::vector<float> xy;
+      xy.resize(size_t(draw_count) * 2);
+      bool fits[2] = {true, true}; // clip_i = dot(v, c_i) / sum_j v_j c_j[i]
+      static thread_local std::vector<std::array<float, 4>> verts;
+      verts.resize(draw_count);
+      for (uint32_t i = 0; i < draw_count; ++i)
+      {
+        uint32_t vertex = first + (indices.empty() ? i : indices[i]);
+        uint32_t at = base + vertex * stride + uint32_t(position->offset) * 4;
+        if (!IsGuestPhysicalReadable(at, words * 4))
+        {
+          return false;
+        }
+        const uint8_t *src = Mem()->TranslatePhysical(at);
+        std::array<float, 4> v = {0.0f, 0.0f, 0.0f, 1.0f};
+        for (uint32_t c = 0; c < words; ++c)
+        {
+          uint32_t raw;
+          std::memcpy(&raw, src + c * 4, 4);
+          raw = SwapEndian(raw, fetch.endian);
+          std::memcpy(&v[c], &raw, 4);
+          if (!(std::abs(v[c]) < 65536.0f))
+          {
+            return false;
+          }
+        }
+        verts[i] = v;
+        for (int way = 0; way < 2; ++way)
+        {
+          float clip[4];
+          for (uint32_t k = 0; k < 4; ++k)
+          {
+            clip[k] = way == 0 ? v[0] * m[k][0] + v[1] * m[k][1] + v[2] * m[k][2] + v[3] * m[k][3]
+                               : v[0] * m[0][k] + v[1] * m[1][k] + v[2] * m[2][k] + v[3] * m[3][k];
+          }
+          fits[way] = fits[way] && clip[3] > 1e-4f && std::abs(clip[0] / clip[3]) <= 1.25f &&
+                      std::abs(clip[1] / clip[3]) <= 1.25f;
+        }
+      }
+      if (!fits[0] && !fits[1])
+      {
+        return false;
+      }
+      int way = fits[0] ? 0 : 1;
+      for (uint32_t i = 0; i < draw_count; ++i)
+      {
+        const auto &v = verts[i];
+        float clip[4];
+        for (uint32_t k = 0; k < 4; ++k)
+        {
+          clip[k] = way == 0 ? v[0] * m[k][0] + v[1] * m[k][1] + v[2] * m[k][2] + v[3] * m[k][3]
+                             : v[0] * m[0][k] + v[1] * m[1][k] + v[2] * m[2][k] + v[3] * m[3][k];
+        }
+        xy[i * 2] = clip[0] / clip[3];
+        xy[i * 2 + 1] = clip[1] / clip[3];
+      }
+      bool ndc = true;
+      float gw = float(ao2::aspect::GuestWidth()), gh = float(ao2::aspect::GuestHeight());
+      auto inside = [](const float b[4], const float part[4], float gw, float gh) {
+        return b[0] >= part[0] * gw - 2 && b[2] <= part[2] * gw + 2 && b[1] >= part[1] * gh - 2 &&
+               b[3] <= part[3] * gh + 2;
+      };
+      for (uint32_t t = 0; t < draw_count; t += 3)
+      {
+        float b[4] = {FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX};
+        for (uint32_t k = 0; k < 3; ++k)
+        {
+          float x = xy[(t + k) * 2], y = xy[(t + k) * 2 + 1];
+          if (ndc)
+          {
+            float nx = x * vp.ndc_scale[0] + vp.ndc_offset[0], ny = y * vp.ndc_scale[1] + vp.ndc_offset[1];
+            x = vp.viewport.TopLeftX + (nx * 0.5f + 0.5f) * vp.viewport.Width;
+            y = vp.viewport.TopLeftY + (0.5f - ny * 0.5f) * vp.viewport.Height;
+          }
+          b[0] = std::min(b[0], x);
+          b[1] = std::min(b[1], y);
+          b[2] = std::max(b[2], x);
+          b[3] = std::max(b[3], y);
+        }
+        int part = inside(b, keys, gw, gh) ? 0 : inside(b, pad, gw, gh) ? 1 : 2;
+        if (!runs.empty() && runs.back().part == part && runs.back().start + runs.back().count == t)
+        {
+          PromptRun &run = runs.back();
+          run.count += 3;
+          run.box[0] = std::min(run.box[0], b[0]);
+          run.box[1] = std::min(run.box[1], b[1]);
+          run.box[2] = std::max(run.box[2], b[2]);
+          run.box[3] = std::max(run.box[3], b[3]);
+        }
+        else
+        {
+          PromptRun run;
+          run.start = t;
+          run.count = 3;
+          run.part = part;
+          std::memcpy(run.box, b, sizeof(b));
+          runs.push_back(run);
+        }
+      }
+      // A shared prompt is a quad: its two triangles are one group already.
+      if (REXCVAR_GET(ao2_prompts_debug))
+      {
+        static uint32_t logged = 0;
+        if (logged < 4000)
+        {
+          ++logged;
+          NativeLog("prompts: frame %llu way %d c0 %g %g %g %g c1 %g %g %g %g c3 %g %g %g %g v0 %g,%g vp %g,%g %gx%g\n",
+                    (unsigned long long)g.frame_number, way, m[0][0], m[0][1], m[0][2], m[0][3], m[1][0], m[1][1],
+                    m[1][2], m[1][3], m[3][0], m[3][1], m[3][2], m[3][3], verts[0][0], verts[0][1],
+                    vp.viewport.TopLeftX, vp.viewport.TopLeftY, vp.viewport.Width, vp.viewport.Height);
+          for (const PromptRun &run : runs)
+          {
+            NativeLog("  run %u+%u part %d box %.0f,%.0f-%.0f,%.0f\n", run.start, run.count, run.part, run.box[0],
+                      run.box[1], run.box[2], run.box[3]);
+          }
+        }
+      }
+      return true;
+    }
+
     // Values written by D3D's clear rectangles (VS A6266DE8: position xyz at
     // dword 0, color at dword 3 of each vertex; PS 5C92B939 outputs the
     // color, or no PS for depth/stencil clears), when all vertices agree.
@@ -3885,9 +4078,11 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     // page with Cyrillic letters (cyrillic_fonts). False if the texture is the
     // guest's own; with `rgba` null only says whether it is replaced.
     bool ReplacementPicture(const GuestTextureDesc &desc, std::vector<uint8_t> *rgba, uint32_t *width,
-                            uint32_t *height)
+                            uint32_t *height, bool *prompt = nullptr)
     {
       const uint8_t *data = nullptr;
+      if (prompt)
+        *prompt = true;
       if (desc.width == 256 && desc.height == 256 && desc.base_size >= 256 * 256 &&
           IsGuestPhysicalReadable(desc.base_address, 256 * 256))
       {
@@ -3914,6 +4109,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           return !rgba || ao2::prompts::BuildButtonTexture(button, *rgba, *width, *height);
         }
       }
+      if (prompt)
+        *prompt = false;
       uint32_t bytes = ao2::cyrillic::PageBytes(uint32_t(desc.format), desc.width, desc.height);
       if (!bytes || desc.base_size < bytes || !IsGuestPhysicalReadable(desc.base_address, bytes))
         return false;
@@ -3984,6 +4181,38 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     // memory changed since it was last checked (once per frame).
     CachedTexture *GetTextureSlow(const xenos::xe_gpu_texture_fetch_t &fetch);
 
+    // Split-screen: the guest's own picture of a replaced button texture,
+    // loaded next to ours (and again when the guest's data changes).
+    CachedTexture *GuestPicture(CachedTexture &t)
+    {
+      if (!t.guest)
+      {
+        auto g_tex = std::make_unique<CachedTexture>();
+        g_tex->desc = t.desc;
+        g_tex->host = &GetHostTextureFormat(t.desc.format);
+        g_tex->cube = t.cube;
+        if (!CreateTextureResource(*g_tex))
+        {
+          return nullptr;
+        }
+        g_tex->epoch = t.epoch - 1;
+        t.guest = std::move(g_tex);
+      }
+      CachedTexture &o = *t.guest;
+      o.desc.fetch = t.desc.fetch;
+      if (!o.loaded || o.epoch != t.epoch)
+      {
+        const GuestTextureDesc &d = o.desc;
+        if (!IsGuestPhysicalReadable(d.base_address, d.base_size) || !IsGuestPhysicalReadable(d.mip_address, d.mip_size))
+        {
+          return o.loaded ? &o : nullptr;
+        }
+        o.loaded = UploadTexture(o);
+        o.epoch = t.epoch;
+      }
+      return o.loaded ? &o : nullptr;
+    }
+
     CachedTexture *GetTexture(const xenos::xe_gpu_texture_fetch_t &fetch)
     {
       // Same fetch constant already described and validated this frame.
@@ -4029,7 +4258,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         slot->prompts_generation = ao2::prompts::Generation();
         std::vector<uint8_t> page;
         uint32_t page_w = 0, page_h = 0;
-        if (ReplacementPicture(desc, &page, &page_w, &page_h))
+        if (ReplacementPicture(desc, &page, &page_w, &page_h, &slot->prompt))
         {
           slot->epoch = g.write_epoch.load(std::memory_order_relaxed);
           slot->checked_epoch = slot->epoch;
@@ -4070,11 +4299,29 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
             t.prompts_generation = prompts_generation;
             t.epoch = now;
             WatchGuestRange(desc.base_address, desc.base_size);
-            if (!ReplacementPicture(desc, nullptr, nullptr, nullptr))
+            std::vector<uint8_t> picture;
+            uint32_t picture_w = 0, picture_h = 0;
+            if (prompts_switched && t.prompt &&
+                ReplacementPicture(desc, &picture, &picture_w, &picture_h, &t.prompt))
+            {
+              // Still ours, but the picture may be another (the split-screen page).
+              DeferRelease(std::move(t.resource));
+              if (!CreateReplacedTexture(t, picture, picture_w, picture_h))
+              {
+                t.failed = true;
+                return nullptr;
+              }
+            }
+            else if (!ReplacementPicture(desc, nullptr, nullptr, nullptr))
             {
               // Back to the guest's texture, in place (the fetch cache points at it).
               DeferRelease(std::move(t.resource));
-              t.replaced = t.loaded = false;
+              if (t.guest)
+              {
+                DeferRelease(std::move(t.guest->resource));
+                t.guest.reset();
+              }
+              t.replaced = t.loaded = t.prompt = false;
               t.host = &GetHostTextureFormat(desc.format);
               t.validated_frame = UINT64_MAX;
               if (!CreateTextureResource(t))
@@ -4129,7 +4376,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           // replace (a button streamed into memory that held something else).
           std::vector<uint8_t> picture;
           uint32_t picture_w = 0, picture_h = 0;
-          if (ReplacementPicture(desc, &picture, &picture_w, &picture_h))
+          if (ReplacementPicture(desc, &picture, &picture_w, &picture_h, &t.prompt))
           {
             DeferRelease(std::move(t.resource));
             t.checked_epoch = t.epoch;
@@ -4231,6 +4478,11 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       // Bindings the shader declares: the only slots it reads (and the only
       // ones written to the descriptor heap).
       uint32_t used = 0;
+      // Split-screen: slots with a button picture, and the guest's own
+      // picture for them (the gamepad player's part of the screen).
+      uint32_t dual = 0;
+      ID3D12Resource *guest_resources[kMaxTextureBindings] = {};
+      D3D12_SHADER_RESOURCE_VIEW_DESC guest_views[kMaxTextureBindings] = {};
     };
 
     bool EnsureLowres(HostTexture &t);
@@ -4363,6 +4615,22 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
               }
               table.resources[index] = t->resource.Get();
               ++g.texture_binds;
+              CachedTexture *o = t->replaced && t->prompt && dimension == xenos::FetchOpDimension::k2D &&
+                                         ao2::prompts::SplitActive()
+                                     ? GuestPicture(*t)
+                                     : nullptr;
+              if (o)
+              {
+                D3D12_SHADER_RESOURCE_VIEW_DESC &gv = table.guest_views[index];
+                gv = sd;
+                gv.Format = o->host->unorm;
+                gv.Shader4ComponentMapping = HostSwizzle(fetch.swizzle, o->host->swizzle) |
+                                             D3D12_SHADER_COMPONENT_MAPPING_ALWAYS_SET_BIT_AVOIDING_ZEROMEM_MISTAKES;
+                gv.Texture2D.MipLevels = o->mip_levels;
+                Transition(o->resource.Get(), o->state, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+                table.guest_resources[index] = o->resource.Get();
+                table.dual |= 1u << index;
+              }
             }
           }
         }
@@ -6379,6 +6647,22 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     timer.Mark(5);
     D3D12_GPU_DESCRIPTOR_HANDLE ps_table = WriteTextureTable(ps_textures, 0);
     D3D12_GPU_DESCRIPTOR_HANDLE vs_table = WriteTextureTable(vs_textures, 1);
+    // Split-screen: a button picture is drawn once per player's part of the
+    // screen, ours for the keyboard player, the guest's for the other.
+    D3D12_GPU_DESCRIPTOR_HANDLE ps_guest_table = {};
+    float split_keys[4], split_pad[4];
+    bool split_draw = ps_textures.dual && ao2::prompts::SplitRegions(split_keys, split_pad);
+    if (split_draw)
+    {
+      TextureTable guest = ps_textures;
+      for (uint32_t dual = guest.dual; dual; dual &= dual - 1)
+      {
+        uint32_t i = uint32_t(__builtin_ctz(dual));
+        guest.resources[i] = guest.guest_resources[i];
+        guest.views[i] = guest.guest_views[i];
+      }
+      ps_guest_table = WriteTextureTable(guest, 0);
+    }
     timer.Mark(6);
 
     Viewport vp = ComputeViewport(r, rt_width, rt_height, ps && ps->shader->writes_depth());
@@ -6582,15 +6866,78 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     uint32_t stamp_begin = g_trace ? GpuStamp(kGpuDraw) : UINT32_MAX;
     // Only the draw itself is counted, not the EDRAM transfers recorded for it.
     uint32_t occlusion_index = g.occlusion_active ? BeginOcclusionSegment() : UINT32_MAX;
-    if (indices.empty())
-    {
-      list->DrawInstanced(draw_count, 1, 0, 0);
-    }
-    else
+    if (!indices.empty())
     {
       D3D12_INDEX_BUFFER_VIEW ibv = {ib, UINT(indices.size() * 4), DXGI_FORMAT_R32_UINT};
       list->IASetIndexBuffer(&ibv);
-      list->DrawIndexedInstanced(UINT(indices.size()), 1, 0, 0, 0);
+    }
+    auto issue_part = [&](uint32_t start, uint32_t count) {
+      if (indices.empty())
+      {
+        list->DrawInstanced(count, 1, start, 0);
+      }
+      else
+      {
+        list->DrawIndexedInstanced(count, 1, start, 0, 0);
+      }
+    };
+    auto issue = [&] { issue_part(0, indices.empty() ? draw_count : UINT(indices.size())); };
+    static thread_local std::vector<PromptRun> runs;
+    if (!split_draw)
+    {
+      issue();
+    }
+    else if (PromptRuns(vs, r, index_fetch, indices, draw_count, topology, vp, split_keys, split_pad, runs))
+    {
+      // Each prompt as its player sees it. One the players share (across
+      // both parts, or in neither) is drawn twice side by side, centered
+      // where it was: the key on the left, the gamepad's button on the right.
+      for (const PromptRun &run : runs)
+      {
+        if (run.part < 2)
+        {
+          list->SetGraphicsRootDescriptorTable(kRootPSTextures, run.part == 0 ? ps_table : ps_guest_table);
+          issue_part(run.start, run.count);
+          continue;
+        }
+        float half = ((run.box[2] - run.box[0]) * 0.5f + 1.0f) * host_scale;
+        for (int side = 0; side < 2; ++side)
+        {
+          D3D12_VIEWPORT moved = host_viewport;
+          moved.TopLeftX += side == 0 ? -half : half;
+          list->RSSetViewports(1, &moved);
+          list->SetGraphicsRootDescriptorTable(kRootPSTextures, side == 0 ? ps_table : ps_guest_table);
+          issue_part(run.start, run.count);
+        }
+        list->RSSetViewports(1, &host_viewport);
+      }
+      list->SetGraphicsRootDescriptorTable(kRootPSTextures, ps_table);
+      b.tables[0] = ps_table;
+    }
+    else
+    {
+      // The players' parts of the guest back buffer, in host pixels.
+      float gw = float(ao2::aspect::GuestWidth()), gh = float(ao2::aspect::GuestHeight());
+      for (int pass = 0; pass < 2; ++pass)
+      {
+        const float *f = pass == 0 ? split_keys : split_pad;
+        D3D12_RECT part = {LONG(std::lround(f[0] * gw)), LONG(std::lround(f[1] * gh)), LONG(std::lround(f[2] * gw)),
+                           LONG(std::lround(f[3] * gh))};
+        part = ScaleRect(part, scale4);
+        D3D12_RECT clip = {std::max(part.left, host_scissor.left), std::max(part.top, host_scissor.top),
+                           std::min(part.right, host_scissor.right), std::min(part.bottom, host_scissor.bottom)};
+        if (clip.left >= clip.right || clip.top >= clip.bottom)
+        {
+          continue;
+        }
+        list->RSSetScissorRects(1, &clip);
+        list->SetGraphicsRootDescriptorTable(kRootPSTextures, pass == 0 ? ps_table : ps_guest_table);
+        issue();
+      }
+      list->RSSetScissorRects(1, &host_scissor);
+      list->SetGraphicsRootDescriptorTable(kRootPSTextures, ps_table);
+      b.scissor = host_scissor;
+      b.tables[0] = ps_table;
     }
     if (occlusion_index != UINT32_MAX)
     {

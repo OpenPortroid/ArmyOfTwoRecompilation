@@ -340,30 +340,270 @@ namespace AO2Launcher
               "derecho; esta es su sensibilidad.",
               "Dove la telecamera non si può girare direttamente (torrette, veicoli, menu) il mouse fa da levetta " +
               "destra; questa è la sua sensibilità.");
-            a("WASD - move   mouse - camera   LMB - fire   RMB - aim   R - reload   " +
-              "Space - roll / cover   Ctrl, C - crouch   E, Enter - use   F - co-op commands   " +
-              "Z - inventory   1-4 - weapons and grenades   arrows - partner orders   Tab - GPS   Esc - pause.\n" +
-              "Xbox gamepad: as on the console. Key bindings: settings\\mapping.toml in the game folder.",
-              "WASD — движение   мышь — камера   ЛКМ — огонь   ПКМ — прицел   R — перезарядка   " +
-              "Пробел — кувырок / укрытие   Ctrl, C — присесть   E, Enter — действие   F — кооп-команды   " +
-              "Z — инвентарь   1-4 — оружие и гранаты   стрелки — приказы напарнику   Tab — GPS   Esc — пауза.\n" +
-              "Геймпад Xbox: как на консоли. Назначение клавиш: settings\\mapping.toml в папке игры.",
-              "WASD - déplacement   souris - caméra   clic gauche - tir   clic droit - viser   R - recharger   " +
-              "Espace - roulade / couvert   Ctrl, C - s'accroupir   E, Entrée - utiliser   F - commandes coop   " +
-              "Z - inventaire   1-4 - armes et grenades   flèches - ordres au partenaire   Tab - GPS   Échap - pause.\n" +
-              "Manette Xbox : comme sur la console. Touches : settings\\mapping.toml dans le dossier du jeu.",
-              "WASD - bewegen   Maus - Kamera   LMT - feuern   RMT - zielen   R - nachladen   " +
-              "Leertaste - Rolle / Deckung   Strg, C - ducken   E, Enter - benutzen   F - Koop-Befehle   " +
-              "Z - Inventar   1-4 - Waffen und Granaten   Pfeiltasten - Partnerbefehle   Tab - GPS   Esc - Pause.\n" +
-              "Xbox-Controller: wie auf der Konsole. Tastenbelegung: settings\\mapping.toml im Spielordner.",
-              "WASD - moverse   ratón - cámara   clic izq. - disparar   clic der. - apuntar   R - recargar   " +
-              "Espacio - rodar / cobertura   Ctrl, C - agacharse   E, Intro - usar   F - órdenes cooperativas   " +
-              "Z - inventario   1-4 - armas y granadas   flechas - órdenes al compañero   Tab - GPS   Esc - pausa.\n" +
-              "Mando de Xbox: como en la consola. Teclas: settings\\mapping.toml en la carpeta del juego.",
-              "WASD - movimento   mouse - telecamera   tasto sin. - fuoco   tasto des. - mira   R - ricarica   " +
-              "Spazio - capriola / copertura   Ctrl, C - accovacciati   E, Invio - usa   F - comandi cooperativa   " +
-              "Z - inventario   1-4 - armi e granate   frecce - ordini al compagno   Tab - GPS   Esc - pausa.\n" +
-              "Controller Xbox: come sulla console. Tasti: settings\\mapping.toml nella cartella del gioco.");
+
+            // --- Keyboard, Gamepad, Split-screen ---
+            a("KEYBOARD", "КЛАВИАТУРА", "CLAVIER", "TASTATUR", "TECLADO", "TASTIERA");
+            a("GAMEPAD", "ГЕЙМПАД", "MANETTE", "CONTROLLER", "MANDO", "CONTROLLER");
+            a("SPLIT-SCREEN", "РАЗДЕЛЁННЫЙ ЭКРАН", "ÉCRAN PARTAGÉ", "SPLITSCREEN", "PANTALLA DIVIDIDA", "SCHERMO CONDIVISO");
+            a("Keys and mouse buttons: the Keyboard tab. Gamepad buttons and sticks: the Gamepad tab. " +
+              "Two players on one PC: the Split-Screen tab.",
+              "Клавиши и кнопки мыши — вкладка «Клавиатура». Кнопки и стики геймпада — вкладка «Геймпад». " +
+              "Двое игроков на одном ПК — вкладка «Разделённый экран».",
+              "Touches et boutons de la souris : onglet Clavier. Boutons et sticks de la manette : onglet Manette. " +
+              "Deux joueurs sur un PC : onglet Écran partagé.",
+              "Tasten und Maustasten: Reiter Tastatur. Controller-Tasten und Sticks: Reiter Controller. " +
+              "Zwei Spieler an einem PC: Reiter Splitscreen.",
+              "Teclas y botones del ratón: pestaña Teclado. Botones y sticks del mando: pestaña Mando. " +
+              "Dos jugadores en un PC: pestaña Pantalla dividida.",
+              "Tasti e pulsanti del mouse: scheda Tastiera. Pulsanti e levette del controller: scheda Controller. " +
+              "Due giocatori su un PC: scheda Schermo condiviso.");
+            a("Enter or click: press the new key or mouse button (hold Shift / Ctrl / Alt for a combination). " +
+              "→ or +: add one more key. Delete or ×: clear. Waiting stops after a few seconds.",
+              "Enter или щелчок — нажмите новую клавишу или кнопку мыши (с Shift / Ctrl / Alt — сочетание). " +
+              "→ или + — добавить ещё одну клавишу. Delete или × — очистить. Ожидание закончится само через несколько секунд.",
+              "Entrée ou clic : appuyez sur la nouvelle touche ou le bouton de la souris (avec Maj / Ctrl / Alt : une combinaison). " +
+              "→ ou + : ajouter une touche. Suppr ou × : effacer. L'attente s'arrête au bout de quelques secondes.",
+              "Enter oder Klick: die neue Taste oder Maustaste drücken (mit Umschalt / Strg / Alt: eine Kombination). " +
+              "→ oder +: eine weitere Taste. Entf oder ×: löschen. Das Warten endet nach ein paar Sekunden.",
+              "Intro o clic: pulsa la nueva tecla o botón del ratón (con Mayús / Ctrl / Alt: una combinación). " +
+              "→ o +: añadir otra tecla. Supr o ×: borrar. La espera termina a los pocos segundos.",
+              "Invio o clic: premi il nuovo tasto o pulsante del mouse (con Maiusc / Ctrl / Alt: una combinazione). " +
+              "→ o +: aggiungi un altro tasto. Canc o ×: cancella. L'attesa finisce dopo qualche secondo.");
+            a("←→: choose the gamepad control that presses this button in the game. Enter or click: press it " +
+              "on the gamepad (Xbox controllers). Applies to every gamepad; the game still shows the Xbox buttons.",
+              "←→ — выбрать, какая кнопка геймпада нажимает эту кнопку в игре. Enter или щелчок — нажать её " +
+              "на геймпаде (контроллеры Xbox). Действует на все геймпады; в игре по-прежнему показываются кнопки Xbox.",
+              "←→ : choisir la commande de la manette qui appuie sur ce bouton dans le jeu. Entrée ou clic : l'appuyer " +
+              "sur la manette (manettes Xbox). Vaut pour toutes les manettes ; le jeu affiche toujours les boutons Xbox.",
+              "←→: wählen, welches Bedienelement des Controllers diese Taste im Spiel drückt. Enter oder Klick: es " +
+              "am Controller drücken (Xbox-Controller). Gilt für alle Controller; das Spiel zeigt weiter die Xbox-Tasten.",
+              "←→: elige el control del mando que pulsa este botón en el juego. Intro o clic: púlsalo " +
+              "en el mando (mandos de Xbox). Vale para todos los mandos; el juego sigue mostrando los botones de Xbox.",
+              "←→: scegli il comando del controller che preme questo pulsante nel gioco. Invio o clic: premilo " +
+              "sul controller (controller Xbox). Vale per tutti i controller; il gioco mostra ancora i pulsanti Xbox.");
+            a("PRESS A KEY… {0}", "НАЖМИТЕ КЛАВИШУ… {0}", "APPUYEZ SUR UNE TOUCHE… {0}", "TASTE DRÜCKEN… {0}",
+              "PULSA UNA TECLA… {0}", "PREMI UN TASTO… {0}");
+            a("PRESS A BUTTON… {0}", "НАЖМИТЕ КНОПКУ… {0}", "APPUYEZ SUR UN BOUTON… {0}", "TASTE DRÜCKEN… {0}",
+              "PULSA UN BOTÓN… {0}", "PREMI UN PULSANTE… {0}");
+            a("LMB", "ЛКМ", "CLIC G", "LMT", "CLIC IZQ", "TASTO SIN");
+            a("RMB", "ПКМ", "CLIC D", "RMT", "CLIC DER", "TASTO DES");
+            a("MMB", "СКМ", "CLIC M", "MMT", "CLIC CEN", "TASTO CEN");
+            a("MOUSE 4", "МЫШЬ 4", "SOURIS 4", "MAUS 4", "RATÓN 4", "MOUSE 4");
+            a("MOUSE 5", "МЫШЬ 5", "SOURIS 5", "MAUS 5", "RATÓN 5", "MOUSE 5");
+            a("Move forward", "Вперёд", "Avancer", "Vorwärts", "Avanzar", "Avanti");
+            a("Move back", "Назад", "Reculer", "Rückwärts", "Retroceder", "Indietro");
+            a("Move left", "Влево", "Aller à gauche", "Nach links", "Izquierda", "Sinistra");
+            a("Move right", "Вправо", "Aller à droite", "Nach rechts", "Derecha", "Destra");
+            a("Crouch (L3)", "Присесть (L3)", "S'accroupir (L3)", "Ducken (L3)", "Agacharse (L3)", "Accovacciati (L3)");
+            a("Fire (RT)", "Огонь (RT)", "Tirer (RT)", "Feuern (RT)", "Disparar (RT)", "Fuoco (RT)");
+            a("Aim (LT)", "Прицел (LT)", "Viser (LT)", "Zielen (LT)", "Apuntar (LT)", "Mira (LT)");
+            a("Reload (X)", "Перезарядка (X)", "Recharger (X)", "Nachladen (X)", "Recargar (X)", "Ricarica (X)");
+            a("Roll / cover / vault (Y)", "Кувырок / укрытие / перелезть (Y)", "Roulade / couvert / franchir (Y)",
+              "Rolle / Deckung / Überspringen (Y)", "Rodar / cobertura / saltar (Y)", "Capriola / copertura / scavalca (Y)");
+            a("Use / heal / confirm (A)", "Действие / лечить / выбор (A)", "Utiliser / soigner / valider (A)",
+              "Benutzen / heilen / bestätigen (A)", "Usar / curar / aceptar (A)", "Usa / cura / conferma (A)");
+            a("Cancel / back (B)", "Отмена / назад (B)", "Annuler / retour (B)", "Abbrechen / zurück (B)",
+              "Cancelar / atrás (B)", "Annulla / indietro (B)");
+            a("Inventory (LB)", "Инвентарь (LB)", "Inventaire (LB)", "Inventar (LB)", "Inventario (LB)", "Inventario (LB)");
+            a("Co-op commands (RB)", "Кооп-команды (RB)", "Commandes coop (RB)", "Koop-Befehle (RB)",
+              "Órdenes cooperativas (RB)", "Comandi cooperativa (RB)");
+            a("Right stick press (R3)", "Нажатие правого стика (R3)", "Clic du stick droit (R3)", "Rechter Stick drücken (R3)",
+              "Pulsar stick derecho (R3)", "Pressione levetta destra (R3)");
+            a("D-pad up: advance / primary weapon", "Крестовина вверх: вперёд / основное оружие",
+              "Croix haut : avancer / arme principale", "Steuerkreuz oben: vorrücken / Primärwaffe",
+              "Cruceta arriba: avanzar / arma principal", "Croce su: avanza / arma primaria");
+            a("D-pad down: partner view / grenades", "Крестовина вниз: вид напарника / гранаты",
+              "Croix bas : vue du partenaire / grenades", "Steuerkreuz unten: Partnersicht / Granaten",
+              "Cruceta abajo: vista del compañero / granadas", "Croce giù: vista compagno / granate");
+            a("D-pad left: regroup / secondary weapon", "Крестовина влево: ко мне / дополнительное оружие",
+              "Croix gauche : regroupement / arme secondaire", "Steuerkreuz links: sammeln / Sekundärwaffe",
+              "Cruceta izquierda: reagruparse / arma secundaria", "Croce sinistra: raggruppa / arma secondaria");
+            a("D-pad right: hold position / special weapon", "Крестовина вправо: стоять / особое оружие",
+              "Croix droite : tenir la position / arme spéciale", "Steuerkreuz rechts: Position halten / Spezialwaffe",
+              "Cruceta derecha: mantener posición / arma especial", "Croce destra: mantieni posizione / arma speciale");
+            a("Look up (right stick)", "Взгляд вверх (правый стик)", "Regarder en haut (stick droit)", "Nach oben sehen (rechter Stick)",
+              "Mirar arriba (stick derecho)", "Guarda su (levetta destra)");
+            a("Look down (right stick)", "Взгляд вниз (правый стик)", "Regarder en bas (stick droit)", "Nach unten sehen (rechter Stick)",
+              "Mirar abajo (stick derecho)", "Guarda giù (levetta destra)");
+            a("Look left (right stick)", "Взгляд влево (правый стик)", "Regarder à gauche (stick droit)", "Nach links sehen (rechter Stick)",
+              "Mirar a la izquierda (stick derecho)", "Guarda a sinistra (levetta destra)");
+            a("Look right (right stick)", "Взгляд вправо (правый стик)", "Regarder à droite (stick droit)", "Nach rechts sehen (rechter Stick)",
+              "Mirar a la derecha (stick derecho)", "Guarda a destra (levetta destra)");
+            a("GPS (Back)", "GPS (Back)", "GPS (Back)", "GPS (Back)", "GPS (Back)", "GPS (Back)");
+            a("Pause (Start)", "Пауза (Start)", "Pause (Start)", "Pause (Start)", "Pausa (Start)", "Pausa (Start)");
+            a("Guide button", "Кнопка Guide", "Bouton Guide", "Guide-Taste", "Botón Guía", "Pulsante Guida");
+            a("Key bindings", "Назначение клавиш", "Touches", "Tastenbelegung", "Teclas", "Tasti");
+            a("Return every key to the default layout (WASD, mouse).", "Вернуть все клавиши по умолчанию (WASD, мышь).",
+              "Remettre toutes les touches par défaut (WASD, souris).", "Alle Tasten auf die Standardbelegung (WASD, Maus) zurücksetzen.",
+              "Devolver todas las teclas a la distribución por defecto (WASD, ratón).",
+              "Riporta tutti i tasti alla disposizione predefinita (WASD, mouse).");
+            a("Default keys restored", "Клавиши по умолчанию восстановлены", "Touches par défaut rétablies",
+              "Standardtasten wiederhergestellt", "Teclas por defecto restablecidas", "Tasti predefiniti ripristinati");
+            a("A: use / confirm", "A: действие / выбор", "A : utiliser / valider", "A: benutzen / bestätigen", "A: usar / aceptar",
+              "A: usa / conferma");
+            a("B: cancel / back", "B: отмена / назад", "B : annuler / retour", "B: abbrechen / zurück", "B: cancelar / atrás",
+              "B: annulla / indietro");
+            a("X: reload", "X: перезарядка", "X : recharger", "X: nachladen", "X: recargar", "X: ricarica");
+            a("Y: roll / cover / vault", "Y: кувырок / укрытие / перелезть", "Y : roulade / couvert / franchir",
+              "Y: Rolle / Deckung / Überspringen", "Y: rodar / cobertura / saltar", "Y: capriola / copertura / scavalca");
+            a("RT: fire", "RT: огонь", "RT : tirer", "RT: feuern", "RT: disparar", "RT: fuoco");
+            a("LT: aim", "LT: прицел", "LT : viser", "LT: zielen", "LT: apuntar", "LT: mira");
+            a("LB: inventory", "LB: инвентарь", "LB : inventaire", "LB: Inventar", "LB: inventario", "LB: inventario");
+            a("RB: co-op commands", "RB: кооп-команды", "RB : commandes coop", "RB: Koop-Befehle", "RB: órdenes cooperativas",
+              "RB: comandi cooperativa");
+            a("L3: crouch", "L3: присесть", "L3 : s'accroupir", "L3: ducken", "L3: agacharse", "L3: accovacciati");
+            a("D-pad up", "Крестовина вверх", "Croix haut", "Steuerkreuz oben", "Cruceta arriba", "Croce su");
+            a("D-pad down", "Крестовина вниз", "Croix bas", "Steuerkreuz unten", "Cruceta abajo", "Croce giù");
+            a("D-pad left", "Крестовина влево", "Croix gauche", "Steuerkreuz links", "Cruceta izquierda", "Croce sinistra");
+            a("D-pad right", "Крестовина вправо", "Croix droite", "Steuerkreuz rechts", "Cruceta derecha", "Croce destra");
+            a("Back: GPS", "Back: GPS", "Back : GPS", "Back: GPS", "Back: GPS", "Back: GPS");
+            a("Start: pause", "Start: пауза", "Start : pause", "Start: Pause", "Start: pausa", "Start: pausa");
+            a("LEFT STICK", "ЛЕВЫЙ СТИК", "STICK GAUCHE", "LINKER STICK", "STICK IZQUIERDO", "LEVETTA SINISTRA");
+            a("RIGHT STICK", "ПРАВЫЙ СТИК", "STICK DROIT", "RECHTER STICK", "STICK DERECHO", "LEVETTA DESTRA");
+            a("Movement (left stick)", "Движение (левый стик)", "Déplacement (stick gauche)", "Bewegung (linker Stick)",
+              "Movimiento (stick izquierdo)", "Movimento (levetta sinistra)");
+            a("Camera (right stick)", "Камера (правый стик)", "Caméra (stick droit)", "Kamera (rechter Stick)",
+              "Cámara (stick derecho)", "Telecamera (levetta destra)");
+            a("Which stick of the gamepad moves the character. Swap both to play with the sticks swapped.",
+              "Какой стик геймпада двигает персонажа. Поменяйте оба, чтобы играть с переставленными стиками.",
+              "Quel stick de la manette déplace le personnage. Échangez les deux pour jouer avec les sticks inversés.",
+              "Welcher Stick des Controllers die Figur bewegt. Beide tauschen, um mit vertauschten Sticks zu spielen.",
+              "Qué stick del mando mueve al personaje. Cambia los dos para jugar con los sticks intercambiados.",
+              "Quale levetta del controller muove il personaggio. Scambia entrambe per giocare con le levette invertite.");
+            a("Which stick of the gamepad turns the camera and aims.", "Какой стик геймпада поворачивает камеру и целится.",
+              "Quel stick de la manette tourne la caméra et vise.", "Welcher Stick des Controllers die Kamera dreht und zielt.",
+              "Qué stick del mando gira la cámara y apunta.", "Quale levetta del controller gira la telecamera e mira.");
+            a("Invert movement stick Y", "Инверсия Y стика движения", "Inverser l'axe Y du déplacement", "Bewegungsstick Y umkehren",
+              "Invertir eje Y del movimiento", "Inverti asse Y del movimento");
+            a("Invert camera stick Y", "Инверсия Y стика камеры", "Inverser l'axe Y de la caméra", "Kamerastick Y umkehren",
+              "Invertir eje Y de la cámara", "Inverti asse Y della telecamera");
+            a("Up on the movement stick walks backwards.", "Стик движения вверх — идти назад.",
+              "Pousser le stick de déplacement vers le haut fait reculer.", "Bewegungsstick nach oben geht rückwärts.",
+              "Arriba en el stick de movimiento camina hacia atrás.", "Su sulla levetta di movimento cammina all'indietro.");
+            a("Up on the camera stick looks down (on top of the Invert Y option in the game itself).",
+              "Стик камеры вверх — взгляд вниз (поверх настройки инверсии Y в самой игре).",
+              "Pousser le stick de caméra vers le haut fait regarder en bas (en plus de l'option Inverser Y du jeu).",
+              "Kamerastick nach oben sieht nach unten (zusätzlich zur Option Y umkehren im Spiel).",
+              "Arriba en el stick de cámara mira abajo (además de la opción Invertir Y del propio juego).",
+              "Su sulla levetta della telecamera guarda in basso (oltre all'opzione Inverti Y del gioco).");
+            a("Gamepad layout", "Раскладка геймпада", "Disposition de la manette", "Controller-Belegung", "Distribución del mando",
+              "Disposizione del controller");
+            a("Return every gamepad button to the console layout.", "Вернуть все кнопки геймпада как на консоли.",
+              "Remettre tous les boutons de la manette comme sur la console.", "Alle Controller-Tasten auf die Konsolenbelegung zurücksetzen.",
+              "Devolver todos los botones del mando a la distribución de la consola.",
+              "Riporta tutti i pulsanti del controller alla disposizione della console.");
+            a("Default gamepad layout restored", "Раскладка геймпада по умолчанию восстановлена", "Disposition de la manette rétablie",
+              "Standard-Controllerbelegung wiederhergestellt", "Distribución del mando restablecida",
+              "Disposizione del controller ripristinata");
+            a("Split-screen", "Разделённый экран", "Écran partagé", "Splitscreen", "Pantalla dividida", "Schermo condiviso");
+            a("Two players on one PC, each with their own half of the screen. On Play the game starts at once, without " +
+              "looking for a network host. Off: every device controls player 1.",
+              "Двое игроков на одном ПК, у каждого своя половина экрана. По «Играть» игра запускается сразу, без " +
+              "поиска хоста в сети. Выкл.: все устройства управляют игроком 1.",
+              "Deux joueurs sur un PC, chacun avec sa moitié de l'écran. Jouer lance le jeu tout de suite, sans " +
+              "chercher d'hôte sur le réseau. Désactivé : tous les périphériques contrôlent le joueur 1.",
+              "Zwei Spieler an einem PC, jeder mit seiner Bildschirmhälfte. Spielen startet das Spiel sofort, ohne " +
+              "einen Host im Netzwerk zu suchen. Aus: alle Geräte steuern Spieler 1.",
+              "Dos jugadores en un PC, cada uno con su mitad de la pantalla. Jugar inicia el juego enseguida, sin " +
+              "buscar un anfitrión en la red. Desactivado: todos los dispositivos controlan al jugador 1.",
+              "Due giocatori su un PC, ognuno con la sua metà dello schermo. Gioca avvia subito il gioco, senza " +
+              "cercare un host in rete. Disattivato: tutti i dispositivi controllano il giocatore 1.");
+            a("Player 1 name", "Имя игрока 1", "Nom du joueur 1", "Name von Spieler 1", "Nombre del jugador 1", "Nome giocatore 1");
+            a("Player 2 name", "Имя игрока 2", "Nom du joueur 2", "Name von Spieler 2", "Nombre del jugador 2", "Nome giocatore 2");
+            a("Gamertag of player 1 (up to 15 characters), the same as Network → Player name. Empty: the computer's name.",
+              "Геймертег игрока 1 (до 15 символов), то же, что «Сеть → Имя игрока». Пусто — имя компьютера.",
+              "Gamertag du joueur 1 (15 caractères max.), le même que Réseau → Nom du joueur. Vide : le nom de l'ordinateur.",
+              "Gamertag von Spieler 1 (bis 15 Zeichen), wie Netzwerk → Spielername. Leer: der Name des Computers.",
+              "Gamertag del jugador 1 (hasta 15 caracteres), el mismo que Red → Nombre del jugador. Vacío: el nombre del PC.",
+              "Gamertag del giocatore 1 (fino a 15 caratteri), lo stesso di Rete → Nome giocatore. Vuoto: il nome del computer.");
+            a("Gamertag of player 2 (up to 15 characters); their own profile and settings. " +
+              "Empty: player 1's name with (1) after it.",
+              "Геймертег игрока 2 (до 15 символов); у него свой профиль и настройки. " +
+              "Пусто — имя игрока 1 с (1) в конце.",
+              "Gamertag du joueur 2 (15 caractères max.) ; son propre profil et ses réglages. " +
+              "Vide : le nom du joueur 1 suivi de (1).",
+              "Gamertag von Spieler 2 (bis 15 Zeichen); eigenes Profil und eigene Einstellungen. " +
+              "Leer: der Name von Spieler 1 mit (1) dahinter.",
+              "Gamertag del jugador 2 (hasta 15 caracteres); su propio perfil y ajustes. " +
+              "Vacío: el nombre del jugador 1 con (1) detrás.",
+              "Gamertag del giocatore 2 (fino a 15 caratteri); il suo profilo e le sue impostazioni. " +
+              "Vuoto: il nome del giocatore 1 seguito da (1).");
+            a("Player 1 controls", "Управление игрока 1", "Commandes du joueur 1", "Steuerung von Spieler 1",
+              "Controles del jugador 1", "Comandi del giocatore 1");
+            a("Player 2 controls", "Управление игрока 2", "Commandes du joueur 2", "Steuerung von Spieler 2",
+              "Controles del jugador 2", "Comandi del giocatore 2");
+            a("The devices of player 1. Gamepads are numbered in the order the game finds them (usually the order " +
+              "they were connected): if the players' pads turn out swapped, swap them here. " +
+              "Any gamepad: every gamepad the other player does not have.",
+              "Устройства игрока 1. Геймпады нумеруются в том порядке, в каком их находит игра (обычно в порядке " +
+              "подключения): если геймпады игроков перепутались, поменяйте их здесь. " +
+              "Любой геймпад — все геймпады, которых нет у другого игрока.",
+              "Les périphériques du joueur 1. Les manettes sont numérotées dans l'ordre où le jeu les trouve (en général l'ordre " +
+              "de branchement) : si les manettes des joueurs sont inversées, échangez-les ici. " +
+              "N'importe quelle manette : toutes celles que l'autre joueur n'a pas.",
+              "Die Geräte von Spieler 1. Controller werden in der Reihenfolge nummeriert, in der das Spiel sie findet (meist die " +
+              "Reihenfolge des Anschließens): Sind die Controller vertauscht, hier tauschen. " +
+              "Beliebiger Controller: jeder, den der andere Spieler nicht hat.",
+              "Los dispositivos del jugador 1. Los mandos se numeran en el orden en que el juego los encuentra (normalmente el " +
+              "orden de conexión): si los mandos de los jugadores salen cambiados, cámbialos aquí. " +
+              "Cualquier mando: todos los que no tiene el otro jugador.",
+              "I dispositivi del giocatore 1. I controller sono numerati nell'ordine in cui il gioco li trova (di solito l'ordine " +
+              "di collegamento): se i controller dei giocatori risultano scambiati, scambiali qui. " +
+              "Qualsiasi controller: tutti quelli che l'altro giocatore non ha.");
+            a("The devices of player 2. The mouse aims for whoever has the keyboard. " +
+              "Any gamepad: every gamepad the other player does not have.",
+              "Устройства игрока 2. Мышь целится за того, у кого клавиатура. " +
+              "Любой геймпад — все геймпады, которых нет у другого игрока.",
+              "Les périphériques du joueur 2. La souris vise pour celui qui a le clavier. " +
+              "N'importe quelle manette : toutes celles que l'autre joueur n'a pas.",
+              "Die Geräte von Spieler 2. Die Maus zielt für den, der die Tastatur hat. " +
+              "Beliebiger Controller: jeder, den der andere Spieler nicht hat.",
+              "Los dispositivos del jugador 2. El ratón apunta para quien tiene el teclado. " +
+              "Cualquier mando: todos los que no tiene el otro jugador.",
+              "I dispositivi del giocatore 2. Il mouse mira per chi ha la tastiera. " +
+              "Qualsiasi controller: tutti quelli che l'altro giocatore non ha.");
+            a("KEYBOARD + MOUSE", "КЛАВ. + МЫШЬ", "CLAVIER + SOURIS", "TASTATUR + MAUS", "TECLADO + RATÓN", "TASTIERA + MOUSE");
+            a("ANY GAMEPAD", "ЛЮБОЙ ГЕЙМПАД", "TOUTE MANETTE", "JEDER CONTROLLER", "CUALQUIER MANDO", "QUALSIASI CONTROLLER");
+            a("GAMEPAD 1", "ГЕЙМПАД 1", "MANETTE 1", "CONTROLLER 1", "MANDO 1", "CONTROLLER 1");
+            a("GAMEPAD 2", "ГЕЙМПАД 2", "MANETTE 2", "CONTROLLER 2", "MANDO 2", "CONTROLLER 2");
+            a("GAMEPAD 3", "ГЕЙМПАД 3", "MANETTE 3", "CONTROLLER 3", "MANDO 3", "CONTROLLER 3");
+            a("GAMEPAD 4", "ГЕЙМПАД 4", "MANETTE 4", "CONTROLLER 4", "MANDO 4", "CONTROLLER 4");
+            a("KEYBOARD + ANY PAD", "КЛАВ. + ЛЮБОЙ", "CLAVIER + MANETTE", "TASTATUR + CONTR.", "TECLADO + MANDO", "TASTIERA + CONTR.");
+            a("KEYBOARD + PAD 1", "КЛАВ. + ГЕЙМПАД 1", "CLAVIER + MANETTE 1", "TASTATUR + CONTR. 1", "TECLADO + MANDO 1",
+              "TASTIERA + CONTR. 1");
+            a("KEYBOARD + PAD 2", "КЛАВ. + ГЕЙМПАД 2", "CLAVIER + MANETTE 2", "TASTATUR + CONTR. 2", "TECLADO + MANDO 2",
+              "TASTIERA + CONTR. 2");
+            a("GAMEPAD {0}", "ГЕЙМПАД {0}", "MANETTE {0}", "CONTROLLER {0}", "MANDO {0}", "CONTROLLER {0}");
+            a("KEYBOARD + PAD {0}", "КЛАВ. + ГЕЙМПАД {0}", "CLAVIER + MANETTE {0}", "TASTATUR + CONTR. {0}", "TECLADO + MANDO {0}",
+              "TASTIERA + CONTR. {0}");
+            a("not connected", "не подключён", "non branchée", "nicht angeschlossen", "no conectado", "non collegato");
+            a("Game controller", "Игровой контроллер", "Manette de jeu", "Gamecontroller", "Mando de juego", "Controller di gioco");
+            a("No gamepads connected.", "Геймпады не подключены.", "Aucune manette branchée.", "Keine Controller angeschlossen.",
+              "No hay mandos conectados.", "Nessun controller collegato.");
+            a("Connected:", "Подключены:", "Branchées :", "Angeschlossen:", "Conectados:", "Collegati:");
+            a("gamepad {0} - {1}", "геймпад {0} — {1}", "manette {0} - {1}", "Controller {0} - {1}", "mando {0} - {1}",
+              "controller {0} - {1}");
+            a("Both players have the keyboard: it goes to player 1.", "Клавиатура у обоих игроков — она достанется игроку 1.",
+              "Les deux joueurs ont le clavier : il revient au joueur 1.", "Beide Spieler haben die Tastatur: sie geht an Spieler 1.",
+              "Los dos jugadores tienen el teclado: será del jugador 1.", "Entrambi i giocatori hanno la tastiera: va al giocatore 1.");
+            a("Both players have gamepad {0}: it goes to player 1.", "Геймпад {0} у обоих игроков — он достанется игроку 1.",
+              "Les deux joueurs ont la manette {0} : elle revient au joueur 1.", "Beide Spieler haben Controller {0}: er geht an Spieler 1.",
+              "Los dos jugadores tienen el mando {0}: será del jugador 1.", "Entrambi i giocatori hanno il controller {0}: va al giocatore 1.");
+            a("Any gamepad for both players: they all go to player 1.", "«Любой геймпад» у обоих — все геймпады достанутся игроку 1.",
+              "Toute manette pour les deux joueurs : elles reviennent toutes au joueur 1.",
+              "Jeder Controller für beide Spieler: alle gehen an Spieler 1.",
+              "Cualquier mando para los dos jugadores: todos serán del jugador 1.",
+              "Qualsiasi controller per entrambi: vanno tutti al giocatore 1.");
+            a("Gamepad {0} is not connected.", "Геймпад {0} не подключён.", "La manette {0} n'est pas branchée.",
+              "Controller {0} ist nicht angeschlossen.", "El mando {0} no está conectado.", "Il controller {0} non è collegato.");
+            a("In the game: Campaign Mode → Splitscreen; player 2 signs in with their device when asked.",
+              "В игре: «Кампания» → «Разделенный экран»; игрок 2 входит со своего устройства, когда игра попросит.",
+              "Dans le jeu : Mode Campagne → Écran partagé ; le joueur 2 se connecte avec son périphérique quand le jeu le demande.",
+              "Im Spiel: Kampagnenmodus → Splitscreen; Spieler 2 meldet sich mit seinem Gerät an, wenn das Spiel fragt.",
+              "En el juego: Modo Campaña → Pantalla dividida; el jugador 2 inicia sesión con su dispositivo cuando se le pida.",
+              "Nel gioco: Modalità Campagna → Schermo condiviso; il giocatore 2 accede con il suo dispositivo quando richiesto.");
+            a("Starting split-screen", "Запуск на разделённом экране", "Lancement en écran partagé", "Splitscreen wird gestartet",
+              "Iniciando pantalla dividida", "Avvio a schermo condiviso");
 
             // --- Network ---
             a("Player name", "Имя игрока", "Nom du joueur", "Spielername", "Nombre del jugador", "Nome giocatore");

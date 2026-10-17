@@ -20,6 +20,7 @@ namespace AO2Launcher
         Text,
         Button,
         Info,
+        Bind, // a key binding (or with Pad, a gamepad button's)
     }
 
     sealed class Row
@@ -44,6 +45,10 @@ namespace AO2Launcher
         public Action Click;
         // Info
         public Func<string> Text;
+        // Bind: a gamepad button (Values: the physical controls) instead of keys
+        public bool Pad;
+        // Choice: Enter or a click opens the list of all the choices
+        public bool Drop;
 
         public Func<bool> Visible = () => true;
         public Func<bool> Enabled = () => true;
@@ -112,7 +117,7 @@ namespace AO2Launcher
         Font fTitle, fTitleSub, fBack, fSection, fLcd, fTiny;
         bool padConnected;
 
-        string[] tabNames = { "GRAPHICS", "CONTROLS", "NETWORK", "ADVANCED" };
+        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED" };
         List<Row>[] tabs;
         UiScreen screen = UiScreen.Main;
         int mainSel; // 0 = play, 1 = settings
@@ -165,10 +170,12 @@ namespace AO2Launcher
             InitInstall();
 
             pad.Pressed += OnPad;
+            pad.RawPressed += OnPadRaw;
             timer.Interval = 16;
             timer.Tick += (s, e) =>
             {
                 pad.Poll(Form.ActiveForm == this);
+                TickCapture();
                 if (pad.Connected != padConnected || installing || UpdateBusy)
                 {
                     // Installing: the progress bar's stripes move.
@@ -423,6 +430,8 @@ namespace AO2Launcher
             updError = st == UpdState.Failed ? "The remote server returned an error: (404) Not Found." : null;
         }
 
+        public bool SnapshotDrop; // --drop: the current row's list open
+
         public void Snapshot(string path, int t, int s, UiScreen scr)
         {
             IntPtr h = Handle;
@@ -431,7 +440,12 @@ namespace AO2Launcher
             screen = scr;
             sel = s;
             instSel = s;
+            RefreshPads();
             LayoutRows();
+            if (SnapshotDrop && SelectedRow() != null && SelectedRow().Drop)
+            {
+                OpenDrop(SelectedRow());
+            }
             using (var bmp = new Bitmap(ClientSize.Width, ClientSize.Height))
             {
                 DrawToBitmap(bmp, new Rectangle(Point.Empty, ClientSize));
@@ -709,10 +723,8 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Info,
-                    Text = () => L.T("WASD - move   mouse - camera   LMB - fire   RMB - aim   R - reload   " +
-                                     "Space - roll / cover   Ctrl, C - crouch   E, Enter - use   F - co-op commands   " +
-                                     "Z - inventory   1-4 - weapons and grenades   arrows - partner orders   Tab - GPS   Esc - pause.\n" +
-                                     "Xbox gamepad: as on the console. Key bindings: settings\\mapping.toml in the game folder.")
+                    Text = () => L.T("Keys and mouse buttons: the Keyboard tab. Gamepad buttons and sticks: the Gamepad tab. " +
+                                     "Two players on one PC: the Split-Screen tab.")
                 },
             };
 
@@ -847,7 +859,7 @@ namespace AO2Launcher
                 },
             };
 
-            tabs = new[] { graphics, controls, online, extras };
+            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras };
 
             foreach (Row r in AllRows().Where(r => r.Kind == RowKind.Text))
             {
@@ -940,32 +952,76 @@ namespace AO2Launcher
             get { return ColX + ColW - 18 - ValueW; }
         }
 
-        // Row positions for the current tab and the text boxes over them.
-        void LayoutRows()
+        // Row positions for the current tab and the text boxes over them. A tab longer than the panel
+        // scrolls; followSel keeps the current row in view.
+        void LayoutRows(bool followSel = true)
         {
-            float y = RowsTop;
+            List<Row> rows = VisibleRows();
+            if (sel >= rows.Count || !rows[sel].Selectable)
+            {
+                sel = FirstSelectable();
+            }
+            float content = 0, selTop = 0, selH = 0;
             using (Graphics g = CreateGraphics())
             {
                 g.ScaleTransform(scale, scale);
-                foreach (Row r in VisibleRows())
+                for (int i = 0; i < rows.Count; i++)
                 {
-                    r.Y = y;
+                    Row r = rows[i];
                     if (r.Kind == RowKind.Info)
                     {
                         SizeF sz = g.MeasureString(r.Text(), fSmall, (int)(ColW - 36));
-                        r.H = Math.Min(sz.Height + 16, Math.Max(0, DescTop - 6 - y));
+                        r.H = sz.Height + 16;
                     }
                     else
                     {
                         r.H = RowH;
                     }
-                    y += r.H;
+                    if (i == sel)
+                    {
+                        selTop = content;
+                        selH = r.H;
+                    }
+                    content += r.H;
                 }
             }
-            var visible = new HashSet<Row>(VisibleRows());
+            // A last info row that does not fit is cut rather than scrolled to.
+            if (rows.Count > 0 && rows[rows.Count - 1].Kind == RowKind.Info && content - rows[rows.Count - 1].H <= RowsView)
+            {
+                Row last = rows[rows.Count - 1];
+                last.H = Math.Max(0, Math.Min(last.H, RowsView - (content - last.H)));
+                content = Math.Min(content, RowsView);
+            }
+            // Scrolled by whole rows, so the top row is never cut.
+            Func<float, float> rowsUp = v => (float)Math.Ceiling(v / RowH - 0.01) * RowH;
+            maxScroll = Math.Max(0, rowsUp(content - RowsView));
+            if (followSel && selH > 0)
+            {
+                if (selTop < scroll)
+                {
+                    scroll = selTop;
+                }
+                else if (selTop + selH > scroll + RowsView)
+                {
+                    scroll = rowsUp(selTop + selH - RowsView);
+                }
+            }
+            scroll = Math.Max(0, Math.Min(maxScroll, scroll));
+            float y = RowsTop - scroll;
+            foreach (Row r in rows)
+            {
+                r.Y = y;
+                y += r.H;
+            }
+            var visible = new HashSet<Row>(rows.Where(RowShown));
             foreach (Row r in AllRows().Where(r => r.Box != null))
             {
                 bool show = screen == UiScreen.Settings && visible.Contains(r);
+                if (!r.Box.Focused && r.Box.Text != S[r.Key])
+                {
+                    // Two pages show the player's name.
+                    r.Box.Text = S[r.Key];
+                }
                 if (show)
                 {
                     float boxH = 22;
@@ -981,11 +1037,6 @@ namespace AO2Launcher
                     r.Box.Visible = show;
                 }
             }
-            List<Row> rows = VisibleRows();
-            if (sel >= rows.Count || !rows[sel].Selectable)
-            {
-                sel = FirstSelectable();
-            }
             Invalidate();
         }
 
@@ -995,6 +1046,9 @@ namespace AO2Launcher
         void SetScreen(UiScreen s)
         {
             ActiveControl = null;
+            FinishCapture(null);
+            dropRow = null;
+            scroll = 0;
             screen = s;
             hover = null;
             if (s == UiScreen.Settings)
@@ -1022,8 +1076,12 @@ namespace AO2Launcher
                 return;
             }
             ActiveControl = null;
+            FinishCapture(null);
+            dropRow = null;
             tab = t;
             sel = FirstSelectable();
+            scroll = 0;
+            padsAt = DateTime.MinValue;
             LayoutRows();
         }
 
@@ -1041,7 +1099,8 @@ namespace AO2Launcher
                 }
             }
             ActiveControl = null;
-            Invalidate();
+            FinishCapture(null);
+            LayoutRows();
         }
 
         void Change(Row r, int dir)
@@ -1054,6 +1113,11 @@ namespace AO2Launcher
             {
                 case RowKind.Choice:
                 {
+                    if (r.Drop && dir == 0)
+                    {
+                        OpenDrop(r);
+                        return;
+                    }
                     int i = Array.IndexOf(r.Values, S[r.Key]);
                     i = i < 0 ? 0 : (i + (dir == 0 ? 1 : dir) + r.Values.Length) % r.Values.Length;
                     S[r.Key] = r.Values[i];
@@ -1085,6 +1149,25 @@ namespace AO2Launcher
                         r.Box.SelectAll();
                     }
                     return;
+                case RowKind.Bind:
+                    if (capturing == r)
+                    {
+                        FinishCapture(null);
+                        return;
+                    }
+                    if (dir == 0 || (!r.Pad && dir > 0))
+                    {
+                        StartCapture(r, dir > 0);
+                        return;
+                    }
+                    if (!r.Pad)
+                    {
+                        return;
+                    }
+                    int k = Array.IndexOf(r.Values, S[r.Key]);
+                    k = k < 0 ? 0 : (k + dir + r.Values.Length) % r.Values.Length;
+                    S[r.Key] = r.Values[k];
+                    break;
                 default:
                     return;
             }
@@ -1175,6 +1258,12 @@ namespace AO2Launcher
                 ShowToast(L.T("The game is already running"), true);
                 return;
             }
+            if (S.Bool("split_screen"))
+            {
+                // Two players here: nobody to look for on the network.
+                StartGame(null);
+                return;
+            }
             searching = true;
             Invalidate();
             string manual = S["host_ip"].Trim();
@@ -1219,7 +1308,8 @@ namespace AO2Launcher
                 ShowToast(L.F("Could not start the game: {0}", ex.Message), true);
                 return;
             }
-            ShowToast(host != null ? L.F("Host found: {0} - joining", host) : L.T("No host found - hosting a game"), false);
+            ShowToast(S.Bool("split_screen") ? L.T("Starting split-screen")
+                : host != null ? L.F("Host found: {0} - joining", host) : L.T("No host found - hosting a game"), false);
             if (S.Bool("close_on_launch"))
             {
                 Close();
@@ -1284,6 +1374,15 @@ namespace AO2Launcher
                         ClosePrompt();
                         break;
                 }
+                return;
+            }
+            if (capturing != null)
+            {
+                return; // OnPadRaw
+            }
+            if (screen == UiScreen.Settings && dropRow != null)
+            {
+                DropPad(b);
                 return;
             }
             if (RevealFocus(b == Gamepad.A || b == Gamepad.Start))
@@ -1361,6 +1460,14 @@ namespace AO2Launcher
                 }
                 return true;
             }
+            if (screen == UiScreen.Settings && capturing != null)
+            {
+                return CaptureKey(ref msg, keyData);
+            }
+            if (screen == UiScreen.Settings && dropRow != null)
+            {
+                return DropKey(keyData);
+            }
             if (!(ActiveControl is TextBox) && RevealFocus(keyData == Keys.Enter || keyData == Keys.Space))
             {
                 return true;
@@ -1421,6 +1528,13 @@ namespace AO2Launcher
                 case Keys.Space:
                 case Keys.Enter:
                     Change(cur, 0);
+                    return true;
+                case Keys.Delete:
+                case Keys.Back:
+                    if (cur != null && cur.Kind == RowKind.Bind && !cur.Pad && cur.Enabled())
+                    {
+                        ClearBind(cur);
+                    }
                     return true;
                 case Keys.Escape: SetScreen(UiScreen.Main); return true;
                 case Keys.Tab:
@@ -1554,6 +1668,10 @@ namespace AO2Launcher
         {
             base.OnMouseDown(e);
             UsePad(false);
+            if (screen == UiScreen.Settings && CaptureMouse(e.Button))
+            {
+                return;
+            }
             if (e.Button != MouseButtons.Left)
             {
                 return;
@@ -1935,8 +2053,12 @@ namespace AO2Launcher
             List<Row> rows = VisibleRows();
             for (int i = 0; i < rows.Count; i++)
             {
-                DrawRow(g, rows[i], i);
+                if (RowShown(rows[i]) && rows[i].H > 0)
+                {
+                    DrawRow(g, rows[i], i);
+                }
             }
+            DrawScrollBar(g);
 
             Line(g, Hairline, ColX, DescTop + 0.5f, ColX + ColW, DescTop + 0.5f);
             Row cur = SelectedRow();
@@ -1945,6 +2067,7 @@ namespace AO2Launcher
                 DrawText(g, L.T(cur.Desc), fDesc, TextDim, new RectangleF(ColX, DescTop + 12, ColW, 76), StringFormat.GenericDefault);
             }
             DrawHints(g);
+            DrawDrop(g);
         }
 
         void DrawRow(Graphics g, Row r, int index)
@@ -1977,9 +2100,15 @@ namespace AO2Launcher
                 {
                     int i = Array.IndexOf(r.Values, S[r.Key]);
                     string text = i >= 0 ? r.ChoiceName(i) : S[r.Key];
-                    AddHot(rr, id, () => Change(r, 1), index);
+                    AddHot(rr, id, () => Change(r, r.Drop ? 0 : 1), index);
                     DrawText(g, text, fValue, valColor, new RectangleF(vx + 16, r.Y, ValueW - 32, r.H), CenterFmt());
-                    if (enabled)
+                    if (r.Drop && enabled)
+                    {
+                        // A list: ▾ where the right chevron would be (←→ still step through it).
+                        var drop = new RectangleF(vx + ValueW - 18, r.Y, 24, r.H);
+                        DrawText(g, "▾", fValue, selected || IsHover(id) ? PaperHi : Color.FromArgb(150, Paper), drop, CenterFmt());
+                    }
+                    else if (enabled)
                     {
                         var left = new RectangleF(vx - 6, r.Y, 24, r.H);
                         var right = new RectangleF(vx + ValueW - 18, r.Y, 24, r.H);
@@ -2041,6 +2170,9 @@ namespace AO2Launcher
                     AddHot(rr, id, () => Change(r, 0), index);
                     break;
                 }
+                case RowKind.Bind:
+                    DrawBind(g, r, index, id, selected || capturing == r, valColor);
+                    break;
                 case RowKind.Button:
                 {
                     var br = new RectangleF(vx, r.Y + 5, ValueW, r.H - 10);
@@ -2300,6 +2432,7 @@ namespace AO2Launcher
             if (snap != null)
             {
                 form.padInput = opt("hints") == "pad"; // --hints=pad: the controller's buttons in the hints
+                form.SnapshotDrop = args.Contains("--drop");
                 int t = 0, sl = 0;
                 int.TryParse(opt("tab"), out t);
                 int.TryParse(opt("sel"), out sl);

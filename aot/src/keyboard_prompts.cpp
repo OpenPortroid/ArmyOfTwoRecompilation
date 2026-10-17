@@ -45,6 +45,17 @@
 // guest's own page and button textures again and the font's characters go
 // back to the disc's rectangles; a key press or a mouse move brings the keys
 // back. The text stays rewritten either way ("hold <LB>" reads well with both).
+//
+// Split-screen with one player on the keyboard and the other on a gamepad
+// (SplitRegions): each half of the screen shows its own player's pictures.
+// The renderer finds where each prompt is on the screen (its vertices
+// through the HUD's matrix) and which player's part of it (the local
+// players' Origin / Size) that is: the keys in the keyboard player's, the
+// guest's own texture in the other's; a prompt the players share is drawn
+// twice side by side where it was, the key on the left, the button on the
+// right. The font's characters stay on the disc's rectangles then, so both
+// pages share them: the keys' page draws each button character's key into
+// that character's own rectangle (a long key name gets narrow letters).
 #include "keyboard_prompts.h"
 
 #ifndef NOMINMAX
@@ -75,6 +86,7 @@
 #include <rex/runtime.h>
 
 #include "gpu/native/texture_loader.h"
+#include "mouse_aim.h"
 #include "ue3_reflect.h"
 
 REXCVAR_DEFINE_BOOL(ao2_keyboard_prompts, true, "Input",
@@ -138,7 +150,9 @@ namespace ao2::prompts
         size_t comma = rest.find(',');
         std::string key = Trim(rest.substr(0, comma));
         rest.remove_prefix(comma == std::string_view::npos ? rest.size() : comma + 1);
-        if (!key.empty())
+        // "none": nothing bound (the launcher's empty bind, as a command line
+        // flag needs a value).
+        if (!key.empty() && key != "none")
           return key;
       }
       return {};
@@ -826,6 +840,13 @@ namespace ao2::prompts
     std::atomic<bool> g_keys{true};
     std::atomic<uint32_t> g_generation{0};
 
+    // Split-screen: the keyboard player's and the gamepad player's parts of
+    // the screen (x0, y0, x1, y1 as fractions of it), set by the game thread.
+    std::mutex g_split_mutex;
+    bool g_split = false;
+    float g_split_keys[4] = {}, g_split_pad[4] = {};
+    std::atomic<bool> g_split_active{false};
+
     bool KeysShown()
     {
       return REXCVAR_GET(ao2_keyboard_prompts) && g_keys.load(std::memory_order_relaxed);
@@ -937,7 +958,7 @@ namespace ao2::prompts
 
     // The disc's entries of the characters PatchFont moves, to put them back.
     std::array<std::array<uint8_t, kCharStride>, 256> g_disc_chars{};
-    bool g_disc_chars_saved = false;
+    std::atomic<bool> g_disc_chars_saved{false}; // the renderer reads them for the split-screen page
     uint32_t g_font = 0; // Xbox360_18pt, as last found
 
     // Moves the button characters of Xbox360_18pt to the keys (`to_keys`) or
@@ -980,11 +1001,13 @@ namespace ao2::prompts
         REXLOG_WARN("keyboard_prompts: Xbox360_18pt's characters are not where expected");
         return true; // do not keep looking
       }
-      if (original && !g_disc_chars_saved)
+      if (original && !g_disc_chars_saved.load(std::memory_order_relaxed))
       {
         for (int c = 0; c < 256 && c < int(count); ++c)
           std::memcpy(g_disc_chars[c].data(), base + data + uint32_t(c) * kCharStride, kCharStride);
-        g_disc_chars_saved = true;
+        g_disc_chars_saved.store(true, std::memory_order_release);
+        // The split-screen page needs them: the renderer looks again.
+        g_generation.fetch_add(1, std::memory_order_release);
       }
       if (ours == to_keys || (!to_keys && !g_disc_chars_saved))
         return true;
@@ -1008,6 +1031,121 @@ namespace ao2::prompts
       }
       REXLOG_INFO("keyboard_prompts: button characters of Xbox360_18pt moved to {}",
                   to_keys ? "the keys" : "the controller's buttons");
+      return true;
+    }
+
+    // ---------------------------------------------------------------------
+    // Split-screen: whose part of the screen is whose (game thread)
+    // ---------------------------------------------------------------------
+
+    float LoadF32(const uint8_t *base, uint32_t addr)
+    {
+      return std::bit_cast<float>(Load32(base, addr));
+    }
+
+    // The local players' parts of the screen (Engine GamePlayers: LocalPlayer
+    // Origin / Size, fractions of the viewport; 2 players: 0,0 1x0.5 and
+    // 0,0.5 1x0.5) and which one has the keyboard; false when not split
+    // between a keyboard player and a gamepad player.
+    bool ReadSplit(const uint8_t *base, float keys[4], float pad[4])
+    {
+      constexpr uint32_t kEngine = 0x831EFCBC; // GEngine
+      static const int32_t players = ao2::ue3::PropertyOffset(base, "Engine", "GamePlayers");
+      static const int32_t controller_id = ao2::ue3::PropertyOffset(base, "LocalPlayer", "ControllerId");
+      static const int32_t origin = ao2::ue3::PropertyOffset(base, "LocalPlayer", "Origin");
+      static const int32_t size = ao2::ue3::PropertyOffset(base, "LocalPlayer", "Size");
+      if (players < 0 || controller_id < 0 || origin < 0 || size < 0)
+      {
+        static bool logged = false;
+        if (!logged)
+        {
+          logged = true;
+          REXLOG_WARN("keyboard_prompts: LocalPlayer's layout not found ({} {} {} {})", players, controller_id,
+                      origin, size);
+        }
+        return false;
+      }
+      uint32_t keyboard = ao2::mouse::KeyboardUser();
+      uint32_t engine = Load32(base, kEngine);
+      if (keyboard >= 4 || !engine)
+        return false;
+      uint32_t data = Load32(base, engine + uint32_t(players)), count = Load32(base, engine + uint32_t(players) + 4);
+      if (!data || count < 2 || count > 4)
+        return false;
+      bool have_keys = false, have_pad = false;
+      for (uint32_t i = 0; i < count; ++i)
+      {
+        uint32_t player = Load32(base, data + i * 4);
+        if (!player)
+          continue;
+        float x = LoadF32(base, player + uint32_t(origin)), y = LoadF32(base, player + uint32_t(origin) + 4);
+        float w = LoadF32(base, player + uint32_t(size)), h = LoadF32(base, player + uint32_t(size) + 4);
+        if (!(w > 0.0f && h > 0.0f && w <= 1.0f && h <= 1.0f) || (w >= 1.0f && h >= 1.0f))
+          return false; // not split (yet)
+        float *rect = Load32(base, player + uint32_t(controller_id)) == keyboard ? keys : pad;
+        bool &have = rect == keys ? have_keys : have_pad;
+        if (have)
+          continue;
+        have = true;
+        rect[0] = x;
+        rect[1] = y;
+        rect[2] = x + w;
+        rect[3] = y + h;
+      }
+      return have_keys && have_pad;
+    }
+
+    // The keys' page for split-screen: the disc's page with every button
+    // character's rectangle showing that character's key.
+    bool BuildSplitPage(const uint8_t *guest_data, std::vector<uint8_t> &rgba, uint32_t &size)
+    {
+      const Layout &layout = GetLayout();
+      if (!layout.valid || !g_disc_chars_saved.load(std::memory_order_acquire))
+        return false;
+      static std::mutex built_mutex;
+      static std::vector<uint8_t> built;
+      static uint32_t built_size = 0;
+      std::lock_guard<std::mutex> lock(built_mutex);
+      if (built.empty())
+      {
+        int scale = PageScale();
+        Canvas canvas(256 * scale);
+        Upscale(DecodeOriginalPage(guest_data), canvas, scale);
+        TextRenderer text;
+        auto field = [](const std::array<uint8_t, kCharStride> &e, int at) {
+          uint32_t v;
+          std::memcpy(&v, e.data() + at, 4);
+          return int32_t(std::byteswap(v));
+        };
+        for (int c = 0; c < 256; ++c)
+        {
+          int index = layout.cap_of_char[c];
+          if (index < 0)
+            continue;
+          const auto &e = g_disc_chars[c];
+          int u = field(e, 0), v = field(e, 4), w = field(e, 8), h = field(e, 12);
+          if (w <= 2 || h <= 2 || u < 0 || v < 0 || u + w > 256 || v + h > 256)
+            continue;
+          canvas.Clear(u * scale, v * scale, (u + w) * scale, (v + h) * scale);
+          const Cap &cap = layout.caps[index];
+          // The key's picture as in the keys' page (22 of the cell's 26), as
+          // wide as it needs within the character.
+          float y0 = float((v + kCapTop * h / kCellHeight) * scale);
+          float y1 = float((v + (kCapTop + kCapHeight) * h / kCellHeight) * scale);
+          float room = float((w - 1) * scale);
+          float cw = std::min(float(CapPixels(cap, text, int(y1 - y0))), room);
+          float x0 = (u + w * 0.5f) * scale - cw * 0.5f;
+          DrawCapIn(canvas, text, cap, Box{x0, y0, x0 + cw, y1});
+        }
+        built_size = uint32_t(canvas.size);
+        built.resize(size_t(built_size) * built_size * 4);
+        for (size_t i = 0; i < built.size(); ++i)
+          built[i] = uint8_t(std::clamp(canvas.px[i], 0.0f, 1.0f) * 255.0f + 0.5f);
+        if (REXCVAR_GET(ao2_keyboard_prompts_dump))
+          WriteDump("page_split_keys", canvas.px.data(), canvas.size, canvas.size);
+      }
+      rgba = built;
+      size = built_size;
       return true;
     }
 
@@ -1204,7 +1342,34 @@ namespace ao2::prompts
   {
     if (!REXCVAR_GET(ao2_keyboard_prompts))
       return;
-    bool keys = LastInput() != 2;
+    // Split-screen between a keyboard and a gamepad player: looked at a few
+    // times a second (players join and leave in the menus).
+    static uint32_t split_frame = 0;
+    if (split_frame++ % 15 == 0)
+    {
+      float keys_rect[4] = {}, pad_rect[4] = {};
+      bool split = ReadSplit(base, keys_rect, pad_rect);
+      std::lock_guard<std::mutex> lock(g_split_mutex);
+      bool moved = split && (std::memcmp(keys_rect, g_split_keys, sizeof(keys_rect)) ||
+                             std::memcmp(pad_rect, g_split_pad, sizeof(pad_rect)));
+      if (split != g_split || moved)
+      {
+        g_split = split;
+        std::memcpy(g_split_keys, keys_rect, sizeof(keys_rect));
+        std::memcpy(g_split_pad, pad_rect, sizeof(pad_rect));
+        g_split_active.store(split, std::memory_order_release);
+        g_generation.fetch_add(1, std::memory_order_release);
+        if (split)
+          REXLOG_INFO("keyboard_prompts: split-screen, keys at {:.2f},{:.2f}-{:.2f},{:.2f}, gamepad buttons at "
+                      "{:.2f},{:.2f}-{:.2f},{:.2f}",
+                      keys_rect[0], keys_rect[1], keys_rect[2], keys_rect[3], pad_rect[0], pad_rect[1], pad_rect[2],
+                      pad_rect[3]);
+        else
+          REXLOG_INFO("keyboard_prompts: not split between keys and a gamepad");
+      }
+    }
+    bool split = g_split_active.load(std::memory_order_relaxed);
+    bool keys = split || LastInput() != 2;
     if (keys != g_keys.load(std::memory_order_relaxed))
     {
       g_keys.store(keys, std::memory_order_relaxed);
@@ -1219,7 +1384,8 @@ namespace ao2::prompts
     // (a reloaded font gets moved again).
     static uint32_t frame = 0;
     static bool done = false, done_keys = false;
-    bool to_keys = keys && g_page_built.load(std::memory_order_acquire);
+    // Split-screen: the disc's rectangles, which both halves' pages share.
+    bool to_keys = keys && !split && g_page_built.load(std::memory_order_acquire);
     if (done && done_keys != to_keys)
       frame = 0;
     else if (++frame % (done ? 600 : 30) != 0)
@@ -1229,6 +1395,18 @@ namespace ao2::prompts
   }
 
   uint32_t Generation() { return g_generation.load(std::memory_order_acquire); }
+
+  bool SplitActive() { return g_split_active.load(std::memory_order_acquire); }
+
+  bool SplitRegions(float keys[4], float pad[4])
+  {
+    std::lock_guard<std::mutex> lock(g_split_mutex);
+    if (!g_split)
+      return false;
+    std::memcpy(keys, g_split_keys, sizeof(g_split_keys));
+    std::memcpy(pad, g_split_pad, sizeof(g_split_pad));
+    return true;
+  }
 
   bool MayBeButton(uint32_t format, uint32_t width, uint32_t height)
   {
@@ -1253,6 +1431,8 @@ namespace ao2::prompts
     const Layout &layout = GetLayout();
     if (!KeysShown() || !layout.valid)
       return false;
+    if (SplitActive())
+      return BuildSplitPage(guest_data, rgba, size);
     // Drawn once: the page is the disc's and the binds do not change.
     static std::mutex built_mutex;
     static std::vector<uint8_t> built;

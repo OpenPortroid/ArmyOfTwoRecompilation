@@ -6,8 +6,17 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - The look (`src\Skin.cs`): flat and minimal in the cover's tones — deep navy, warm grey paper for the main button
   and accents, hairlines, letter-spaced Segoe UI Semibold captions. The cover and the logo are baked into cached
   backdrops, so a repaint takes a few milliseconds (`--bench=<file>` measures it per screen).
-- Two screens. **Main**: the art and logo, then Settings, Play and Exit. **Settings**: the Graphics, Controls, Network and
-  Advanced tabs; Back returns to the main screen.
+- Two screens. **Main**: the art and logo, then Settings, Play and Exit. **Settings**: the Graphics, Controls, Keyboard,
+  Gamepad, Split-Screen, Network and Advanced tabs; Back returns to the main screen. A tab longer than the panel scrolls
+  (wheel, or by moving the selection).
+- **Keyboard / Gamepad** (`src\BindPages.cs`, `src\Bindings.cs`): every key of the game's `keybind_*` and every gamepad
+  button of `padbind_*` (plus the sticks swapped / inverted). Enter or a click waits for the key or mouse button (with
+  Shift / Ctrl / Alt: a combination; a modifier let go alone binds itself), → or + adds one more key, Delete or × clears;
+  a gamepad row takes ←→ or a press on an Xbox controller. All bindings go to the game as flags (`none` = nothing bound).
+- **Split-Screen**: on/off, both gamertags (player 1's is the Network page's name, `--user_gamertag_2`) and each player's
+  devices (`--input_player1/2`: keyboard, gamepad N, any gamepad, or keyboard + a pad), picked from a drop-down list of
+  the keyboard and the gamepads connected now (Enter / a click opens it). The connected controllers are listed by name (`src\Devices.cs`: HID joysticks / gamepads through Raw Input). On, Play starts the game at once without
+  the host search; off, every device is player 1's and nobody else signs in (`--max_local_users=1`).
 - Game files are not changed: settings go to the game as command line flags, which take precedence over
   `settings\*.toml`. The launcher keeps its own settings in `ArmyOfTwoLauncher.ini` next to itself
   (in `%APPDATA%\ArmyOfTwoLauncher` when that folder is read-only).
@@ -47,7 +56,7 @@ screen's 2.5:1 art band (`bg.jpg`) and to the window's shape, blurred, for Setti
 bevel, without the rosette and the ground — into `res\logo.png` with a soft shadow (needs numpy and scipy).
 
 Debugging: `--dump-args=<file> [--host=<ip>]` writes the game command line for the current settings (`--host`:
-as if a host had been found); `--snapshot=<png> [--screen=main|settings|install] [--tab=N] [--sel=N]` renders
+as if a host had been found); `--snapshot=<png> [--screen=main|settings|install] [--tab=N] [--sel=N] [--drop]` renders
 the window to a file without showing it; `--probe=<file>` runs the host search and writes the found IP or
 `none`; `--install=<log> --src=<path>[;<path>...]` installs from the given sources without the window;
 `--check-update=<file>` asks GitHub for the latest release and writes `<version> <url> newer|current` or `none`;

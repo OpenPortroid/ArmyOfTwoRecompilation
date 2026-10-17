@@ -40,6 +40,9 @@ REXCVAR_DEFINE_UINT32(user_language, 1, "Kernel", "User's language ID");
 REXCVAR_DEFINE_UINT32(max_local_users, 2, "Kernel",
                       "Local players that can be signed in (split-screen): users past the first "
                       "are signed in while a controller is assigned to them. 1 = only the first");
+REXCVAR_DEFINE_STRING(user_gamertag_2, "", "Kernel",
+                      "Gamertag of the second local player (split-screen); empty: the first "
+                      "player's with (1) after it");
 
 namespace rex {
 namespace kernel {
@@ -120,6 +123,9 @@ namespace {
 // Guest-style name of a local user: the gamertag, "(n)" after it for users
 // past the first.
 std::string LocalUserName(uint32_t user_index) {
+  if (user_index == 1 && !REXCVAR_GET(user_gamertag_2).empty()) {
+    return REXCVAR_GET(user_gamertag_2).substr(0, 15);
+  }
   std::string name = live::LocalGamertag();
   if (user_index) {
     std::string suffix = fmt::format("({})", user_index);

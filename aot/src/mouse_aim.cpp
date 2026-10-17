@@ -364,6 +364,31 @@ namespace
     return result;
   }
 
+  // Split-screen: the controller of the player the keyboard and mouse belong
+  // to (0: nobody's, or not known yet).
+  uint32_t KeyboardController(PPCContext &ctx, uint8_t *base)
+  {
+    uint32_t user = ao2::mouse::KeyboardUser();
+    return user < 4 ? ControllerOf(ctx, base, user) : 0;
+  }
+
+  // Outside online co-op every local player's camera runs the hooks below:
+  // only the keyboard player's takes the mouse. Without a local player of
+  // that user (single player started from another pad), or while it has no
+  // character (the main menu, whose camera is another controller's), the
+  // one there is takes it: given to nobody, the mouse went to the right
+  // stick and turned the main menu's camera.
+  bool TakesMouse(PPCContext &ctx, uint8_t *base, uint32_t controller)
+  {
+    uint32_t user = ao2::mouse::KeyboardUser();
+    if (user >= 4)
+    {
+      return false;
+    }
+    uint32_t owner = ControllerOf(ctx, base, user);
+    return !owner || owner == controller || !LoadU32(base, owner + 2024);
+  }
+
   // Sender: turn of the current lockstep frame (in rotation units).
   uint32_t g_send_frame = ~0u;
   double g_send_yaw = 0.0, g_send_pitch = 0.0;   // this frame + carry
@@ -659,6 +684,8 @@ namespace
   }
 
   std::atomic<bool> g_driving{false};
+  // The player with the keyboard has a character (not the main menu / lobby).
+  std::atomic<bool> g_has_character{false};
 
   // At the wheel the view is the vehicle's look-around camera: the vehicle's
   // rotation plus the Offset (+80: pitch, yaw, roll; int) of a camera modifier
@@ -946,6 +973,16 @@ namespace ao2::mouse
     return g_driving.load(std::memory_order_relaxed);
   }
 
+  uint32_t KeyboardUser()
+  {
+    using Fn = uint32_t (*)();
+    static Fn fn = []() -> Fn {
+      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
+      return runtime ? reinterpret_cast<Fn>(GetProcAddress(runtime, "rex_input_keyboard_user")) : nullptr;
+    }();
+    return fn ? fn() : 0;
+  }
+
   bool TakeStickFallback(int32_t &rx, int32_t &ry)
   {
     // The game turns turrets, vehicle cameras etc. from the stick through
@@ -965,6 +1002,15 @@ namespace ao2::mouse
     static int32_t held_x = 0, held_y = 0;
     if (NativeActive())
     {
+      held_x = held_y = 0;
+      return false;
+    }
+    // In the main menu and the lobby the right stick turns their camera:
+    // the mouse is for the menus there, its movement is dropped.
+    if (!g_has_character.load(std::memory_order_relaxed))
+    {
+      float dx, dy;
+      TakeDelta(dx, dy);
       held_x = held_y = 0;
       return false;
     }
@@ -1060,11 +1106,21 @@ extern "C" REX_FUNC(sub_82A95F70)
   {
     SendLockstepMouse(ctx, base, client);
   }
-  // For the pad hook (input_script.cpp): W / S as the triggers at the wheel.
-  uint32_t player = LocalController(ctx, base);
+  // For the pad hook (input_script.cpp): W / S as the triggers at the wheel,
+  // for the player with the keyboard.
+  uint32_t player = 0;
+  if (!LockstepMouse(base))
+  {
+    player = KeyboardController(ctx, base);
+  }
+  if (!player)
+  {
+    player = LocalController(ctx, base);
+  }
   uint32_t pawn = player ? LoadU32(base, player + 452) : 0;
   g_driving.store(pawn && pawn != LoadU32(base, player + 2024) && IsDrivenVehicle(base, pawn),
                   std::memory_order_relaxed);
+  g_has_character.store(player && LoadU32(base, player + 2024) != 0, std::memory_order_relaxed);
 }
 
 // Pad polling: one button or axis to the viewport's input receiver (r3 =
@@ -1209,6 +1265,11 @@ extern "C" REX_FUNC(sub_82365150)
     __imp__sub_82365150(ctx, base);
     return;
   }
+  if (!TakesMouse(ctx, base, controller))
+  {
+    __imp__sub_82365150(ctx, base);
+    return;
+  }
   g_native_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
   g_view_locked = !PlayerTurnsView(ctx, base, holder);
 
@@ -1334,6 +1395,10 @@ extern "C" REX_FUNC(sub_822F66C0)
   }
   else
   {
+    if (!TakesMouse(ctx, base, controller))
+    {
+      return;
+    }
     g_native_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
     g_single_controller = controller;
     float dx, dy;
@@ -1457,6 +1522,10 @@ extern "C" REX_FUNC(sub_8233FE78)
   }
   else
   {
+    if (!TakesMouse(ctx, base, controller))
+    {
+      return;
+    }
     g_native_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
     g_single_controller = controller;
     float dx, dy;
