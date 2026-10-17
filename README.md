@@ -41,15 +41,15 @@ On the first runs shaders are compiled, so there are short stutters.
 
 ## What the port adds
 
-- Online co-op without EA servers (Public and Private Co-op)
+- Online coop mode without reliance on EA servers, supporting both Public and Private Co-op
 - Split-screen on one PC with each player's devices chosen in the launcher
 - Graphics settings inside the game: Options → Graphics
 - Render resolution above the console's 720p
-- Good optimization and stable FPS (see the tested GPUs above)
-- Keyboard and mouse support, keyboard keys in the button prompts
-- Key and gamepad remapping in the launcher
-- Skipping of movies and cutscenes (Enter / Space)
-
+- Optimized performance with stable frame rates
+- Keyboard and mouse support, including keyboard key glyphs in on-screen button prompts
+- Input remapping for both keyboard and gamepad, available in the launcher
+- Skippable pre-rendered cutscenes using the Enter or Space key
+  
 ## Controls
 
 Action|Keyboard / mouse|Controller
