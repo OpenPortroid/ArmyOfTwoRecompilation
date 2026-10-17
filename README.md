@@ -42,10 +42,12 @@ On the first runs shaders are compiled, so there are short stutters.
 ## What the port adds
 
 - Online co-op without EA servers (Public and Private Co-op)
+- Split-screen on one PC with each player's devices chosen in the launcher
 - Graphics settings inside the game: Options → Graphics
 - Render resolution above the console's 720p
 - Good optimization and stable FPS (see the tested GPUs above)
 - Keyboard and mouse support, keyboard keys in the button prompts
+- Key and gamepad remapping in the launcher
 - Skipping of movies and cutscenes (Enter / Space)
 
 ## Controls
@@ -69,7 +71,8 @@ R3|MMB|R3
 GPS|Tab|Back
 Pause|Esc|Start
 
-Bindings: `settings\mapping.toml`. Gamepads work as on the console.
+Bindings: the launcher's Settings → Keyboard and Gamepad tabs (press the key or button to assign it, combinations
+and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind_*`). Gamepads work as on the console.
 
 ## Co-op
 
@@ -85,6 +88,18 @@ Bindings: `settings\mapping.toml`. Gamepads work as on the console.
 
 Details: [aot/docs/online_coop.md](aot/docs/online_coop.md).
 
+## Split-screen
+
+- Two players on one PC: in the launcher, Settings → Split-Screen, turn it on, enter both gamertags and pick each
+  player's devices from the list of connected ones: the keyboard and mouse, a specific gamepad, any gamepad, or the
+  keyboard plus a pad. Play then starts the game at once, without the host search.
+- Player 2 signs in with their own profile and saves while a device is assigned to them.
+- The mouse aims and drives for the player who has the keyboard.
+- Button prompts follow each player: keys in the keyboard player's half of the screen, Xbox buttons in the other's;
+  a prompt they share shows both.
+- Without the launcher: `input_player1`, `input_player2`, `user_gamertag_2` and `max_local_users` in
+  `settings\mapping.toml`.
+
 ## Settings
 
 TOML files in `settings\`.
@@ -92,7 +107,7 @@ TOML files in `settings\`.
 File|Contents
 -|-
 `hardware.toml`|Window, fullscreen, render scale (`ao2_native_gpu_resolution_scale`), FPS cap (`ao2_fps_target`), anisotropic filtering, language (`ao2_game_language`)
-`mapping.toml`|Key bindings, mouse sensitivity and inversion
+`mapping.toml`|Key and gamepad bindings, mouse sensitivity and inversion, split-screen players and devices
 `online.toml`|Co-op settings, gamertag
 
 ## Building
