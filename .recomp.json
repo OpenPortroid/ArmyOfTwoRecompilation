@@ -10,11 +10,7 @@
   "toolchain": "Rexglue",
   "approach": "Static recompilation with ReXGlue, native Direct3D 12 renderer",
   "maintainers": [
-    { "name": "max", "link": "https://github.com/meysner" },
-    { "name": "tihon", "link": "https://github.com/TheR1singSun" }
-  ],
-  "links": [
-    { "label": "OpenPortroid", "url": "https://github.com/OpenPortroid" }
+    { "name": "OpenPortroid", "link": "https://github.com/OpenPortroid" }
   ],
   "tags": ["co-op", "online", "d3d12", "unreal-engine-3", "shooter", "mouse-keyboard", "high-fps"],
   "notes": "Online co-op supported + Direct3D 12."
