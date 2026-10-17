@@ -55,6 +55,7 @@
 #include "cyrillic_fonts.h"
 #include "keyboard_prompts.h"
 #include "log_files.h"
+#include "ue3_reflect.h"
 
 #include <windows.h>
 
@@ -364,6 +365,17 @@ namespace
     return result;
   }
 
+  // The main menu and the lobby: the world of the package Shell. Their
+  // camera is a player controller's too and UpdateLookingAction turns it,
+  // but the mouse is for the menus there.
+  bool InShell(const uint8_t *base)
+  {
+    constexpr uint32_t kWorld = 0x831F2CC8; // GWorld; +40 its package
+    uint32_t world = LoadU32(base, kWorld);
+    uint32_t package = world ? LoadU32(base, world + 40) : 0;
+    return package && ao2::ue3::ObjectName(base, package) == "Shell";
+  }
+
   // Split-screen: the controller of the player the keyboard and mouse belong
   // to (0: nobody's, or not known yet).
   uint32_t KeyboardController(PPCContext &ctx, uint8_t *base)
@@ -381,7 +393,7 @@ namespace
   bool TakesMouse(PPCContext &ctx, uint8_t *base, uint32_t controller)
   {
     uint32_t user = ao2::mouse::KeyboardUser();
-    if (user >= 4)
+    if (user >= 4 || InShell(base))
     {
       return false;
     }
@@ -684,8 +696,10 @@ namespace
   }
 
   std::atomic<bool> g_driving{false};
-  // The player with the keyboard has a character (not the main menu / lobby).
-  std::atomic<bool> g_has_character{false};
+  // Clock ticks of the last UpdateLookingAction of any branch: it runs on
+  // foot, in vehicles and on turrets, not in the menus (where the players'
+  // controllers still have the menu's characters as pawns) or when paused.
+  std::atomic<int64_t> g_look_seen{0};
 
   // At the wheel the view is the vehicle's look-around camera: the vehicle's
   // rotation plus the Offset (+80: pitch, yaw, roll; int) of a camera modifier
@@ -1007,7 +1021,8 @@ namespace ao2::mouse
     }
     // In the main menu and the lobby the right stick turns their camera:
     // the mouse is for the menus there, its movement is dropped.
-    if (!g_has_character.load(std::memory_order_relaxed))
+    auto looked = clock::time_point(clock::duration(g_look_seen.load(std::memory_order_relaxed)));
+    if (clock::now() - looked >= kNativeIdle)
     {
       float dx, dy;
       TakeDelta(dx, dy);
@@ -1120,7 +1135,6 @@ extern "C" REX_FUNC(sub_82A95F70)
   uint32_t pawn = player ? LoadU32(base, player + 452) : 0;
   g_driving.store(pawn && pawn != LoadU32(base, player + 2024) && IsDrivenVehicle(base, pawn),
                   std::memory_order_relaxed);
-  g_has_character.store(player && LoadU32(base, player + 2024) != 0, std::memory_order_relaxed);
 }
 
 // Pad polling: one button or axis to the viewport's input receiver (r3 =
@@ -1224,6 +1238,10 @@ extern "C" REX_FUNC(sub_82365150)
 {
   uint32_t controller = ctx.r3.u32;
   uint32_t holder = controller ? LoadU32(base, controller + 2024) : 0;
+  if (!InShell(base))
+  {
+    g_look_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
+  }
   // Driving a vehicle (the controller's pawn +452 is the vehicle, not the
   // character) this still runs, but the view is the vehicle's camera: a
   // mouse turn added here showed nowhere, and its prediction turned the
