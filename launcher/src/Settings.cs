@@ -32,6 +32,9 @@ namespace AO2Launcher
             { "skip_cutscenes", "1" },
             { "skip_unskippable", "1" },
             { "god_mode", "0" },
+            { "unlock_all", "0" },
+            { "profile", "" },
+            { "new_profile", "" },
             { "host_ip", "" },
             { "gamertag", "" },
             { "split_screen", "0" },
@@ -187,15 +190,17 @@ namespace AO2Launcher
             return v;
         }
 
+        // Everything but the game's path and the chosen profile.
         public void Reset()
         {
-            string game = this["game_path"];
+            string game = this["game_path"], profile = this["profile"];
             values.Clear();
             foreach (var kv in Defaults)
             {
                 values[kv.Key] = kv.Value;
             }
             values["game_path"] = game;
+            values["profile"] = profile;
         }
     }
 }

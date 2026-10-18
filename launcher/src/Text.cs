@@ -738,12 +738,12 @@ namespace AO2Launcher
             a("Saves", "Сохранения", "Sauvegardes", "Spielstände", "Partidas guardadas", "Salvataggi");
             a("No saves yet: {0}", "Сохранений пока нет: {0}", "Pas encore de sauvegardes : {0}", "Noch keine Spielstände: {0}",
               "Aún no hay partidas guardadas: {0}", "Ancora nessun salvataggio: {0}");
-            a("Saves and profile folder: Documents\\armyoftworecomp_tu2 (or armyoftworecomp).",
-              "Папка сохранений и профиля: Documents\\armyoftworecomp_tu2 (или armyoftworecomp).",
-              "Dossier des sauvegardes et du profil : Documents\\armyoftworecomp_tu2 (ou armyoftworecomp).",
-              "Ordner für Spielstände und Profil: Documents\\armyoftworecomp_tu2 (oder armyoftworecomp).",
-              "Carpeta de partidas y perfil: Documents\\armyoftworecomp_tu2 (o armyoftworecomp).",
-              "Cartella dei salvataggi e del profilo: Documents\\armyoftworecomp_tu2 (o armyoftworecomp).");
+            a("The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2).",
+              "Папка сохранений текущего профиля (основного: Documents\\armyoftworecomp_tu2).",
+              "Le dossier des sauvegardes du profil actuel (celui du profil principal : Documents\\armyoftworecomp_tu2).",
+              "Der Ordner mit den Spielständen des aktuellen Profils (beim Hauptprofil: Documents\\armyoftworecomp_tu2).",
+              "La carpeta de partidas del perfil actual (la del perfil principal: Documents\\armyoftworecomp_tu2).",
+              "La cartella dei salvataggi del profilo attuale (quella del profilo principale: Documents\\armyoftworecomp_tu2).");
             a("Game files and DLC", "Файлы игры и DLC", "Fichiers du jeu et DLC", "Spieldateien und DLC",
               "Archivos del juego y DLC", "File del gioco e DLC");
             a("Install the game from your own disc image, Title Update 2, or add downloadable content (DLC).",
@@ -975,6 +975,144 @@ namespace AO2Launcher
               "Title Update 2 ist nicht installiert: wähle die Update-Datei",
               "El Title Update 2 no está instalado: elige el archivo de la actualización",
               "Il Title Update 2 non è installato: scegli il file dell'aggiornamento");
+            a("choose the game first", "сначала выберите игру", "choisissez d'abord le jeu", "zuerst das Spiel wählen",
+              "elige primero el juego", "scegli prima il gioco");
+            a("choose Title Update 2 first", "сначала выберите Title Update 2", "choisissez d'abord le Title Update 2",
+              "zuerst Title Update 2 wählen", "elige primero el Title Update 2", "scegli prima il Title Update 2");
+            a("Choose the game first, then Title Update 2", "Сначала выберите игру, затем Title Update 2",
+              "Choisissez d'abord le jeu, puis le Title Update 2", "Wähle zuerst das Spiel, dann Title Update 2",
+              "Elige primero el juego y luego el Title Update 2", "Scegli prima il gioco, poi il Title Update 2");
+            a("Choose Title Update 2 first, then the DLC", "Сначала выберите Title Update 2, затем DLC",
+              "Choisissez d'abord le Title Update 2, puis les DLC", "Wähle zuerst Title Update 2, dann die DLC",
+              "Elige primero el Title Update 2 y luego los DLC", "Scegli prima il Title Update 2, poi i DLC");
+
+            // --- Uninstall, confirmations ---
+            a("OK", "OK", "OK", "OK", "Aceptar", "OK");
+            a("DELETE", "УДАЛИТЬ", "SUPPRIMER", "LÖSCHEN", "ELIMINAR", "ELIMINA");
+            a("Uninstall the game", "Удалить игру", "Désinstaller le jeu", "Spiel deinstallieren", "Desinstalar el juego", "Disinstalla il gioco");
+            a("UNINSTALL", "УДАЛИТЬ", "DÉSINSTALLER", "DEINSTALLIEREN", "DESINSTALAR", "DISINSTALLA");
+            a("UNINSTALL THE GAME", "УДАЛЕНИЕ ИГРЫ", "DÉSINSTALLER LE JEU", "SPIEL DEINSTALLIEREN", "DESINSTALAR EL JUEGO", "DISINSTALLA IL GIOCO");
+            a("Delete the installed game files (the assets folder). Saves are kept unless you choose otherwise.",
+              "Удалить установленные файлы игры (папку assets). Сохранения остаются, если не выбрать иное.",
+              "Supprimer les fichiers du jeu installés (le dossier assets). Les sauvegardes sont conservées, sauf choix contraire.",
+              "Die installierten Spieldateien löschen (den Ordner assets). Spielstände bleiben, außer du wählst es anders.",
+              "Eliminar los archivos del juego instalados (la carpeta assets). Las partidas se conservan salvo que elijas lo contrario.",
+              "Elimina i file del gioco installati (la cartella assets). I salvataggi restano, salvo diversa scelta.");
+            a("The game files will be deleted from {0} ({1}). To play again, install the game from your copy. Downloadable content stays in Documents.",
+              "Файлы игры будут удалены из {0} ({1}). Чтобы снова играть, установите игру из своей копии. Дополнения (DLC) остаются в «Документах».",
+              "Les fichiers du jeu seront supprimés de {0} ({1}). Pour rejouer, installez le jeu depuis votre copie. Les DLC restent dans Documents.",
+              "Die Spieldateien werden aus {0} gelöscht ({1}). Um wieder zu spielen, installiere das Spiel aus deiner Kopie. Die DLC bleiben in Dokumente.",
+              "Los archivos del juego se eliminarán de {0} ({1}). Para volver a jugar, instala el juego desde tu copia. Los DLC se quedan en Documentos.",
+              "I file del gioco saranno eliminati da {0} ({1}). Per giocare di nuovo, installa il gioco dalla tua copia. I DLC restano in Documenti.");
+            a("Also delete the saves of every profile", "Также удалить сохранения всех профилей", "Supprimer aussi les sauvegardes de tous les profils",
+              "Auch die Spielstände aller Profile löschen", "Eliminar también las partidas de todos los perfiles", "Elimina anche i salvataggi di tutti i profili");
+            a("Could not delete everything: {0}", "Удалить всё не удалось: {0}", "Impossible de tout supprimer : {0}",
+              "Nicht alles konnte gelöscht werden: {0}", "No se pudo eliminar todo: {0}", "Impossibile eliminare tutto: {0}");
+            a("The game and the saves are deleted", "Игра и сохранения удалены", "Le jeu et les sauvegardes sont supprimés",
+              "Spiel und Spielstände sind gelöscht", "El juego y las partidas se han eliminado", "Gioco e salvataggi eliminati");
+            a("The game is uninstalled, the saves are kept", "Игра удалена, сохранения остались", "Le jeu est désinstallé, les sauvegardes sont conservées",
+              "Das Spiel ist deinstalliert, die Spielstände bleiben", "El juego se ha desinstalado, las partidas se conservan", "Gioco disinstallato, i salvataggi restano");
+
+            // --- Unlock All ---
+            a("Unlock All (cheat)", "Открыть всё (чит)", "Tout débloquer (triche)", "Alles freischalten (Cheat)", "Desbloquear todo (truco)", "Sblocca tutto (trucco)");
+            a("UNLOCK ALL", "ОТКРЫТЬ ВСЁ", "TOUT DÉBLOQUER", "ALLES FREISCHALTEN", "DESBLOQUEAR TODO", "SBLOCCA TUTTO");
+            a("TURN ON", "ВКЛЮЧИТЬ", "ACTIVER", "EINSCHALTEN", "ACTIVAR", "ATTIVA");
+            a("The game will unlock the Professional difficulty and the BST-V1 and SAL-86 bonus weapons and give 9,999,999 money in the current profile. " +
+              "This is saved in the profile and stays after the cheat is turned off. Turn it on?",
+              "Игра откроет сложность «Профессионал», бонусное оружие BST-V1 и SAL-86 и даст 9 999 999 денег в текущем профиле. " +
+              "Это сохранится в профиле и останется после выключения чита. Включить?",
+              "Le jeu débloquera la difficulté Professionnel et les armes bonus BST-V1 et SAL-86 et donnera 9 999 999 d'argent dans le profil actuel. " +
+              "C'est enregistré dans le profil et reste après la désactivation de la triche. Activer ?",
+              "Das Spiel schaltet den Schwierigkeitsgrad Profi und die Bonuswaffen BST-V1 und SAL-86 frei und gibt 9.999.999 Geld im aktuellen Profil. " +
+              "Das wird im Profil gespeichert und bleibt nach dem Ausschalten des Cheats. Einschalten?",
+              "El juego desbloqueará la dificultad Profesional y las armas extra BST-V1 y SAL-86 y dará 9.999.999 de dinero en el perfil actual. " +
+              "Se guarda en el perfil y se mantiene al desactivar el truco. ¿Activarlo?",
+              "Il gioco sbloccherà la difficoltà Professionista e le armi bonus BST-V1 e SAL-86 e darà 9.999.999 di denaro nel profilo attuale. " +
+              "Viene salvato nel profilo e resta dopo aver disattivato il trucco. Attivarlo?");
+            a("Unlocks every difficulty and the BST-V1 and SAL-86 bonus weapons and gives 9,999,999 money (kept at the maximum while on). " +
+              "Saved in the current profile. Has no effect in online co-op.",
+              "Открывает все сложности, бонусное оружие BST-V1 и SAL-86 и даёт 9 999 999 денег (пока включено, деньги держатся на максимуме). " +
+              "Сохраняется в текущем профиле. В сетевом кооперативе не действует.",
+              "Débloque toutes les difficultés et les armes bonus BST-V1 et SAL-86 et donne 9 999 999 d'argent (maintenu au maximum tant que c'est activé). " +
+              "Enregistré dans le profil actuel. Sans effet en coop en ligne.",
+              "Schaltet alle Schwierigkeitsgrade und die Bonuswaffen BST-V1 und SAL-86 frei und gibt 9.999.999 Geld (bleibt beim Maximum, solange an). " +
+              "Wird im aktuellen Profil gespeichert. Im Online-Koop ohne Wirkung.",
+              "Desbloquea todas las dificultades y las armas extra BST-V1 y SAL-86 y da 9.999.999 de dinero (se mantiene al máximo mientras está activado). " +
+              "Se guarda en el perfil actual. Sin efecto en el cooperativo en línea.",
+              "Sblocca tutte le difficoltà e le armi bonus BST-V1 e SAL-86 e dà 9.999.999 di denaro (resta al massimo finché è attivo). " +
+              "Salvato nel profilo attuale. Nessun effetto nella co-op online.");
+
+            // --- Profiles ---
+            a("PROFILES", "ПРОФИЛИ", "PROFILS", "PROFILE", "PERFILES", "PROFILI");
+            a("PROFILE", "ПРОФИЛЬ", "PROFIL", "PROFIL", "PERFIL", "PROFILO");
+            a("Profile", "Профиль", "Profil", "Profil", "Perfil", "Profilo");
+            a("Main", "Основной", "Principal", "Hauptprofil", "Principal", "Principale");
+            a("Profile {0}", "Профиль {0}", "Profil {0}", "Profil {0}", "Perfil {0}", "Profilo {0}");
+            a("Profile {0}: {1}", "Профиль {0}: {1}", "Profil {0} : {1}", "Profil {0}: {1}", "Perfil {0}: {1}", "Profilo {0}: {1}");
+            a("no saves yet", "сохранений пока нет", "pas encore de sauvegarde", "noch keine Spielstände", "aún no hay partidas", "nessun salvataggio");
+            a("none yet", "пока нет", "pas encore", "noch keine", "aún no", "ancora nessuno");
+            a("Last checkpoint: {0}", "Последний чекпоинт: {0}", "Dernier point de contrôle : {0}", "Letzter Checkpoint: {0}",
+              "Último punto de control: {0}", "Ultimo checkpoint: {0}");
+            a("Money: {0}", "Деньги: {0}", "Argent : {0}", "Geld: {0}", "Dinero: {0}", "Denaro: {0}");
+            a("The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; the downloadable content is shared.",
+              "Профиль, с которым запускается игра. У каждого профиля свои сохранения, настройки игры, деньги и открытое; дополнения (DLC) общие.",
+              "Le profil avec lequel le jeu démarre. Chaque profil a ses sauvegardes, ses réglages du jeu, son argent et ses déblocages ; les DLC sont communs.",
+              "Das Profil, mit dem das Spiel startet. Jedes Profil hat eigene Spielstände, Spieleinstellungen, Geld und Freischaltungen; die DLC sind gemeinsam.",
+              "El perfil con el que se inicia el juego. Cada perfil tiene sus partidas, ajustes del juego, dinero y desbloqueos; los DLC son compartidos.",
+              "Il profilo con cui parte il gioco. Ogni profilo ha i suoi salvataggi, impostazioni di gioco, denaro e sblocchi; i DLC sono condivisi.");
+            a("New profile name", "Имя нового профиля", "Nom du nouveau profil", "Name des neuen Profils", "Nombre del nuevo perfil", "Nome del nuovo profilo");
+            a("The name of a new profile. Empty: the suggested one.", "Имя нового профиля. Пусто — предложенное.",
+              "Le nom d'un nouveau profil. Vide : celui proposé.", "Der Name eines neuen Profils. Leer: der vorgeschlagene.",
+              "El nombre de un nuevo perfil. Vacío: el propuesto.", "Il nome di un nuovo profilo. Vuoto: quello proposto.");
+            a("Create profile", "Создать профиль", "Créer un profil", "Profil erstellen", "Crear perfil", "Crea profilo");
+            a("Create an empty profile with the name above and switch to it. The game starts it from the beginning.",
+              "Создать пустой профиль с этим именем и переключиться на него. Игра начнётся с начала.",
+              "Créer un profil vide avec le nom ci-dessus et passer dessus. Le jeu le commence depuis le début.",
+              "Ein leeres Profil mit dem Namen oben erstellen und dorthin wechseln. Das Spiel beginnt es von vorn.",
+              "Crear un perfil vacío con el nombre de arriba y cambiar a él. El juego lo empieza desde el principio.",
+              "Crea un profilo vuoto con il nome sopra e passa a quello. Il gioco lo inizia dal principio.");
+            a("Delete profile", "Удалить профиль", "Supprimer le profil", "Profil löschen", "Eliminar perfil", "Elimina profilo");
+            a("Delete the current profile with all its saves. The main profile cannot be deleted.",
+              "Удалить текущий профиль со всеми сохранениями. Основной профиль удалить нельзя.",
+              "Supprimer le profil actuel avec toutes ses sauvegardes. Le profil principal ne peut pas être supprimé.",
+              "Das aktuelle Profil mit allen Spielständen löschen. Das Hauptprofil kann nicht gelöscht werden.",
+              "Eliminar el perfil actual con todas sus partidas. El perfil principal no se puede eliminar.",
+              "Elimina il profilo attuale con tutti i salvataggi. Il profilo principale non si può eliminare.");
+            a("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles.",
+              "Профили, кроме основного, хранятся в Documents\\armyoftworecomp_profiles.",
+              "Les profils autres que le principal sont dans Documents\\armyoftworecomp_profiles.",
+              "Profile außer dem Hauptprofil liegen in Documents\\armyoftworecomp_profiles.",
+              "Los perfiles distintos del principal se guardan en Documents\\armyoftworecomp_profiles.",
+              "I profili diversi dal principale si trovano in Documents\\armyoftworecomp_profiles.");
+            a("Enter a name for the profile", "Введите имя профиля", "Entrez un nom pour le profil", "Gib einen Namen für das Profil ein",
+              "Escribe un nombre para el perfil", "Inserisci un nome per il profilo");
+            a("This name cannot be used for a profile", "Такое имя для профиля не подходит", "Ce nom ne peut pas servir pour un profil",
+              "Dieser Name ist für ein Profil nicht möglich", "Ese nombre no sirve para un perfil", "Questo nome non può essere usato per un profilo");
+            a("A profile named {0} already exists", "Профиль {0} уже есть", "Un profil nommé {0} existe déjà", "Ein Profil namens {0} gibt es schon",
+              "Ya existe un perfil llamado {0}", "Esiste già un profilo chiamato {0}");
+            a("Could not create the profile: {0}", "Не удалось создать профиль: {0}", "Impossible de créer le profil : {0}",
+              "Profil konnte nicht erstellt werden: {0}", "No se pudo crear el perfil: {0}", "Impossibile creare il profilo: {0}");
+            a("Profile {0} created", "Профиль {0} создан", "Profil {0} créé", "Profil {0} erstellt", "Perfil {0} creado", "Profilo {0} creato");
+            a("DELETE PROFILE", "УДАЛЕНИЕ ПРОФИЛЯ", "SUPPRIMER LE PROFIL", "PROFIL LÖSCHEN", "ELIMINAR PERFIL", "ELIMINA PROFILO");
+            a("Profile {0} and all its saves will be deleted for good ({1}).", "Профиль {0} и все его сохранения будут удалены навсегда ({1}).",
+              "Le profil {0} et toutes ses sauvegardes seront supprimés définitivement ({1}).",
+              "Das Profil {0} und alle seine Spielstände werden endgültig gelöscht ({1}).",
+              "El perfil {0} y todas sus partidas se eliminarán para siempre ({1}).",
+              "Il profilo {0} e tutti i suoi salvataggi saranno eliminati per sempre ({1}).");
+            a("Could not delete the profile: {0}", "Не удалось удалить профиль: {0}", "Impossible de supprimer le profil : {0}",
+              "Profil konnte nicht gelöscht werden: {0}", "No se pudo eliminar el perfil: {0}", "Impossibile eliminare il profilo: {0}");
+            a("Profile {0} deleted", "Профиль {0} удалён", "Profil {0} supprimé", "Profil {0} gelöscht", "Perfil {0} eliminado", "Profilo {0} eliminato");
+
+            // Missions (the last checkpoint of a profile)
+            a("Somalia", "Сомали", "Somalie", "Somalia", "Somalia", "Somalia");
+            a("Afghanistan", "Афганистан", "Afghanistan", "Afghanistan", "Afganistán", "Afghanistan");
+            a("Iraq", "Ирак", "Irak", "Irak", "Irak", "Iraq");
+            a("Aircraft carrier", "Авианосец", "Porte-avions", "Flugzeugträger", "Portaaviones", "Portaerei");
+            a("China", "Китай", "Chine", "China", "China", "Cina");
+            a("Miami", "Майами", "Miami", "Miami", "Miami", "Miami");
+            a("Kiev", "Киев", "Kiev", "Kiew", "Kiev", "Kiev");
+            a("Miami (alternate ending)", "Майами (альтернативная концовка)", "Miami (fin alternative)", "Miami (alternatives Ende)",
+              "Miami (final alternativo)", "Miami (finale alternativo)");
             return t;
         }
     }

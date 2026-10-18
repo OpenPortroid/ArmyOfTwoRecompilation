@@ -33,6 +33,7 @@ namespace AO2Launcher
         public string[] Values;
         public string[] Names;
         public Func<int, string> Name; // instead of Names (text that is not a fixed string)
+        public Func<int, string> DropName; // in the open list, instead of Name
         // Slider
         public double Min, Max, Step;
         public Func<double, string> Format;
@@ -49,6 +50,10 @@ namespace AO2Launcher
         public bool Pad;
         // Choice: Enter or a click opens the list of all the choices
         public bool Drop;
+        // Choice: a question before this value is set (null: none)
+        public Func<string, Confirm> ConfirmOn;
+        // Choice: after the value changed
+        public Action Changed;
 
         public Func<bool> Visible = () => true;
         public Func<bool> Enabled = () => true;
@@ -117,7 +122,8 @@ namespace AO2Launcher
         Font fTitle, fTitleSub, fBack, fSection, fLcd, fTiny;
         bool padConnected;
 
-        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED" };
+        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED", "PROFILES" };
+        const int ProfilesTab = 7;
         List<Row>[] tabs;
         UiScreen screen = UiScreen.Main;
         int mainSel; // 0 = play, 1 = settings
@@ -168,6 +174,13 @@ namespace AO2Launcher
             // The launcher always opens on the main screen; without the game files its button reads
             // INSTALL and leads to the installation.
             InitInstall();
+            RefreshProfiles();
+            // Back from the game: its saves may have changed.
+            Activated += (s, e) =>
+            {
+                RefreshProfiles();
+                Invalidate();
+            };
 
             pad.Pressed += OnPad;
             pad.RawPressed += OnPadRaw;
@@ -432,7 +445,7 @@ namespace AO2Launcher
 
         public bool SnapshotDrop; // --drop: the current row's list open
 
-        public void Snapshot(string path, int t, int s, UiScreen scr)
+        public void Snapshot(string path, int t, int s, UiScreen scr, string ask = null)
         {
             IntPtr h = Handle;
             snapshotting = true;
@@ -442,6 +455,10 @@ namespace AO2Launcher
             instSel = s;
             RefreshPads();
             LayoutRows();
+            if (ask != null)
+            {
+                SnapshotAsk(ask);
+            }
             if (SnapshotDrop && SelectedRow() != null && SelectedRow().Drop)
             {
                 OpenDrop(SelectedRow());
@@ -778,6 +795,21 @@ namespace AO2Launcher
                     "Also allow skipping the cutscenes the original game does not let you skip.",
                     "NO", "YES"),
                 Toggle("God mode (cheat)", "god_mode", "The player takes no damage. Has no effect in online co-op."),
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Unlock All (cheat)", Key = "unlock_all",
+                    Values = new[] { "0", "1" }, Names = new[] { "OFF", "ON" },
+                    ConfirmOn = v => v != "1" ? null : new Confirm
+                    {
+                        Title = "UNLOCK ALL",
+                        Text = L.T("The game will unlock the Professional difficulty and the BST-V1 and SAL-86 bonus weapons and " +
+                                   "give 9,999,999 money in the current profile. This is saved in the profile and stays after " +
+                                   "the cheat is turned off. Turn it on?"),
+                        Ok = "TURN ON",
+                    },
+                    Desc = "Unlocks every difficulty and the BST-V1 and SAL-86 bonus weapons and gives 9,999,999 money " +
+                           "(kept at the maximum while on). Saved in the current profile. Has no effect in online co-op."
+                },
                 Toggle("Close the launcher", "close_on_launch", "Close this window once the game has started.", "NO", "YES"),
                 new Row
                 {
@@ -806,7 +838,7 @@ namespace AO2Launcher
                     Kind = RowKind.Button, Label = "Saves", ButtonText = () => "OPEN",
                     Click = () =>
                     {
-                        string dir = Game.SavesFolder();
+                        string dir = Profiles.Root(S["profile"]);
                         if (Directory.Exists(dir))
                         {
                             Game.OpenFolder(dir);
@@ -816,13 +848,19 @@ namespace AO2Launcher
                             ShowToast(L.F("No saves yet: {0}", dir), true);
                         }
                     },
-                    Desc = "Saves and profile folder: Documents\\armyoftworecomp_tu2 (or armyoftworecomp)."
+                    Desc = "The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2)."
                 },
                 new Row
                 {
                     Kind = RowKind.Button, Label = "Game files and DLC", ButtonText = () => "INSTALL",
                     Click = () => SetScreen(UiScreen.Install),
                     Desc = "Install the game from your own disc image, Title Update 2, or add downloadable content (DLC)."
+                },
+                new Row
+                {
+                    Kind = RowKind.Button, Label = "Uninstall the game", ButtonText = () => "UNINSTALL",
+                    Click = Uninstall, Enabled = () => anyInstalled,
+                    Desc = "Delete the installed game files (the assets folder). Saves are kept unless you choose otherwise."
                 },
                 new Row
                 {
@@ -859,7 +897,7 @@ namespace AO2Launcher
                 },
             };
 
-            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras };
+            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras, ProfileRows() };
 
             foreach (Row r in AllRows().Where(r => r.Kind == RowKind.Text))
             {
@@ -1120,10 +1158,9 @@ namespace AO2Launcher
                     }
                     int i = Array.IndexOf(r.Values, S[r.Key]);
                     i = i < 0 ? 0 : (i + (dir == 0 ? 1 : dir) + r.Values.Length) % r.Values.Length;
-                    S[r.Key] = r.Values[i];
-                    if (r.Key == "language")
+                    if (!SetChoice(r, r.Values[i]))
                     {
-                        LanguageChanged();
+                        return;
                     }
                     break;
                 }
@@ -1357,6 +1394,11 @@ namespace AO2Launcher
         void OnPad(int b)
         {
             UsePad(true);
+            if (confirm != null)
+            {
+                ConfirmPad(b);
+                return;
+            }
             if (PromptShown)
             {
                 switch (b)
@@ -1439,6 +1481,10 @@ namespace AO2Launcher
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             UsePad(false);
+            if (confirm != null)
+            {
+                return ConfirmKey(keyData);
+            }
             if (PromptShown)
             {
                 switch (keyData)
@@ -1882,6 +1928,11 @@ namespace AO2Launcher
                 DrawSettings(g);
                 DrawTitleBar(g, "Settings", true, true);
             }
+            if (confirm != null)
+            {
+                hots.Clear();
+                DrawConfirm(g);
+            }
             DrawToast(g);
             DrawFrame(g);
         }
@@ -1951,6 +2002,7 @@ namespace AO2Launcher
                 DrawText(g, Summary(), fLcd, Color.FromArgb(130, 142, 160), status, CenterFmt());
             }
             Dot(g, 28, 627, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
+            DrawProfileChip(g);
         }
 
         // The update window: over the art, the rest of the main screen dimmed and not clickable.
@@ -2450,7 +2502,7 @@ namespace AO2Launcher
                         : parts[0] == "failed" ? LauncherForm.UpdState.Failed : LauncherForm.UpdState.Downloading, p);
                 }
                 UiScreen scr = opt("screen") == "settings" ? UiScreen.Settings : opt("screen") == "install" ? UiScreen.Install : UiScreen.Main;
-                form.Snapshot(snap, t, sl, scr);
+                form.Snapshot(snap, t, sl, scr, opt("ask"));
                 return;
             }
             Application.Run(form);

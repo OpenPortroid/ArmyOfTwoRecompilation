@@ -159,6 +159,15 @@ namespace AO2Launcher
             a.Add(Flag("ao2_skip_cutscenes", s.Bool("skip_cutscenes")));
             a.Add(Flag("ao2_skip_unskippable", s.Bool("skip_unskippable")));
             a.Add(Flag("ao2_god_mode", s.Bool("god_mode")));
+            a.Add(Flag("ao2_unlock_all", s.Bool("unlock_all")));
+
+            // A profile other than the main one: its own user data folder, the main one's shader cache.
+            string profile = s["profile"];
+            if (profile.Length > 0 && Profiles.Exists(profile))
+            {
+                a.Add("--user_data_root=" + Profiles.Root(profile));
+                a.Add("--cache_root=" + Path.Combine(Profiles.MainRoot, "cache"));
+            }
 
             if (!string.IsNullOrEmpty(hostIp))
             {
@@ -240,6 +249,7 @@ namespace AO2Launcher
 
         public static void Start(string exe, Settings s, string hostIp)
         {
+            Profiles.LinkDlc(s["profile"]);
             var psi = new ProcessStartInfo(exe, CommandLine(s, hostIp))
             {
                 WorkingDirectory = Path.GetDirectoryName(exe),
@@ -350,13 +360,6 @@ namespace AO2Launcher
                 // UAC declined.
                 return false;
             }
-        }
-
-        public static string SavesFolder()
-        {
-            string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            string tu2 = Path.Combine(docs, "armyoftworecomp_tu2");
-            return Directory.Exists(tu2) ? tu2 : Path.Combine(docs, "armyoftworecomp");
         }
 
         public static void OpenFolder(string path)

@@ -138,7 +138,7 @@ namespace AO2Launcher
 
         void RefreshInputRows()
         {
-            foreach (Row r in AllRows().Where(r => r.Drop))
+            foreach (Row r in AllRows().Where(r => r.Drop && r != profileRow))
             {
                 r.Values = InputValues(S[r.Key]);
             }
@@ -451,7 +451,12 @@ namespace AO2Launcher
         Row dropRow;   // the row whose list is open, or null
         int dropSel;   // the lit item
 
-        const float DropItemH = 30, DropW = 360;
+        const float DropItemH = 30;
+
+        float DropW
+        {
+            get { return dropRow != null && dropRow.DropName != null ? 520 : 360; }
+        }
 
         void OpenDrop(Row r)
         {
@@ -474,9 +479,8 @@ namespace AO2Launcher
         {
             Row r = dropRow;
             dropRow = null;
-            if (r != null && i >= 0 && i < r.Values.Length)
+            if (r != null && i >= 0 && i < r.Values.Length && SetChoice(r, r.Values[i]))
             {
-                S[r.Key] = r.Values[i];
                 S.Save();
             }
             LayoutRows();
@@ -523,7 +527,8 @@ namespace AO2Launcher
                 {
                     DrawText(g, "✓", fLabel, c, new RectangleF(ir.X + 10, ir.Y, 20, ir.Height), fmt);
                 }
-                DrawText(g, dropRow.ChoiceName(i), fLabel, c, new RectangleF(ir.X + 32, ir.Y, ir.Width - 40, ir.Height), fmt);
+                string text = dropRow.DropName != null ? dropRow.DropName(i) : dropRow.ChoiceName(i);
+                DrawText(g, text, fLabel, c, new RectangleF(ir.X + 32, ir.Y, ir.Width - 40, ir.Height), fmt);
                 int pick = i;
                 AddHot(ir, "drop" + i, () => PickDrop(pick));
             }

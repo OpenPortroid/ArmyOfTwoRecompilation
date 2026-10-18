@@ -18,7 +18,7 @@ namespace AO2Launcher
 
         InstallSource srcGame, srcUpdate;
         readonly List<InstallSource> srcDlc = new List<InstallSource>();
-        bool gameOk, updateOk;
+        bool gameOk, updateOk, anyInstalled;
         int dlcCount;
         int instSel;
         bool installing;
@@ -71,6 +71,7 @@ namespace AO2Launcher
             string dir = GameDir;
             gameOk = dir != null && Installer.GameInstalled(dir);
             updateOk = dir != null && Installer.UpdateInstalled(dir);
+            anyInstalled = Installer.AnythingInstalled(dir);
             dlcCount = Installer.InstalledDlcCount();
         }
 
@@ -92,6 +93,7 @@ namespace AO2Launcher
             }
             instError = null;
             var added = new List<string>();
+            var found = new List<InstallSource>();
             Cursor = Cursors.WaitCursor;
             try
             {
@@ -99,27 +101,42 @@ namespace AO2Launcher
                 {
                     try
                     {
-                        InstallSource src = Installer.Probe(GameDir, path);
-                        switch (src.Kind)
-                        {
-                            case "game":
-                                srcGame = src;
-                                added.Add(L.T("game"));
-                                break;
-                            case "tu":
-                                srcUpdate = src;
-                                added.Add("Title Update");
-                                break;
-                            default:
-                                srcDlc.RemoveAll(d => string.Equals(Path.GetFileName(d.Path), Path.GetFileName(src.Path), StringComparison.OrdinalIgnoreCase));
-                                srcDlc.Add(src);
-                                added.Add("DLC");
-                                break;
-                        }
+                        found.Add(Installer.Probe(GameDir, path));
                     }
                     catch (InstallException ex)
                     {
                         instError = ex.Message;
+                    }
+                }
+                // The game, then its update, then the DLC: each needs the one before (chosen now or installed).
+                Func<string, int> rank = k => k == "game" ? 0 : k == "tu" ? 1 : 2;
+                foreach (InstallSource src in found.OrderBy(f => rank(f.Kind)))
+                {
+                    switch (src.Kind)
+                    {
+                        case "game":
+                            srcGame = src;
+                            added.Add(L.T("game"));
+                            break;
+                        case "tu":
+                            if (!InstRowEnabled(1))
+                            {
+                                instError = L.T("Choose the game first, then Title Update 2");
+                                break;
+                            }
+                            srcUpdate = src;
+                            added.Add("Title Update");
+                            break;
+                        default:
+                            if (!InstRowEnabled(2))
+                            {
+                                instError = L.T("Choose Title Update 2 first, then the DLC");
+                                break;
+                            }
+                            srcDlc.RemoveAll(d => string.Equals(Path.GetFileName(d.Path), Path.GetFileName(src.Path), StringComparison.OrdinalIgnoreCase));
+                            srcDlc.Add(src);
+                            added.Add("DLC");
+                            break;
                     }
                 }
             }
@@ -157,6 +174,17 @@ namespace AO2Launcher
             }
         }
 
+        // Title Update 2 can be chosen once the game is (chosen or installed), the DLC once the update is.
+        bool InstRowEnabled(int i)
+        {
+            switch (i)
+            {
+                case 1: return srcGame != null || gameOk;
+                case 2: return srcUpdate != null || updateOk;
+            }
+            return true;
+        }
+
         void ActivateInstall(int i)
         {
             if (installing)
@@ -165,6 +193,10 @@ namespace AO2Launcher
                 {
                     cancelInstall = true;
                 }
+                return;
+            }
+            if (!InstRowEnabled(i))
+            {
                 return;
             }
             if (i < 3)
@@ -262,7 +294,10 @@ namespace AO2Launcher
 
         void MoveInstSel(int dir)
         {
-            instSel = (instSel + dir + InstRows + 1) % (InstRows + 1);
+            do
+            {
+                instSel = (instSel + dir + InstRows + 1) % (InstRows + 1);
+            } while (!InstRowEnabled(instSel));
             Invalidate();
         }
 
@@ -330,14 +365,17 @@ namespace AO2Launcher
                     fDesc, txt, new RectangleF(ColX + 6, 98, ColW - 12, 56));
             }
 
-            string dlcStatus = srcDlc.Count > 0 ? string.Join(", ", srcDlc.Select(d => d.Name.Length > 0 ? d.Name : Path.GetFileName(d.Path)))
+            string dlcStatus = !InstRowEnabled(2) ? L.T("choose Title Update 2 first")
+                : srcDlc.Count > 0 ? string.Join(", ", srcDlc.Select(d => d.Name.Length > 0 ? d.Name : Path.GetFileName(d.Path)))
                 : dlcCount > 0 ? L.F("packages installed: {0}", dlcCount) : L.T("none chosen - can be added later");
             DrawInstRow(g, 0, L.T("Game"), srcGame != null ? srcGame.Caption
                     : L.T(gameOk ? "installed" : "not chosen - a disc image (.iso) or the game folder"),
                 srcGame != null || gameOk ? Good : Bad, L.T(srcGame != null || gameOk ? "CHANGE" : "CHOOSE"));
-            DrawInstRow(g, 1, "Title Update 2", srcUpdate != null ? srcUpdate.Caption : L.T(updateOk ? "installed" : "not chosen - required"),
-                srcUpdate != null || updateOk ? Good : Bad, L.T(srcUpdate != null || updateOk ? "CHANGE" : "CHOOSE"));
-            DrawInstRow(g, 2, L.T("Downloadable content (DLC)"), dlcStatus, srcDlc.Count > 0 || dlcCount > 0 ? Good : TextDim, L.T("ADD"));
+            DrawInstRow(g, 1, "Title Update 2", !InstRowEnabled(1) ? L.T("choose the game first")
+                    : srcUpdate != null ? srcUpdate.Caption : L.T(updateOk ? "installed" : "not chosen - required"),
+                !InstRowEnabled(1) ? TextOff : srcUpdate != null || updateOk ? Good : Bad, L.T(srcUpdate != null || updateOk ? "CHANGE" : "CHOOSE"));
+            DrawInstRow(g, 2, L.T("Downloadable content (DLC)"), dlcStatus,
+                !InstRowEnabled(2) ? TextOff : srcDlc.Count > 0 || dlcCount > 0 ? Good : TextDim, L.T("ADD"));
             DrawInstRow(g, 3, L.T("Desktop shortcut"), L.T("created after installation"), TextDim,
                 L.T(S.Bool("desktop_shortcut") ? "YES" : "NO"));
 
@@ -389,7 +427,8 @@ namespace AO2Launcher
         void DrawInstRow(Graphics g, int index, string label, string status, Color statusColor, string button)
         {
             var rr = new RectangleF(ColX, InstTop + index * InstRowH, ColW, InstRowH);
-            bool selected = Lit(instSel, index);
+            bool enabled = InstRowEnabled(index);
+            bool selected = Lit(instSel, index) && enabled;
             using (var b = new SolidBrush(Color.FromArgb(0, 0, 0, 0)))
             {
                 g.FillRectangle(b, rr);
@@ -410,7 +449,7 @@ namespace AO2Launcher
             }
             else
             {
-                using (var lb = new SolidBrush(installing ? TextDim : TextLight))
+                using (var lb = new SolidBrush(!enabled ? TextOff : installing ? TextDim : TextLight))
                 using (var sb = new SolidBrush(statusColor))
                 {
                     g.DrawString(label, fLabel, lb, lr, fmt);
@@ -418,8 +457,8 @@ namespace AO2Launcher
                 }
             }
             var br = new RectangleF(rr.Right - btnW - 14, rr.Y + 13, btnW, 32);
-            FlatButton(g, br, button, fBtn, false, selected && !installing, installing);
-            if (!installing)
+            FlatButton(g, br, button, fBtn, false, selected && !installing, installing || !enabled);
+            if (!installing && enabled)
             {
                 AddHot(rr, "inst" + index, () => ActivateInstall(index), index);
             }

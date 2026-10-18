@@ -481,6 +481,86 @@ namespace AO2Launcher
             }
         }
 
+        // What the release itself puts in assets\ (not the user's game files).
+        static readonly string[] ShippedAssets = { "README.md", "icon.png" };
+
+        static IEnumerable<string> InstalledEntries(string gameDir)
+        {
+            string assets = AssetsDir(gameDir);
+            if (!Directory.Exists(assets))
+            {
+                return new string[0];
+            }
+            return Directory.GetFileSystemEntries(assets)
+                .Where(e => !ShippedAssets.Contains(Path.GetFileName(e), StringComparer.OrdinalIgnoreCase));
+        }
+
+        // Whether assets\ has anything installed (the game, the update, or a broken installation).
+        public static bool AnythingInstalled(string gameDir)
+        {
+            try
+            {
+                return gameDir != null && InstalledEntries(gameDir).Any();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static long InstalledBytes(string gameDir)
+        {
+            long bytes = 0;
+            try
+            {
+                foreach (string e in InstalledEntries(gameDir))
+                {
+                    if (File.Exists(e))
+                    {
+                        bytes += new FileInfo(e).Length;
+                    }
+                    else if ((File.GetAttributes(e) & FileAttributes.ReparsePoint) == 0)
+                    {
+                        bytes += new DirectoryInfo(e).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return bytes;
+        }
+
+        // Deletes the installed game: everything in assets\ but the release's own files. A linked folder
+        // (a junction to the files elsewhere) is unlinked, not emptied.
+        public static void Uninstall(string gameDir)
+        {
+            foreach (string e in InstalledEntries(gameDir).ToList())
+            {
+                DeleteEntry(e);
+            }
+            DeleteDir(AssetsDir(gameDir) + ".tmp");
+        }
+
+        static void DeleteEntry(string path)
+        {
+            FileAttributes a = File.GetAttributes(path);
+            if ((a & FileAttributes.Directory) == 0)
+            {
+                File.SetAttributes(path, FileAttributes.Normal); // files from a disc can be read-only
+                File.Delete(path);
+                return;
+            }
+            if ((a & FileAttributes.ReparsePoint) == 0)
+            {
+                foreach (string e in Directory.GetFileSystemEntries(path))
+                {
+                    DeleteEntry(e);
+                }
+            }
+            Directory.Delete(path, false);
+        }
+
         // "Army of Two.lnk" on the desktop, pointing at the launcher.
         public static bool CreateDesktopShortcut()
         {
