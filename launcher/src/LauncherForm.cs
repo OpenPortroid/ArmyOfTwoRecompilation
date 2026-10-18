@@ -1053,12 +1053,12 @@ namespace AO2Launcher
                     ConfirmOn = v => v != "1" ? null : new Confirm
                     {
                         Title = "UNLOCK ALL",
-                        Text = L.T("The game will unlock the Professional difficulty and the BST-V1 and SAL-86 bonus weapons and " +
+                        Text = L.T("The game will unlock the Professional difficulty and " +
                                    "give 9,999,999 money in the current profile. This is saved in the profile and stays after " +
                                    "the cheat is turned off. Turn it on?"),
                         Ok = "TURN ON",
                     },
-                    Desc = "Unlocks every difficulty and the BST-V1 and SAL-86 bonus weapons and gives 9,999,999 money " +
+                    Desc = "Unlocks every difficulty and gives 9,999,999 money " +
                            "(kept at the maximum while on). Saved in the current profile. Has no effect in online co-op."
                 },
                 Toggle("Close the launcher", "close_on_launch", "Close this window once the game has started.", "NO", "YES"),

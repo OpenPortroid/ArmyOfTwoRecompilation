@@ -26,7 +26,7 @@
 // AO2ProfileSettings (AO2Game.xxx): HardUnlocked 1160 (what the script's
 // UnlockHardDifficulty sets: the Professional difficulty), BSTV1_UNLOCKED 770
 // and SAL86_UNLOCKED 771 (UnlockContestWeapons: the bonus weapons in the
-// store), Inventory_CashMoney 1000 (the money; GiveCash clamps it to MaxMoney,
+// store: always on, see ao2_unlock_bonus_weapons), Inventory_CashMoney 1000 (the money; GiveCash clamps it to MaxMoney,
 // 9999999). The game writes the profile to the save itself, at its next save.
 // The money is topped up to the maximum while the option is on. Not in a
 // network game (the profile is the same data both machines show).
@@ -47,8 +47,11 @@ REXCVAR_DEFINE_BOOL(ao2_god_mode, false, "Cheats",
 REXCVAR_DEFINE_BOOL(ao2_coop_god_mode, false, "Cheats",
                     "Debug, online co-op: both players take no damage; must be the same on both PCs");
 REXCVAR_DEFINE_BOOL(ao2_unlock_all, false, "Cheats",
-                    "Cheat: the Professional difficulty, the BST-V1 and SAL-86 bonus weapons and 9,999,999 money "
-                    "in the player's profile (not in network games)");
+                    "Cheat: the Professional difficulty and 9,999,999 money in the player's profile (not in network "
+                    "games)");
+REXCVAR_DEFINE_BOOL(ao2_unlock_bonus_weapons, true, "General",
+                    "The BST-V1 and SAL-86 bonus weapons are always unlocked in the player's profile (not in network "
+                    "games)");
 
 namespace
 {
@@ -100,15 +103,18 @@ namespace
     uint32_t id;
     int32_t value;
   };
-  constexpr Unlock kUnlocks[] = {
+  constexpr Unlock kBonusWeapons[] = {
+      {770, 1}, // BSTV1_UNLOCKED
+      {771, 1}, // SAL86_UNLOCKED
+  };
+  constexpr Unlock kUnlockAll[] = {
       {1160, 1},       // HardUnlocked
-      {770, 1},        // BSTV1_UNLOCKED
-      {771, 1},        // SAL86_UNLOCKED
       {1000, 9999999}, // Inventory_CashMoney = MaxMoney
   };
 
-  // Sets the unlocks in the first local player's profile; how many values changed.
-  int ApplyUnlocks(PPCContext &ctx, uint8_t *base)
+  // Sets the unlocks (the bonus weapons, and with `all` the cheat's) in the first local player's
+  // profile; how many values changed.
+  int ApplyUnlocks(PPCContext &ctx, uint8_t *base, bool all)
   {
     // Looked up until the classes are loaded (then cached by ue3_reflect).
     int32_t profile_off = ao2::ue3::PropertyOffset(base, "AO2PlayerControllerNative", "ProfileSettings");
@@ -143,12 +149,22 @@ namespace
         continue;
       }
       uint32_t id = LoadU32(base, e + kSettingId);
-      for (const Unlock &u : kUnlocks)
-      {
+      auto set = [&](const Unlock &u) {
         if (u.id == id && int32_t(LoadU32(base, e + kSettingValue)) != u.value)
         {
           StoreU32(base, e + kSettingValue, uint32_t(u.value));
           ++changed;
+        }
+      };
+      for (const Unlock &u : kBonusWeapons)
+      {
+        set(u);
+      }
+      for (const Unlock &u : kUnlockAll)
+      {
+        if (all)
+        {
+          set(u);
         }
       }
     }
@@ -177,15 +193,16 @@ namespace ao2::cheats
 {
   void Tick(PPCContext &ctx, uint8_t *base)
   {
-    // Unlock All: twice a second is plenty (the profile is read once, the
-    // money changes at purchases).
+    // The bonus weapons always, the rest with Unlock All: twice a second is
+    // plenty (the profile is read once, the money changes at purchases).
     static uint32_t unlock_frames = 0;
-    if (REXCVAR_GET(ao2_unlock_all) && ++unlock_frames >= 30)
+    bool all = REXCVAR_GET(ao2_unlock_all);
+    if ((all || REXCVAR_GET(ao2_unlock_bonus_weapons)) && ++unlock_frames >= 30)
     {
       unlock_frames = 0;
       if (!ao2::coop::InNetworkGame(base))
       {
-        ApplyUnlocks(ctx, base);
+        ApplyUnlocks(ctx, base, all);
       }
     }
     auto god = [&](uint32_t controller) { SetGodFlag(base, controller, true); };

@@ -1025,29 +1025,29 @@ namespace AO2Launcher
             a("Unlock All (cheat)", "Открыть всё (чит)", "Tout débloquer (triche)", "Alles freischalten (Cheat)", "Desbloquear todo (truco)", "Sblocca tutto (trucco)");
             a("UNLOCK ALL", "ОТКРЫТЬ ВСЁ", "TOUT DÉBLOQUER", "ALLES FREISCHALTEN", "DESBLOQUEAR TODO", "SBLOCCA TUTTO");
             a("TURN ON", "ВКЛЮЧИТЬ", "ACTIVER", "EINSCHALTEN", "ACTIVAR", "ATTIVA");
-            a("The game will unlock the Professional difficulty and the BST-V1 and SAL-86 bonus weapons and give 9,999,999 money in the current profile. " +
+            a("The game will unlock the Professional difficulty and give 9,999,999 money in the current profile. " +
               "This is saved in the profile and stays after the cheat is turned off. Turn it on?",
-              "Игра откроет сложность «Профессионал», бонусное оружие BST-V1 и SAL-86 и даст 9 999 999 денег в текущем профиле. " +
+              "Игра откроет сложность «Профессионал» и даст 9 999 999 денег в текущем профиле. " +
               "Это сохранится в профиле и останется после выключения чита. Включить?",
-              "Le jeu débloquera la difficulté Professionnel et les armes bonus BST-V1 et SAL-86 et donnera 9 999 999 d'argent dans le profil actuel. " +
+              "Le jeu débloquera la difficulté Professionnel et donnera 9 999 999 d'argent dans le profil actuel. " +
               "C'est enregistré dans le profil et reste après la désactivation de la triche. Activer ?",
-              "Das Spiel schaltet den Schwierigkeitsgrad Profi und die Bonuswaffen BST-V1 und SAL-86 frei und gibt 9.999.999 Geld im aktuellen Profil. " +
+              "Das Spiel schaltet den Schwierigkeitsgrad Profi frei und gibt 9.999.999 Geld im aktuellen Profil. " +
               "Das wird im Profil gespeichert und bleibt nach dem Ausschalten des Cheats. Einschalten?",
-              "El juego desbloqueará la dificultad Profesional y las armas extra BST-V1 y SAL-86 y dará 9.999.999 de dinero en el perfil actual. " +
+              "El juego desbloqueará la dificultad Profesional y dará 9.999.999 de dinero en el perfil actual. " +
               "Se guarda en el perfil y se mantiene al desactivar el truco. ¿Activarlo?",
-              "Il gioco sbloccherà la difficoltà Professionista e le armi bonus BST-V1 e SAL-86 e darà 9.999.999 di denaro nel profilo attuale. " +
+              "Il gioco sbloccherà la difficoltà Professionista e darà 9.999.999 di denaro nel profilo attuale. " +
               "Viene salvato nel profilo e resta dopo aver disattivato il trucco. Attivarlo?");
-            a("Unlocks every difficulty and the BST-V1 and SAL-86 bonus weapons and gives 9,999,999 money (kept at the maximum while on). " +
+            a("Unlocks every difficulty and gives 9,999,999 money (kept at the maximum while on). " +
               "Saved in the current profile. Has no effect in online co-op.",
-              "Открывает все сложности, бонусное оружие BST-V1 и SAL-86 и даёт 9 999 999 денег (пока включено, деньги держатся на максимуме). " +
+              "Открывает все сложности и даёт 9 999 999 денег (пока включено, деньги держатся на максимуме). " +
               "Сохраняется в текущем профиле. В сетевом кооперативе не действует.",
-              "Débloque toutes les difficultés et les armes bonus BST-V1 et SAL-86 et donne 9 999 999 d'argent (maintenu au maximum tant que c'est activé). " +
+              "Débloque toutes les difficultés et donne 9 999 999 d'argent (maintenu au maximum tant que c'est activé). " +
               "Enregistré dans le profil actuel. Sans effet en coop en ligne.",
-              "Schaltet alle Schwierigkeitsgrade und die Bonuswaffen BST-V1 und SAL-86 frei und gibt 9.999.999 Geld (bleibt beim Maximum, solange an). " +
+              "Schaltet alle Schwierigkeitsgrade frei und gibt 9.999.999 Geld (bleibt beim Maximum, solange an). " +
               "Wird im aktuellen Profil gespeichert. Im Online-Koop ohne Wirkung.",
-              "Desbloquea todas las dificultades y las armas extra BST-V1 y SAL-86 y da 9.999.999 de dinero (se mantiene al máximo mientras está activado). " +
+              "Desbloquea todas las dificultades y da 9.999.999 de dinero (se mantiene al máximo mientras está activado). " +
               "Se guarda en el perfil actual. Sin efecto en el cooperativo en línea.",
-              "Sblocca tutte le difficoltà e le armi bonus BST-V1 e SAL-86 e dà 9.999.999 di denaro (resta al massimo finché è attivo). " +
+              "Sblocca tutte le difficoltà e dà 9.999.999 di denaro (resta al massimo finché è attivo). " +
               "Salvato nel profilo attuale. Nessun effetto nella co-op online.");
 
             // --- Profiles ---
