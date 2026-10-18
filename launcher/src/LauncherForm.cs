@@ -2280,6 +2280,18 @@ namespace AO2Launcher
             }
             Dot(g, 28, 627, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
             DrawProfileChip(g);
+
+            // PATCH NOTES, bottom right: what's new in this version.
+            string pn = L.T("PATCH NOTES");
+            float pw = CapsWidth(g, pn, fBack, 1.6f) + 28;
+            var pr = new RectangleF(W - 24 - pw, 614, pw, 26);
+            bool phv = IsHover("patch_notes");
+            if (phv)
+            {
+                Fill(g, Color.FromArgb(14, 255, 255, 255), pr);
+            }
+            Caps(g, pn, fBack, phv ? PaperHi : Color.FromArgb(130, 142, 160), pr, 1.6f);
+            AddHot(pr, "patch_notes", () => LoadNotes(false));
         }
 
         // The update window: over the art, the rest of the main screen dimmed and not clickable.

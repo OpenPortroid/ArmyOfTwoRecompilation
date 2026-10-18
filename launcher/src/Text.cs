@@ -95,7 +95,8 @@ namespace AO2Launcher
               "Il launcher la scarica e la installa da solo. File del gioco, impostazioni e salvataggi restano.");
             a("UPDATE", "ОБНОВИТЬ", "METTRE À JOUR", "AKTUALISIEREN", "ACTUALIZAR", "AGGIORNA");
             a("WHAT'S NEW", "ЧТО НОВОГО", "NOUVEAUTÉS", "NEUERUNGEN", "NOVEDADES", "NOVITÀ");
-            a("CLOSE", "ЗАКРЫТЬ", "FERMER", "SCHLIESSEN", "CERRAR", "CHIUDI");
+            a("PATCH NOTES", "СПИСОК ИЗМЕНЕНИЙ", "NOTES DE VERSION", "VERSIONSHINWEISE", "NOTAS DE VERSIÓN", "NOTE DI RILASCIO");
+            a("CLOSE","ЗАКРЫТЬ", "FERMER", "SCHLIESSEN", "CERRAR", "CHIUDI");
             a("LATER","ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
             a("RETRY", "ПОВТОРИТЬ", "RÉESSAYER", "WIEDERHOLEN", "REINTENTAR", "RIPROVA");
             a("UPDATING TO {0}", "ОБНОВЛЕНИЕ ДО {0}", "MISE À JOUR VERS {0}", "UPDATE AUF {0}", "ACTUALIZANDO A {0}", "AGGIORNAMENTO A {0}");
