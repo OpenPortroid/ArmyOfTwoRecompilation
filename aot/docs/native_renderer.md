@@ -192,7 +192,7 @@ sampling 111D0000 into 544) -> shadow depth (below) and its projection, transluc
   SMAA 1x (luma edges with local contrast adaptation, runs followed up to 32 pixels, the silhouette rebuilt from the
   crossing edges at their ends - the area texture's L/Z/U shapes computed analytically). So bloom and tonemap work on
   the result and the HUD is untouched. Cvars: `ao2_ambient_occlusion` off/ssao/hbao/gtao, `ao2_anti_aliasing`
-  off/fxaa/smaa, `ao2_motion_blur` 0-2, `ao2_depth_of_field` 0-2 (all live; anti-aliasing is also on the in-game
+  off/fxaa/smaa, `ao2_motion_blur` 0-2, `ao2_depth_of_field` 0/1 (all live; anti-aliasing is also on the in-game
   Graphics page, its eighth and last row).
 - MSAA is the game's own 2x: `ao2_disable_msaa` (the xenia "Black Shading Fix") writes 4 into the predicated tiling
   mode index 0x831876D4 (5 modes, tile counts at 0x83187714: 4xAA 3 tiles, 2xAA 2 tiles, ..., 4 = no AA); the
@@ -205,7 +205,8 @@ sampling 111D0000 into 544) -> shadow depth (below) and its projection, transluc
   Stage 1 of a tiled frame waits for the depth resolve that completes the scene depth texture (the depth render
   target only holds the last tile) and linearizes that texture instead.
 - Cost at 2560x1440 (gpu ms/frame, category `post`): SSAO 0.75, GTAO 1.06, HBAO 1.42, FXAA 1.38, SMAA 1.9, motion
-  blur high 1.4, depth of field high ~2.7 (each with the copy in and out of the scene texture).
+  blur high 1.4, depth of field ~2.7 at a stronger level since removed (24 taps; the remaining one takes 12) (each
+  with the copy in and out of the scene texture).
 - Debugging: `set <cvar> <value>` lines in console.txt change the cvars live (console_cmd.cpp);
   `ao2_post_debug=1` shows the occlusion instead of the scene; a traced frame captures `post_ao` (x = visibility,
   y = view depth), `post_depth`, and the scene before / after stage 2 (`post_in`, `post_out`).

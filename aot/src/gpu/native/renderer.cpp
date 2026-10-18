@@ -75,7 +75,7 @@ REXCVAR_DEFINE_STRING(ao2_anti_aliasing, "off", "GPU",
                       "ao2_disable_msaa)");
 REXCVAR_DEFINE_INT32(ao2_motion_blur, 0, "GPU", "Camera motion blur: 0 off, 1 low, 2 high");
 REXCVAR_DEFINE_INT32(ao2_depth_of_field, 0, "GPU",
-                     "Depth of field (what lies beyond the aim point blurs): 0 off, 1 low, 2 high");
+                     "Depth of field (what lies beyond the aim point blurs): 0 off, 1 on");
 REXCVAR_DEFINE_INT32(ao2_shadow_resolution, 0, "GPU",
                      "Shadow map resolution: 0 = as the render resolution, or 1024, 2048, 4096 (host pixels of the "
                      "game's shadow buffer)");
@@ -6645,7 +6645,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       s.ao = ao == "ssao" ? 1u : ao == "hbao" ? 2u : ao == "gtao" ? 3u : 0u;
       s.aa = aa == "fxaa" ? 1u : aa == "smaa" ? 2u : 0u;
       s.motion_blur = std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
-      s.dof = std::clamp(REXCVAR_GET(ao2_depth_of_field), 0, 2);
+      s.dof = REXCVAR_GET(ao2_depth_of_field) > 0 ? 1 : 0;
       g_post.settings = s;
       return g_post.settings;
     }
@@ -7396,11 +7396,11 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         {
           g_post.focus_index ^= 1;
           g_post.focus_frame = g.frame_number;
-          // Low: a slight blur well behind the focus; high: a stronger one sooner.
-          c.p0[0] = (s.dof >= 2 ? 5.0f : 2.0f) * scale;
-          c.p0[1] = s.dof >= 2 ? 1.15f : 1.3f;
-          c.p0[2] = s.dof >= 2 ? 1.2f : 0.8f;
-          c.i0[0] = s.dof >= 2 ? 24 : 12;
+          // A slight blur well behind the focus.
+          c.p0[0] = 2.0f * scale;
+          c.p0[1] = 1.3f;
+          c.p0[2] = 0.8f;
+          c.i0[0] = 12;
           run(kPassDof, {In(g_post.depth), In(next)});
         }
       }

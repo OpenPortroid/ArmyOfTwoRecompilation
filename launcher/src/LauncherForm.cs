@@ -981,12 +981,8 @@ namespace AO2Launcher
                     Values = new[] { "0", "1", "2" }, Names = new[] { "OFF", "LOW", "HIGH" },
                     Desc = "Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp."
                 },
-                new Row
-                {
-                    Kind = RowKind.Choice, Label = "Depth of field", Key = "dof",
-                    Values = new[] { "0", "1", "2" }, Names = new[] { "OFF", "LOW", "HIGH" },
-                    Desc = "What lies far behind the point you aim at goes out of focus; the focus follows the crosshair."
-                },
+                Toggle("Depth of field", "dof",
+                    "What lies far behind the point you aim at goes out of focus; the focus follows the crosshair."),
                 new Row
                 {
                     Kind = RowKind.Choice, Label = "Shadow resolution", Key = "shadow_res",

@@ -89,6 +89,11 @@ namespace AO2Launcher
                 FilePath = Path.Combine(appdata, "ArmyOfTwoLauncher.ini");
             }
             Load();
+            // Depth of field had a HIGH level (2); now it is just on.
+            if (this["dof"] == "2")
+            {
+                this["dof"] = "1";
+            }
         }
 
         static bool CanWrite(string dir)

@@ -153,7 +153,7 @@ namespace AO2Launcher
             string ao = s["ao"];
             a.Add("--ao2_ambient_occlusion=" + (ao == "ssao" || ao == "hbao" || ao == "gtao" ? ao : "off"));
             a.Add("--ao2_motion_blur=" + Math.Max(0, Math.Min(2, s.Int("motion_blur"))));
-            a.Add("--ao2_depth_of_field=" + Math.Max(0, Math.Min(2, s.Int("dof"))));
+            a.Add("--ao2_depth_of_field=" + (s.Int("dof") > 0 ? 1 : 0));
             int shadow = s.Int("shadow_res");
             a.Add("--ao2_shadow_resolution=" + (shadow == 1024 || shadow == 2048 || shadow == 4096 ? shadow : 0));
             string lang = s["language"];
