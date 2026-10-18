@@ -22,7 +22,12 @@ foreach ($f in "vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "msvcp1
                 "msvcp140_atomic_wait.dll", "concrt140.dll") {
   Copy-Item "$($crt.FullName)\$f" $Out -Force
 }
-Copy-Item "C:\Windows\System32\D3DCompiler_47.dll" $Out -Force
+# The Windows SDK's redistributable D3DCompiler, not System32's: the Windows 11
+# 24H2 copy imports __std_parallel_algorithms_hw_threads from msvcp_win.dll,
+# which Windows 10 lacks ("Entry Point Not Found" at start).
+$d3dc = "${env:ProgramFiles(x86)}\Windows Kits\10\Redist\D3D\x64\d3dcompiler_47.dll"
+if (-not (Test-Path $d3dc)) { throw "Windows SDK D3DCompiler redist not found: $d3dc" }
+Copy-Item $d3dc "$Out\D3DCompiler_47.dll" -Force
 
 New-Item -ItemType Directory -Force "$Out\settings" | Out-Null
 Copy-Item "$repo\settings\*" "$Out\settings" -Force
