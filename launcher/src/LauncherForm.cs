@@ -2262,9 +2262,7 @@ namespace AO2Launcher
             }
             else
             {
-                bool hv = IsHover("version");
-                DrawText(g, latest != null ? L.F("{0} · up to date", current) : current, fTiny, hv ? PaperHi : Color.FromArgb(110, 122, 140), ver, CenterFmt());
-                AddHot(ver, "version", () => LoadNotes(false)); // click: what's new in this version
+                DrawText(g, latest != null ? L.F("{0} · up to date", current) : current, fTiny, Color.FromArgb(110, 122, 140), ver, CenterFmt());
             }
 
             var status = new RectangleF((W - 520) / 2, 616, 520, 22);
