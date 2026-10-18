@@ -164,6 +164,7 @@ namespace AO2Launcher
             BuildRows();
             tab = Math.Max(0, Math.Min(tabs.Length - 1, S.Int("tab")));
             sel = FirstSelectable();
+            Game.InstallCpuBuild(AppDomain.CurrentDomain.BaseDirectory);
             gameExe = Game.Find(S);
             // The launcher always opens on the main screen; without the game files its button reads
             // INSTALL and leads to the installation.
@@ -2319,6 +2320,15 @@ namespace AO2Launcher
             if (opt("pretend-version") != null)
             {
                 Updates.Current = opt("pretend-version").TrimStart('v', 'V');
+            }
+            // --pretend-no-avx2: act as on a CPU without AVX2 (the compat game build).
+            Game.PretendNoAvx2 = args.Contains("--pretend-no-avx2");
+            // --cpu-build=<log>: install the game build for this CPU in the launcher's folder, log what was done.
+            string cpuBuild = opt("cpu-build");
+            if (cpuBuild != null)
+            {
+                File.WriteAllText(cpuBuild, Game.InstallCpuBuild(AppDomain.CurrentDomain.BaseDirectory) ?? "nothing to do");
+                return;
             }
             string snap = opt("snapshot");
             string dump = opt("dump-args");

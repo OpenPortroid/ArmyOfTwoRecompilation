@@ -928,6 +928,12 @@ namespace AO2Launcher
             // --- Installation errors ---
             a("{0} is missing from the game folder", "{0} нет в папке игры", "{0} est absent du dossier du jeu",
               "{0} fehlt im Spielordner", "Falta {0} en la carpeta del juego", "{0} manca nella cartella del gioco");
+            a("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)",
+              "процессор слишком старый: нужен SSE4.2 (Intel Core i первого поколения / AMD FX и новее)",
+              "processeur trop ancien : SSE4.2 requis (Intel Core i 1re génération / AMD FX ou plus récent)",
+              "Prozessor zu alt: SSE4.2 erforderlich (Intel Core i 1. Generation / AMD FX oder neuer)",
+              "procesador demasiado antiguo: se requiere SSE4.2 (Intel Core i 1.ª generación / AMD FX o posterior)",
+              "processore troppo vecchio: serve SSE4.2 (Intel Core i 1ª generazione / AMD FX o successivi)");
             a("not an Xbox 360 disc image or a TU / DLC package", "это не образ диска Xbox 360 и не пакет TU / DLC",
               "ce n'est ni une image disque Xbox 360 ni un paquet TU / DLC", "kein Xbox-360-Disc-Image und kein TU-/DLC-Paket",
               "no es una imagen de disco de Xbox 360 ni un paquete TU / DLC",

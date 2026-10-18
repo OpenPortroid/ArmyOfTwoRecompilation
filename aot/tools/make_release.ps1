@@ -16,13 +16,17 @@ $crt = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio\2022\*\VC\Redist
   Sort-Object FullName | Select-Object -Last 1
 if (-not $crt) { throw "Visual C++ redistributable folder not found" }
 $launcher = "$root\launcher\bin\ArmyOfTwoLauncher.exe"
-foreach ($f in "$build\armyoftworecomp.exe", "$build\rexruntime.dll", "$build\ao2_install.exe", $launcher) {
+# armyoftworecomp_compat.exe: the same game for CPUs without AVX2 (build.cmd compat).
+foreach ($f in "$build\armyoftworecomp.exe", "$build\armyoftworecomp_compat.exe", "$build\rexruntime.dll", "$build\ao2_install.exe", $launcher) {
   if (-not (Test-Path $f)) { throw "not built: $f" }
+}
+if ((Get-Item "$build\armyoftworecomp_compat.exe").LastWriteTime -lt (Get-Item "$build\armyoftworecomp.exe").LastWriteTime.AddHours(-1)) {
+  throw "armyoftworecomp_compat.exe is older than armyoftworecomp.exe - run build.cmd compat"
 }
 
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
 New-Item -ItemType Directory -Force $Out | Out-Null
-foreach ($f in "armyoftworecomp.exe", "rexruntime.dll", "ao2_install.exe", "ao2_lobby_server.exe", "gamecontrollerdb.txt") {
+foreach ($f in "armyoftworecomp.exe", "armyoftworecomp_compat.exe", "rexruntime.dll", "ao2_install.exe", "ao2_lobby_server.exe", "gamecontrollerdb.txt") {
   Copy-Item "$build\$f" $Out -Force
 }
 Copy-Item $launcher $Out -Force

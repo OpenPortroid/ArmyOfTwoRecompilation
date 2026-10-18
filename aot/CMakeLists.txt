@@ -46,7 +46,9 @@ include(generated/rexglue.cmake)
 # BMI2, MOVBE - Haswell / Zen and newer) turns every big-endian guest memory
 # access into one MOVBE and the VMX emulation into AVX. No FMA contraction:
 # float results stay bit-identical to the SSE build (co-op lockstep compares
-# them between PCs). Empty = the compiler default.
+# them between PCs). Empty = the compiler default. The release also carries
+# armyoftworecomp_compat.exe built with x86-64-v2 (build.cmd compat) for CPUs
+# without AVX2; the launcher picks it.
 set(AO2_CPU_ARCH "x86-64-v3" CACHE STRING "-march for the game (empty = compiler default)")
 if(AO2_CPU_ARCH AND CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
     add_compile_options(-march=${AO2_CPU_ARCH} -ffp-contract=off)
@@ -193,6 +195,11 @@ if(WIN32)
 
     # Reads the user's disc image and TU / DLC packages for the launcher's
     # install screen (see tools/ao2_install.cpp).
+    # Runs before the launcher knows the CPU: built for x86-64-v2 like
+    # rexruntime.dll, not the game's baseline (the later -march wins).
     add_executable(ao2_install tools/ao2_install.cpp)
     target_link_libraries(ao2_install PRIVATE rex::runtime)
+    if(AO2_CPU_ARCH AND CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+        target_compile_options(ao2_install PRIVATE -march=x86-64-v2)
+    endif()
 endif()

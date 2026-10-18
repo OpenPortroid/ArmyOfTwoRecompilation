@@ -188,7 +188,12 @@ namespace AO2Launcher
                     }
                 }
                 p.WaitForExit();
-                if (p.ExitCode != 0 && error == null)
+                if (p.ExitCode == unchecked((int)0xC000001D) && error == null)
+                {
+                    // STATUS_ILLEGAL_INSTRUCTION: the tool and the game need SSE4.2 (x86-64-v2).
+                    error = L.T("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)");
+                }
+                else if (p.ExitCode != 0 && error == null)
                 {
                     error = "ao2_install: exit code " + p.ExitCode;
                 }

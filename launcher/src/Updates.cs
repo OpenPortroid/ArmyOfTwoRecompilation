@@ -273,6 +273,8 @@ namespace AO2Launcher
             // The archive and the unpacked copy are not needed any more (the running launcher's .old stays
             // until the next start).
             CleanUp();
+            // The release brings both game builds again.
+            Game.InstallCpuBuild(dir);
         }
     }
 }
