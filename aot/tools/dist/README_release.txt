@@ -45,3 +45,4 @@ CONTROLS
   E/Enter - use and select in menus, Backspace - back, Tab - GPS,
   Z - inventory, F - co-op commands, 1-4 - weapons / grenades,
   arrows - partner orders.
+- Menus: point with the mouse and click, Enter - select, Esc - back.
