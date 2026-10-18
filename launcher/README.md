@@ -48,6 +48,12 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   the next start. Without a release layout (no `armyoftworecomp.exe` next to the launcher) the browser downloads the
   archive instead. Offline only the version is shown. `Updates.Version` is the package's version: bump it before
   every release, the tag is `v` + it.
+- **What's new.** The first start after an update (`seen_version` in the launcher's ini differs from
+  `Updates.Version`) fetches the description of release `v<Version>` from GitHub (`Updates.NotesFor`, markdown: headings,
+  bullets, bold and links are reduced to plain lines) and shows it in a window (scroll: wheel, ↑↓, PgUp/PgDn; Enter / Esc /
+  CLOSE). So the release description is the patch notes: write it before publishing. A click on the version under Play
+  shows them again. A fresh install, a release without a description, or being offline shows nothing (offline: asked
+  again next start). Debug: `--notes-file=<md>` with `--snapshot` renders the window from a file.
 
 Build: `build.cmd` (Roslyn from Visual Studio / Build Tools, or the csc that ships with Windows). The pictures
 in `res\` are made by `tools\make_assets.py <background> [<logo>]`: the background is cropped to the main

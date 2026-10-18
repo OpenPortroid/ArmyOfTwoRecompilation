@@ -420,6 +420,11 @@ namespace AO2Launcher
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
+            if (NotesShown)
+            {
+                ScrollNotes(e.Delta > 0 ? -3 : 3);
+                return;
+            }
             if (screen != UiScreen.Settings || maxScroll <= 0 || capturing != null)
             {
                 return;

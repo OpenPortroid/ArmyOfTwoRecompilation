@@ -94,7 +94,9 @@ namespace AO2Launcher
               "El lanzador la descarga e instala solo. Se conservan los archivos del juego, los ajustes y las partidas.",
               "Il launcher la scarica e la installa da solo. File del gioco, impostazioni e salvataggi restano.");
             a("UPDATE", "ОБНОВИТЬ", "METTRE À JOUR", "AKTUALISIEREN", "ACTUALIZAR", "AGGIORNA");
-            a("LATER", "ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
+            a("WHAT'S NEW", "ЧТО НОВОГО", "NOUVEAUTÉS", "NEUERUNGEN", "NOVEDADES", "NOVITÀ");
+            a("CLOSE", "ЗАКРЫТЬ", "FERMER", "SCHLIESSEN", "CERRAR", "CHIUDI");
+            a("LATER","ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
             a("RETRY", "ПОВТОРИТЬ", "RÉESSAYER", "WIEDERHOLEN", "REINTENTAR", "RIPROVA");
             a("UPDATING TO {0}", "ОБНОВЛЕНИЕ ДО {0}", "MISE À JOUR VERS {0}", "UPDATE AUF {0}", "ACTUALIZANDO A {0}", "AGGIORNAMENTO A {0}");
             a("Downloading: {0:0.0} of {1:0.0} MB", "Загрузка: {0:0.0} из {1:0.0} МБ", "Téléchargement : {0:0.0} sur {1:0.0} Mo",
@@ -121,7 +123,12 @@ namespace AO2Launcher
               "Riprova, oppure scarica l'archivio da GitHub ed estrailo sopra questa cartella.");
             a("Close the game first.", "Сначала закройте игру.", "Fermez d'abord le jeu.", "Schließen Sie zuerst das Spiel.",
               "Cierra primero el juego.", "Chiudi prima il gioco.");
-            a("Update cancelled", "Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
+            a("Could not load the release notes", "Не удалось загрузить список изменений", "Impossible de charger les notes de version",
+              "Die Versionshinweise konnten nicht geladen werden", "No se pudieron cargar las notas de la versión",
+              "Impossibile caricare le note di rilascio");
+            a("This release has no notes", "У этой версии нет описания", "Cette version n'a pas de notes", "Diese Version hat keine Hinweise",
+              "Esta versión no tiene notas", "Questa versione non ha note");
+            a("Update cancelled","Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
               "Aggiornamento annullato");
             a("Updated to {0}. Start the launcher again: {1}", "Обновлено до {0}. Запустите лаунчер заново: {1}",
               "Mis à jour vers {0}. Relancez le lanceur : {1}", "Auf {0} aktualisiert. Starten Sie den Launcher neu: {1}",

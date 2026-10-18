@@ -65,6 +65,93 @@ namespace AO2Launcher
             }
         }
 
+        // Debug: --notes-file=<file> takes this file as the release notes instead of asking GitHub.
+        public static string NotesFile;
+
+        // The notes of the release with this version (its description on GitHub, markdown), "" when it has
+        // none, null when GitHub could not be reached. Blocks: call off the UI thread.
+        public static string NotesFor(string version)
+        {
+            if (NotesFile != null)
+            {
+                try
+                {
+                    return File.ReadAllText(NotesFile, Encoding.UTF8);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            try
+            {
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases/tags/v" + version);
+                req.UserAgent = "ArmyOfTwoLauncher/" + Current;
+                req.Accept = "application/vnd.github+json";
+                req.Timeout = 6000;
+                req.ReadWriteTimeout = 6000;
+                string json;
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    json = rd.ReadToEnd();
+                }
+                return JsonString(json, "body") ?? "";
+            }
+            catch (WebException ex)
+            {
+                var resp = ex.Response as HttpWebResponse;
+                return resp != null && resp.StatusCode == HttpStatusCode.NotFound ? "" : null; // no such release: no notes
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // The string value of the first "key": "..." in a JSON text, unescaped; null when it is absent or null.
+        static string JsonString(string json, string key)
+        {
+            Match m = Regex.Match(json, "\"" + key + "\"\\s*:\\s*\"");
+            if (!m.Success)
+            {
+                return null;
+            }
+            var sb = new StringBuilder();
+            for (int i = m.Index + m.Length; i < json.Length; i++)
+            {
+                char c = json[i];
+                if (c == '"')
+                {
+                    return sb.ToString();
+                }
+                if (c != '\\' || i + 1 >= json.Length)
+                {
+                    sb.Append(c);
+                    continue;
+                }
+                c = json[++i];
+                switch (c)
+                {
+                    case 'n': sb.Append('\n'); break;
+                    case 'r': break;
+                    case 't': sb.Append(' '); break;
+                    case 'u':
+                        int code;
+                        if (i + 4 < json.Length && int.TryParse(json.Substring(i + 1, 4), System.Globalization.NumberStyles.HexNumber,
+                            System.Globalization.CultureInfo.InvariantCulture, out code))
+                        {
+                            sb.Append((char)code);
+                            i += 4;
+                        }
+                        break;
+                    default: sb.Append(c); break; // \" \ \/
+                }
+            }
+            return null;
+        }
+
         // Whether version a is newer than b ("1.10" > "1.9"); tags that are not numbers count as newer when they differ.
         public static bool Newer(string a, string b)
         {

@@ -24,6 +24,7 @@ namespace AO2Launcher
             { "aniso", "0" },
             { "vsync", "0" },
             { "language", "auto" },
+            { "seen_version", "" }, // the version whose release notes were shown
             { "mouse_aim", "1" },
             { "mouse_sens", "2" },
             { "mouse_zoom", "1" },
@@ -193,7 +194,7 @@ namespace AO2Launcher
         // Everything but the game's path and the chosen profile.
         public void Reset()
         {
-            string game = this["game_path"], profile = this["profile"];
+            string game = this["game_path"], profile = this["profile"], seen = this["seen_version"];
             values.Clear();
             foreach (var kv in Defaults)
             {
@@ -201,6 +202,7 @@ namespace AO2Launcher
             }
             values["game_path"] = game;
             values["profile"] = profile;
+            values["seen_version"] = seen;
         }
     }
 }

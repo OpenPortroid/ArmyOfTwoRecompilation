@@ -223,6 +223,7 @@ namespace AO2Launcher
                 clean.Start();
             }
             CheckForUpdate();
+            CheckNotes();
         }
 
         // Asks GitHub for the latest release off the UI thread; a newer one opens the update window.
@@ -283,6 +284,248 @@ namespace AO2Launcher
         string updError;
         volatile bool cancelUpdate;
         bool restarting;
+
+        // ------------------------------------------------------------------
+        // "What's new": the notes of the release this package is, shown once after an update (the version is
+        // kept in seen_version), and again by a click on the version under PLAY.
+        bool notesOpen;
+        string notesText;      // the release description (markdown); null until loaded
+        int notesScroll;       // in lines
+        int notesLines;        // wrapped lines in the last frame
+        int notesFit;          // lines that fit
+        bool notesLoading;
+
+        sealed class NoteRow
+        {
+            public int Kind;      // -1 empty line, 0 text, 1 heading, 2 bullet
+            public string Text;
+            public bool Cont;     // a wrapped continuation (no bullet dot)
+        }
+
+        bool NotesShown
+        {
+            get { return notesOpen && notesText != null && screen == UiScreen.Main && !installing && !PromptShown; }
+        }
+
+        // After an update (the version differs from the one last seen): fetches the notes off the UI thread.
+        // A fresh install, offline or a release without a description just marks the version as seen / waits.
+        void CheckNotes()
+        {
+            if (S["seen_version"] == Updates.Version)
+            {
+                return;
+            }
+            if (S["seen_version"] == "" && !Installed)
+            {
+                MarkSeen();
+                return;
+            }
+            LoadNotes(true);
+        }
+
+        void MarkSeen()
+        {
+            S["seen_version"] = Updates.Version;
+            S.Save();
+        }
+
+        void LoadNotes(bool auto)
+        {
+            if (notesLoading)
+            {
+                return;
+            }
+            if (notesText != null)
+            {
+                OpenNotes();
+                return;
+            }
+            notesLoading = true;
+            var th = new System.Threading.Thread(() =>
+            {
+                string notes = Updates.NotesFor(Updates.Current);
+                UiDo(() =>
+                {
+                    notesLoading = false;
+                    if (notes == null)
+                    {
+                        if (!auto)
+                        {
+                            ShowToast(L.T("Could not load the release notes"), true);
+                        }
+                        return; // offline: asked again on the next start
+                    }
+                    notes = notes.Trim();
+                    if (notes.Length == 0)
+                    {
+                        if (auto)
+                        {
+                            MarkSeen();
+                        }
+                        else
+                        {
+                            ShowToast(L.T("This release has no notes"), true);
+                        }
+                        return;
+                    }
+                    notesText = notes;
+                    OpenNotes();
+                });
+            });
+            th.IsBackground = true;
+            th.Start();
+        }
+
+        void OpenNotes()
+        {
+            notesOpen = true;
+            notesScroll = 0;
+            if (S["seen_version"] != Updates.Version)
+            {
+                MarkSeen();
+            }
+            Invalidate();
+        }
+
+        void CloseNotes()
+        {
+            notesOpen = false;
+            Invalidate();
+        }
+
+        void ScrollNotes(int lines)
+        {
+            notesScroll = Math.Max(0, Math.Min(Math.Max(0, notesLines - notesFit), notesScroll + lines));
+            Invalidate();
+        }
+
+        // Keys of the notes window; false for a key it does not use.
+        bool NotesKey(Keys key)
+        {
+            switch (key)
+            {
+                case Keys.Enter:
+                case Keys.Space:
+                case Keys.Escape:
+                    CloseNotes();
+                    return true;
+                case Keys.Up: ScrollNotes(-2); return true;
+                case Keys.Down: ScrollNotes(2); return true;
+                case Keys.PageUp: ScrollNotes(-notesFit + 1); return true;
+                case Keys.PageDown: ScrollNotes(notesFit - 1); return true;
+                case Keys.Home: ScrollNotes(-100000); return true;
+                case Keys.End: ScrollNotes(100000); return true;
+            }
+            return true; // modal
+        }
+
+        // The markdown of a release description as plain lines: kind 1 heading, 2 bullet, 0 text.
+        static List<KeyValuePair<int, string>> NoteLines(string md)
+        {
+            var list = new List<KeyValuePair<int, string>>();
+            foreach (string raw in md.Replace("\r", "").Split('\n'))
+            {
+                string t = raw.TrimEnd();
+                int kind = 0;
+                if (t.TrimStart().StartsWith("#"))
+                {
+                    kind = 1;
+                    t = t.TrimStart().TrimStart('#').Trim();
+                }
+                else if (t.TrimStart().StartsWith("- ") || t.TrimStart().StartsWith("* "))
+                {
+                    kind = 2;
+                    t = t.TrimStart().Substring(2);
+                }
+                t = System.Text.RegularExpressions.Regex.Replace(t, @"\[([^\]]*)\]\([^)]*\)", "$1");
+                t = t.Replace("**", "").Replace("__", "").Replace("`", "");
+                list.Add(new KeyValuePair<int, string>(kind, t.Trim()));
+            }
+            return list;
+        }
+
+        void DrawNotes(Graphics g)
+        {
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            var box = new RectangleF((W - 640) / 2, 70, 640, 520);
+            Panel(g, box);
+            Caps(g, L.T("WHAT'S NEW") + "  ·  v" + Updates.Version, fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+            Line(g, Hairline, box.X + 30, box.Y + 58.5f, box.Right - 30, box.Y + 58.5f);
+
+            var body = new RectangleF(box.X + 36, box.Y + 74, box.Width - 72, box.Height - 74 - 84);
+            float lh = fLabel.GetHeight(g) + 4;
+            notesFit = Math.Max(1, (int)(body.Height / lh));
+            var wrapped = new List<NoteRow>();
+            foreach (var l in NoteLines(notesText))
+            {
+                if (l.Value.Length == 0)
+                {
+                    if (wrapped.Count > 0 && wrapped[wrapped.Count - 1].Kind >= 0)
+                    {
+                        wrapped.Add(new NoteRow { Kind = -1 }); // one gap, none at the start
+                    }
+                    continue;
+                }
+                float indent = l.Key == 2 ? 18 : 0;
+                Font f = l.Key == 1 ? fLabel : fSmall;
+                string line = "";
+                bool cont = false;
+                foreach (string word in l.Value.Split(' '))
+                {
+                    string next = line.Length == 0 ? word : line + " " + word;
+                    if (line.Length > 0 && g.MeasureString(next, f).Width > body.Width - indent)
+                    {
+                        wrapped.Add(new NoteRow { Kind = l.Key, Text = line, Cont = cont });
+                        cont = true;
+                        line = word;
+                    }
+                    else
+                    {
+                        line = next;
+                    }
+                }
+                wrapped.Add(new NoteRow { Kind = l.Key, Text = line, Cont = cont });
+            }
+            notesLines = wrapped.Count;
+            notesScroll = Math.Max(0, Math.Min(Math.Max(0, notesLines - notesFit), notesScroll));
+
+            var oldClip = g.Clip;
+            g.SetClip(body);
+            for (int i = 0; i < wrapped.Count; i++)
+            {
+                int row = i - notesScroll;
+                NoteRow nr = wrapped[i];
+                if (row < 0 || row >= notesFit || nr.Kind < 0)
+                {
+                    continue;
+                }
+                float y = body.Y + row * lh;
+                if (nr.Kind == 2)
+                {
+                    if (!nr.Cont)
+                    {
+                        Fill(g, Paper, new RectangleF(body.X + 3, y + lh / 2 - 3, 4, 4));
+                    }
+                    DrawText(g, nr.Text, fSmall, TextLight, new RectangleF(body.X + 18, y, body.Width - 18, lh + 2), new StringFormat());
+                }
+                else
+                {
+                    DrawText(g, nr.Text, nr.Kind == 1 ? fLabel : fSmall, nr.Kind == 1 ? PaperHi : TextLight,
+                        new RectangleF(body.X, y, body.Width, lh + 2), new StringFormat());
+                }
+            }
+            g.Clip = oldClip;
+            if (notesLines > notesFit)
+            {
+                float th = Math.Max(24, body.Height * notesFit / notesLines);
+                float ty = body.Y + (body.Height - th) * notesScroll / Math.Max(1, notesLines - notesFit);
+                Fill(g, Color.FromArgb(70, 255, 255, 255), new RectangleF(box.Right - 22, ty, 3, th));
+            }
+
+            var close = new RectangleF(box.X + (box.Width - 180) / 2, box.Bottom - 64, 180, 42);
+            FlatButton(g, close, L.T("CLOSE"), fBtn, true, true, false);
+            AddHot(close, "notes_close", CloseNotes);
+        }
 
         bool UpdateBusy
         {
@@ -427,6 +670,14 @@ namespace AO2Launcher
             {
                 ClosePrompt();
             }
+        }
+
+        // Debug (--snapshot with --notes-file): the "what's new" window.
+        public void SnapshotNotes()
+        {
+            notesText = Updates.NotesFor(Updates.Current) ?? "";
+            notesOpen = true;
+            updatePrompt = false;
         }
 
         // Debug (--snapshot with --latest): the update window in a given state.
@@ -1400,6 +1651,20 @@ namespace AO2Launcher
                 ConfirmPad(b);
                 return;
             }
+            if (NotesShown)
+            {
+                switch (b)
+                {
+                    case Gamepad.DpadUp: ScrollNotes(-2); break;
+                    case Gamepad.DpadDown: ScrollNotes(2); break;
+                    case Gamepad.A:
+                    case Gamepad.B:
+                    case Gamepad.Start:
+                        CloseNotes();
+                        break;
+                }
+                return;
+            }
             if (PromptShown)
             {
                 switch (b)
@@ -1485,6 +1750,10 @@ namespace AO2Launcher
             if (confirm != null)
             {
                 return ConfirmKey(keyData);
+            }
+            if (NotesShown)
+            {
+                return NotesKey(keyData);
             }
             if (PromptShown)
             {
@@ -1917,6 +2186,11 @@ namespace AO2Launcher
                     hots.Clear();
                     DrawPrompt(g);
                 }
+                else if (NotesShown)
+                {
+                    hots.Clear();
+                    DrawNotes(g);
+                }
                 DrawTitleBar(g, "Launcher", false, false);
             }
             else if (screen == UiScreen.Install)
@@ -1988,7 +2262,9 @@ namespace AO2Launcher
             }
             else
             {
-                DrawText(g, latest != null ? L.F("{0} · up to date", current) : current, fTiny, Color.FromArgb(110, 122, 140), ver, CenterFmt());
+                bool hv = IsHover("version");
+                DrawText(g, latest != null ? L.F("{0} · up to date", current) : current, fTiny, hv ? PaperHi : Color.FromArgb(110, 122, 140), ver, CenterFmt());
+                AddHot(ver, "version", () => LoadNotes(false)); // click: what's new in this version
             }
 
             var status = new RectangleF((W - 520) / 2, 616, 520, 22);
@@ -2476,6 +2752,7 @@ namespace AO2Launcher
                 return;
             }
             Updates.Override = opt("latest"); // --latest=<tag>: the latest release, without asking GitHub
+            Updates.NotesFile = opt("notes-file"); // --notes-file=<md>: the release notes from a file (with --snapshot: shown)
             var form = new LauncherForm();
             if (opt("bench") != null)
             {
@@ -2501,6 +2778,10 @@ namespace AO2Launcher
                     }
                     form.SnapshotUpdate(parts[0] == "installing" ? LauncherForm.UpdState.Installing
                         : parts[0] == "failed" ? LauncherForm.UpdState.Failed : LauncherForm.UpdState.Downloading, p);
+                }
+                if (Updates.NotesFile != null)
+                {
+                    form.SnapshotNotes();
                 }
                 UiScreen scr = opt("screen") == "settings" ? UiScreen.Settings : opt("screen") == "install" ? UiScreen.Install : UiScreen.Main;
                 form.Snapshot(snap, t, sl, scr, opt("ask"));
