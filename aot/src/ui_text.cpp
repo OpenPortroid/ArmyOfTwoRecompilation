@@ -96,6 +96,7 @@ namespace
       {"ACCEPTED", "ПРИНЯЛ", "ANGENOMMEN", "ACCEPTÉ", "ACEPTADO", "ACCETTATO"},
       {"DECLINED", "ОТКЛОНИЛ", "ABGELEHNT", "REFUSÉ", "RECHAZADO", "RIFIUTATO"},
       {"NOT DELIVERED", "НЕ ДОШЛО", "NICHT ZUGESTELLT", "NON REÇU", "NO ENTREGADO", "NON RECAPITATO"},
+      {"NOT JOINED", "НЕ ПРИСОЕДИНИЛСЯ", "NICHT BEIGETRETEN", "N'A PAS REJOINT", "NO SE UNIÓ", "NON UNITO"},
       {"AGAIN", "ЕЩЁ РАЗ", "ERNEUT", "RÉESSAYER", "OTRA VEZ", "DI NUOVO"},
       {"INVITE", "ПРИГЛАСИТЬ", "EINLADEN", "INVITER", "INVITAR", "INVITA"},
       {"To invite, create a game: Campaign Mode → Private Co-op Game.",

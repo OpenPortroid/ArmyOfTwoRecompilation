@@ -46,6 +46,7 @@
 
 #include "aspect_ratio.h"
 #include "coop.h"
+#include "debug_menu.h"
 #include "gpu/native/renderer.h"
 #include "graphics_menu.h"
 #include "log_files.h"
@@ -929,6 +930,21 @@ namespace ao2::menumouse
 
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard)
   {
+    if (ao2::menu::IsOpen())
+    {
+      // The players window (invites) or the debug menu is up: the mouse and
+      // Enter / Esc are theirs, nothing reaches the game's menus.
+      ao2::gpu::RendererSetMenuProbe(0, 0, 0, 0);
+      g_inject_polls = 0;
+      g_hover = 0;
+      g_walk = Walk{};
+      g_last_u = g_last_v = -1.0f;
+      g_left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+      g_enter = GetAsyncKeyState(VK_RETURN) & 0x8000;
+      g_esc = GetAsyncKeyState(VK_ESCAPE) & 0x8000;
+      g_enter_menu = g_esc_menu = false;
+      return;
+    }
     uint8_t *p = base + state;
     uint16_t buttons = uint16_t((p[4] << 8) | p[5]);
     auto store_buttons = [&]() {
