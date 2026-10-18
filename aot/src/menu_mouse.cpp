@@ -40,8 +40,10 @@
 // Kismet opens Extras) never run: A on it is taken out of the pad state and
 // closes the window instead.
 //
-// Not in online co-op while the lockstep runs: the focus would change on
-// this machine only.
+// Online co-op: the pause menu is this machine's UI and its focus is not part
+// of the simulation (the checksum is the shared rand() and physics), and the
+// presses go through the pad input like the keys' (Enter / Esc already did),
+// so the mouse works there too.
 #include "menu_mouse.h"
 
 #include "aspect_ratio.h"
@@ -1045,7 +1047,7 @@ namespace ao2::menumouse
       return;
     }
 
-    bool menu = scene && REXCVAR_GET(ao2_menu_mouse) && !ao2::coop::OnlineLockstep(base);
+    bool menu = scene && REXCVAR_GET(ao2_menu_mouse);
     SetMenuMode(menu);
     bool left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
     bool left_pressed = left && !g_left;
