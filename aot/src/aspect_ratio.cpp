@@ -232,6 +232,10 @@ namespace ao2::aspect
   {
     g_window = static_cast<HWND>(native_window_handle);
   }
+  void *Window()
+  {
+    return g_window.load();
+  }
   uint32_t GuestWidth()
   {
     return g_width;

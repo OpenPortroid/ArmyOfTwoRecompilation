@@ -98,6 +98,20 @@ namespace ao2::gpu
     constexpr uint64_t kPhysicalFileOffset = 0x100000000ull;
     constexpr uint32_t kBackBufferCount = 3;
 
+    // The menu probe (RendererSetMenuProbe): the draws that sample a texture
+    // of the size asked for (the menu's render target, put on the slabs of
+    // the Shell level) are drawn again with a variant of their pixel shader
+    // that writes that texture's coordinates (HlslModification::probe_binding)
+    // into g.probe.target, with the depth test but no writes; the texel under
+    // the cursor is read back at the end of the frame.
+    constexpr uint64_t kProbeNone = UINT64_MAX - 1;
+    constexpr uint64_t kProbeOff = UINT64_MAX;
+    constexpr DXGI_FORMAT kProbeFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
+    std::atomic<uint32_t> g_probe_size{0};   // width | height << 16 of the texture, 0 = off
+    std::atomic<uint32_t> g_probe_cursor{0}; // guest picture pixel x | y << 16
+    // Last result: u | v << 16 (UNORM16), bit 32 = found, bits 33.. = the size it was for.
+    std::atomic<uint64_t> g_probe_result{0};
+
     enum RootParam : uint32_t
     {
       kRootVSConstants,
@@ -348,6 +362,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint8_t *readback_mapped = nullptr;
       uint64_t readback_offset = 0;
       std::vector<Writeback> writebacks;
+      // The menu probe's texel in `readback` (kProbeNone: nothing drawn
+      // there, kProbeOff: not asked for) and the texture it was for.
+      uint64_t probe_offset = UINT64_MAX;
+      uint32_t probe_size = 0;
     };
 
     struct State
@@ -519,6 +537,16 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         D3D12_GPU_DESCRIPTOR_HANDLE tables[4] = {};
         D3D12_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
       } bound;
+      // The menu probe's target (host size and samples of the render target
+      // the probed draws went to) and its single-sample copy for MSAA.
+      struct
+      {
+        ComPtr<ID3D12Resource> target, resolved;
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        D3D12_RESOURCE_STATES resolved_state = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        uint32_t width = 0, height = 0, samples = 0, scale4 = 4;
+        uint64_t drawn_frame = UINT64_MAX; // frame_number it was cleared and drawn in
+      } probe;
       // Float constants uploaded in this upload generation, per stage: reused
       // while the guest did not write them.
       struct ConstantUpload
@@ -2428,6 +2456,21 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       }
       f.ts_count = f.ts_resolved = 0;
       f.ts_last = kGpuNone;
+      if (f.probe_offset != kProbeOff)
+      {
+        uint64_t result = uint64_t(f.probe_size) << 33;
+        if (f.probe_offset != kProbeNone)
+        {
+          uint16_t texel[4];
+          std::memcpy(texel, f.readback_mapped + f.probe_offset, sizeof(texel));
+          if (texel[3] >= 0x8000)
+          {
+            result |= texel[0] | (uint64_t(texel[1]) << 16) | (1ull << 32);
+          }
+        }
+        g_probe_result.store(result, std::memory_order_relaxed);
+        f.probe_offset = kProbeOff;
+      }
       ApplyWritebacks(f);
       CollectGarbage();
       HRESULT allocator_hr = f.allocator->Reset();
@@ -6416,6 +6459,159 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       ++g.lowres_copies;
       return true;
     }
+
+    // ------------------------------------------------------------ Menu probe
+
+    // The probe target matching render target `rt` (made or remade for it,
+    // unless this frame drew into another one already).
+    bool EnsureProbeTarget(const RenderTarget &rt)
+    {
+      D3D12_RESOURCE_DESC rd = rt.resource->GetDesc();
+      uint32_t w = uint32_t(rd.Width), h = rd.Height;
+      auto &p = g.probe;
+      if (p.target && p.width == w && p.height == h && p.samples == rt.samples)
+      {
+        p.scale4 = rt.scale4;
+        return true;
+      }
+      if (p.drawn_frame == g.frame_number)
+      {
+        return false;
+      }
+      DeferRelease(std::move(p.target));
+      DeferRelease(std::move(p.resolved));
+      D3D12_RESOURCE_DESC d = {};
+      d.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+      d.Width = w;
+      d.Height = h;
+      d.DepthOrArraySize = 1;
+      d.MipLevels = 1;
+      d.SampleDesc.Count = rt.samples;
+      d.Format = kProbeFormat;
+      d.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+      D3D12_HEAP_PROPERTIES hp = {D3D12_HEAP_TYPE_DEFAULT};
+      p.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      if (FAILED(g.device->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &d, p.state, nullptr,
+                                                   IID_PPV_ARGS(&p.target))))
+      {
+        p.width = 0;
+        return false;
+      }
+      if (rt.samples > 1)
+      {
+        d.SampleDesc.Count = 1;
+        d.Flags = D3D12_RESOURCE_FLAG_NONE;
+        p.resolved_state = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        if (FAILED(g.device->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &d, p.resolved_state, nullptr,
+                                                     IID_PPV_ARGS(&p.resolved))))
+        {
+          p.target.Reset();
+          p.width = 0;
+          return false;
+        }
+      }
+      p.width = w;
+      p.height = h;
+      p.samples = rt.samples;
+      p.scale4 = rt.scale4;
+      NativeLog("menu probe target %ux%u x%u\n", w, h, rt.samples);
+      return true;
+    }
+
+    // Draws a probed draw again (`issue`, with its state bound) with the probe
+    // variant of its pixel shader into the probe target: its depth test, no
+    // depth or stencil writes, no blending.
+    template <typename Issue>
+    void DrawProbe(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *probe_ps,
+                   const RenderTarget &rt, const RenderTarget *ds, const Issue &issue)
+    {
+      if (!EnsureProbeTarget(rt))
+      {
+        return;
+      }
+      PipelineKey pk = key;
+      pk.ps = probe_ps;
+      std::memset(pk.rt_formats, 0, sizeof(pk.rt_formats));
+      std::memset(pk.write_mask, 0, sizeof(pk.write_mask));
+      std::memset(pk.blend, 0, sizeof(pk.blend));
+      pk.rt_formats[0] = uint8_t(kProbeFormat);
+      pk.write_mask[0] = 0xF;
+      reg::RB_DEPTHCONTROL dc;
+      dc.value = pk.depth_control;
+      dc.z_write_enable = 0;
+      pk.depth_control = dc.value;
+      pk.stencil_masks &= 0x00FF00FFu;
+      ID3D12PipelineState *pso = GetPipeline(pk, vs, probe_ps);
+      if (!pso)
+      {
+        return;
+      }
+      auto &p = g.probe;
+      auto *list = g.list.Get();
+      Transition(p.target.Get(), p.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
+      D3D12_CPU_DESCRIPTOR_HANDLE rtv = g.transient_rtv_heap->GetCPUDescriptorHandleForHeapStart();
+      rtv.ptr += uint64_t(g.transient_rtvs_used++ % kTransientRtvCount) * g.rtv_size;
+      D3D12_RENDER_TARGET_VIEW_DESC rv = {};
+      rv.Format = kProbeFormat;
+      rv.ViewDimension = p.samples > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D;
+      g.device->CreateRenderTargetView(p.target.Get(), &rv, rtv);
+      if (p.drawn_frame != g.frame_number)
+      {
+        const float zero[4] = {};
+        list->ClearRenderTargetView(rtv, zero, 0, nullptr);
+        p.drawn_frame = g.frame_number;
+      }
+      list->OMSetRenderTargets(1, &rtv, FALSE, ds ? &ds->view : nullptr);
+      list->SetPipelineState(pso);
+      issue();
+      // The next draw binds its own targets and pipeline again.
+      g.bound.rtv_count = UINT32_MAX;
+      g.bound.pso = nullptr;
+    }
+
+    // End of the frame: the probed coordinates under the cursor go to the
+    // frame's readback buffer (read when the frame slot is reused).
+    void ReadProbe()
+    {
+      Frame &f = CurrentFrame();
+      uint32_t size = g_probe_size.load(std::memory_order_relaxed);
+      f.probe_offset = size ? kProbeNone : kProbeOff;
+      f.probe_size = size;
+      auto &p = g.probe;
+      if (!size || p.drawn_frame != g.frame_number || !p.target)
+      {
+        return;
+      }
+      uint32_t cursor = g_probe_cursor.load(std::memory_order_relaxed);
+      uint32_t x = std::min((cursor & 0xFFFF) * p.scale4 / 4, p.width - 1);
+      uint32_t y = std::min((cursor >> 16) * p.scale4 / 4, p.height - 1);
+      uint64_t offset = (f.readback_offset + D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1) &
+                        ~uint64_t(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1);
+      if (offset + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT > kReadbackSize)
+      {
+        return;
+      }
+      auto *list = g.list.Get();
+      ID3D12Resource *source = p.target.Get();
+      D3D12_RESOURCE_STATES *state = &p.state;
+      if (p.samples > 1)
+      {
+        Transition(p.target.Get(), p.state, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
+        Transition(p.resolved.Get(), p.resolved_state, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+        list->ResolveSubresource(p.resolved.Get(), 0, p.target.Get(), 0, kProbeFormat);
+        source = p.resolved.Get();
+        state = &p.resolved_state;
+      }
+      Transition(source, *state, D3D12_RESOURCE_STATE_COPY_SOURCE);
+      D3D12_TEXTURE_COPY_LOCATION dst = {f.readback.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT};
+      dst.PlacedFootprint.Offset = offset;
+      dst.PlacedFootprint.Footprint = {kProbeFormat, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT};
+      D3D12_TEXTURE_COPY_LOCATION src = {source, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
+      D3D12_BOX box = {x, y, 0, x + 1, y + 1, 1};
+      list->CopyTextureRegion(&dst, 0, 0, 0, &src, &box);
+      f.readback_offset = offset + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+      f.probe_offset = offset;
+    }
   } // namespace
 
   // ------------------------------------------------------------ Draw
@@ -6489,6 +6685,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     const CompiledShader *vs =
         shaders.Get(xenos::ShaderType::kVertex, vs_code.dwords, vs_code.dword_count, vs_code.hash, vm.value);
     const CompiledShader *ps = nullptr;
+    const CompiledShader *probe_ps = nullptr; // the menu probe's variant
     const auto &ps_code = pm4.pixel_shader();
     if (edram_mode == xenos::EdramMode::kColorDepth && ps_code.dword_count)
     {
@@ -6496,6 +6693,28 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       pm.register_count = program_cntl.ps_num_reg + 1;
       pm.param_gen_register = program_cntl.param_gen ? (context_misc.param_gen_pos & 31) : 31;
       ps = shaders.Get(xenos::ShaderType::kPixel, ps_code.dwords, ps_code.dword_count, ps_code.hash, pm.value);
+      uint32_t probe_size = g_probe_size.load(std::memory_order_relaxed);
+      if (ps && probe_size && ps->shader)
+      {
+        for (const auto &tb : ps->shader->texture_bindings())
+        {
+          if (tb.binding_index >= 16 || tb.fetch_instr.dimension != xenos::FetchOpDimension::k2D)
+          {
+            continue;
+          }
+          auto fetch = r.Get<xenos::xe_gpu_texture_fetch_t>(XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0 +
+                                                            tb.fetch_constant * 6);
+          if (fetch.type == xenos::FetchConstantType::kTexture &&
+              ((fetch.size_2d.width + 1) | ((fetch.size_2d.height + 1) << 16)) == probe_size)
+          {
+            HlslModification probe = pm;
+            probe.probe_binding = uint32_t(tb.binding_index) + 1;
+            probe_ps = shaders.Get(xenos::ShaderType::kPixel, ps_code.dwords, ps_code.dword_count, ps_code.hash,
+                                   probe.value);
+            break;
+          }
+        }
+      }
     }
     {
       uint64_t shader_ns = Elapsed(shader_start);
@@ -6942,6 +7161,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     if (occlusion_index != UINT32_MAX)
     {
       list->EndQuery(g.occlusion_heap.Get(), D3D12_QUERY_TYPE_OCCLUSION, occlusion_index);
+    }
+    if (probe_ps && probe_ps->ok() && !probe_ps->pending() && color_rts[0] && !split_draw)
+    {
+      DrawProbe(key, vs, probe_ps, *color_rts[0], ds, issue);
     }
     if (stamp_begin != UINT32_MAX)
     {
@@ -7685,6 +7908,25 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     }
   } // namespace
 
+  void RendererSetMenuProbe(uint32_t width, uint32_t height, uint32_t x, uint32_t y)
+  {
+    g_probe_size.store(width && height && width < 4096 && height < 4096 ? width | (height << 16) : 0,
+                       std::memory_order_relaxed);
+    g_probe_cursor.store(std::min(x, 0xFFFFu) | (std::min(y, 0xFFFFu) << 16), std::memory_order_relaxed);
+  }
+
+  bool RendererMenuProbe(uint32_t width, uint32_t height, float &u, float &v)
+  {
+    uint64_t result = g_probe_result.load(std::memory_order_relaxed);
+    if (!(result & (1ull << 32)) || (result >> 33) != (width | (height << 16)))
+    {
+      return false;
+    }
+    u = float(result & 0xFFFF) / 65535.0f;
+    v = float((result >> 16) & 0xFFFF) / 65535.0f;
+    return true;
+  }
+
   bool RendererSetResolutionScale(double scale)
   {
     if (!g_running.load(std::memory_order_relaxed))
@@ -7792,6 +8034,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       DrawOverlay(bb_index);
       Transition(bb, bb_state, D3D12_RESOURCE_STATE_PRESENT);
     }
+    ReadProbe();
     if (CloseList())
     {
       ID3D12CommandList *lists[] = {g.list.Get()};

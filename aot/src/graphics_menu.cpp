@@ -733,6 +733,11 @@ namespace
 namespace ao2::gfxmenu
 {
   void Attach(rex::ui::Window *window) { g_window = window; }
+
+  void SetCaption(PPCContext &ctx, uint8_t *base, uint32_t button, const char *english)
+  {
+    ::SetCaption(ctx, base, button, english);
+  }
 } // namespace ao2::gfxmenu
 
 // OnlineSubsystemLive::ShowDeviceSelectionUI(this, user, size needed, force).

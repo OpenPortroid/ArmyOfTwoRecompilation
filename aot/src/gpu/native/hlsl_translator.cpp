@@ -1204,6 +1204,11 @@ float4 xe_tex_post(float4 v, uint4 info) {
         Line(fmt::format("xe_uv += float2({}, {}) / float2(xe_tw, xe_th);", F(at.offset_x + eps),
                          F(is_1d ? 0.0f : at.offset_y + eps)));
       }
+      if (is_pixel_shader() && !is_1d && instr.opcode == FetchOpcode::kTextureFetch &&
+          modification().probe_binding == binding + 1)
+      {
+        Line("xe_probe = float4(xe_uv, 0.0, 1.0);");
+      }
       if (instr.opcode == FetchOpcode::kGetTextureWeights)
       {
         StoreResult(instr.result, "float4(frac(xe_uv * float2(xe_tw, xe_th) - 0.5), 0.0, 0.0)");
@@ -1393,7 +1398,9 @@ float4 xe_tex_post(float4 v, uint4 info) {
     }
     else
     {
-      uint32_t color_targets = shader.writes_color_targets();
+      // The menu probe: only color 0, the probed coordinates.
+      bool probe = mod.probe_binding != 0;
+      uint32_t color_targets = probe ? 1u : shader.writes_color_targets();
       s += "struct XePixelOut {\n";
       for (uint32_t i = 0; i < 4; ++i)
       {
@@ -1415,6 +1422,11 @@ float4 xe_tex_post(float4 v, uint4 info) {
       s += "  XePixelOut xe_result = (XePixelOut)0;\n";
       s += "  float4 xe_color[4] = { 0.0.xxxx, 0.0.xxxx, 0.0.xxxx, 0.0.xxxx };\n";
       s += "  float xe_depth = xe_in.position.z;\n";
+      if (probe)
+      {
+        // Only here: the other shaders' text (and their cached DXBC) stays as it was.
+        s += "  float4 xe_probe = 0.0.xxxx;\n";
+      }
       s += fmt::format("  float4 xe_r[{}];\n", regs);
       s += fmt::format("  [unroll] for (uint xe_i = 0u; xe_i < {}u; ++xe_i) {{ xe_r[xe_i] = "
                        "xe_i < 16u ? xe_in.o[min(xe_i, 15u)] : 0.0; }}\n",
@@ -1447,11 +1459,18 @@ float4 xe_tex_post(float4 v, uint4 info) {
     if (!xe_pass) { discard; }
   }
 )";
-      for (uint32_t i = 0; i < 4; ++i)
+      if (probe)
       {
-        if (color_targets & (1u << i))
+        s += "  if (xe_probe.w == 0.0) { discard; }\n  xe_result.c0 = xe_probe;\n";
+      }
+      else
+      {
+        for (uint32_t i = 0; i < 4; ++i)
         {
-          s += fmt::format("  xe_result.c{0} = xe_color[{0}] * xe_color_exp_bias[{0}];\n", i);
+          if (color_targets & (1u << i))
+          {
+            s += fmt::format("  xe_result.c{0} = xe_color[{0}] * xe_color_exp_bias[{0}];\n", i);
+          }
         }
       }
       if (shader.writes_depth())

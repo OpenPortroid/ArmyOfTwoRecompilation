@@ -188,6 +188,8 @@ namespace
 
       // --- The Graphics page of the game's Options screen (in the game's fonts) ---
       {"Graphics", "Графика", "Grafik", "Graphismes", "Gráficos", "Grafica"},
+      // The main menu's last item (menu_mouse.cpp).
+      {"Exit", "Выход", "Beenden", "Quitter", "Salir", "Esci"},
       {"Display mode", "Режим экрана", "Anzeigemodus", "Mode d'affichage", "Modo de pantalla", "Modalità schermo"},
       {"Fullscreen", "Весь экран", "Vollbild", "Plein écran", "Pantalla completa", "Schermo intero"},
       {"Windowed", "Окно", "Fenster", "Fenêtré", "Ventana", "Finestra"},

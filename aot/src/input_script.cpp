@@ -31,6 +31,7 @@
 
 #include "autopilot.h"
 #include "cutscene_skip.h"
+#include "menu_mouse.h"
 #include "mouse_aim.h"
 
 REXCVAR_DEFINE_BOOL(ao2_vehicle_wasd, true, "Input",
@@ -320,6 +321,10 @@ extern "C" REX_FUNC(sub_82B07AF0)
   // stick where it does not aim) and W / S at the wheel go to the player with
   // the keyboard - another one in split-screen.
   bool keyboard = user == ao2::mouse::KeyboardUser();
+  if (state && (user == 0 || keyboard))
+  {
+    ao2::menumouse::OnPadPoll(ctx, base, state, keyboard);
+  }
   if ((user != 0 && !keyboard) || !state)
   {
     return;

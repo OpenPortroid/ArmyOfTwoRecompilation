@@ -657,3 +657,9 @@ void MnkInputDriver::OnGotFocus(rex::ui::UISetupEvent&) {
 }
 
 }  // namespace rex::input::mnk
+
+/// SetMouseLookActive for the game, by name (GetProcAddress): 0 lets the cursor go
+/// (the game's menus take the mouse), 1 captures it again for mouse look.
+extern "C" void rex_input_set_mouse_look(uint32_t active) {
+  rex::input::mnk::SetMouseLookActive(active != 0);
+}

@@ -28,6 +28,10 @@ namespace ao2::gpu
       uint64_t param_gen_register : 5;
       // VS: 0 = regular, 1 = rectangle list via GS, 2 = point sprite via GS.
       uint64_t host_vertex_type : 2;
+      // PS: 1 + the texture binding whose 2D fetch coordinates (0 to 1 over
+      // the guest texture) are written to color 0 instead of the colors, 0 =
+      // none (the menu probe, renderer.cpp).
+      uint64_t probe_binding : 5;
     };
   };
 

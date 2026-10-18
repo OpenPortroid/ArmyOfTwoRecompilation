@@ -79,7 +79,7 @@ def save_state(st):
 
 
 def alive(pid):
-    out = subprocess.run(['tasklist', '/fi', 'PID eq %d' % pid, '/nh'], capture_output=True, text=True).stdout
+    out = subprocess.run(['tasklist', '/fi', 'PID eq %d' % pid, '/nh'], capture_output=True, text=True, errors='replace').stdout or ''
     return 'armyoftworecomp' in out.lower()
 
 

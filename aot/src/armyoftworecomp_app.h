@@ -23,6 +23,7 @@
 #include "hang_watchdog.h"
 #include "game_language.h"
 #include "graphics_menu.h"
+#include "menu_mouse.h"
 #include "gpu/native/native_graphics_system.h"
 #include "gpu/native/renderer.h"
 #include "game_patches.h"
@@ -100,6 +101,7 @@ public:
       ao2::mouse::Attach(window());
       ao2::skip::Attach(window());
       ao2::gfxmenu::Attach(window());
+      ao2::menumouse::Attach(window());
       ao2::menu::Attach(window(), imgui_drawer(),
                         static_cast<rex::input::InputSystem *>(runtime()->input_system()), game_data_root(),
                         user_data_root());

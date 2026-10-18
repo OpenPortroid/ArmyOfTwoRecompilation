@@ -34,6 +34,14 @@ namespace ao2::gpu
   // of a quarter) from the next frame on. Any thread; false when the native
   // renderer is not presenting (another GPU backend, not started yet).
   bool RendererSetResolutionScale(double scale);
+  // The menu probe (menu_mouse.cpp): the draws that sample a texture of
+  // `width` x `height` (a menu's render target put on the Shell level's
+  // slabs; 0 = off) also write that texture's coordinates, and the ones at
+  // guest picture pixel x, y are read back. Any thread.
+  void RendererSetMenuProbe(uint32_t width, uint32_t height, uint32_t x, uint32_t y);
+  // Those coordinates (0 to 1 over the texture) from the last finished frame;
+  // false when the texture of that size was not drawn at that pixel.
+  bool RendererMenuProbe(uint32_t width, uint32_t height, float &u, float &v);
   // Display gamma ramp for the following presents (Pm4Consumer::gamma_table/pwl).
   void RendererSetGammaRamp(const uint32_t table[256], const uint32_t pwl[128][3], uint32_t luta_control);
 
