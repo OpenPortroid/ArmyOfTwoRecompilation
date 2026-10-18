@@ -283,6 +283,68 @@ namespace AO2Launcher
               "del monitor e la latenza dell'input cresce un po'.");
             a("Anisotropic filtering", "Анизотропная фильтрация", "Filtrage anisotrope", "Anisotrope Filterung",
               "Filtrado anisotrópico", "Filtro anisotropico");
+            a("Anti-aliasing", "Сглаживание", "Anticrénelage", "Kantenglättung", "Antialiasing", "Antialiasing");
+            a("Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. MSAA is the game's own " +
+              "2× multisampling, the heaviest. On top of the render resolution.",
+              "Сглаживает «лесенки» на краях. FXAA самое быстрое и чуть размывает; SMAA чётче. MSAA — собственный " +
+              "2× мультисэмплинг игры, самый тяжёлый. Работает поверх разрешения рендера.",
+              "Lisse les bords crénelés. FXAA est le plus rapide et un peu flou ; SMAA est plus net. MSAA est le " +
+              "multi-échantillonnage 2× du jeu, le plus lourd. S'ajoute à la résolution de rendu.",
+              "Glättet gezackte Kanten. FXAA ist am schnellsten und leicht weich; SMAA ist schärfer. MSAA ist das " +
+              "2×-Multisampling des Spiels, am aufwendigsten. Zusätzlich zur Renderauflösung.",
+              "Suaviza los bordes dentados. FXAA es el más rápido y algo suave; SMAA es más nítido. MSAA es el " +
+              "multimuestreo 2× del propio juego, el más pesado. Se suma a la resolución de renderizado.",
+              "Ammorbidisce i bordi seghettati. FXAA è il più veloce e un po' morbido; SMAA è più nitido. MSAA è il " +
+              "multicampionamento 2× del gioco, il più pesante. Si aggiunge alla risoluzione di rendering.");
+            a("Ambient occlusion", "Затенение окружения (AO)", "Occlusion ambiante", "Umgebungsverdeckung",
+              "Oclusión ambiental", "Occlusione ambientale");
+            a("Soft contact shadows in corners and where objects meet. SSAO is the lightest, HBAO is more defined, " +
+              "GTAO is the most accurate and the heaviest.",
+              "Мягкие контактные тени в углах и там, где предметы соприкасаются. SSAO самое лёгкое, HBAO выразительнее, " +
+              "GTAO самое точное и самое тяжёлое.",
+              "Ombres de contact douces dans les coins et là où les objets se touchent. SSAO est le plus léger, HBAO " +
+              "plus marqué, GTAO le plus précis et le plus lourd.",
+              "Weiche Kontaktschatten in Ecken und wo Objekte sich berühren. SSAO ist am leichtesten, HBAO deutlicher, " +
+              "GTAO am genauesten und am aufwendigsten.",
+              "Sombras de contacto suaves en las esquinas y donde se tocan los objetos. SSAO es el más ligero, HBAO " +
+              "más marcado, GTAO el más preciso y el más pesado.",
+              "Ombre di contatto morbide negli angoli e dove gli oggetti si toccano. SSAO è il più leggero, HBAO più " +
+              "marcato, GTAO il più preciso e il più pesante.");
+            a("Motion blur", "Размытие в движении", "Flou de mouvement", "Bewegungsunschärfe", "Desenfoque de movimiento",
+              "Sfocatura di movimento");
+            a("Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp.",
+              "Размытие от движения камеры, одинаковое при любой частоте кадров. Ваш персонаж рядом с камерой остаётся чётким.",
+              "Flou dû au mouvement de la caméra, identique à toute fréquence d'images. Votre personnage près de la " +
+              "caméra reste net.",
+              "Unschärfe durch Kamerabewegung, gleich bei jeder Bildrate. Ihre Figur nahe der Kamera bleibt scharf.",
+              "Desenfoque por el movimiento de la cámara, igual a cualquier tasa de fotogramas. Tu personaje cerca " +
+              "de la cámara sigue nítido.",
+              "Sfocatura dal movimento della telecamera, uguale a qualsiasi frequenza. Il tuo personaggio vicino alla " +
+              "telecamera resta nitido.");
+            a("Depth of field", "Глубина резкости", "Profondeur de champ", "Tiefenschärfe", "Profundidad de campo",
+              "Profondità di campo");
+            a("What lies far behind the point you aim at goes out of focus; the focus follows the crosshair.",
+              "То, что далеко позади точки прицеливания, уходит из фокуса; фокус следует за прицелом.",
+              "Ce qui est loin derrière le point visé devient flou ; la mise au point suit le réticule.",
+              "Was weit hinter dem Zielpunkt liegt, wird unscharf; der Fokus folgt dem Fadenkreuz.",
+              "Lo que queda muy por detrás del punto al que apuntas se desenfoca; el enfoque sigue a la mira.",
+              "Ciò che sta molto dietro il punto mirato va fuori fuoco; la messa a fuoco segue il mirino.");
+            a("Shadow resolution", "Разрешение теней", "Résolution des ombres", "Schattenauflösung",
+              "Resolución de sombras", "Risoluzione delle ombre");
+            a("Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
+              "4096 needs about 150 MB more video memory.",
+              "Чёткость краёв теней. Авто следует за разрешением рендера (на консоли было 768). " +
+              "4096 требует примерно на 150 МБ больше видеопамяти.",
+              "Netteté des bords des ombres. Auto suit la résolution de rendu (la console avait 768). " +
+              "4096 demande environ 150 Mo de mémoire vidéo en plus.",
+              "Schärfe der Schattenkanten. Auto folgt der Renderauflösung (die Konsole hatte 768). " +
+              "4096 braucht etwa 150 MB mehr Videospeicher.",
+              "Nitidez de los bordes de las sombras. Auto sigue la resolución de renderizado (la consola tenía 768). " +
+              "4096 necesita unos 150 MB más de memoria de vídeo.",
+              "Nitidezza dei bordi delle ombre. Auto segue la risoluzione di rendering (la console aveva 768). " +
+              "4096 richiede circa 150 MB di memoria video in più.");
+            a("LOW", "НИЗКО", "FAIBLE", "NIEDRIG", "BAJO", "BASSO");
+            a("HIGH", "ВЫСОКО", "ÉLEVÉ", "HOCH", "ALTO", "ALTO");
             a("Sharper textures at an angle (16×). Costs almost no performance.",
               "Чёткие текстуры под углом (16×). Почти не влияет на производительность.",
               "Textures plus nettes en biais (16×). Ne coûte presque rien en performances.",

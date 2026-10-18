@@ -961,6 +961,39 @@ namespace AO2Launcher
                     "and the input lag grows a little."),
                 Toggle("Anisotropic filtering", "aniso", "Sharper textures at an angle (16×). Costs almost no performance.",
                     "OFF", "16×"),
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Anti-aliasing", Key = "aa",
+                    Values = new[] { "off", "fxaa", "smaa", "msaa" }, Names = new[] { "OFF", "FXAA", "SMAA", "MSAA" },
+                    Desc = "Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. MSAA is the game's own " +
+                           "2× multisampling, the heaviest. On top of the render resolution."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Ambient occlusion", Key = "ao",
+                    Values = new[] { "off", "ssao", "hbao", "gtao" }, Names = new[] { "OFF", "SSAO", "HBAO", "GTAO" },
+                    Desc = "Soft contact shadows in corners and where objects meet. SSAO is the lightest, HBAO is more defined, " +
+                           "GTAO is the most accurate and the heaviest."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Motion blur", Key = "motion_blur",
+                    Values = new[] { "0", "1", "2" }, Names = new[] { "OFF", "LOW", "HIGH" },
+                    Desc = "Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Depth of field", Key = "dof",
+                    Values = new[] { "0", "1", "2" }, Names = new[] { "OFF", "LOW", "HIGH" },
+                    Desc = "What lies far behind the point you aim at goes out of focus; the focus follows the crosshair."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Shadow resolution", Key = "shadow_res",
+                    Values = new[] { "0", "1024", "2048", "4096" }, Names = new[] { "AUTO", "1024", "2048", "4096" },
+                    Desc = "Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
+                           "4096 needs about 150 MB more video memory."
+                },
             };
 
             // Controls

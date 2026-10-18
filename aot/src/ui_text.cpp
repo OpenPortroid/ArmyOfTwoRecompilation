@@ -211,6 +211,7 @@ namespace
       {"FPS limit", "Ограничение FPS", "FPS-Limit", "Limite FPS", "Límite de FPS", "Limite FPS"},
       {"Anisotropic filtering", "Анизотропная фильтрация", "Anisotrope Filterung", "Filtrage anisotrope",
        "Filtrado anisotrópico", "Filtro anisotropico"},
+      {"Anti-aliasing", "Сглаживание", "Kantenglättung", "Anticrénelage", "Antialiasing", "Antialiasing"},
   };
   // clang-format on
 

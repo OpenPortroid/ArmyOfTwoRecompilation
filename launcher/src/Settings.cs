@@ -22,6 +22,11 @@ namespace AO2Launcher
             { "fps", "240" },
             { "fps_overlay", "0" },
             { "aniso", "0" },
+            { "aa", "off" },
+            { "ao", "off" },
+            { "motion_blur", "0" },
+            { "dof", "0" },
+            { "shadow_res", "0" },
             { "vsync", "0" },
             { "language", "auto" },
             { "seen_version", "" }, // the version whose release notes were shown

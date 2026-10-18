@@ -145,8 +145,17 @@ namespace AO2Launcher
             a.Add("--ao2_fps_overlay=" + Math.Max(0, Math.Min(2, s.Int("fps_overlay"))));
             a.Add(Flag("ao2_anisotropic_16x", s.Bool("aniso")));
             a.Add(Flag("ao2_native_gpu_vsync", s.Bool("vsync")));
-            // The game's MSAA stays off: with it some surfaces show dark artifacts.
-            a.Add(Flag("ao2_disable_msaa", true));
+            // Anti-aliasing: the renderer's FXAA / SMAA, or the game's own MSAA
+            // (2x in predicated tiles; off otherwise, as the xenia patch had it).
+            string aa = s["aa"];
+            a.Add("--ao2_anti_aliasing=" + (aa == "fxaa" || aa == "smaa" ? aa : "off"));
+            a.Add(Flag("ao2_disable_msaa", aa != "msaa"));
+            string ao = s["ao"];
+            a.Add("--ao2_ambient_occlusion=" + (ao == "ssao" || ao == "hbao" || ao == "gtao" ? ao : "off"));
+            a.Add("--ao2_motion_blur=" + Math.Max(0, Math.Min(2, s.Int("motion_blur"))));
+            a.Add("--ao2_depth_of_field=" + Math.Max(0, Math.Min(2, s.Int("dof"))));
+            int shadow = s.Int("shadow_res");
+            a.Add("--ao2_shadow_resolution=" + (shadow == 1024 || shadow == 2048 || shadow == 4096 ? shadow : 0));
             string lang = s["language"];
             a.Add("--ao2_game_language=" + (Array.IndexOf(Languages, lang) >= 0 ? lang : "auto"));
 

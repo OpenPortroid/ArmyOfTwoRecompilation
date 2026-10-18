@@ -28,7 +28,8 @@
 // Options screen's tag is changed during the open for the same reason.
 //
 // Most changes apply at once (fullscreen, frame rate cap, vertical sync, FPS
-// counter, anisotropy). The render resolution waits for the page's
+// counter, anisotropy, anti-aliasing). The page has eight rows, all taken; the
+// other post effects are launcher settings. The render resolution waits for the page's
 // Accept, which publishes every widget's value (SaveSubscriberValue): the
 // native renderer then switches at the end of a frame
 // (RendererSetResolutionScale; the cvar stays as the game started, the
@@ -276,6 +277,8 @@ namespace
          {{"Off", "0"}, {"FPS", "1"}, {"Detailed", "2"}}},
         {"Anisotropic filtering", nullptr, When::kNow, "ao2_anisotropic_16x", "b", "aniso",
          {{"Off", "false"}, {"16x", "true"}}},
+        {"Anti-aliasing", nullptr, When::kNow, "ao2_anti_aliasing", "s", "aa",
+         {{"Off", "off"}, {"FXAA", "fxaa"}, {"SMAA", "smaa"}}},
     };
     return settings;
   }

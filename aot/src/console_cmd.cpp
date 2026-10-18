@@ -11,6 +11,8 @@
 //   console's "open" is not there): the URL
 //   Checkpoint?LoadSaveGame?CheckpointToLoad=<name>?... goes to the travel
 //   event sub_8238C8E8; "travel <url>" sends any URL that way.
+//   "set <cvar> <value>" changes a port setting (e.g. the renderer's post
+//   effects, which apply from the next frame).
 // - Queue(): the same lines from the app (the F1 debug menu).
 // - --ao2_start_checkpoint=<name>: the same at startup - the startup movies
 //   are skipped, then the checkpoint loads from the "Press Start" screen.
@@ -187,6 +189,14 @@ namespace
     if (line.rfind("travel ", 0) == 0)
     {
       return Travel(ctx, base, line.substr(7));
+    }
+    if (line.rfind("set ", 0) == 0)
+    {
+      // A port setting (cvar) by name, e.g. "set ao2_anti_aliasing smaa".
+      char cvar[128], value[256];
+      bool ok = std::sscanf(line.c_str(), "set %127s %255s", cvar, value) == 2 && rex::cvar::SetFlagByName(cvar, value);
+      Logf("%s: %s\n", line.c_str(), ok ? "set" : "not set");
+      return ok;
     }
     const std::string &command = line;
     uint32_t top = (ctx.r1.u32 - 1024) & ~15u;

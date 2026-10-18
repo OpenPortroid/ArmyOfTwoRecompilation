@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstdarg>
@@ -44,6 +45,7 @@
 
 #include "hlsl_shared.h"
 #include "native_graphics_system.h"
+#include "post_effects.h"
 #include "overlay.h"
 #include "../../perf_overlay.h"
 #include "pm4.h"
@@ -66,6 +68,19 @@ REXCVAR_DECLARE(bool, ao2_native_gpu_async_pipelines);
 REXCVAR_DEFINE_BOOL(ao2_prompts_debug, false, "Debug",
                     "Log where split-screen button pictures are drawn (native_gpu.log)");
 REXCVAR_DECLARE(double, ao2_native_gpu_resolution_scale);
+REXCVAR_DEFINE_STRING(ao2_ambient_occlusion, "off", "GPU",
+                      "Ambient occlusion added to the scene: off, ssao, hbao or gtao");
+REXCVAR_DEFINE_STRING(ao2_anti_aliasing, "off", "GPU",
+                      "Post-process anti-aliasing of the scene: off, fxaa or smaa (MSAA is the game's own: "
+                      "ao2_disable_msaa)");
+REXCVAR_DEFINE_INT32(ao2_motion_blur, 0, "GPU", "Camera motion blur: 0 off, 1 low, 2 high");
+REXCVAR_DEFINE_INT32(ao2_depth_of_field, 0, "GPU",
+                     "Depth of field (what lies beyond the aim point blurs): 0 off, 1 low, 2 high");
+REXCVAR_DEFINE_INT32(ao2_shadow_resolution, 0, "GPU",
+                     "Shadow map resolution: 0 = as the render resolution, or 1024, 2048, 4096 (host pixels of the "
+                     "game's shadow buffer)");
+REXCVAR_DEFINE_INT32(ao2_post_debug, 0, "Debug",
+                     "Post effects: 1 = show the ambient occlusion instead of the scene");
 REXCVAR_DECLARE(bool, ao2_native_gpu_vsync);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_small_target_width);
 REXCVAR_DECLARE(bool, ao2_native_gpu_capture_draws);
@@ -321,12 +336,13 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       kGpuUpload,
       kGpuCopy,
       kGpuPresent,
+      kGpuPost,
       kGpuCategoryCount,
       kGpuEnd = 0xFE, // last timestamp of a command list
       kGpuNone = 0xFF,
     };
     const char *const kGpuCategoryNames[kGpuCategoryCount] = {"draw", "transfer", "resolve", "clear",
-                                                              "upload", "copy", "present"};
+                                                              "upload", "copy", "present", "post"};
     constexpr uint32_t kTimestampsPerFrame = 16384;
     constexpr uint32_t kOcclusionPerFrame = 4096; // host occlusion queries per frame slot
 
@@ -866,6 +882,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     void ApplyWritebacks(Frame &f);
     void Transition(ID3D12Resource *resource, D3D12_RESOURCE_STATES &state, D3D12_RESOURCE_STATES to);
     void WaitIdle();
+    // Post effects / shadow resolution (see "Post effects", "Shadow resolution").
+    struct HostTexture;
+    void PostBeforeSample(HostTexture &tex, uint32_t address);
+    uint32_t ShadowScale4(uint32_t base, uint32_t format, uint32_t pitch, uint32_t *rows = nullptr);
 
     rex::memory::Memory *Mem()
     {
@@ -2755,6 +2775,16 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       rt->format = depth ? DepthFormat(xenos::DepthRenderTargetFormat(format))
                          : ColorFormat(xenos::ColorRenderTargetFormat(format));
       rt->scale4 = SurfaceScale4(pitch, rt->samples);
+      if (depth && rt->samples == 1)
+      {
+        // The shadow buffer at the shadow resolution, only as tall as it is used.
+        uint32_t rows = 0;
+        if (uint32_t shadow_scale4 = ShadowScale4(base, format, pitch, &rows))
+        {
+          rt->scale4 = shadow_scale4;
+          rt->height = std::clamp((rows + 15) & ~15u, 16u, rt->height);
+        }
+      }
       D3D12_RESOURCE_DESC d = {};
       d.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
       d.Width = ScaleSize(rt->width, rt->scale4);
@@ -4571,6 +4601,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
                                       : nullptr;
           if (resolved && resolved->resource)
           {
+            PostBeforeSample(*resolved, (fetch.base_address & 0x1FFFF) << 12);
             bool use_snorm = texture_util::IsAnySignSigned(uint8_t(signs)) && resolved->snorm != DXGI_FORMAT_UNKNOWN;
             bool guest_res = (lowres || resolved->small_source) && !use_snorm && !resolved->from_depth && EnsureLowres(*resolved);
             ID3D12Resource *resource = guest_res ? resolved->lowres.Get() : resolved->resource.Get();
@@ -6197,7 +6228,7 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
     // Resolve pass: one fullscreen triangle per destination, the scissor
     // limits it to the resolved rectangle; source texel = destination pixel.
     const char kResolveShader[] = R"(
-cbuffer c : register(b0) { float scale; uint sample_mask; uint sample_count; uint swap_red_blue; };
+cbuffer c : register(b0) { float scale; uint sample_mask; uint sample_count; uint swap_red_blue; int2 dest_offset; };
 float4 vs(uint id : SV_VertexID) : SV_Position {
   float2 uv = float2((id << 1) & 2, id & 2);
   return float4(uv * float2(2, -2) + float2(-1, 1), 0, 1);
@@ -6205,7 +6236,7 @@ float4 vs(uint id : SV_VertexID) : SV_Position {
 #if VARIANT == 0
 Texture2D<float4> src : register(t0);
 float4 ps(float4 p : SV_Position) : SV_Target {
-  float4 c = src.Load(int3(int2(p.xy), 0)) * scale;
+  float4 c = src.Load(int3(int2(p.xy) - dest_offset, 0)) * scale;
   return swap_red_blue != 0u ? c.bgra : c;
 }
 #elif VARIANT == 1
@@ -6213,17 +6244,17 @@ Texture2DMS<float4> src : register(t0);
 float4 ps(float4 p : SV_Position) : SV_Target {
   float4 sum = 0.0; uint n = 0u;
   [unroll] for (uint i = 0u; i < 4u; ++i) {
-    if (i < sample_count && ((sample_mask >> i) & 1u) != 0u) { sum += src.Load(int2(p.xy), i); ++n; }
+    if (i < sample_count && ((sample_mask >> i) & 1u) != 0u) { sum += src.Load(int2(p.xy) - dest_offset, i); ++n; }
   }
   float4 c = sum / float(max(n, 1u)) * scale;
   return swap_red_blue != 0u ? c.bgra : c;
 }
 #elif VARIANT == 2
 Texture2D<float> src : register(t0);
-float ps(float4 p : SV_Position) : SV_Target { return src.Load(int3(int2(p.xy), 0)); }
+float ps(float4 p : SV_Position) : SV_Target { return src.Load(int3(int2(p.xy) - dest_offset, 0)); }
 #elif VARIANT == 3
 Texture2DMS<float> src : register(t0);
-float ps(float4 p : SV_Position) : SV_Target { return src.Load(int2(p.xy), 0); }
+float ps(float4 p : SV_Position) : SV_Target { return src.Load(int2(p.xy) - dest_offset, 0); }
 #else
 // Box downscale by the resolution scale (sample_count = scale in quarters):
 // guest-sized copy of a scaled resolve destination. Each guest pixel is the
@@ -6257,7 +6288,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       p[0].DescriptorTable.pDescriptorRanges = &range;
       p[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
       p[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-      p[1].Constants.Num32BitValues = 4;
+      p[1].Constants.Num32BitValues = 6;
       p[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
       D3D12_ROOT_SIGNATURE_DESC desc = {};
       desc.NumParameters = 2;
@@ -6319,9 +6350,11 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     }
 
     // Draws `rect` of the render target into the destination with the
-    // exponent bias / sample averaging / format conversion applied.
+    // exponent bias / sample averaging / format conversion applied, `dest_row`
+    // guest rows lower (a predicated tile, see the resolve).
     bool ResolveWithShader(RenderTarget &src, HostTexture &dest, const ResolveFormat &rf, const D3D12_RECT &rect,
-                           float scale, xenos::CopySampleSelect sample_select, bool swap_red_blue = false)
+                           float scale, xenos::CopySampleSelect sample_select, bool swap_red_blue = false,
+                           uint32_t dest_row = 0)
     {
       Frame &f = CurrentFrame();
       if (f.views_used >= kViewsPerFrame)
@@ -6356,11 +6389,14 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       g.device->CreateRenderTargetView(dest.resource.Get(), &rd, rtv);
 
       static const uint32_t kSampleMasks[] = {1, 2, 4, 8, 3, 12, 15, 15};
-      uint32_t constants[4];
+      int32_t offset_y = ScaleEdge(LONG(dest_row), dest.scale4);
+      uint32_t constants[6];
       std::memcpy(&constants[0], &scale, 4);
       constants[1] = kSampleMasks[uint32_t(sample_select) & 7];
       constants[2] = src.samples;
       constants[3] = swap_red_blue ? 1u : 0u;
+      constants[4] = 0;
+      constants[5] = uint32_t(offset_y);
 
       Transition(src.resource.Get(), src.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
       Transition(dest.resource.Get(), dest.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -6371,12 +6407,14 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       D3D12_VIEWPORT vp = {0.0f, 0.0f, float(ScaleSize(dest.width, dest.scale4)),
                            float(ScaleSize(dest.height, dest.scale4)), 0.0f, 1.0f};
       D3D12_RECT host_rect = ScaleRect(rect, dest.scale4);
+      host_rect.top += offset_y;
+      host_rect.bottom += offset_y;
       list->RSSetViewports(1, &vp);
       list->RSSetScissorRects(1, &host_rect);
       list->SetGraphicsRootSignature(g.resolve_root.Get());
       list->SetPipelineState(pso);
       list->SetGraphicsRootDescriptorTable(0, srv_gpu);
-      list->SetGraphicsRoot32BitConstants(1, 4, constants, 0);
+      list->SetGraphicsRoot32BitConstants(1, 6, constants, 0);
       list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       GpuMark(kGpuResolve);
       Crumb("resolve draw", uint64_t(src.resource.Get()), uint64_t(dest.resource.Get()), variant, rf.rtv);
@@ -6436,7 +6474,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       rd.Format = t.format;
       rd.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
       g.device->CreateRenderTargetView(t.lowres.Get(), &rd, rtv);
-      uint32_t constants[4] = {0, 0, t.scale4, 0};
+      uint32_t constants[6] = {0, 0, t.scale4, 0, 0, 0};
 
       Transition(t.resource.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
       Transition(t.lowres.Get(), t.lowres_state, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -6450,7 +6488,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       list->SetGraphicsRootSignature(g.resolve_root.Get());
       list->SetPipelineState(pso);
       list->SetGraphicsRootDescriptorTable(0, srv_gpu);
-      list->SetGraphicsRoot32BitConstants(1, 4, constants, 0);
+      list->SetGraphicsRoot32BitConstants(1, 6, constants, 0);
       list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       GpuMark(kGpuResolve);
       Crumb("guest-resolution copy", uint64_t(t.resource.Get()), uint64_t(t.lowres.Get()), t.width, t.height);
@@ -6458,6 +6496,1059 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       t.lowres_generation = t.generation;
       ++g.lowres_copies;
       return true;
+    }
+
+    // ------------------------------------------------------------ Post effects
+    //
+    // Effects the console never had, added to the game's own frame
+    // (post_effects.h has the shaders):
+    // - Stage 1, at the frame's first resolve of the whole HDR scene (the
+    //   opaque scene: the game resolves it, clears and draws it back before the
+    //   translucent pass): the scene depth is still in its render target and is
+    //   kept as view depth for the rest of the frame; ambient occlusion is
+    //   computed from it and multiplied into the resolved scene, which the
+    //   game then draws back - translucent surfaces and the sky light come
+    //   after and stay as they are.
+    // - Stage 2, on the scene's last resolve, before anything samples it into
+    //   another surface (the bloom downsample, the tonemap): motion blur,
+    //   depth of field and anti-aliasing, so the game's bloom and tonemap
+    //   work on the result and the HUD drawn after them is untouched.
+    //   Draws that sample the scene into its own surface (the restore) do not
+    //   count.
+    // The camera comes from the scene draws: their vertex shaders get the view
+    // projection in c0-c3 (UE3's ViewProjectionMatrix; the column of w is the
+    // view direction, unit length). The one most draws over the whole screen
+    // with depth writes use is the scene's. Its inverse turns depth back into
+    // positions; the previous frame's projects them for camera motion blur.
+    // Split screen (two smaller views) and scene captures are left alone.
+
+    enum PostPass : uint32_t
+    {
+      kPassLinearize,
+      kPassLinearizeMs,
+      kPassAo,
+      kPassAoBlur,
+      kPassAoApply,
+      kPassMotionBlur,
+      kPassDofFocus,
+      kPassDof,
+      kPassFxaa,
+      kPassSmaaEdges,
+      kPassSmaaWeights,
+      kPassSmaaBlend,
+      kPassCount,
+    };
+    const char *const kPassEntries[kPassCount] = {
+        "ps_linearize", "ps_linearize", "ps_ao",     "ps_ao_blur",    "ps_ao_apply",     "ps_motion_blur",
+        "ps_dof_focus", "ps_dof",       "ps_fxaa",   "ps_smaa_edges", "ps_smaa_weights", "ps_smaa_blend",
+    };
+
+    // cbuffer PostConstants (post_effects.h).
+    struct PostConstants
+    {
+      float inv_vp[16];
+      float vp[16];
+      float prev_vp[16];
+      float target_size[4];
+      float view_size[4];
+      float depth_params[4];
+      float p0[4];
+      float p1[4];
+      uint32_t i0[4];
+    };
+
+    struct PostTexture
+    {
+      ComPtr<ID3D12Resource> resource;
+      D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+      DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+      uint32_t width = 0, height = 0;
+    };
+
+    struct PostSettings
+    {
+      uint32_t ao = 0;  // 0 off, 1 SSAO, 2 HBAO, 3 GTAO (the shader's i0.x)
+      uint32_t aa = 0;  // 0 off, 1 FXAA, 2 SMAA
+      int32_t motion_blur = 0, dof = 0;
+      bool Any() const { return ao || aa || motion_blur > 0 || dof > 0; }
+      bool NeedsDepth() const { return ao || motion_blur > 0 || dof > 0; }
+    };
+
+    struct Post
+    {
+      bool failed = false;
+      ComPtr<ID3D12RootSignature> root;
+      std::vector<uint8_t> vs;
+      std::vector<uint8_t> ps[kPassCount];
+      bool ps_failed[kPassCount] = {};
+      std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> pipelines;
+      PostTexture depth, ao[2], color[2], edges, weights, focus[2];
+      uint32_t focus_index = 0;
+      uint64_t focus_frame = UINT64_MAX; // frame the focus was last eased in
+
+      PostSettings settings;
+      uint64_t settings_frame = UINT64_MAX;
+
+      // View projections of this frame's scene draws (see NoteSceneCamera).
+      struct Candidate
+      {
+        float m[16];
+        float z_scale, z_offset;
+        uint32_t count;
+        RenderTarget *depth;
+      };
+      Candidate candidates[4] = {};
+      uint32_t candidate_count = 0;
+      uint64_t candidates_frame = UINT64_MAX;
+
+      // The scene's camera in this frame (stage 1) and in the frame before.
+      double vp[16] = {}, prev[16] = {};
+      bool has_vp = false, has_prev = false;
+      uint64_t vp_frame = UINT64_MAX;
+      float z_scale = 1.0f, z_offset = 0.0f;
+      RenderTarget *vp_depth = nullptr; // the depth surface the scene was drawn with
+      std::chrono::steady_clock::time_point vp_time;
+      double frame_seconds = 1.0 / 60.0;
+
+      uint64_t scene_frame = UINT64_MAX; // stage 1 ran in this frame
+      bool depth_ready = false;          // `depth` holds this frame's scene
+      // A tiled scene's color waiting for its depth resolve (PostDepthResolved).
+      HostTexture *waiting_color = nullptr;
+      uint64_t waiting_generation = 0;
+      uint32_t waiting_base = 0;
+      uint32_t width = 0, height = 0;    // the picture in host pixels
+
+      // Stage 2 waits for the first draw that samples this resolve elsewhere.
+      bool pending = false;
+      const HostTexture *pending_texture = nullptr;
+      uint64_t pending_generation = 0;
+      uint32_t pending_base = 0, pending_src_base = 0, pending_src_format = 0;
+      const RenderTarget *draw_target = nullptr; // color target 0 of the draw being prepared
+      uint64_t logged = 0;
+    };
+    Post g_post;
+
+    const PostSettings &CurrentPostSettings()
+    {
+      if (g_post.settings_frame == g.frame_number)
+      {
+        return g_post.settings;
+      }
+      g_post.settings_frame = g.frame_number;
+      PostSettings s;
+      std::string ao = REXCVAR_GET(ao2_ambient_occlusion);
+      std::string aa = REXCVAR_GET(ao2_anti_aliasing);
+      for (std::string *v : {&ao, &aa})
+      {
+        std::transform(v->begin(), v->end(), v->begin(), [](unsigned char c) { return char(std::tolower(c)); });
+      }
+      s.ao = ao == "ssao" ? 1u : ao == "hbao" ? 2u : ao == "gtao" ? 3u : 0u;
+      s.aa = aa == "fxaa" ? 1u : aa == "smaa" ? 2u : 0u;
+      s.motion_blur = std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
+      s.dof = std::clamp(REXCVAR_GET(ao2_depth_of_field), 0, 2);
+      g_post.settings = s;
+      return g_post.settings;
+    }
+
+    // A draw over the whole screen writing depth: notes the view projection
+    // its vertex shader gets (c0-c3) when it looks like a perspective one.
+    void NoteSceneCamera(const RegisterFile &r, RenderTarget *ds, const D3D12_VIEWPORT &viewport,
+                         reg::RB_DEPTHCONTROL depth_control)
+    {
+      if (!ds || !depth_control.z_enable || !depth_control.z_write_enable || ds->scale4 != g.scale4 ||
+          !CurrentPostSettings().NeedsDepth())
+      {
+        return;
+      }
+      float gw = float(ao2::aspect::GuestWidth()), gh = float(ao2::aspect::GuestHeight());
+      if (viewport.TopLeftX > 0.0f || viewport.TopLeftY > 0.0f || viewport.Width < gw * 0.9f ||
+          viewport.Height < gh * 0.9f)
+      {
+        return;
+      }
+      if (g_post.candidates_frame != g.frame_number)
+      {
+        g_post.candidates_frame = g.frame_number;
+        g_post.candidate_count = 0;
+      }
+      uint32_t base = std::min(r.v[XE_GPU_REG_SQ_VS_CONST] & 0x1FFu, 252u);
+      float m[16];
+      std::memcpy(m, &r.v[0x4000 + base * 4], sizeof(m));
+      // Column of w (row-vector matrices: clip.w = x * m[3] + y * m[7] + z * m[11] + m[15]).
+      float wlen = std::sqrt(m[3] * m[3] + m[7] * m[7] + m[11] * m[11]);
+      if (!(wlen > 0.95f && wlen < 1.05f))
+      {
+        return;
+      }
+      uint32_t vte = r.v[XE_GPU_REG_PA_CL_VTE_CNTL];
+      float z_scale = (vte & (1u << 4)) ? r.F(XE_GPU_REG_PA_CL_VPORT_ZSCALE) : 1.0f;
+      float z_offset = (vte & (1u << 5)) ? r.F(XE_GPU_REG_PA_CL_VPORT_ZOFFSET) : 0.0f;
+      if (z_scale == 0.0f)
+      {
+        return;
+      }
+      for (uint32_t i = 0; i < g_post.candidate_count; ++i)
+      {
+        Post::Candidate &c = g_post.candidates[i];
+        if (!std::memcmp(c.m, m, sizeof(m)) && c.z_scale == z_scale && c.z_offset == z_offset)
+        {
+          ++c.count;
+          c.depth = ds;
+          return;
+        }
+      }
+      if (g_post.candidate_count < std::size(g_post.candidates))
+      {
+        Post::Candidate &c = g_post.candidates[g_post.candidate_count++];
+        std::memcpy(c.m, m, sizeof(m));
+        c.z_scale = z_scale;
+        c.z_offset = z_offset;
+        c.count = 1;
+        c.depth = ds;
+      }
+    }
+
+    // 4x4 inverse (row-major), false when singular.
+    bool Invert4(const double m[16], double out[16])
+    {
+      double a[4][8];
+      for (int i = 0; i < 4; ++i)
+      {
+        for (int j = 0; j < 4; ++j)
+        {
+          a[i][j] = m[i * 4 + j];
+          a[i][j + 4] = i == j ? 1.0 : 0.0;
+        }
+      }
+      for (int c = 0; c < 4; ++c)
+      {
+        int pivot = c;
+        for (int i = c + 1; i < 4; ++i)
+        {
+          if (std::fabs(a[i][c]) > std::fabs(a[pivot][c]))
+          {
+            pivot = i;
+          }
+        }
+        if (std::fabs(a[pivot][c]) < 1e-12)
+        {
+          return false;
+        }
+        if (pivot != c)
+        {
+          for (int j = 0; j < 8; ++j)
+          {
+            std::swap(a[c][j], a[pivot][j]);
+          }
+        }
+        double d = a[c][c];
+        for (int j = 0; j < 8; ++j)
+        {
+          a[c][j] /= d;
+        }
+        for (int i = 0; i < 4; ++i)
+        {
+          if (i != c && a[i][c] != 0.0)
+          {
+            double f = a[i][c];
+            for (int j = 0; j < 8; ++j)
+            {
+              a[i][j] -= f * a[c][j];
+            }
+          }
+        }
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        for (int j = 0; j < 4; ++j)
+        {
+          out[i * 4 + j] = a[i][j + 4];
+        }
+      }
+      return true;
+    }
+
+    // Camera position of a view projection: clip (0, 0, 1, 0) through its inverse.
+    bool CameraOf(const double inv[16], double c[3])
+    {
+      if (std::fabs(inv[11]) < 1e-12)
+      {
+        return false;
+      }
+      for (int k = 0; k < 3; ++k)
+      {
+        c[k] = inv[8 + k] / inv[11];
+      }
+      return true;
+    }
+
+    // Takes the scene's camera for this frame from the noted candidates (the
+    // previous frame's stays for motion blur unless the camera jumped).
+    bool SelectSceneCamera()
+    {
+      const Post::Candidate *best = nullptr;
+      if (g_post.candidates_frame == g.frame_number)
+      {
+        for (uint32_t i = 0; i < g_post.candidate_count; ++i)
+        {
+          if (!best || g_post.candidates[i].count > best->count)
+          {
+            best = &g_post.candidates[i];
+          }
+        }
+      }
+      auto now = std::chrono::steady_clock::now();
+      bool consecutive = g_post.has_vp && g_post.vp_frame + 1 == g.frame_number;
+      if (consecutive)
+      {
+        double seconds = std::chrono::duration<double>(now - g_post.vp_time).count();
+        g_post.frame_seconds = std::clamp(seconds, 1.0 / 1000.0, 0.25);
+      }
+      g_post.vp_time = now;
+      if (!best)
+      {
+        g_post.has_vp = g_post.has_prev = false;
+        return false;
+      }
+      double vp[16];
+      for (int k = 0; k < 16; ++k)
+      {
+        vp[k] = best->m[k];
+      }
+      g_post.has_prev = false;
+      if (consecutive)
+      {
+        std::memcpy(g_post.prev, g_post.vp, sizeof(vp));
+        // A cut (or a teleport): no blur from the old view.
+        double inv_new[16], inv_old[16], c_new[3], c_old[3];
+        if (Invert4(vp, inv_new) && Invert4(g_post.prev, inv_old) && CameraOf(inv_new, c_new) &&
+            CameraOf(inv_old, c_old))
+        {
+          double dx = c_new[0] - c_old[0], dy = c_new[1] - c_old[1], dz = c_new[2] - c_old[2];
+          double turn = vp[3] * g_post.prev[3] + vp[7] * g_post.prev[7] + vp[11] * g_post.prev[11];
+          g_post.has_prev = dx * dx + dy * dy + dz * dz < 400.0 * 400.0 && turn > 0.8;
+        }
+      }
+      std::memcpy(g_post.vp, vp, sizeof(vp));
+      g_post.has_vp = true;
+      g_post.vp_frame = g.frame_number;
+      g_post.z_scale = best->z_scale;
+      g_post.z_offset = best->z_offset;
+      g_post.vp_depth = best->depth;
+      return true;
+    }
+
+    // The constants every pass shares: the camera relative to its position
+    // (float precision near the camera however far it is from the origin).
+    bool FillPostCamera(PostConstants &c)
+    {
+      double inv[16], cam[3];
+      if (!g_post.has_vp || !Invert4(g_post.vp, inv) || !CameraOf(inv, cam))
+      {
+        return false;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        for (int k = 0; k < 3; ++k)
+        {
+          c.inv_vp[i * 4 + k] = i == 2 ? 0.0f : float(inv[i * 4 + k] - cam[k] * inv[i * 4 + 3]);
+        }
+        c.inv_vp[i * 4 + 3] = float(inv[i * 4 + 3]);
+      }
+      auto relative = [&](const double m[16], float out[16]) {
+        for (int k = 0; k < 12; ++k)
+        {
+          out[k] = float(m[k]);
+        }
+        for (int j = 0; j < 4; ++j)
+        {
+          out[12 + j] = float(cam[0] * m[j] + cam[1] * m[4 + j] + cam[2] * m[8 + j] + m[12 + j]);
+        }
+      };
+      relative(g_post.vp, c.vp);
+      relative(g_post.has_prev ? g_post.prev : g_post.vp, c.prev_vp);
+      float w = float(g_post.width), h = float(g_post.height);
+      c.view_size[0] = w;
+      c.view_size[1] = h;
+      c.view_size[2] = 1.0f / w;
+      c.view_size[3] = 1.0f / h;
+      double py = std::sqrt(g_post.vp[1] * g_post.vp[1] + g_post.vp[5] * g_post.vp[5] + g_post.vp[9] * g_post.vp[9]);
+      c.depth_params[0] = g_post.z_scale;
+      c.depth_params[1] = g_post.z_offset;
+      c.depth_params[2] = float(py * h * 0.5);
+      c.p1[0] = 4.0f; // the scene texture holds a quarter of the brightness (resolve exponent bias -2)
+      return true;
+    }
+
+    bool InitPost()
+    {
+      if (g_post.root)
+      {
+        return true;
+      }
+      if (g_post.failed)
+      {
+        return false;
+      }
+      g_post.failed = true;
+      D3D12_DESCRIPTOR_RANGE range = {};
+      range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+      range.NumDescriptors = 3;
+      D3D12_ROOT_PARAMETER p[2] = {};
+      p[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      p[0].DescriptorTable.NumDescriptorRanges = 1;
+      p[0].DescriptorTable.pDescriptorRanges = &range;
+      p[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+      p[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+      p[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+      D3D12_STATIC_SAMPLER_DESC samplers[2] = {};
+      for (uint32_t i = 0; i < 2; ++i)
+      {
+        samplers[i].Filter = i == 0 ? D3D12_FILTER_MIN_MAG_MIP_LINEAR : D3D12_FILTER_MIN_MAG_MIP_POINT;
+        samplers[i].AddressU = samplers[i].AddressV = samplers[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        samplers[i].MaxLOD = D3D12_FLOAT32_MAX;
+        samplers[i].ShaderRegister = i;
+        samplers[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+      }
+      D3D12_ROOT_SIGNATURE_DESC desc = {};
+      desc.NumParameters = 2;
+      desc.pParameters = p;
+      desc.NumStaticSamplers = 2;
+      desc.pStaticSamplers = samplers;
+      ComPtr<ID3DBlob> blob, error;
+      if (FAILED(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error)) ||
+          FAILED(g.device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(),
+                                               IID_PPV_ARGS(&g_post.root))))
+      {
+        NativeLog("post effects: root signature failed\n");
+        return false;
+      }
+      g_post.vs = Compile(kPostShader, "vs", "vs_5_1");
+      if (g_post.vs.empty())
+      {
+        g_post.root.Reset();
+        return false;
+      }
+      g_post.failed = false;
+      return true;
+    }
+
+    // Pixel shader of a pass, compiled when first used.
+    const std::vector<uint8_t> *PostShader(PostPass pass)
+    {
+      if (!g_post.ps[pass].empty())
+      {
+        return &g_post.ps[pass];
+      }
+      if (g_post.ps_failed[pass])
+      {
+        return nullptr;
+      }
+      D3D_SHADER_MACRO macros[] = {{"DEPTH_MS", "1"}, {nullptr, nullptr}};
+      ComPtr<ID3DBlob> code, errors;
+      auto start = std::chrono::steady_clock::now();
+      if (FAILED(D3DCompile(kPostShader, std::strlen(kPostShader), nullptr,
+                            pass == kPassLinearizeMs ? macros : macros + 1, nullptr, kPassEntries[pass], "ps_5_1",
+                            D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &code, &errors)))
+      {
+        NativeLog("post effects: %s failed: %s\n", kPassEntries[pass],
+                  errors ? static_cast<const char *>(errors->GetBufferPointer()) : "?");
+        g_post.ps_failed[pass] = true;
+        return nullptr;
+      }
+      auto *b = static_cast<const uint8_t *>(code->GetBufferPointer());
+      g_post.ps[pass].assign(b, b + code->GetBufferSize());
+      NativeLog("post effects: %s compiled (%.0f ms)\n", kPassEntries[pass], Elapsed(start) / 1e6);
+      return &g_post.ps[pass];
+    }
+
+    // blend: 0 none, 1 multiply (dest * src, alpha kept).
+    ID3D12PipelineState *GetPostPipeline(PostPass pass, DXGI_FORMAT format, uint32_t blend)
+    {
+      uint64_t key = (uint64_t(pass) << 40) | (uint64_t(blend) << 32) | uint64_t(format);
+      auto it = g_post.pipelines.find(key);
+      if (it != g_post.pipelines.end())
+      {
+        return it->second.Get();
+      }
+      const std::vector<uint8_t> *ps = PostShader(pass);
+      if (!ps)
+      {
+        return nullptr;
+      }
+      D3D12_GRAPHICS_PIPELINE_STATE_DESC d = {};
+      d.pRootSignature = g_post.root.Get();
+      d.VS = {g_post.vs.data(), g_post.vs.size()};
+      d.PS = {ps->data(), ps->size()};
+      D3D12_RENDER_TARGET_BLEND_DESC &rb = d.BlendState.RenderTarget[0];
+      rb.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+      if (blend == 1)
+      {
+        rb.BlendEnable = TRUE;
+        rb.SrcBlend = D3D12_BLEND_ZERO;
+        rb.DestBlend = D3D12_BLEND_SRC_COLOR;
+        rb.BlendOp = D3D12_BLEND_OP_ADD;
+        rb.SrcBlendAlpha = D3D12_BLEND_ZERO;
+        rb.DestBlendAlpha = D3D12_BLEND_ONE;
+        rb.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+      }
+      d.SampleMask = UINT_MAX;
+      d.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+      d.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+      d.RasterizerState.DepthClipEnable = TRUE;
+      d.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      d.NumRenderTargets = 1;
+      d.RTVFormats[0] = format;
+      d.SampleDesc.Count = 1;
+      ComPtr<ID3D12PipelineState> pso;
+      if (FAILED(g.device->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso))))
+      {
+        NativeLog("post effects: pipeline %s failed (format %u)\n", kPassEntries[pass], unsigned(format));
+      }
+      g_post.pipelines.emplace(key, pso);
+      return pso.Get();
+    }
+
+    bool EnsurePostTexture(PostTexture &t, uint32_t width, uint32_t height, DXGI_FORMAT format)
+    {
+      if (t.resource && t.width == width && t.height == height && t.format == format)
+      {
+        return true;
+      }
+      DeferRelease(std::move(t.resource));
+      D3D12_RESOURCE_DESC td = {};
+      td.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+      td.Width = width;
+      td.Height = height;
+      td.DepthOrArraySize = 1;
+      td.MipLevels = 1;
+      td.SampleDesc.Count = 1;
+      td.Format = format;
+      td.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+      D3D12_HEAP_PROPERTIES hp = {D3D12_HEAP_TYPE_DEFAULT};
+      t.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      ++g.resources_created;
+      if (FAILED(g.device->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, t.state, nullptr,
+                                                   IID_PPV_ARGS(&t.resource))))
+      {
+        NativeLog("post effects: texture creation failed (%ux%u fmt %u)\n", width, height, unsigned(format));
+        t = {};
+        return false;
+      }
+      t.width = width;
+      t.height = height;
+      t.format = format;
+      return true;
+    }
+
+    struct PostInput
+    {
+      ID3D12Resource *resource;
+      D3D12_RESOURCE_STATES *state;
+      DXGI_FORMAT format;
+      bool multisampled = false;
+    };
+
+    PostInput In(PostTexture &t)
+    {
+      return {t.resource.Get(), &t.state, t.format};
+    }
+
+    // One fullscreen pass into `target` (its whole `width` x `height`).
+    bool PostDraw(PostPass pass, ID3D12Resource *target, D3D12_RESOURCE_STATES &target_state, DXGI_FORMAT format,
+                  uint32_t width, uint32_t height, uint32_t blend, std::initializer_list<PostInput> inputs,
+                  PostConstants &c)
+    {
+      Frame &f = CurrentFrame();
+      if (!target || f.views_used + 3 > kViewsPerFrame)
+      {
+        return false;
+      }
+      ID3D12PipelineState *pso = GetPostPipeline(pass, format, blend);
+      if (!pso)
+      {
+        return false;
+      }
+      c.target_size[0] = float(width);
+      c.target_size[1] = float(height);
+      c.target_size[2] = 1.0f / float(width);
+      c.target_size[3] = 1.0f / float(height);
+      D3D12_GPU_VIRTUAL_ADDRESS cbv = Upload(&c, sizeof(c));
+      if (!cbv)
+      {
+        return false;
+      }
+      uint32_t slot = g.frame_index * kViewsPerFrame + f.views_used;
+      f.views_used += 3;
+      D3D12_CPU_DESCRIPTOR_HANDLE cpu = g.view_heap->GetCPUDescriptorHandleForHeapStart();
+      cpu.ptr += uint64_t(slot) * g.view_size;
+      D3D12_GPU_DESCRIPTOR_HANDLE gpu = g.view_heap->GetGPUDescriptorHandleForHeapStart();
+      gpu.ptr += uint64_t(slot) * g.view_size;
+      uint32_t k = 0;
+      for (const PostInput &in : inputs)
+      {
+        D3D12_CPU_DESCRIPTOR_HANDLE h = cpu;
+        h.ptr += uint64_t(k++) * g.view_size;
+        D3D12_SHADER_RESOURCE_VIEW_DESC sd = {};
+        sd.Format = in.format;
+        sd.ViewDimension = in.multisampled ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;
+        sd.Texture2D.MipLevels = 1;
+        sd.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        g.device->CreateShaderResourceView(in.resource, &sd, h);
+        Transition(in.resource, *in.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+      }
+      for (; k < 3; ++k)
+      {
+        D3D12_CPU_DESCRIPTOR_HANDLE h = cpu;
+        h.ptr += uint64_t(k) * g.view_size;
+        g.device->CopyDescriptorsSimple(1, h, g.null_srv_2d, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+      }
+      D3D12_CPU_DESCRIPTOR_HANDLE rtv = g.transient_rtv_heap->GetCPUDescriptorHandleForHeapStart();
+      rtv.ptr += uint64_t(g.transient_rtvs_used++ % kTransientRtvCount) * g.rtv_size;
+      D3D12_RENDER_TARGET_VIEW_DESC rd = {};
+      rd.Format = format;
+      rd.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+      g.device->CreateRenderTargetView(target, &rd, rtv);
+      Transition(target, target_state, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+      auto *list = g.list.Get();
+      g.bound.valid = false;
+      list->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+      D3D12_VIEWPORT vp = {0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f};
+      D3D12_RECT sc = {0, 0, LONG(width), LONG(height)};
+      list->RSSetViewports(1, &vp);
+      list->RSSetScissorRects(1, &sc);
+      list->SetGraphicsRootSignature(g_post.root.Get());
+      list->SetPipelineState(pso);
+      list->SetGraphicsRootDescriptorTable(0, gpu);
+      list->SetGraphicsRootConstantBufferView(1, cbv);
+      list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      GpuMark(kGpuPost);
+      Crumb("post pass", pass, uint64_t(target), width, height);
+      list->DrawInstanced(3, 1, 0, 0);
+      return true;
+    }
+
+    bool PostDraw(PostPass pass, PostTexture &target, uint32_t blend, std::initializer_list<PostInput> inputs,
+                  PostConstants &c)
+    {
+      return PostDraw(pass, target.resource.Get(), target.state, target.format, target.width, target.height, blend,
+                      inputs, c);
+    }
+
+    // Copies the picture's part (`width` x `height` host pixels) between two
+    // textures of one format.
+    void PostCopy(ID3D12Resource *dst, D3D12_RESOURCE_STATES &dst_state, ID3D12Resource *src,
+                  D3D12_RESOURCE_STATES &src_state, uint32_t width, uint32_t height)
+    {
+      Transition(src, src_state, D3D12_RESOURCE_STATE_COPY_SOURCE);
+      Transition(dst, dst_state, D3D12_RESOURCE_STATE_COPY_DEST);
+      D3D12_TEXTURE_COPY_LOCATION s = {src, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
+      D3D12_TEXTURE_COPY_LOCATION t = {dst, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
+      D3D12_BOX box = {0, 0, 0, width, height, 1};
+      GpuMark(kGpuPost);
+      Crumb("post copy", uint64_t(src), uint64_t(dst), width, height);
+      g.list->CopyTextureRegion(&t, 0, 0, 0, &s, &box);
+    }
+
+    // Stage 1 with the scene depth in `depth` (its render target, or the
+    // resolved depth texture of a tiled frame): the view depth, kept for the
+    // frame, and ambient occlusion multiplied into the resolved scene.
+    void PostStage1(HostTexture &tex, uint32_t width, uint32_t height, const PostInput &depth)
+    {
+      const PostSettings &s = CurrentPostSettings();
+      PostConstants c = {};
+      if (!FillPostCamera(c))
+      {
+        return;
+      }
+      if (EnsurePostTexture(g_post.depth, width, height, DXGI_FORMAT_R32_FLOAT) &&
+          PostDraw(depth.multisampled ? kPassLinearizeMs : kPassLinearize, g_post.depth, 0, {depth}, c))
+      {
+        g_post.depth_ready = true;
+      }
+      if (!g_post.depth_ready || !s.ao)
+      {
+        return;
+      }
+      uint32_t hw = (width + 1) / 2, hh = (height + 1) / 2;
+      float scale = float(g.scale4) * 0.25f;
+      static const uint32_t kDirections[4] = {0, 16, 8, 3}, kSteps[4] = {0, 0, 6, 6}; // SSAO: 16 taps
+      static const float kStrength[4] = {0.0f, 1.2f, 1.5f, 1.5f};
+      c.p0[0] = 80.0f;            // radius, world units
+      c.p0[1] = 80.0f * scale;    // at most, in pixels
+      c.p0[2] = kStrength[s.ao];
+      c.p0[3] = 8000.0f;          // gone by this view depth
+      c.i0[0] = s.ao;
+      c.i0[1] = kDirections[s.ao];
+      c.i0[2] = kSteps[s.ao];
+      c.p1[0] = float(hw);
+      c.p1[1] = float(hh);
+      bool ok = EnsurePostTexture(g_post.ao[0], hw, hh, DXGI_FORMAT_R16G16_FLOAT) &&
+                EnsurePostTexture(g_post.ao[1], hw, hh, DXGI_FORMAT_R16G16_FLOAT) &&
+                PostDraw(kPassAo, g_post.ao[0], 0, {In(g_post.depth)}, c);
+      c.i0[0] = 0;
+      ok = ok && PostDraw(kPassAoBlur, g_post.ao[1], 0, {In(g_post.ao[0])}, c);
+      c.i0[0] = 1;
+      ok = ok && PostDraw(kPassAoBlur, g_post.ao[0], 0, {In(g_post.ao[1])}, c);
+      // Debug: the occlusion alone (at a quarter, as the scene is stored).
+      bool show = REXCVAR_GET(ao2_post_debug) == 1;
+      c.p1[2] = show ? 0.25f : 1.0f;
+      ok = ok && PostDraw(kPassAoApply, tex.resource.Get(), tex.state, tex.format, width, height, show ? 0 : 1,
+                          {In(g_post.ao[0]), In(g_post.depth)}, c);
+      if (ok && g_trace)
+      {
+        // Traced frame: the occlusion and the view depth (capture/).
+        char name[64];
+        std::snprintf(name, sizeof(name), "%03llu_post_ao", (unsigned long long)g.capture_index++);
+        CaptureTexture(g_post.ao[0].resource.Get(), g_post.ao[0].state, g_post.ao[0].format, name);
+        std::snprintf(name, sizeof(name), "%03llu_post_depth", (unsigned long long)g.capture_index++);
+        CaptureTexture(g_post.depth.resource.Get(), g_post.depth.state, g_post.depth.format, name);
+      }
+      if (!ok && g_post.logged++ < 4)
+      {
+        NativeLog("post effects: ambient occlusion failed in frame %llu\n", (unsigned long long)g.frame_number);
+      }
+    }
+
+    // A resolve of the scene's color: the whole picture at once, or the last
+    // of its predicated tiles (the game's MSAA; `dest_row` = the tile's first
+    // row). The frame's first one runs stage 1 - with a whole picture the
+    // depth render target still holds the scene's depth; with tiles it holds
+    // the last tile's only, so stage 1 waits for the depth resolve that
+    // completes the scene depth texture (PostDepthResolved).
+    void PostSceneResolved(RenderTarget &src, HostTexture &tex, const D3D12_RECT &rect, uint32_t dest_row,
+                           uint32_t dest_base)
+    {
+      const PostSettings &s = CurrentPostSettings();
+      if (!s.Any() || tex.format != DXGI_FORMAT_R16G16B16A16_FLOAT || rect.left || src.scale4 != g.scale4 ||
+          src.depth)
+      {
+        return;
+      }
+      uint32_t gw = ao2::aspect::GuestWidth(), gh = ao2::aspect::GuestHeight();
+      uint32_t top = uint32_t(rect.top) + dest_row, bottom = uint32_t(rect.bottom) + dest_row;
+      bool whole = top == 0;
+      if (uint32_t(rect.right) * 10 < gw * 9 || bottom * 10 < gh * 9 || (!whole && !dest_row) || !InitPost())
+      {
+        return;
+      }
+      uint32_t width = ScaleSize(uint32_t(rect.right), src.scale4), height = ScaleSize(bottom, src.scale4);
+      if (g_post.scene_frame != g.frame_number)
+      {
+        g_post.scene_frame = g.frame_number;
+        g_post.depth_ready = false;
+        g_post.waiting_color = nullptr;
+        g_post.width = width;
+        g_post.height = height;
+        if (s.NeedsDepth() && SelectSceneCamera())
+        {
+          RenderTarget *depth = g_post.vp_depth;
+          if (!whole)
+          {
+            g_post.waiting_color = &tex;
+            g_post.waiting_generation = tex.generation;
+            g_post.waiting_base = dest_base;
+          }
+          else if (depth && depth->scale4 == src.scale4 && ScaleSize(depth->width, depth->scale4) >= width &&
+                   ScaleSize(depth->height, depth->scale4) >= height)
+          {
+            ClaimEdram(*depth, rect);
+            PostStage1(tex, width, height,
+                       {depth->resource.Get(), &depth->state, DepthSrvFormat(depth->format), depth->samples > 1});
+          }
+        }
+        if (g_post.logged < 2 && s.NeedsDepth())
+        {
+          ++g_post.logged;
+          NativeLog("post effects: scene %08X %ux%u (host %ux%u)%s, camera %s from %u candidates, depth %s\n",
+                    dest_base, uint32_t(rect.right), bottom, width, height, whole ? "" : " in tiles",
+                    g_post.has_vp ? "found" : "not found", g_post.candidate_count,
+                    g_post.depth_ready ? "kept" : (g_post.waiting_color ? "from its resolve" : "not kept"));
+        }
+      }
+      if (s.aa || s.motion_blur || s.dof)
+      {
+        g_post.pending = true;
+        g_post.pending_texture = &tex;
+        g_post.pending_generation = tex.generation;
+        g_post.pending_base = dest_base;
+        g_post.pending_src_base = src.edram_base;
+        g_post.pending_src_format = src.edram_format;
+        g_post.width = width;
+        g_post.height = height;
+      }
+    }
+
+    // A depth resolve: in a tiled frame, the one that completes the scene
+    // depth texture runs stage 1 for the scene color waiting for it.
+    void PostDepthResolved(HostTexture &depth, const D3D12_RECT &rect, uint32_t dest_row)
+    {
+      HostTexture *color = g_post.waiting_color;
+      if (!color || g_post.scene_frame != g.frame_number)
+      {
+        return;
+      }
+      uint32_t gw = ao2::aspect::GuestWidth(), gh = ao2::aspect::GuestHeight();
+      if (rect.left || uint32_t(rect.right) * 10 < gw * 9 || (uint32_t(rect.bottom) + dest_row) * 10 < gh * 9)
+      {
+        return;
+      }
+      g_post.waiting_color = nullptr;
+      auto it = g.resolved.find(g_post.waiting_base);
+      if (it == g.resolved.end() || it->second.get() != color || color->generation != g_post.waiting_generation ||
+          depth.format != DXGI_FORMAT_R32_FLOAT || depth.scale4 != g.scale4 ||
+          ScaleSize(depth.width, depth.scale4) < g_post.width || ScaleSize(depth.height, depth.scale4) < g_post.height)
+      {
+        return;
+      }
+      PostStage1(*color, g_post.width, g_post.height, {depth.resource.Get(), &depth.state, depth.format});
+      if (g_post.logged < 3)
+      {
+        ++g_post.logged;
+        NativeLog("post effects: scene depth from its tiled resolve (%s)\n", g_post.depth_ready ? "kept" : "failed");
+      }
+    }
+
+    // Stage 2: the scene's resolve is about to be sampled.
+    void PostBeforeSample(HostTexture &tex, uint32_t address)
+    {
+      if (!g_post.pending || address != g_post.pending_base || &tex != g_post.pending_texture ||
+          tex.generation != g_post.pending_generation)
+      {
+        return;
+      }
+      const RenderTarget *target = g_post.draw_target;
+      if (target && target->edram_base == g_post.pending_src_base && target->edram_format == g_post.pending_src_format)
+      {
+        return; // drawn back into the scene: not the last resolve yet
+      }
+      g_post.pending = false;
+      const PostSettings &s = CurrentPostSettings();
+      uint32_t width = g_post.width, height = g_post.height;
+      PostConstants c = {};
+      bool camera = g_post.depth_ready && FillPostCamera(c);
+      if (!camera)
+      {
+        c.view_size[0] = float(width);
+        c.view_size[1] = float(height);
+        c.view_size[2] = 1.0f / float(width);
+        c.view_size[3] = 1.0f / float(height);
+        c.p1[0] = 4.0f;
+      }
+      bool motion_blur = s.motion_blur > 0 && camera && g_post.has_prev;
+      bool dof = s.dof > 0 && camera;
+      if (!motion_blur && !dof && !s.aa)
+      {
+        return;
+      }
+      if (!EnsurePostTexture(g_post.color[0], width, height, DXGI_FORMAT_R16G16B16A16_FLOAT) ||
+          !EnsurePostTexture(g_post.color[1], width, height, DXGI_FORMAT_R16G16B16A16_FLOAT))
+      {
+        return;
+      }
+      float scale = float(g.scale4) * 0.25f;
+      PostCopy(g_post.color[0].resource.Get(), g_post.color[0].state, tex.resource.Get(), tex.state, width, height);
+      uint32_t cur = 0;
+      auto capture = [&](const char *what) {
+        if (g_trace)
+        {
+          char name[64];
+          std::snprintf(name, sizeof(name), "%03llu_post_%s", (unsigned long long)g.capture_index++, what);
+          CaptureTexture(g_post.color[cur].resource.Get(), g_post.color[cur].state, g_post.color[cur].format, name);
+        }
+      };
+      capture("in");
+      auto run = [&](PostPass pass, std::initializer_list<PostInput> extra) {
+        PostTexture &from = g_post.color[cur], &to = g_post.color[cur ^ 1];
+        bool ok = false;
+        switch (extra.size())
+        {
+        case 0: ok = PostDraw(pass, to, 0, {In(from)}, c); break;
+        case 1: ok = PostDraw(pass, to, 0, {In(from), extra.begin()[0]}, c); break;
+        default: ok = PostDraw(pass, to, 0, {In(from), extra.begin()[0], extra.begin()[1]}, c); break;
+        }
+        if (ok)
+        {
+          cur ^= 1;
+        }
+        return ok;
+      };
+      if (motion_blur)
+      {
+        // Blur of a 1/60 s exposure (high) or half of it (low) whatever the frame rate.
+        double shutter = s.motion_blur >= 2 ? 1.0 : 0.5;
+        c.p0[0] = float(std::min(shutter / (60.0 * g_post.frame_seconds), 2.0));
+        c.p0[1] = (s.motion_blur >= 2 ? 48.0f : 24.0f) * scale;
+        c.p0[2] = 250.0f;
+        c.p0[3] = 450.0f;
+        c.i0[0] = s.motion_blur >= 2 ? 16 : 10;
+        run(kPassMotionBlur, {In(g_post.depth)});
+      }
+      if (dof && EnsurePostTexture(g_post.focus[0], 1, 1, DXGI_FORMAT_R32_FLOAT) &&
+          EnsurePostTexture(g_post.focus[1], 1, 1, DXGI_FORMAT_R32_FLOAT))
+      {
+        PostTexture &prev = g_post.focus[g_post.focus_index], &next = g_post.focus[g_post.focus_index ^ 1];
+        c.p0[0] = 150.0f;
+        c.p0[1] = float(1.0 - std::exp(-g_post.frame_seconds * 6.0));
+        c.i0[0] = g_post.focus_frame + 1 == g.frame_number ? 0u : 1u;
+        if (PostDraw(kPassDofFocus, next, 0, {In(g_post.depth), In(prev)}, c))
+        {
+          g_post.focus_index ^= 1;
+          g_post.focus_frame = g.frame_number;
+          // Low: a slight blur well behind the focus; high: a stronger one sooner.
+          c.p0[0] = (s.dof >= 2 ? 5.0f : 2.0f) * scale;
+          c.p0[1] = s.dof >= 2 ? 1.15f : 1.3f;
+          c.p0[2] = s.dof >= 2 ? 1.2f : 0.8f;
+          c.i0[0] = s.dof >= 2 ? 24 : 12;
+          run(kPassDof, {In(g_post.depth), In(next)});
+        }
+      }
+      if (s.aa == 1)
+      {
+        c.p0[0] = 0.0312f;
+        c.p0[1] = 0.125f;
+        c.p0[2] = 0.75f;
+        run(kPassFxaa, {});
+      }
+      else if (s.aa == 2 && EnsurePostTexture(g_post.edges, width, height, DXGI_FORMAT_R8G8_UNORM) &&
+               EnsurePostTexture(g_post.weights, width, height, DXGI_FORMAT_R8G8B8A8_UNORM))
+      {
+        c.p0[0] = 0.07f;
+        if (PostDraw(kPassSmaaEdges, g_post.edges, 0, {In(g_post.color[cur])}, c) &&
+            PostDraw(kPassSmaaWeights, g_post.weights, 0, {In(g_post.edges)}, c))
+        {
+          run(kPassSmaaBlend, {In(g_post.weights)});
+        }
+      }
+      if (cur != 0)
+      {
+        capture("out");
+        PostCopy(tex.resource.Get(), tex.state, g_post.color[cur].resource.Get(), g_post.color[cur].state, width,
+                 height);
+      }
+    }
+
+    // ------------------------------------------------------------ Shadow resolution
+    //
+    // ao2_shadow_resolution: the game's shadow depth surface (UE3's shadow
+    // buffer, 768 texels square here, of which each light's shadow takes up
+    // to the part its screen size asks for) is rendered with a scale of its
+    // own, so the shadow map has about that many host texels across. Its
+    // resolve keeps that scale and the shadow projection samples it at the
+    // same coordinates: the same filter footprint with finer depth texels,
+    // sharper and steadier edges. A surface counts as the shadow buffer once
+    // a square part of it was resolved as depth into a square texture.
+
+    struct ShadowSurface
+    {
+      uint32_t size = 0; // guest texels across the resolved shadow buffer
+      uint32_t rows = 0; // rows of the surface ever resolved
+      bool rejected = false; // also drawn with color targets: not a shadow buffer after all
+    };
+    std::unordered_map<uint64_t, ShadowSurface> g_shadow_surfaces; // base | format << 12 | pitch << 17
+    int32_t g_shadow_setting = 0;
+    bool g_shadow_dirty = false; // render targets to remake at the end of the frame
+
+    uint64_t ShadowKey(uint32_t base, uint32_t format, uint32_t pitch)
+    {
+      return uint64_t(base) | (uint64_t(format) << 12) | (uint64_t(pitch) << 17);
+    }
+
+    // Scale of a depth surface's render targets, 0 = not a shadow surface (or
+    // no shadow resolution chosen).
+    uint32_t ShadowScale4(uint32_t base, uint32_t format, uint32_t pitch, uint32_t *rows)
+    {
+      if (g_shadow_setting <= 0)
+      {
+        return 0;
+      }
+      auto it = g_shadow_surfaces.find(ShadowKey(base, format, pitch));
+      if (it == g_shadow_surfaces.end() || !it->second.size || it->second.rejected)
+      {
+        return 0;
+      }
+      if (rows)
+      {
+        *rows = it->second.rows;
+      }
+      uint32_t want = uint32_t(g_shadow_setting);
+      return std::clamp((want * 4 + it->second.size - 1) / it->second.size, 4u, 64u);
+    }
+
+    // A depth resolve: notes the shadow buffer.
+    void NoteShadowResolve(const RenderTarget &src, const D3D12_RECT &rect, uint32_t dest_pitch, uint32_t dest_height)
+    {
+      if (rect.right - rect.left != rect.bottom - rect.top || dest_pitch != dest_height || dest_pitch < 128 ||
+          src.samples > 1)
+      {
+        return;
+      }
+      uint32_t format = src.edram_format;
+      ShadowSurface &s = g_shadow_surfaces[ShadowKey(src.edram_base, format, src.edram_pitch)];
+      if (s.rejected)
+      {
+        return;
+      }
+      uint32_t rows = std::max(s.rows, std::max(dest_height, uint32_t(rect.bottom)));
+      if (s.size != dest_pitch || s.rows != rows)
+      {
+        NativeLog("shadow buffer: depth base %u fmt %u pitch %u, %u texels across (%u rows)\n", src.edram_base, format,
+                  src.edram_pitch, dest_pitch, rows);
+        s.size = dest_pitch;
+        s.rows = rows;
+        g_shadow_dirty = true;
+      }
+    }
+
+    // Drops render targets (their EDRAM contents with them); they are made
+    // again on first use.
+    template <typename F>
+    void DropRenderTargets(F &&which)
+    {
+      bool any = false;
+      for (auto it = g.render_targets.begin(); it != g.render_targets.end();)
+      {
+        RenderTarget *rt = it->second.get();
+        if (!which(*rt))
+        {
+          ++it;
+          continue;
+        }
+        std::replace(std::begin(g.edram_owner), std::end(g.edram_owner), rt, static_cast<RenderTarget *>(nullptr));
+        DeferRelease(std::move(rt->resource));
+        it = g.render_targets.erase(it);
+        any = true;
+      }
+      if (any)
+      {
+        ++g.edram_generation;
+        g.bound = {};
+        g_post.candidate_count = 0;
+        g_post.pending = false;
+      }
+    }
+
+    // End of a frame: the shadow resolution asked for, the shadow surfaces
+    // learnt.
+    void ApplyShadowResolution()
+    {
+      int32_t want = REXCVAR_GET(ao2_shadow_resolution);
+      want = want >= 4096 ? 4096 : want >= 2048 ? 2048 : want >= 1024 ? 1024 : 0;
+      if (want == g_shadow_setting && !g_shadow_dirty)
+      {
+        return;
+      }
+      if (want != g_shadow_setting)
+      {
+        NativeLog("shadow resolution %d from frame %llu\n", want, (unsigned long long)g.frame_number);
+      }
+      g_shadow_setting = want;
+      g_shadow_dirty = false;
+      DropRenderTargets([](const RenderTarget &rt) {
+        return rt.depth && g_shadow_surfaces.count(ShadowKey(rt.edram_base, rt.edram_format, rt.edram_pitch)) &&
+               rt.samples == 1;
+      });
     }
 
     // ------------------------------------------------------------ Menu probe
@@ -6808,6 +7899,29 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       auto di = r.Get<reg::RB_DEPTH_INFO>();
       ds = GetRenderTarget(di.depth_base, uint32_t(di.depth_format), true, surface.surface_pitch,
                            surface.msaa_samples);
+      if (ds && ds->scale4 != scale4)
+      {
+        // The shadow buffer has a scale of its own (ao2_shadow_resolution):
+        // its depth-only passes take it. Drawn with color it was no shadow
+        // buffer - its render targets are remade at the end of the frame.
+        auto shadow = g_shadow_surfaces.find(ShadowKey(ds->edram_base, ds->edram_format, ds->edram_pitch));
+        if (rtv_count == 0)
+        {
+          scale4 = ds->scale4;
+        }
+        else
+        {
+          if (shadow != g_shadow_surfaces.end() && !shadow->second.rejected)
+          {
+            NativeLog("shadow buffer: depth base %u fmt %u pitch %u drawn with color, not a shadow buffer\n",
+                      ds->edram_base, ds->edram_format, ds->edram_pitch);
+            shadow->second.rejected = true;
+            g_shadow_dirty = true;
+          }
+          ++g.draws_skipped;
+          return;
+        }
+      }
       if (ds)
       {
         Transition(ds->resource.Get(), ds->state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -6857,8 +7971,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     uint32_t tex_info_used = 0;
     TextureTable ps_textures, vs_textures;
     bool lowres = rtv_count && SmallTarget(surface.surface_pitch, key.samples);
+    g_post.draw_target = color_rts[0];
     PrepareTextures(ps, r, ps_textures, tex_info, tex_info_used, lowres);
     PrepareTextures(vs, r, vs_textures, tex_info, tex_info_used, lowres);
+    g_post.draw_target = nullptr;
     timer.Mark(4);
     ReserveSamplerTables(2);
     D3D12_GPU_DESCRIPTOR_HANDLE ps_samplers = BindSamplers(ps, r);
@@ -6885,6 +8001,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     timer.Mark(6);
 
     Viewport vp = ComputeViewport(r, rt_width, rt_height, ps && ps->shader->writes_depth());
+    NoteSceneCamera(r, ds, vp.viewport, depth_control);
     Trace("    viewport %.0f,%.0f %.0fx%.0f z %g..%g (guest z scale %g offset %g%s) scissor %d,%d-%d,%d\n",
           vp.viewport.TopLeftX, vp.viewport.TopLeftY, vp.viewport.Width, vp.viewport.Height, vp.viewport.MinDepth,
           vp.viewport.MaxDepth, r.F(XE_GPU_REG_PA_CL_VPORT_ZSCALE), r.F(XE_GPU_REG_PA_CL_VPORT_ZOFFSET),
@@ -7330,6 +8447,30 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     if (copy.copy_command == xenos::CopyCommand::kRaw || copy.copy_command == xenos::CopyCommand::kConvert)
     {
       ResolveFormat rf = GetResolveFormat(uint32_t(dest_info.copy_dest_format), is_depth);
+      // Predicated tiling (the game's own MSAA): each tile is drawn with the
+      // window offset moved up by the tile's first row and resolved with the
+      // destination base moved down to that row (tiled textures are stored in
+      // 32-row stripes: row 512 starts 512 rows in). Those rows belong to the
+      // texture the first tile was resolved to in this frame - the one the
+      // game samples - not to a texture of their own.
+      uint32_t dest_row = 0;
+      {
+        uint32_t row_bytes =
+            dest_pitch.copy_dest_pitch * (FormatInfo::Get(uint32_t(dest_info.copy_dest_format))->bits_per_pixel / 8);
+        for (const auto &[address, t] : g.resolved)
+        {
+          if (row_bytes && address < dest_base && t && t->resource && t->last_frame == g.frame_number &&
+              t->format == rf.unorm && t->scale4 == src->scale4 && t->width == dest_pitch.copy_dest_pitch &&
+              t->height == dest_pitch.copy_dest_height && (dest_base - address) % (row_bytes * 32) == 0 &&
+              (dest_base - address) / row_bytes + uint32_t(y1) <= t->height)
+          {
+            dest_row = (dest_base - address) / row_bytes;
+            Trace("    predicated tile: rows from %u of %08X\n", dest_row, address);
+            dest_base = address;
+            break;
+          }
+        }
+      }
       uint32_t w = std::max<uint32_t>(dest_pitch.copy_dest_pitch, uint32_t(x1));
       uint32_t h = std::max<uint32_t>(dest_pitch.copy_dest_height, uint32_t(y1));
       w = std::min(w, 8192u);
@@ -7439,17 +8580,19 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         D3D12_TEXTURE_COPY_LOCATION t = {tex->resource.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
         D3D12_RECT hrect = ScaleRect(rect, src->scale4);
         D3D12_BOX box = {UINT(hrect.left), UINT(hrect.top), 0, UINT(hrect.right), UINT(hrect.bottom), 1};
+        LONG offset_y = ScaleEdge(LONG(dest_row), src->scale4);
+        D3D12_RECT drect = {hrect.left, hrect.top + offset_y, hrect.right, hrect.bottom + offset_y};
         GpuMark(kGpuResolve);
         Crumb("resolve copy", uint64_t(src->resource.Get()), uint64_t(tex->resource.Get()),
               (uint64_t(rect.right) << 32) | uint64_t(rect.left), (uint64_t(rect.bottom) << 32) | uint64_t(rect.top));
         if (RectFits(src->resource.Get(), hrect, "resolve copy source") &&
-            RectFits(tex->resource.Get(), hrect, "resolve copy destination"))
+            RectFits(tex->resource.Get(), drect, "resolve copy destination"))
         {
-          g.list->CopyTextureRegion(&t, UINT(hrect.left), UINT(hrect.top), 0, &s, &box);
+          g.list->CopyTextureRegion(&t, UINT(drect.left), UINT(drect.top), 0, &s, &box);
         }
         ++g.resolves_copied;
       }
-      else if (ResolveWithShader(*src, *tex, rf, rect, scale, copy.copy_sample_select, swap_red_blue))
+      else if (ResolveWithShader(*src, *tex, rf, rect, scale, copy.copy_sample_select, swap_red_blue, dest_row))
       {
         ++g.resolves_drawn;
       }
@@ -7467,6 +8610,15 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       if (!is_depth && w >= 640 && h >= 360)
       {
         g.present_address = dest_base;
+      }
+      if (is_depth)
+      {
+        NoteShadowResolve(*src, rect, dest_pitch.copy_dest_pitch, dest_pitch.copy_dest_height);
+        PostDepthResolved(*tex, rect, dest_row);
+      }
+      else
+      {
+        PostSceneResolved(*src, *tex, rect, dest_row, dest_base);
       }
       // Small results (luminance reductions...) may be read by the CPU.
       uint32_t guest_bpp = FormatInfo::Get(uint32_t(dest_info.copy_dest_format))->bits_per_pixel / 8;
@@ -8075,7 +9227,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g.frame_index = (g.frame_index + 1) % kFrameCount;
     ++g.frame_number;
     g_running.store(true, std::memory_order_relaxed);
+    g_post.pending = false;
+    g_post.waiting_color = nullptr;
     ApplyRequestedScale();
+    ApplyShadowResolution();
     WriteCaptures();
     UpdateTraceFrame();
     auto now = std::chrono::steady_clock::now();
