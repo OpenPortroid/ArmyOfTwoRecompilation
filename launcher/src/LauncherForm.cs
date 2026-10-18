@@ -1054,7 +1054,8 @@ namespace AO2Launcher
             var visible = new HashSet<Row>(rows.Where(RowShown));
             foreach (Row r in AllRows().Where(r => r.Box != null))
             {
-                bool show = screen == UiScreen.Settings && visible.Contains(r);
+                // Real controls are drawn over everything: hidden under a question or an open list.
+                bool show = screen == UiScreen.Settings && visible.Contains(r) && confirm == null && dropRow == null;
                 if (!r.Box.Focused && r.Box.Text != S[r.Key])
                 {
                     // Two pages show the player's name.

@@ -28,13 +28,13 @@ namespace AO2Launcher
             CloseDrop();
             confirm = c;
             confirmSel = 1; // a stray Enter does not confirm
-            Invalidate();
+            LayoutRows(false);
         }
 
         void CloseConfirm()
         {
             confirm = null;
-            Invalidate();
+            LayoutRows(false);
         }
 
         void ConfirmActivate(int i)
@@ -55,7 +55,7 @@ namespace AO2Launcher
             {
                 c.OnOk(c.Checked);
             }
-            Invalidate();
+            LayoutRows(false);
         }
 
         // The order focus moves in: the check box (if any), OK, cancel.

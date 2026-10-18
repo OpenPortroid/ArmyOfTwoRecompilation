@@ -463,7 +463,7 @@ namespace AO2Launcher
             RefreshInputRows();
             dropRow = r;
             dropSel = Math.Max(0, Array.IndexOf(r.Values, S[r.Key]));
-            Invalidate();
+            LayoutRows(false);
         }
 
         void CloseDrop()
@@ -471,7 +471,7 @@ namespace AO2Launcher
             if (dropRow != null)
             {
                 dropRow = null;
-                Invalidate();
+                LayoutRows(false);
             }
         }
 
