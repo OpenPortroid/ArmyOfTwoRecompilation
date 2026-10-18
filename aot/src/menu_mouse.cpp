@@ -4,11 +4,15 @@
 // pad: the mouse there was the right stick or nothing. While a menu takes
 // input the SDK driver lets the cursor go (SetMouseLookActive(false): shown,
 // not captured; rex_input_set_mouse_look) and here:
-//  - moving the cursor over a button, option or slider focuses it
-//    (UIScreenObject::SetFocus, vtable +328, as execSetFocus 0x82727C18 calls
-//    it with the player index from sub_82973AF0);
+//  - moving the cursor over a button, option or slider walks the focus to it
+//    with the D-pad, as the pad would (some menus' scripts follow the
+//    navigation, not the focus: the weapon upgrades' preview); where a step
+//    does not move it, it is set (UIScreenObject::SetFocus, vtable +328, as
+//    execSetFocus 0x82727C18 calls it with the player index from sub_82973AF0);
 //  - the left button presses A on it (on an option button or a slider: left
-//    of its middle D-pad left, else D-pad right), the right button B (back).
+//    of its middle D-pad left, else D-pad right). The right button keeps its
+//    binding (LT: the weapon shop's stats);
+//  - Enter and Esc are A and B, accept and back (Esc is otherwise Start).
 // The presses go into the pad state of the player with the keyboard
 // (XInputGetState hook, input_script.cpp), so the game takes them as its own
 // input. Mouse buttons do not reach the triggers they are bound to there.
@@ -118,6 +122,8 @@ namespace
   constexpr float kSlabReachAlong = 8.0f; // times further sideways
 
   constexpr uint16_t kDpadLeft = 0x0004, kDpadRight = 0x0008;
+  constexpr uint16_t kDpadUp = 0x0001, kDpadDown = 0x0002;
+  constexpr uint16_t kButtonStart = 0x0010;
   constexpr uint16_t kButtonA = 0x1000, kButtonB = 0x2000;
 
   FILE *Log()
@@ -369,6 +375,25 @@ namespace
     return 0;
   }
 
+  // A menu takes the keys (Enter, Esc): a scene taking input is on the
+  // stack - in the game it is empty - other than the title screen's, where
+  // Esc stays Start (Press START, the attract movie). Confirmations and the
+  // objectives have nothing to point at but take B as back.
+  bool KeysMenu(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    bool any = false;
+    for (uint32_t scene : scenes)
+    {
+      std::string name = ao2::ue3::ObjectName(base, scene);
+      if (name.rfind("StartMenuUIScene", 0) == 0 || name.rfind("AttractLauncher", 0) == 0)
+      {
+        return false;
+      }
+      any = any || base[scene + kSceneInputMode] != 0;
+    }
+    return any;
+  }
+
   bool Focused(const uint8_t *base, uint32_t widget)
   {
     static uint32_t focused_class = 0;
@@ -405,10 +430,16 @@ namespace
     float u, v, aspect;
   };
 
+  bool GameInFront()
+  {
+    HWND hwnd = static_cast<HWND>(ao2::aspect::Window());
+    return hwnd && GetForegroundWindow() == hwnd;
+  }
+
   bool CursorOnPicture(Cursor &c)
   {
     HWND hwnd = static_cast<HWND>(ao2::aspect::Window());
-    if (!hwnd || GetForegroundWindow() != hwnd)
+    if (!GameInFront())
     {
       return false;
     }
@@ -766,10 +797,130 @@ namespace
 
   // --- The clicks -----------------------------------------------------------
 
-  bool g_left = false, g_right = false;     // the mouse buttons as last seen
+  bool g_left = false;                      // the left mouse button as last seen
   uint16_t g_inject = 0;                    // pad buttons held for the menu
   int g_inject_polls = 0;                   // for this many more polls
   uint32_t g_hover = 0;                     // the widget under the cursor
+  float g_last_u = -1.0f, g_last_v = -1.0f; // the cursor as last seen
+  uint32_t g_moved = 0;                     // when it last moved (GetTickCount)
+  // Pointing counts this long after a move: the slabs' answer comes a few
+  // frames later. A cursor resting where a menu opens leaves its first item.
+  constexpr uint32_t kMoveWindow = 300;
+  bool g_enter = false, g_esc = false;      // the keys as last seen...
+  bool g_enter_menu = false, g_esc_menu = false; // ...and whether a menu was up when they were pressed
+
+  // The focus goes to a pointed widget the way the pad takes it, one D-pad
+  // step at a time: some menus' scripts follow the navigation, not the
+  // focus (the weapon upgrades show the part navigated to). If a step does
+  // not move the focus, the widget simply gets it (SetFocus).
+  struct Walk
+  {
+    uint32_t target = 0;
+    uint16_t then = 0;   // pressed once there (a click), 0 = none
+    uint16_t button = 0; // the D-pad direction pressed
+    int polls = 0;       // > 0: held for that many polls, < 0: released for that many
+    uint32_t from = 0;   // the focus when it was pressed
+    int steps = 0, stuck = 0;
+  } g_walk;
+  constexpr int kWalkPress = 2, kWalkRelease = 2, kWalkSteps = 16;
+
+  const Widget *Find(const std::vector<Widget> &widgets, uint32_t object)
+  {
+    for (const Widget &w : widgets)
+    {
+      if (w.object == object)
+      {
+        return &w;
+      }
+    }
+    return nullptr;
+  }
+
+  uint32_t FocusedWidget(const uint8_t *base, const std::vector<Widget> &widgets)
+  {
+    for (const Widget &w : widgets)
+    {
+      if (Focused(base, w.object))
+      {
+        return w.object;
+      }
+    }
+    return 0;
+  }
+
+  void WalkTo(uint32_t target, uint16_t then)
+  {
+    if (g_walk.target != target)
+    {
+      g_walk = Walk{};
+      g_walk.target = target;
+    }
+    g_walk.then = then ? then : g_walk.then;
+  }
+
+  // The pad buttons of this poll's step.
+  uint16_t WalkStep(PPCContext &ctx, uint8_t *base, const std::vector<Widget> &widgets)
+  {
+    Walk &w = g_walk;
+    const Widget *target = w.target ? Find(widgets, w.target) : nullptr;
+    if (!target)
+    {
+      w = Walk{};
+      return 0;
+    }
+    if (w.polls > 0)
+    {
+      if (--w.polls == 0)
+      {
+        w.polls = -kWalkRelease;
+      }
+      return w.button;
+    }
+    if (w.polls < 0 && ++w.polls < 0)
+    {
+      return 0;
+    }
+    uint32_t now = FocusedWidget(base, widgets);
+    if (w.steps)
+    {
+      w.stuck = now == w.from ? w.stuck + 1 : 0;
+    }
+    auto arrived = [&]() {
+      if (w.then)
+      {
+        g_inject = w.then;
+        g_inject_polls = 2;
+      }
+      w = Walk{};
+    };
+    if (now == w.target)
+    {
+      arrived();
+      return 0;
+    }
+    const Widget *from = now ? Find(widgets, now) : nullptr;
+    if (!from || from->slab != target->slab || w.stuck >= 2 || w.steps >= kWalkSteps)
+    {
+      Focus(ctx, base, w.target);
+      arrived();
+      return 0;
+    }
+    float dx = (target->x0 + target->x1 - from->x0 - from->x1) * 0.5f;
+    float dy = (target->y0 + target->y1 - from->y0 - from->y1) * 0.5f;
+    // Left / right change an option's value: from one, only up and down.
+    if (std::fabs(dy) >= std::fabs(dx) * 0.5f || from->kind == Kind::kValue)
+    {
+      w.button = dy < 0.0f ? kDpadUp : kDpadDown; // the same place (Exit under Extras): down
+    }
+    else
+    {
+      w.button = dx < 0.0f ? kDpadLeft : kDpadRight;
+    }
+    w.from = now;
+    w.polls = kWalkPress;
+    ++w.steps;
+    return w.button;
+  }
 } // namespace
 
 namespace ao2::menumouse
@@ -837,6 +988,35 @@ namespace ao2::menumouse
         }
       }
     }
+    if (keyboard)
+    {
+      // Enter and Esc in the menus are accept and back (A and B), whatever
+      // they are bound to (Esc is Start, the pause menu). Decided when one
+      // is pressed: the Esc that opened the pause menu stays Start until let go.
+      bool front = GameInFront();
+      bool enter = front && (GetAsyncKeyState(VK_RETURN) & 0x8000);
+      bool esc = front && (GetAsyncKeyState(VK_ESCAPE) & 0x8000);
+      if ((enter && !g_enter) || (esc && !g_esc))
+      {
+        bool menu = KeysMenu(base, scenes);
+        g_enter_menu = enter && !g_enter ? menu : g_enter_menu;
+        g_esc_menu = esc && !g_esc ? menu : g_esc_menu;
+      }
+      g_enter = enter;
+      g_esc = esc;
+      if ((enter && g_enter_menu) || (esc && g_esc_menu))
+      {
+        if (enter && g_enter_menu)
+        {
+          buttons |= kButtonA;
+        }
+        if (esc && g_esc_menu)
+        {
+          buttons = uint16_t((buttons & ~kButtonStart) | kButtonB);
+        }
+        store_buttons();
+      }
+    }
     if (exit && (buttons & kButtonA) && Focused(base, exit))
     {
       // Its own Kismet (Extras') must not see the press.
@@ -852,15 +1032,15 @@ namespace ao2::menumouse
     bool menu = scene && REXCVAR_GET(ao2_menu_mouse) && !ao2::coop::OnlineLockstep(base);
     SetMenuMode(menu);
     bool left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
-    bool right = GetAsyncKeyState(VK_RBUTTON) & 0x8000;
-    bool left_pressed = left && !g_left, right_pressed = right && !g_right;
+    bool left_pressed = left && !g_left;
     g_left = left;
-    g_right = right;
     if (!menu)
     {
       ao2::gpu::RendererSetMenuProbe(0, 0, 0, 0);
       g_inject_polls = 0;
       g_hover = 0;
+      g_walk = Walk{};
+      g_last_u = g_last_v = -1.0f;
       return;
     }
     Cursor cursor;
@@ -869,8 +1049,8 @@ namespace ao2::menumouse
     on_picture = on_picture || test;
     if (test)
     {
-      // The buttons are the real mouse's, maybe clicking another window.
-      left_pressed = right_pressed = left = right = false;
+      // The button is the real mouse's, maybe clicking another window.
+      left_pressed = left = false;
     }
     // The slabs: the renderer finds the menu's texture under the cursor.
     const Widget *slab = nullptr;
@@ -887,6 +1067,19 @@ namespace ao2::menumouse
                                    uint32_t(std::max(cursor.v, 0.0f) * float(ao2::aspect::GuestHeight())));
     if (on_picture)
     {
+      if (g_last_u < 0.0f)
+      {
+        // Menu mode just began: where the cursor is is no move.
+        g_last_u = cursor.u;
+        g_last_v = cursor.v;
+      }
+      if (std::fabs(cursor.u - g_last_u) + std::fabs(cursor.v - g_last_v) > 0.002f)
+      {
+        g_moved = GetTickCount();
+        g_last_u = cursor.u;
+        g_last_v = cursor.v;
+      }
+      bool moving = g_moved && GetTickCount() - g_moved < kMoveWindow;
       float x, y;
       const Widget *hit = Hit(widgets, cursor, x, y);
       if (test)
@@ -900,44 +1093,52 @@ namespace ao2::menumouse
                hit ? ao2::ue3::ObjectName(base, hit->object).c_str() : "nothing", x, y);
         }
       }
-      // Focused when the cursor comes onto it (the slabs' answer comes a few
-      // frames after the move) or clicks it; not while it rests there and
-      // the keys move the focus elsewhere.
-      bool entered = hit && hit->object != g_hover;
-      g_hover = hit ? hit->object : 0;
-      if (hit && (entered || left_pressed) && !Focused(base, hit->object))
+      // Walked to when the cursor comes onto it (the slabs' answer comes a
+      // few frames after the move) or clicks it; not while it rests there
+      // and the keys move the focus elsewhere.
+      bool entered = hit && hit->object != g_hover && moving;
+      if (moving || !hit)
       {
-        Focus(ctx, base, hit->object);
+        g_hover = hit ? hit->object : 0;
       }
-      if (hit && left_pressed)
+      if (hit && left_pressed && exit && hit->object == exit)
       {
-        if (exit && hit->object == exit)
+        Quit();
+      }
+      else if (hit && left_pressed)
+      {
+        uint16_t press = hit->kind == Kind::kButton ? kButtonA
+                                                    : (x < (hit->x0 + hit->x1) * 0.5f ? kDpadLeft : kDpadRight);
+        if (Focused(base, hit->object) && g_walk.target == 0)
         {
-          Quit();
+          g_inject = press;
+          g_inject_polls = 2;
         }
         else
         {
-          g_inject = hit->kind == Kind::kButton ? kButtonA
-                                                : (x < (hit->x0 + hit->x1) * 0.5f ? kDpadLeft : kDpadRight);
-          g_inject_polls = 2;
+          WalkTo(hit->object, press);
         }
       }
+      else if (hit && entered && !Focused(base, hit->object))
+      {
+        WalkTo(hit->object, 0);
+      }
     }
-    if (right_pressed && on_picture)
+    uint16_t walk = g_inject_polls > 0 ? 0 : WalkStep(ctx, base, widgets);
+    // The left button is bound to a trigger (fire): not here. The right one
+    // keeps its own (the weapon shop's stats).
+    if (left)
     {
-      g_inject = kButtonB;
-      g_inject_polls = 2;
-    }
-    // The mouse buttons are bound to the triggers (fire, aim): not here.
-    if (left || right)
-    {
-      p[6] = 0;
       p[7] = 0;
     }
-    if (g_inject_polls > 0)
+    if (g_inject_polls > 0 || walk)
     {
-      --g_inject_polls;
-      buttons |= g_inject;
+      if (g_inject_polls > 0)
+      {
+        --g_inject_polls;
+        buttons |= g_inject;
+      }
+      buttons |= walk;
       store_buttons();
     }
   }
