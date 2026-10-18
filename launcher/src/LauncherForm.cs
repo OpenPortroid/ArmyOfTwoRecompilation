@@ -1018,6 +1018,8 @@ namespace AO2Launcher
                 Toggle("Aim assist", "aim_assist",
                     "While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
                     "In co-op each player keeps their own setting."),
+                Toggle("Toggle aim", "toggle_aim",
+                    "One press of aim (right mouse button, LT) starts aiming, the next press ends it, instead of holding the button. On foot only."),
                 new Row
                 {
                     Kind = RowKind.Slider, Label = "Mouse in vehicles and turrets", Key = "stick_sens", Min = 0.25, Max = 3, Step = 0.05,

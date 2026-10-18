@@ -409,6 +409,20 @@ namespace AO2Launcher
               "En cooperativo cada jugador mantiene su propio ajuste.",
               "Mirando, la telecamera parte dal bersaglio più vicino e i colpi vengono attratti dai bersagli vicini al mirino. " +
               "In cooperativa ogni giocatore mantiene la propria impostazione.");
+            a("Toggle aim", "Прицеливание переключением", "Visée par bascule", "Zielen umschalten",
+              "Apuntar alternando", "Mira a commutazione");
+            a("One press of aim (right mouse button, LT) starts aiming, the next press ends it, instead of holding " +
+              "the button. On foot only.",
+              "Одно нажатие прицела (правая кнопка мыши, LT) включает прицеливание, следующее выключает — держать " +
+              "кнопку не нужно. Только пешком.",
+              "Un appui sur viser (bouton droit, LT) commence la visée, l'appui suivant l'arrête, au lieu de " +
+              "maintenir le bouton. À pied uniquement.",
+              "Ein Druck auf Zielen (rechte Maustaste, LT) startet das Zielen, der nächste beendet es, statt die " +
+              "Taste zu halten. Nur zu Fuß.",
+              "Una pulsación de apuntar (botón derecho, LT) empieza a apuntar y la siguiente lo termina, en vez de " +
+              "mantener el botón. Solo a pie.",
+              "Una pressione di mira (tasto destro, LT) inizia a mirare, la successiva smette, invece di tenere " +
+              "premuto il tasto. Solo a piedi.");
             a("Mouse in vehicles and turrets", "Мышь в технике и турелях", "Souris dans véhicules et tourelles",
               "Maus in Fahrzeugen und Geschützen", "Ratón en vehículos y torretas", "Mouse su veicoli e torrette");
             a("Where the camera cannot be turned directly (turrets, vehicles, menus) the mouse acts as the right stick; " +

@@ -36,6 +36,7 @@ namespace AO2Launcher
             { "invert_y", "0" },
             { "aim_assist", "0" },
             { "stick_sens", "1" },
+            { "toggle_aim", "0" },
             { "skip_cutscenes", "1" },
             { "skip_unskippable", "1" },
             { "god_mode", "0" },

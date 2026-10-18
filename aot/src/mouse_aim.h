@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <rex/ppc.h>
+
 namespace rex::ui
 {
   class Window;
@@ -35,6 +37,12 @@ namespace ao2::mouse
   // This machine's player is driving a vehicle (at the wheel of the
   // hovercraft - not on a turret, not a vehicle's gunner). Any thread.
   bool Driving();
+
+  // The player of pad `user` is on foot in play: the game turns its view
+  // (not the menus, the lobby, the pause menu or a cutscene) and its pawn is
+  // its character (not a vehicle or a turret). Online co-op: this machine's
+  // player. Game thread.
+  bool OnFoot(PPCContext &ctx, uint8_t *base, uint32_t user);
 
   // The guest user the keyboard and mouse belong to (rexruntime.dll's
   // rex_input_keyboard_user): 0 unless split-screen gives them to another

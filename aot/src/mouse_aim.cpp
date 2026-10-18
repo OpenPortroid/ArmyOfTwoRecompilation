@@ -987,6 +987,19 @@ namespace ao2::mouse
     return g_driving.load(std::memory_order_relaxed);
   }
 
+  bool OnFoot(PPCContext &ctx, uint8_t *base, uint32_t user)
+  {
+    auto looked = clock::time_point(clock::duration(g_look_seen.load(std::memory_order_relaxed)));
+    if (user >= 4 || clock::now() - looked >= kNativeIdle)
+    {
+      return false;
+    }
+    uint32_t controller = LockstepMouse(base) ? LocalController(ctx, base) : ControllerOf(ctx, base, user);
+    uint32_t holder = controller ? LoadU32(base, controller + 2024) : 0;
+    return holder && LoadU32(base, controller + 452) == holder &&
+           !(LoadU32(base, controller + 808) & kCinematicMode);
+  }
+
   uint32_t KeyboardUser()
   {
     using Fn = uint32_t (*)();

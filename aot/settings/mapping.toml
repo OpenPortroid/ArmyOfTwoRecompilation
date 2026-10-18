@@ -74,6 +74,9 @@ ao2_mouse_zoom_sensitivity = 1.0
 ao2_mouse_invert_y = false
 # Right-stick strength of the mouse where native aiming is unavailable.
 ao2_mouse_stick_sensitivity = 1.0
+# Toggle aim: one press of aim (LT / the right mouse button) starts aiming,
+# the next ends it, instead of holding the button. On foot only.
+ao2_toggle_aim = false
 
 # ─────────────────────────────────────────────────────────────
 # Button prompts

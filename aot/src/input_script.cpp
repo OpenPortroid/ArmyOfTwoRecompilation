@@ -3,7 +3,8 @@
 // The game polls the pad through the XDK's XInputGetState (sub_82B07AF0,
 // r3 = user, r4 = XINPUT_STATE*). Buttons from a script are merged into its
 // result, so tests can drive the menus without the window having focus. The
-// mouse's right-stick fallback (mouse_aim.cpp) is merged here too.
+// mouse's right-stick fallback (mouse_aim.cpp) is merged here too, and the
+// left trigger becomes a switch with ao2_toggle_aim (toggle aim).
 //
 // Script: space-separated steps, from --ao2_input_script=... at startup or
 // from the file input.script in the working directory (read and deleted when
@@ -37,6 +38,10 @@
 REXCVAR_DEFINE_BOOL(ao2_vehicle_wasd, true, "Input",
                     "Driving a vehicle: the left stick forward / back (W / S) also presses the right / left "
                     "trigger - the game's gas and brake");
+REXCVAR_DEFINE_BOOL(ao2_toggle_aim, false, "Input",
+                    "Aim (LT, the right mouse button) toggles: one press starts aiming, the next ends it, instead "
+                    "of holding the button. On foot only: vehicles, turrets, menus and cutscenes keep the trigger "
+                    "as it is");
 REXCVAR_DEFINE_STRING(ao2_input_script, "", "Debug",
                       "Scripted pad input (also from input.script): a b x y start back up down left right lb rb ls "
                       "rs lt rt [+|-] waitNNN mxN myN skip lxN lyN rxN ryN");
@@ -76,6 +81,38 @@ namespace
   uint32_t g_last_inputs = 0;
   uint32_t g_packet = 0x10000;
   clock::time_point g_next_file_check;
+
+  // Toggle aim, per pad: the trigger held at the last poll, aiming latched.
+  struct ToggleAim
+  {
+    bool down = false;
+    bool on = false;
+  };
+  ToggleAim g_toggle_aim[4];
+
+  // The left trigger of a pad state `p` (XINPUT_STATE) as a switch: each press
+  // flips aiming, the trigger reads fully pulled while it is on. Off the
+  // player's feet the trigger is left alone and aiming starts over unlatched; a trigger held across that change counts
+  // as a press only once released and pressed again. Before the scripted and
+  // autopilot input is merged, so those still hold it as they please.
+  void ApplyToggleAim(PPCContext &ctx, uint8_t *base, uint32_t user, uint8_t *p)
+  {
+    constexpr uint8_t kPressed = 30; // XINPUT_GAMEPAD_TRIGGER_THRESHOLD
+    ToggleAim &t = g_toggle_aim[user];
+    bool down = p[6] >= kPressed;
+    bool press = down && !t.down;
+    t.down = down;
+    if (!ao2::mouse::OnFoot(ctx, base, user))
+    {
+      t.on = false;
+      return;
+    }
+    if (press)
+    {
+      t.on = !t.on;
+    }
+    p[6] = t.on ? 0xFF : 0;
+  }
 
   uint32_t InputMask(const std::string &name)
   {
@@ -324,6 +361,10 @@ extern "C" REX_FUNC(sub_82B07AF0)
   if (state && (user == 0 || keyboard))
   {
     ao2::menumouse::OnPadPoll(ctx, base, state, keyboard);
+  }
+  if (state && user < 4 && ctx.r3.u32 == 0 && REXCVAR_GET(ao2_toggle_aim))
+  {
+    ApplyToggleAim(ctx, base, user, base + state);
   }
   if ((user != 0 && !keyboard) || !state)
   {
