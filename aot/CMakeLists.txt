@@ -59,6 +59,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/mouse_aim.cpp
     src/cutscene_skip.cpp
     src/cheats.cpp
+    src/aim_assist.cpp
     src/debug_menu.cpp
     src/perf_overlay.cpp
     src/autopilot.cpp

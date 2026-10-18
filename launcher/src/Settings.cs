@@ -34,6 +34,7 @@ namespace AO2Launcher
             { "mouse_sens", "2" },
             { "mouse_zoom", "1" },
             { "invert_y", "0" },
+            { "aim_assist", "0" },
             { "stick_sens", "1" },
             { "skip_cutscenes", "1" },
             { "skip_unskippable", "1" },

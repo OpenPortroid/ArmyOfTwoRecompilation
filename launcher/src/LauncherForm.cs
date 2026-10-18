@@ -1015,6 +1015,9 @@ namespace AO2Launcher
                     Desc = "Multiplier while aiming (right button, scopes). Turning already accounts for zoom; 1.0 feels the same as unaimed."
                 },
                 Toggle("Invert Y axis", "invert_y", "Mouse up looks down (on top of the inversion setting in the game itself)."),
+                Toggle("Aim assist", "aim_assist",
+                    "While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
+                    "In co-op each player keeps their own setting."),
                 new Row
                 {
                     Kind = RowKind.Slider, Label = "Mouse in vehicles and turrets", Key = "stick_sens", Min = 0.25, Max = 3, Step = 0.05,

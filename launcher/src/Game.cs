@@ -163,6 +163,7 @@ namespace AO2Launcher
             a.Add("--ao2_mouse_sensitivity=" + Num(s.Double("mouse_sens")));
             a.Add("--ao2_mouse_zoom_sensitivity=" + Num(s.Double("mouse_zoom")));
             a.Add(Flag("ao2_mouse_invert_y", s.Bool("invert_y")));
+            a.Add(Flag("ao2_aim_assist", s.Bool("aim_assist")));
             a.Add("--ao2_mouse_stick_sensitivity=" + Num(s.Double("stick_sens")));
 
             a.Add(Flag("ao2_skip_cutscenes", s.Bool("skip_cutscenes")));

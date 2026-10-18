@@ -31,6 +31,9 @@
 // Commands (one stream per player, by the record's controller id):
 // - "god 0|1": that player's god mode (cheats.cpp). Sent whenever
 //   ao2_god_mode (the menu's checkbox) differs from what went out last.
+// - "aimassist 0|1": that player's aim assist (aim_assist.cpp). Sent whenever
+//   ao2_aim_assist differs from what went out last (at first: from the
+//   default, off).
 // - "checkpoint <name> <difficulty>": both load the checkpoint
 //   (console_cmd.cpp, the co-op lobby's URL). Both need the file: with DLC
 //   on one PC only, a DLC checkpoint desyncs the game. The load runs at the
@@ -51,6 +54,7 @@
 // sync replays the player's own records too).
 #include "coop_cmd.h"
 
+#include "aim_assist.h"
 #include "cheats.h"
 #include "console_cmd.h"
 #include "coop.h"
@@ -69,6 +73,7 @@
 #include <rex/cvar.h>
 
 REXCVAR_DECLARE(bool, ao2_god_mode);
+REXCVAR_DECLARE(bool, ao2_aim_assist);
 REXCVAR_DECLARE(bool, ao2_coop_test_local);
 
 namespace
@@ -108,6 +113,7 @@ namespace
   uint32_t g_last_frame = ~0u; // lockstep frame of the last poll
   uint32_t g_tag = 0;
   int g_sent_god = 0; // the god mode wish that went out last
+  int g_sent_assist = 0; // the aim assist choice that went out last (0: the default)
   int g_mark = -1;    // key table index of F11
 
   struct Stream
@@ -340,6 +346,10 @@ namespace
     {
       ao2::cheats::SetPlayerGod(ctx, base, controller_id, on != 0);
     }
+    else if (std::sscanf(command.c_str(), "aimassist %d", &on) == 1)
+    {
+      ao2::aim_assist::SetPlayer(controller_id, on != 0);
+    }
     else if (std::sscanf(command.c_str(), "checkpoint %39s %d", name, &difficulty) == 2 && ValidName(name) &&
              difficulty >= 0 && difficulty <= 2)
     {
@@ -381,7 +391,7 @@ namespace ao2::coop::cmd
     if (!Routed(base))
     {
       // The game is over: on both machines, nothing of it is left.
-      if (g_in_flight || !g_out.empty() || !g_streams.empty() || g_sent_god)
+      if (g_in_flight || !g_out.empty() || !g_streams.empty() || g_sent_god || g_sent_assist)
       {
         Logf("network game over\n");
       }
@@ -390,6 +400,8 @@ namespace ao2::coop::cmd
       g_in_flight = false;
       g_streams.clear();
       g_sent_god = 0;
+      g_sent_assist = 0;
+      ao2::aim_assist::Reset();
       g_load = {};
       std::lock_guard lock(g_queue_mutex);
       g_queue.clear();
@@ -428,6 +440,12 @@ namespace ao2::coop::cmd
     {
       g_sent_god = god;
       Send("god " + std::to_string(god));
+    }
+    int assist = REXCVAR_GET(ao2_aim_assist) ? 1 : 0;
+    if (assist != g_sent_assist)
+    {
+      g_sent_assist = assist;
+      Send("aimassist " + std::to_string(assist));
     }
     // Once per lockstep frame.
     uint32_t frame = ao2::coop::SyncFrame(base);

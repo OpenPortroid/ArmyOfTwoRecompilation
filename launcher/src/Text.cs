@@ -396,6 +396,19 @@ namespace AO2Launcher
               "Maus nach oben blickt nach unten (zusätzlich zur Invertierung im Spiel selbst).",
               "Ratón hacia arriba mira hacia abajo (además del ajuste de inversión del propio juego).",
               "Mouse in alto guarda in basso (in aggiunta all'inversione impostata nel gioco).");
+            a("Aim assist", "Помощь в прицеливании", "Aide à la visée", "Zielhilfe", "Asistencia de apuntado", "Assistenza alla mira");
+            a("While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
+              "In co-op each player keeps their own setting.",
+              "При прицеливании камера сразу наводится на ближайшую цель, а выстрелы притягиваются к целям рядом с прицелом. " +
+              "В кооперативе у каждого игрока своя настройка.",
+              "En visant, la caméra se place sur la cible la plus proche et les tirs sont attirés vers les cibles près du réticule. " +
+              "En coopération, chaque joueur garde son propre réglage.",
+              "Beim Zielen springt die Kamera auf das nächste Ziel und Schüsse werden zu Zielen nahe dem Fadenkreuz gezogen. " +
+              "Im Koop behält jeder Spieler seine eigene Einstellung.",
+              "Al apuntar, la cámara empieza sobre el objetivo más cercano y los disparos se desvían hacia objetivos cerca de la mira. " +
+              "En cooperativo cada jugador mantiene su propio ajuste.",
+              "Mirando, la telecamera parte dal bersaglio più vicino e i colpi vengono attratti dai bersagli vicini al mirino. " +
+              "In cooperativa ogni giocatore mantiene la propria impostazione.");
             a("Mouse in vehicles and turrets", "Мышь в технике и турелях", "Souris dans véhicules et tourelles",
               "Maus in Fahrzeugen und Geschützen", "Ratón en vehículos y torretas", "Mouse su veicoli e torrette");
             a("Where the camera cannot be turned directly (turrets, vehicles, menus) the mouse acts as the right stick; " +
