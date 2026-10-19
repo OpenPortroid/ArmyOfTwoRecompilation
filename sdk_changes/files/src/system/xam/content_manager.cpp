@@ -30,6 +30,9 @@
 REXCVAR_DEFINE_STRING(content_overlay_root, "", "Storage",
                       "Folder of content overlays: <folder>/<package folder name> holds files that stand in "
                       "for the package's own (the port's translated DLC text)");
+REXCVAR_DEFINE_STRING(marketplace_content_root, "", "Storage",
+                      "Folder of the downloadable content: <folder>/<package folder name>, the running "
+                      "title's common content (empty: <user data>/0000000000000000/<title>/00000002)");
 
 namespace rex {
 namespace system {
@@ -102,6 +105,16 @@ std::filesystem::path ContentManager::ResolvePackageRoot(uint64_t xuid, XContent
   auto xuid_str = fmt::format("{:016X}", xuid);
   auto title_id_str = fmt::format("{:08X}", title_id);
   auto content_type_str = fmt::format("{:08X}", uint32_t(content_type));
+
+  // Downloadable content can live apart from the saves (the game's own folder). It is the common
+  // content (xuid 0) of the running title only: enumerations also ask for the player's own and the
+  // alternate titles', which would list the same packages again.
+  if (content_type == XContentType::kMarketplaceContent && xuid == 0 &&
+      title_id == kernel_state_->title_id()) {
+    if (auto root = REXCVAR_GET(marketplace_content_root); !root.empty()) {
+      return rex::to_path(root);
+    }
+  }
 
   // Package root path:
   // content_root/xuid/title_id/content_type/

@@ -222,8 +222,60 @@ namespace AO2Launcher
                 clean.IsBackground = true;
                 clean.Start();
             }
+            MoveOldDlc();
             CheckForUpdate();
             CheckNotes();
+        }
+
+        // Earlier versions kept the DLC in Documents: it moves into the game folder (dlc\) off the UI
+        // thread, usually at the first start after the update. A game started meanwhile waits for it
+        // (dlc_folder.cpp).
+        void MoveOldDlc()
+        {
+            // A running game has the packages open: they move at the next start (the game's or the launcher's).
+            if (gameExe == null || !Installer.OldDlcLeft() || Game.IsRunning())
+            {
+                return;
+            }
+            string dir = Path.GetDirectoryName(gameExe);
+            ShowToast(L.T("Moving the DLC to the game folder..."), false);
+            var th = new System.Threading.Thread(() =>
+            {
+                string text;
+                bool bad = false;
+                try
+                {
+                    int n = Installer.MoveOldDlc(dir);
+                    text = n > 0 ? L.F("DLC moved to the game folder: {0}", Installer.DlcRoot(dir)) : null;
+                }
+                catch (Exception ex)
+                {
+                    text = L.F("Could not move the DLC to the game folder: {0}", ex.Message);
+                    bad = true;
+                }
+                try
+                {
+                    BeginInvoke(new Action(() =>
+                    {
+                        if (text != null)
+                        {
+                            ShowToast(text, bad);
+                        }
+                        else
+                        {
+                            toast = null;
+                        }
+                        RefreshInstalled();
+                        Invalidate();
+                    }));
+                }
+                catch (InvalidOperationException)
+                {
+                    // The form was closed meanwhile.
+                }
+            });
+            th.IsBackground = true;
+            th.Start();
         }
 
         // Asks GitHub for the latest release off the UI thread; a newer one opens the update window.
@@ -2760,7 +2812,7 @@ namespace AO2Launcher
                 return;
             }
             // --install=<log> --src=<path>[;<path>...]: install from these sources without the window
-            // (DLC goes to the real user data folder).
+            // (DLC goes to the game folder's dlc\).
             string install = opt("install");
             if (install != null)
             {

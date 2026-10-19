@@ -17,6 +17,7 @@
 #include "aspect_ratio.h"
 #include "debug_menu.h"
 #include "debug_tools.h"
+#include "dlc_folder.h"
 #include "coop_invite.h"
 #include "ea_server.h"
 #include "game_cvars.h"
@@ -84,6 +85,10 @@ public:
     // The port's own menus speak the game's language.
     ao2::text::Init();
 
+    // The downloadable content: in the game's folder (moved there from the
+    // user data folder of earlier versions).
+    ao2::dlc::Setup(user_data_root());
+
     // The game's text (Russian, keyboard keys in place of the controller
     // buttons): mounted before the game reads its localization.
     ao2::lang::Install(runtime(), game_data_root(), user_data_root());
@@ -103,8 +108,7 @@ public:
       ao2::gfxmenu::Attach(window());
       ao2::menumouse::Attach(window());
       ao2::menu::Attach(window(), imgui_drawer(),
-                        static_cast<rex::input::InputSystem *>(runtime()->input_system()), game_data_root(),
-                        user_data_root());
+                        static_cast<rex::input::InputSystem *>(runtime()->input_system()), game_data_root());
       if (!window()->IsFullscreen())
       {
         // The default window (1280x720 logical at the display's DPI) can be
@@ -149,10 +153,9 @@ public:
       paths.game_data_root = utils::RepoRoot() / "assets";
     }
 
-    // TU2 keeps its own saves, profile and downloadable content next to the
-    // disc version's (Documents\armyoftworecomp): the DLC needs the TU2
-    // executable, and the disc version enumerates the same content folder.
-    // --user_data_root / --cache_root still win.
+    // TU2 keeps its own saves and profile next to the disc version's
+    // (Documents\armyoftworecomp); the downloadable content is in the game's
+    // folder (dlc_folder.cpp). --user_data_root / --cache_root still win.
     if (REXCVAR_GET(user_data_root).empty())
     {
       paths.user_data_root = paths.user_data_root.parent_path() / "armyoftworecomp_tu2";

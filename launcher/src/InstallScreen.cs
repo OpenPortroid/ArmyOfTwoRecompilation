@@ -72,7 +72,7 @@ namespace AO2Launcher
             gameOk = dir != null && Installer.GameInstalled(dir);
             updateOk = dir != null && Installer.UpdateInstalled(dir);
             anyInstalled = Installer.AnythingInstalled(dir);
-            dlcCount = Installer.InstalledDlcCount();
+            dlcCount = Installer.InstalledDlcCount(dir);
         }
 
         bool CanInstall

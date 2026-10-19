@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 
 namespace AO2Launcher
 {
@@ -40,7 +41,7 @@ namespace AO2Launcher
 
     // Puts the user's own copy of the game where the game looks for it:
     // <game folder>\assets (disc files + default.xexp of Title Update 2) and
-    // Documents\armyoftworecomp_tu2\...\<package> (downloadable content).
+    // <game folder>\dlc\<package> (downloadable content).
     // Images and packages are read by ao2_install.exe (next to the game).
     static class Installer
     {
@@ -118,18 +119,27 @@ namespace AO2Launcher
             return HashIs(Path.Combine(AssetsDir(gameDir), "default.xexp"), XexpSha1);
         }
 
-        // Where the game enumerates downloadable content (see aot\docs\tu2.md).
-        public static string DlcRoot()
+        // Where the game reads downloadable content (aot\src\dlc_folder.cpp).
+        public static string DlcRoot(string gameDir)
         {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "armyoftworecomp_tu2", "0000000000000000", "4541084C", "00000002");
+            return Path.Combine(DataRoot(gameDir), "dlc");
         }
 
-        public static int InstalledDlcCount()
+        // Where earlier versions put it, in the main profile's user data folder.
+        static string OldDlcRoot()
+        {
+            return Path.Combine(Profiles.MainRoot, "0000000000000000", "4541084C", "00000002");
+        }
+
+        public static int InstalledDlcCount(string gameDir)
         {
             try
             {
-                string root = DlcRoot();
+                if (gameDir == null)
+                {
+                    return 0;
+                }
+                string root = DlcRoot(gameDir);
                 return Directory.Exists(root)
                     ? Directory.GetDirectories(root).Count(d => !d.EndsWith(".tmp") && Directory.EnumerateFileSystemEntries(d).Any())
                     : 0;
@@ -441,9 +451,10 @@ namespace AO2Launcher
 
                 foreach (InstallSource d in dlc)
                 {
-                    string dest = Path.Combine(DlcRoot(), Path.GetFileName(d.Path));
+                    string dest = Path.Combine(DlcRoot(gameDir), Path.GetFileName(d.Path));
                     string part = dest + ".tmp";
-                    CheckSpace(DlcRoot(), d.Bytes);
+                    Directory.CreateDirectory(DlcRoot(gameDir));
+                    CheckSpace(DlcRoot(gameDir), d.Bytes);
                     DeleteDir(part);
                     try
                     {
@@ -478,6 +489,143 @@ namespace AO2Launcher
             finally
             {
                 DeleteDir(temp);
+            }
+        }
+
+        // Whether there are packages at the old place to move into the game folder.
+        public static bool OldDlcLeft()
+        {
+            try
+            {
+                string old = OldDlcRoot();
+                return Directory.Exists(old) && Directory.GetDirectories(old).Any(d => !d.EndsWith(".tmp"));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Moves the packages from the old place into <game folder>\dlc and removes the profiles' links
+        // to the old place. A package in dlc\ is always whole (moved there by a rename): one already
+        // there wins and the old copy is deleted. The game does the same when it starts
+        // (dlc_folder.cpp); the mutex keeps the two from moving at once.
+        // Returns how many were moved; throws InstallException if one could not be.
+        public static int MoveOldDlc(string gameDir)
+        {
+            int moved = 0;
+            string failed = null;
+            using (var mutex = new Mutex(false, "AO2_DlcMove"))
+            {
+                try
+                {
+                    mutex.WaitOne();
+                }
+                catch (AbandonedMutexException)
+                {
+                }
+                try
+                {
+                    string old = OldDlcRoot(), root = DlcRoot(gameDir);
+                    if (Directory.Exists(old))
+                    {
+                        foreach (string from in Directory.GetDirectories(old))
+                        {
+                            string to = Path.Combine(root, Path.GetFileName(from));
+                            if (from.EndsWith(".tmp"))
+                            {
+                                continue;
+                            }
+                            try
+                            {
+                                if (Directory.Exists(to))
+                                {
+                                    DeleteEntry(from); // installed again, or a move cut short after the rename
+                                }
+                                else
+                                {
+                                    Directory.CreateDirectory(root);
+                                    MovePackage(from, to);
+                                }
+                                moved++;
+                            }
+                            catch (Exception ex)
+                            {
+                                failed = Path.GetFileName(from) + ": " + ex.Message;
+                            }
+                        }
+                        RemoveEmpty(old, Profiles.MainRoot);
+                    }
+                    Profiles.RemoveDlcLinks();
+                }
+                finally
+                {
+                    mutex.ReleaseMutex();
+                }
+            }
+            if (failed != null)
+            {
+                throw new InstallException(failed);
+            }
+            return moved;
+        }
+
+        // Renames on the same drive; else copies to <to>.tmp, renames that and deletes the old one.
+        static void MovePackage(string from, string to)
+        {
+            // Directory.Move refuses different drive letters itself; a folder mounted from another
+            // volume fails in Windows with ERROR_NOT_SAME_DEVICE.
+            if (string.Equals(Path.GetPathRoot(Path.GetFullPath(from)), Path.GetPathRoot(Path.GetFullPath(to)),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    Directory.Move(from, to);
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    if ((ex.HResult & 0xFFFF) != 17)
+                    {
+                        throw;
+                    }
+                }
+            }
+            string part = to + ".tmp";
+            DeleteDir(part);
+            try
+            {
+                long bytes = new DirectoryInfo(from).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
+                CheckSpace(Path.GetDirectoryName(to), bytes);
+                foreach (string f in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
+                {
+                    string dest = Path.Combine(part, f.Substring(from.Length + 1));
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                    File.Copy(f, dest);
+                }
+                Directory.Move(part, to);
+            }
+            finally
+            {
+                DeleteDir(part);
+            }
+            DeleteEntry(from);
+        }
+
+        // Removes dir and its parents up to (not including) stop while they are empty.
+        static void RemoveEmpty(string dir, string stop)
+        {
+            try
+            {
+                while (dir != null && !string.Equals(dir.TrimEnd('\\'), stop.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) &&
+                       Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
+                {
+                    Directory.Delete(dir, false);
+                    dir = Path.GetDirectoryName(dir);
+                }
+            }
+            catch
+            {
             }
         }
 

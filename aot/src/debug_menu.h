@@ -22,10 +22,10 @@ namespace ao2::menu
   // UI thread, once the runtime is set up. `sdk_drawer` is the SDK's ImGui
   // drawer when the Xenos presenter draws the overlays; null with the native
   // renderer, where the menu brings its own drawer (gpu/native/overlay.h).
-  // Checkpoints: the disc's under `game_data_root`, the DLC's under
-  // `user_data_root`.
+  // Checkpoints: the disc's under `game_data_root`, the DLC's in
+  // ao2::dlc::Dir().
   void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::input::InputSystem *input,
-              const std::filesystem::path &game_data_root, const std::filesystem::path &user_data_root);
+              const std::filesystem::path &game_data_root);
 
   // Any thread: the menu is open (the game gets no input).
   bool IsOpen();

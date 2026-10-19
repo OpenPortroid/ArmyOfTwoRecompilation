@@ -260,7 +260,6 @@ namespace AO2Launcher
 
         public static void Start(string exe, Settings s, string hostIp)
         {
-            Profiles.LinkDlc(s["profile"]);
             var psi = new ProcessStartInfo(exe, CommandLine(s, hostIp))
             {
                 WorkingDirectory = Path.GetDirectoryName(exe),

@@ -61,6 +61,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/cheats.cpp
     src/aim_assist.cpp
     src/debug_menu.cpp
+    src/dlc_folder.cpp
     src/perf_overlay.cpp
     src/autopilot.cpp
     src/console_cmd.cpp

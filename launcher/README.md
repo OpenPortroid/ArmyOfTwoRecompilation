@@ -35,7 +35,9 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   optionally, DLC packages; the launcher works out which is which. Images and packages are read by
   `ao2_install.exe` in the game folder (`aot\tools\ao2_install.cpp`, the file system devices of rexruntime).
   The game is copied to `assets.tmp` and moved to `assets` only after it has been checked; DLC goes to
-  `Documents\armyoftworecomp_tu2\0000000000000000\4541084C\00000002\<package>`. A desktop shortcut is created
+  `dlc\<package>` in the game folder (next to `assets`). DLC that earlier versions put in
+  `Documents\armyoftworecomp_tu2\0000000000000000\4541084C\00000002` is moved there when the launcher starts
+  (the game does the same if it still finds some). A desktop shortcut is created
   after the installation (can be turned off). Later: Settings → Advanced → Game files and DLC.
   `aot\tools\make_release.ps1 [-Zip]` builds the release package without game files.
 

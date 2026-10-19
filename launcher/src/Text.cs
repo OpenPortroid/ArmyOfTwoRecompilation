@@ -1095,12 +1095,20 @@ namespace AO2Launcher
               "Die installierten Spieldateien löschen (den Ordner assets). Spielstände bleiben, außer du wählst es anders.",
               "Eliminar los archivos del juego instalados (la carpeta assets). Las partidas se conservan salvo que elijas lo contrario.",
               "Elimina i file del gioco installati (la cartella assets). I salvataggi restano, salvo diversa scelta.");
-            a("The game files will be deleted from {0} ({1}). To play again, install the game from your copy. Downloadable content stays in Documents.",
-              "Файлы игры будут удалены из {0} ({1}). Чтобы снова играть, установите игру из своей копии. Дополнения (DLC) остаются в «Документах».",
-              "Les fichiers du jeu seront supprimés de {0} ({1}). Pour rejouer, installez le jeu depuis votre copie. Les DLC restent dans Documents.",
-              "Die Spieldateien werden aus {0} gelöscht ({1}). Um wieder zu spielen, installiere das Spiel aus deiner Kopie. Die DLC bleiben in Dokumente.",
-              "Los archivos del juego se eliminarán de {0} ({1}). Para volver a jugar, instala el juego desde tu copia. Los DLC se quedan en Documentos.",
-              "I file del gioco saranno eliminati da {0} ({1}). Per giocare di nuovo, installa il gioco dalla tua copia. I DLC restano in Documenti.");
+            a("The game files will be deleted from {0} ({1}). To play again, install the game from your copy. Downloadable content stays in the dlc folder.",
+              "Файлы игры будут удалены из {0} ({1}). Чтобы снова играть, установите игру из своей копии. Дополнения (DLC) остаются в папке dlc.",
+              "Les fichiers du jeu seront supprimés de {0} ({1}). Pour rejouer, installez le jeu depuis votre copie. Les DLC restent dans le dossier dlc.",
+              "Die Spieldateien werden aus {0} gelöscht ({1}). Um wieder zu spielen, installiere das Spiel aus deiner Kopie. Die DLC bleiben im Ordner dlc.",
+              "Los archivos del juego se eliminarán de {0} ({1}). Para volver a jugar, instala el juego desde tu copia. Los DLC se quedan en la carpeta dlc.",
+              "I file del gioco saranno eliminati da {0} ({1}). Per giocare di nuovo, installa il gioco dalla tua copia. I DLC restano nella cartella dlc.");
+            a("Moving the DLC to the game folder...", "Перенос DLC в папку игры...", "Déplacement des DLC dans le dossier du jeu...",
+              "Die DLC werden in den Spielordner verschoben...", "Moviendo los DLC a la carpeta del juego...",
+              "Spostamento dei DLC nella cartella del gioco...");
+            a("DLC moved to the game folder: {0}", "DLC перенесены в папку игры: {0}", "DLC déplacés dans le dossier du jeu : {0}",
+              "DLC in den Spielordner verschoben: {0}", "DLC movidos a la carpeta del juego: {0}", "DLC spostati nella cartella del gioco: {0}");
+            a("Could not move the DLC to the game folder: {0}", "Не удалось перенести DLC в папку игры: {0}",
+              "Impossible de déplacer les DLC dans le dossier du jeu : {0}", "Die DLC konnten nicht in den Spielordner verschoben werden: {0}",
+              "No se pudieron mover los DLC a la carpeta del juego: {0}", "Impossibile spostare i DLC nella cartella del gioco: {0}");
             a("Also delete the saves of every profile", "Также удалить сохранения всех профилей", "Supprimer aussi les sauvegardes de tous les profils",
               "Auch die Spielstände aller Profile löschen", "Eliminar también las partidas de todos los perfiles", "Elimina anche i salvataggi di tutti i profili");
             a("Could not delete everything: {0}", "Удалить всё не удалось: {0}", "Impossible de tout supprimer : {0}",

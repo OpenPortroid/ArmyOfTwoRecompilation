@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,8 +9,8 @@ namespace AO2Launcher
     // Launcher profiles: each is a user data folder of its own for the game (--user_data_root), so each
     // has its own saves, game profile (settings, money, unlocks) and achievements. The main profile is the
     // game's usual folder, Documents\armyoftworecomp_tu2; the others are folders under
-    // Documents\armyoftworecomp_profiles. The downloadable content stays in the main folder: a profile's
-    // 0000000000000000 (the content of every player) is a junction to it, and the shader cache is shared.
+    // Documents\armyoftworecomp_profiles. The downloadable content is in the game folder (dlc\), the same
+    // for every profile, and the shader cache is shared.
     static class Profiles
     {
         public const string Main = ""; // the "profile" setting of the main profile
@@ -102,42 +101,30 @@ namespace AO2Launcher
         public static void Create(string name)
         {
             Directory.CreateDirectory(Root(name));
-            LinkDlc(name);
         }
 
-        // The profile's content folder points at the main one's (where the launcher installs the DLC).
-        // Done again at every start of the game: the DLC may have been installed after the profile was made.
-        public static void LinkDlc(string name)
+        // Earlier versions linked each profile's content folder (a junction) to the main one's, where
+        // the DLC was: the links are removed, not what they point to.
+        public static void RemoveDlcLinks()
         {
-            if (string.IsNullOrEmpty(name))
+            foreach (string name in All().Skip(1))
             {
-                return;
-            }
-            try
-            {
-                string target = Path.Combine(MainRoot, DlcDir);
-                string link = Path.Combine(Root(name), DlcDir);
-                if (Directory.Exists(link) || !Directory.Exists(target))
+                try
                 {
-                    return;
+                    string link = Path.Combine(Root(name), DlcDir);
+                    if (Directory.Exists(link) && (File.GetAttributes(link) & FileAttributes.ReparsePoint) != 0)
+                    {
+                        Directory.Delete(link, false);
+                    }
                 }
-                var psi = new ProcessStartInfo("cmd.exe", "/c mklink /J " + Game.Quote(link) + " " + Game.Quote(target))
+                catch
                 {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-                using (Process p = Process.Start(psi))
-                {
-                    p.WaitForExit(5000);
                 }
-            }
-            catch
-            {
-                // Without the link the profile just has no DLC.
             }
         }
 
-        // Deletes a profile's folder with its saves. The DLC junction is removed, not what it points to.
+        // Deletes a profile's folder with its saves. A junction in it (an earlier version's DLC link) is
+        // removed, not what it points to.
         public static void Delete(string name)
         {
             if (string.IsNullOrEmpty(name))

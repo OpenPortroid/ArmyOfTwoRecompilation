@@ -56,6 +56,7 @@
 #include <rex/runtime.h>
 
 #include "cyrillic_fonts.h"
+#include "dlc_folder.h"
 #include "keyboard_prompts.h"
 #include "utils.h"
 
@@ -292,19 +293,19 @@ namespace ao2::lang
     // the whole file, which the game reads over the disc's) in Russian, under
     // overlay_root\<package folder>; the SDK mounts a package with the files of
     // its overlay folder in place of its own (content_overlay_root).
-    int RussianContent(const fs::path &user_data_root, const fs::path &overlay_root, const fs::path &russian_dir)
+    int RussianContent(const fs::path &content_dir, const fs::path &overlay_root, const fs::path &russian_dir)
     {
       int files = 0, translated = 0;
       std::error_code ec;
-      for (auto it = fs::recursive_directory_iterator(user_data_root, fs::directory_options::skip_permission_denied, ec);
+      for (auto it = fs::recursive_directory_iterator(content_dir, fs::directory_options::skip_permission_denied, ec);
            it != fs::recursive_directory_iterator(); it.increment(ec))
       {
         if (ec)
           break;
         if (it->is_directory(ec))
         {
-          // Packages sit at <xuid>\<title>\00000002\<package>; not into our own output.
-          if (it.depth() >= 4 || it->path() == overlay_root.parent_path())
+          // Packages sit at <content_dir>\<package> (ao2::dlc::Dir()).
+          if (it.depth() >= 1)
             it.disable_recursion_pending();
           continue;
         }
@@ -437,7 +438,7 @@ namespace ao2::lang
     if (russian)
     {
       fs::path overlays = user_data_root / "localization" / "content";
-      if (RussianContent(user_data_root, overlays, russian_dir))
+      if (RussianContent(ao2::dlc::Dir(), overlays, russian_dir))
         rex::cvar::SetFlagByName("content_overlay_root", overlays.string());
     }
 

@@ -266,7 +266,7 @@ namespace AO2Launcher
                 {
                     Title = "UNINSTALL THE GAME", Danger = true, Ok = "UNINSTALL", Check = "Also delete the saves of every profile",
                     Text = L.F("The game files will be deleted from {0} ({1}). To play again, install the game from your copy. " +
-                               "Downloadable content stays in Documents.", @"C:\Games\ArmyOfTwo\assets", "6.1" + L.T(" GB")),
+                               "Downloadable content stays in the dlc folder.", @"C:\Games\ArmyOfTwo\assets", "6.1" + L.T(" GB")),
                 });
             }
             else if (what == "profile")
@@ -296,7 +296,7 @@ namespace AO2Launcher
             {
                 Title = "UNINSTALL THE GAME",
                 Text = L.F("The game files will be deleted from {0} ({1}). To play again, install the game from your copy. " +
-                           "Downloadable content stays in Documents.", Installer.AssetsDir(dir), Installer.Size(Installer.InstalledBytes(dir))),
+                           "Downloadable content stays in the dlc folder.", Installer.AssetsDir(dir), Installer.Size(Installer.InstalledBytes(dir))),
                 Check = "Also delete the saves of every profile",
                 Ok = "UNINSTALL",
                 Danger = true,

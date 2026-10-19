@@ -33,6 +33,7 @@
 #include "coop.h"
 #include "coop_cmd.h"
 #include "coop_invite.h"
+#include "dlc_folder.h"
 #include "gpu/native/overlay.h"
 #include "perf_overlay.h"
 #include "ui_text.h"
@@ -174,8 +175,8 @@ namespace
   }
 
   // The disc's checkpoints (AO2Game/Checkpoints) and those of the extracted
-  // downloadable content packages (<user data>/<xuid>/<title>/00000002/<package>).
-  std::vector<Mission> ScanCheckpoints(const std::filesystem::path &dir, const std::filesystem::path &user_data)
+  // downloadable content packages (<content_dir>/<package>).
+  std::vector<Mission> ScanCheckpoints(const std::filesystem::path &dir, const std::filesystem::path &content_dir)
   {
     std::map<std::string, Mission> missions;
     auto add = [&](const std::filesystem::path &file) {
@@ -201,24 +202,16 @@ namespace
         add(entry.path());
       }
     }
-    if (!user_data.empty())
+    if (!content_dir.empty())
     {
-      for (const auto &xuid : std::filesystem::directory_iterator(user_data, ec))
+      for (const auto &package : std::filesystem::directory_iterator(content_dir, ec))
       {
         std::error_code ec2;
-        for (const auto &title : std::filesystem::directory_iterator(xuid.path(), ec2))
+        for (const auto &entry : std::filesystem::directory_iterator(package.path(), ec2))
         {
-          std::error_code ec3;
-          for (const auto &package : std::filesystem::directory_iterator(title.path() / "00000002", ec3))
+          if (entry.is_regular_file(ec2) && IsCheckpointFile(entry))
           {
-            std::error_code ec4;
-            for (const auto &entry : std::filesystem::directory_iterator(package.path(), ec4))
-            {
-              if (entry.is_regular_file(ec4) && IsCheckpointFile(entry))
-              {
-                add(entry.path());
-              }
-            }
+            add(entry.path());
           }
         }
       }
@@ -251,7 +244,7 @@ namespace
   std::unique_ptr<rex::ui::ImmediateDrawer> g_perf_immediate;
   std::unique_ptr<rex::ui::ImGuiDrawer> g_perf_drawer;
   std::unique_ptr<rex::ui::ImGuiDialog> g_perf_dialog;
-  std::filesystem::path g_checkpoint_dir, g_user_data;
+  std::filesystem::path g_checkpoint_dir, g_content_dir;
   DebugMenu *g_menu = nullptr; // UI thread
   std::atomic<bool> g_open{false};
   // Open port windows (OpenWindow; modal like the menu) and the notice.
@@ -273,7 +266,7 @@ namespace
   public:
     explicit DebugMenu(rex::ui::ImGuiDrawer *drawer) : ImGuiDialog(drawer)
     {
-      missions_ = ScanCheckpoints(g_checkpoint_dir, g_user_data);
+      missions_ = ScanCheckpoints(g_checkpoint_dir, g_content_dir);
       difficulty_ = std::clamp(REXCVAR_GET(ao2_start_difficulty), 0, 2);
     }
 
@@ -664,7 +657,7 @@ namespace
 namespace ao2::menu
 {
   void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::input::InputSystem *input,
-              const std::filesystem::path &game_data_root, const std::filesystem::path &user_data_root)
+              const std::filesystem::path &game_data_root)
   {
     if (!window || g_window)
     {
@@ -672,7 +665,7 @@ namespace ao2::menu
     }
     g_window = window;
     g_checkpoint_dir = game_data_root / "AO2Game" / "Checkpoints";
-    g_user_data = user_data_root;
+    g_content_dir = ao2::dlc::Dir();
     g_drawer = sdk_drawer;
     if (!g_drawer)
     {

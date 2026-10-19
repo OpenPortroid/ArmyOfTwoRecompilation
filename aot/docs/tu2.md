@@ -21,14 +21,16 @@ is native code there.
   so the recompiled code and the guest image both are TU2.
 - User data: `Documents/armyoftworecomp_tu2` (armyoftworecomp_app.h), not the
   disc version's `Documents/armyoftworecomp`: the disc version enumerates the
-  same content folder and cannot use the DLC. TU2 writes its checkpoint to
+  same content folder and could not use the DLC. TU2 writes its checkpoint to
   both `default_checkpoint.sav` and `default_checkpoint_tu2.sav` (the same
   bytes) and rewrites the profile.
-- DLC: each package extracted to `<user data>/0000000000000000/4541084C/
-  00000002/<package file name>/`. The
-  packages were made for title 454107F8; the game only enumerates its own
-  title (no alternate title ids in the XEX), so they go under 4541084C. The
-  runtime lists directories only, it does not mount STFS files there.
+- DLC: each package extracted to `<game>/dlc/<package file name>/`
+  (dlc_folder.cpp; the SDK's `marketplace_content_root`). Earlier versions
+  used `<user data>/0000000000000000/4541084C/00000002/`, moved from there at
+  start. The packages were made for title 454107F8; the game only enumerates
+  its own title (no alternate title ids in the XEX), and the dlc folder serves
+  every title. The runtime lists directories only, it does not mount STFS
+  files there.
 
 ## What changed in the executable
 
