@@ -175,9 +175,11 @@ namespace AO2Launcher
             // INSTALL and leads to the installation.
             InitInstall();
             RefreshProfiles();
-            // Back from the game: its saves may have changed.
+            // Back from the game: its saves may have changed, and its Graphics and Controls pages may
+            // have changed settings in our file.
             Activated += (s, e) =>
             {
+                S.Reload();
                 RefreshProfiles();
                 Invalidate();
             };

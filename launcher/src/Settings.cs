@@ -111,14 +111,21 @@ namespace AO2Launcher
             }
         }
 
-        void Load()
+        // The file as this launcher last read or wrote it. The game writes the file too (its in-game
+        // Graphics and Controls pages): a key whose value here is still the stored one takes the
+        // file's (Reload, Save), one the launcher changed meanwhile keeps the launcher's.
+        readonly Dictionary<string, string> stored = new Dictionary<string, string>(Defaults);
+
+        // The known keys of the file, null without one (or unreadable).
+        Dictionary<string, string> ReadFile()
         {
             try
             {
                 if (!File.Exists(FilePath))
                 {
-                    return;
+                    return null;
                 }
+                var file = new Dictionary<string, string>();
                 foreach (string raw in File.ReadAllLines(FilePath, Encoding.UTF8))
                 {
                     string line = raw.Trim();
@@ -134,18 +141,47 @@ namespace AO2Launcher
                     string key = line.Substring(0, eq).Trim();
                     if (Defaults.ContainsKey(key))
                     {
-                        values[key] = line.Substring(eq + 1).Trim();
+                        file[key] = line.Substring(eq + 1).Trim();
                     }
                 }
-                // The game's MSAA is no longer offered.
-                if (values.TryGetValue("aa", out string aa) && aa == "msaa")
-                {
-                    values["aa"] = "off";
-                }
+                return file;
             }
             catch
             {
                 // A broken file just means defaults.
+                return null;
+            }
+        }
+
+        void Load()
+        {
+            Reload();
+            // The game's MSAA is no longer offered.
+            string aa;
+            if (values.TryGetValue("aa", out aa) && aa == "msaa")
+            {
+                values["aa"] = "off";
+            }
+        }
+
+        // Takes in what the game wrote to the file since (see `stored`).
+        public void Reload()
+        {
+            Dictionary<string, string> file = ReadFile();
+            if (file == null)
+            {
+                return;
+            }
+            foreach (var kv in file)
+            {
+                string mine, was;
+                values.TryGetValue(kv.Key, out mine);
+                stored.TryGetValue(kv.Key, out was);
+                if (mine == was)
+                {
+                    values[kv.Key] = kv.Value;
+                }
+                stored[kv.Key] = kv.Value;
             }
         }
 
@@ -153,6 +189,7 @@ namespace AO2Launcher
         {
             try
             {
+                Reload();
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
                 var sb = new StringBuilder();
                 sb.AppendLine("# Army of Two launcher settings (the launcher rewrites this file)");
@@ -160,7 +197,41 @@ namespace AO2Launcher
                 {
                     sb.Append(kv.Key).Append(" = ").AppendLine(kv.Value);
                 }
-                File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
+                // Written whole to a file of its own, then put in place: a crash or a read by the game
+                // in the middle never sees half a file.
+                string text = sb.ToString(), part = FilePath + ".tmp";
+                try
+                {
+                    File.WriteAllText(part, text, new UTF8Encoding(false));
+                    if (File.Exists(FilePath))
+                    {
+                        File.Replace(part, FilePath, null);
+                    }
+                    else
+                    {
+                        File.Move(part, FilePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!(ex is IOException) && !(ex is UnauthorizedAccessException))
+                    {
+                        throw;
+                    }
+                    // No replace here (the file held open, a file system without it): written in place.
+                    File.WriteAllText(FilePath, text, new UTF8Encoding(false));
+                    try
+                    {
+                        File.Delete(part);
+                    }
+                    catch
+                    {
+                    }
+                }
+                foreach (var kv in values)
+                {
+                    stored[kv.Key] = kv.Value;
+                }
             }
             catch
             {

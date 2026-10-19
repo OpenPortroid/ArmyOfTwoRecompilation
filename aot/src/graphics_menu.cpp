@@ -84,6 +84,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -533,10 +534,32 @@ namespace
     {
       lines.push_back(key + " = " + value);
     }
-    std::ofstream out(path, std::ios::binary | std::ios::trunc);
-    for (const std::string &line : lines)
+    // Written whole to a file of its own, then put in place: a crash, or the
+    // launcher reading it, in the middle never finds half a file.
+    std::filesystem::path part = path;
+    part += ".tmp";
     {
-      out << line << "\r\n";
+      std::ofstream out(part, std::ios::binary | std::ios::trunc);
+      for (const std::string &line : lines)
+      {
+        out << line << "\r\n";
+      }
+      if (!out.flush())
+      {
+        throw std::runtime_error("cannot write " + rex::path_to_utf8(part));
+      }
+    }
+    std::error_code ec;
+    std::filesystem::rename(part, path, ec);
+    if (ec)
+    {
+      // Held open by someone else (the launcher reading it): written in place.
+      std::filesystem::remove(part, ec);
+      std::ofstream out(path, std::ios::binary | std::ios::trunc);
+      for (const std::string &line : lines)
+      {
+        out << line << "\r\n";
+      }
     }
   }
 
