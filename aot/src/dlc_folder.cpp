@@ -13,7 +13,8 @@
 // waits for the launcher's move to end. A package moves by rename on the same
 // drive, else is copied to <package>.tmp, renamed and only then deleted at the
 // old place, so a package in dlc\ is always whole: one already there wins and
-// the old copy is deleted.
+// the old copy is deleted (an empty folder of its name is no package and is
+// replaced).
 // If dlc\ cannot be written (the game in a protected folder) and nothing is in
 // it, the game keeps reading the old place.
 
@@ -67,7 +68,7 @@ namespace ao2::dlc
         fs::rename(part, to, ec);
       if (ec)
       {
-        REXLOG_WARN("dlc: cannot move {} to {}: {}", from.string(), to.string(), ec.message());
+        REXLOG_WARN("dlc: cannot move {} to {}: {}", rex::path_to_utf8(from), rex::path_to_utf8(to), ec.message());
         std::error_code ec2;
         fs::remove_all(part, ec2);
         return false;
@@ -99,7 +100,9 @@ namespace ao2::dlc
         if (!e.is_directory(ec2) || e.path().extension() == ".tmp")
           continue;
         fs::path to = dir / e.path().filename();
-        if (fs::exists(to, ec2))
+        bool there = fs::exists(to, ec2);
+        std::error_code ec3;
+        if (there && fs::is_directory(to, ec3) && !fs::is_empty(to, ec3) && !ec3)
         {
           // Already here (installed again, or a move cut short after the rename): the old copy
           // is a duplicate.
@@ -110,6 +113,16 @@ namespace ao2::dlc
             ++moved;
           continue;
         }
+        if (there)
+        {
+          // An empty folder (or a file) of that name is no package: the old copy takes its place.
+          fs::remove(to, ec2);
+          if (ec2)
+          {
+            ++kept;
+            continue;
+          }
+        }
         fs::create_directories(dir, ec2);
         if (MovePackage(e.path(), to))
           ++moved;
@@ -118,8 +131,8 @@ namespace ao2::dlc
       }
       RemoveEmpty(old_dir, user_data_root);
       if (moved || kept)
-        REXLOG_INFO("dlc: {} package(s) moved (or already there) from {} to {}, {} left there", moved, old_dir.string(), dir.string(),
-                    kept);
+        REXLOG_INFO("dlc: {} package(s) moved (or already there) from {} to {}, {} left there", moved,
+                    rex::path_to_utf8(old_dir), rex::path_to_utf8(dir), kept);
     }
   } // namespace
 
@@ -150,7 +163,8 @@ namespace ao2::dlc
 
     if (CountPackages(dir) == 0 && CountPackages(old_dir) > 0)
     {
-      REXLOG_WARN("dlc: {} cannot be used, the downloadable content stays in {}", dir.string(), old_dir.string());
+      REXLOG_WARN("dlc: {} cannot be used, the downloadable content stays in {}", rex::path_to_utf8(dir),
+                  rex::path_to_utf8(old_dir));
       g_dir = old_dir;
       return;
     }
