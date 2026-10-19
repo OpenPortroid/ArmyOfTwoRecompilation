@@ -777,6 +777,8 @@ namespace
   }
 
   std::atomic<bool> g_driving{false};
+  // The world is the front end (InShell), as of the game thread's last pad poll.
+  std::atomic<bool> g_in_shell{false};
   // Clock ticks of the last UpdateLookingAction of any branch: it runs on
   // foot, in vehicles and on turrets, not in the menus (where the players'
   // controllers still have the menu's characters as pawns) or when paused.
@@ -1100,6 +1102,11 @@ namespace ao2::mouse
     return g_driving.load(std::memory_order_relaxed);
   }
 
+  bool InFrontEnd()
+  {
+    return g_in_shell.load(std::memory_order_relaxed);
+  }
+
   uint32_t AimTogglePawn(PPCContext &ctx, uint8_t *base, uint32_t user)
   {
     auto looked = clock::time_point(clock::duration(g_look_seen.load(std::memory_order_relaxed)));
@@ -1128,6 +1135,41 @@ namespace ao2::mouse
     last_result = result;
     last_play = in_play;
     return result;
+  }
+
+  bool HoldsGrenade(const uint8_t *base, uint32_t pawn)
+  {
+    constexpr uint32_t kPawnWeapon = 924; // Pawn.Weapon
+    constexpr uint32_t kNames = 0x831D1724;
+    static std::map<uint32_t, bool> by_class;
+    uint32_t weapon = pawn ? LoadU32(base, pawn + kPawnWeapon) : 0;
+    uint32_t cls = weapon ? LoadU32(base, weapon + 52) : 0;
+    if (!cls)
+    {
+      return false;
+    }
+    auto it = by_class.find(cls);
+    if (it != by_class.end())
+    {
+      return it->second;
+    }
+    uint32_t names = LoadU32(base, kNames);
+    bool grenade = false;
+    for (uint32_t c = cls, depth = 0; names && c && depth < 24 && !grenade; c = LoadU32(base, c + 60), ++depth)
+    {
+      uint32_t entry = LoadU32(base, names + LoadU32(base, c + 44) * 4);
+      grenade = entry && std::strncmp(reinterpret_cast<const char *>(base + entry + 16), "AO2Grenade", 10) == 0;
+    }
+    if (REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "weapon class %s: grenade %d\n", ClassName(base, weapon), grenade ? 1 : 0);
+      std::fflush(DebugLog());
+    }
+    if (by_class.size() > 256)
+    {
+      by_class.clear();
+    }
+    return by_class[cls] = grenade;
   }
 
   void NoteToggleAim(uint32_t user, uint8_t trigger, bool on)
@@ -1262,6 +1304,7 @@ extern "C" REX_FUNC(sub_82A95F70)
     Sleep(1);
     return;
   }
+  g_in_shell.store(InShell(base), std::memory_order_relaxed);
   ao2::prompts::Tick(base);
   ao2::cyrillic::Tick(base);
   if (!receiver)

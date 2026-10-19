@@ -84,12 +84,14 @@ namespace
   clock::time_point g_next_file_check;
 
   // Toggle aim, per pad: the trigger held at the last poll, aiming latched,
-  // and the pawn it is latched on (the character, a turret, a vehicle seat).
+  // the pawn it is latched on (the character, a turret, a vehicle seat), and
+  // fire (the right trigger) held with a grenade while aiming.
   struct ToggleAim
   {
     bool down = false;
     bool on = false;
     uint32_t pawn = 0;
+    bool throwing = false;
   };
   ToggleAim g_toggle_aim[4];
 
@@ -111,6 +113,7 @@ namespace
     if (pawn != t.pawn)
     {
       t.on = false;
+      t.throwing = false;
       t.pawn = pawn;
     }
     if (!pawn)
@@ -121,6 +124,22 @@ namespace
     if (press)
     {
       t.on = !t.on;
+    }
+    // A grenade thrown (fire pressed and let go while aiming with it) ends
+    // the aiming.
+    bool fire = p[7] >= kPressed;
+    if (t.on && fire && !t.throwing && ao2::mouse::HoldsGrenade(base, pawn))
+    {
+      t.throwing = true;
+    }
+    else if (t.throwing && !fire)
+    {
+      t.throwing = false;
+      t.on = false;
+    }
+    if (!t.on)
+    {
+      t.throwing = false;
     }
     ao2::mouse::NoteToggleAim(user, p[6], t.on);
     p[6] = t.on ? 0xFF : 0;

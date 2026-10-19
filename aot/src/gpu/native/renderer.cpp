@@ -54,6 +54,7 @@
 #include "../../cyrillic_fonts.h"
 #include "../../aspect_ratio.h"
 #include "../../keyboard_prompts.h"
+#include "../../mouse_aim.h"
 #include "../../precise_sleep.h"
 
 #include <rex/graphics/pipeline/texture/info.h>
@@ -6659,7 +6660,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       }
       s.ao = ao == "ssao" ? 1u : ao == "hbao" ? 2u : ao == "gtao" ? 3u : 0u;
       s.aa = aa == "fxaa" ? 1u : aa == "smaa" ? 2u : 0u;
-      s.motion_blur = std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
+      // Never in the main menu and the lobby (the front end).
+      s.motion_blur = ao2::mouse::InFrontEnd() ? 0 : std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
       s.dof = REXCVAR_GET(ao2_depth_of_field) > 0 ? 1 : 0;
       g_post.settings = s;
       return g_post.settings;
