@@ -19,14 +19,9 @@ namespace game_patches
   // patch instructions, which are already compiled to C++; they are applied
   // through mid-asm hooks instead (midasm_hooks.toml, src/midasm_hooks.cpp).
 
-  // "Black Shading Fix" - disables MSAA.
+  // "Black Shading Fix" - disables MSAA (always: the game's MSAA is not offered).
   static void DisableMsaa()
   {
-    if (!REXCVAR_GET(ao2_disable_msaa))
-    {
-      return;
-    }
-
     auto *rt = rex::Runtime::instance();
     uint8_t *base = rt ? rt->virtual_membase() : nullptr;
     if (!base)

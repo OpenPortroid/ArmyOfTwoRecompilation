@@ -1016,9 +1016,9 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Choice, Label = "Anti-aliasing", Key = "aa",
-                    Values = new[] { "off", "fxaa", "smaa", "msaa" }, Names = new[] { "OFF", "FXAA", "SMAA", "MSAA" },
-                    Desc = "Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. MSAA is the game's own " +
-                           "2× multisampling, the heaviest. On top of the render resolution."
+                    Values = new[] { "off", "fxaa", "smaa" }, Names = new[] { "OFF", "FXAA", "SMAA" },
+                    Desc = "Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. " +
+                           "On top of the render resolution."
                 },
                 new Row
                 {

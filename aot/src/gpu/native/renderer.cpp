@@ -71,8 +71,7 @@ REXCVAR_DECLARE(double, ao2_native_gpu_resolution_scale);
 REXCVAR_DEFINE_STRING(ao2_ambient_occlusion, "off", "GPU",
                       "Ambient occlusion added to the scene: off, ssao, hbao or gtao");
 REXCVAR_DEFINE_STRING(ao2_anti_aliasing, "off", "GPU",
-                      "Post-process anti-aliasing of the scene: off, fxaa or smaa (MSAA is the game's own: "
-                      "ao2_disable_msaa)");
+                      "Post-process anti-aliasing of the scene: off, fxaa or smaa");
 REXCVAR_DEFINE_INT32(ao2_motion_blur, 0, "GPU", "Camera motion blur: 0 off, 1 low, 2 high");
 REXCVAR_DEFINE_INT32(ao2_depth_of_field, 0, "GPU",
                      "Depth of field (what lies beyond the aim point blurs): 0 off, 1 on");

@@ -284,18 +284,18 @@ namespace AO2Launcher
             a("Anisotropic filtering", "Анизотропная фильтрация", "Filtrage anisotrope", "Anisotrope Filterung",
               "Filtrado anisotrópico", "Filtro anisotropico");
             a("Anti-aliasing", "Сглаживание", "Anticrénelage", "Kantenglättung", "Antialiasing", "Antialiasing");
-            a("Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. MSAA is the game's own " +
-              "2× multisampling, the heaviest. On top of the render resolution.",
-              "Сглаживает «лесенки» на краях. FXAA самое быстрое и чуть размывает; SMAA чётче. MSAA — собственный " +
-              "2× мультисэмплинг игры, самый тяжёлый. Работает поверх разрешения рендера.",
-              "Lisse les bords crénelés. FXAA est le plus rapide et un peu flou ; SMAA est plus net. MSAA est le " +
-              "multi-échantillonnage 2× du jeu, le plus lourd. S'ajoute à la résolution de rendu.",
-              "Glättet gezackte Kanten. FXAA ist am schnellsten und leicht weich; SMAA ist schärfer. MSAA ist das " +
-              "2×-Multisampling des Spiels, am aufwendigsten. Zusätzlich zur Renderauflösung.",
-              "Suaviza los bordes dentados. FXAA es el más rápido y algo suave; SMAA es más nítido. MSAA es el " +
-              "multimuestreo 2× del propio juego, el más pesado. Se suma a la resolución de renderizado.",
-              "Ammorbidisce i bordi seghettati. FXAA è il più veloce e un po' morbido; SMAA è più nitido. MSAA è il " +
-              "multicampionamento 2× del gioco, il più pesante. Si aggiunge alla risoluzione di rendering.");
+            a("Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. " +
+              "On top of the render resolution.",
+              "Сглаживает «лесенки» на краях. FXAA самое быстрое и чуть размывает; SMAA чётче. " +
+              "Работает поверх разрешения рендера.",
+              "Lisse les bords crénelés. FXAA est le plus rapide et un peu flou ; SMAA est plus net. " +
+              "S'ajoute à la résolution de rendu.",
+              "Glättet gezackte Kanten. FXAA ist am schnellsten und leicht weich; SMAA ist schärfer. " +
+              "Zusätzlich zur Renderauflösung.",
+              "Suaviza los bordes dentados. FXAA es el más rápido y algo suave; SMAA es más nítido. " +
+              "Se suma a la resolución de renderizado.",
+              "Ammorbidisce i bordi seghettati. FXAA è il più veloce e un po' morbido; SMAA è più nitido. " +
+              "Si aggiunge alla risoluzione di rendering.");
             a("Ambient occlusion", "Затенение окружения (AO)", "Occlusion ambiante", "Umgebungsverdeckung",
               "Oclusión ambiental", "Occlusione ambientale");
             a("Soft contact shadows in corners and where objects meet. SSAO is the lightest, HBAO is more defined, " +

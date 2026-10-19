@@ -84,8 +84,6 @@ ao2_decouple = true
 # Costly in fights (every rand() call and every pawn, each frame): off for playing.
 ao2_coop_debug = false
 ao2_coop_sync_trace = false
-# "Black Shading Fix": disables MSAA.
-ao2_disable_msaa = true
 ao2_anisotropic_16x = true
 
 # Debug cheat: the player takes no damage (UE3 god mode; off in online co-op).

@@ -194,9 +194,9 @@ sampling 111D0000 into 544) -> shadow depth (below) and its projection, transluc
   the result and the HUD is untouched. Cvars: `ao2_ambient_occlusion` off/ssao/hbao/gtao, `ao2_anti_aliasing`
   off/fxaa/smaa, `ao2_motion_blur` 0-2, `ao2_depth_of_field` 0/1 (all live; anti-aliasing is also on the in-game
   Graphics page, its eighth and last row).
-- MSAA is the game's own 2x: `ao2_disable_msaa` (the xenia "Black Shading Fix") writes 4 into the predicated tiling
-  mode index 0x831876D4 (5 modes, tile counts at 0x83187714: 4xAA 3 tiles, 2xAA 2 tiles, ..., 4 = no AA); the
-  launcher's MSAA choice leaves it alone. With it the opaque scene is drawn in two predicated tiles (rows 0-512 and
+- MSAA is the game's own 2x, always off now: the xenia "Black Shading Fix" (game_patches.h) writes 4 into the
+  predicated tiling mode index 0x831876D4 (5 modes, tile counts at 0x83187714: 4xAA 3 tiles, 2xAA 2 tiles, ...,
+  4 = no AA). With MSAA on the opaque scene is drawn in two predicated tiles (rows 0-512 and
   512-720 at 16:9, the second with window offset 0,-512) and each tile is resolved with the destination base moved
   to its first row (109D0000 + 512 rows = 10ED0000; tiled textures are stored in 32-row stripes). The renderer took
   that for a texture of its own, so the lower part of the scene texture the game samples kept stale contents: the

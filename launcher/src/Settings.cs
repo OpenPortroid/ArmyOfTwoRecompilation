@@ -137,6 +137,11 @@ namespace AO2Launcher
                         values[key] = line.Substring(eq + 1).Trim();
                     }
                 }
+                // The game's MSAA is no longer offered.
+                if (values.TryGetValue("aa", out string aa) && aa == "msaa")
+                {
+                    values["aa"] = "off";
+                }
             }
             catch
             {
