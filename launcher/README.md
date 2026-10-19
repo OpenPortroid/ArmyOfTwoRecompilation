@@ -9,6 +9,10 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - Two screens. **Main**: the art and logo, then Settings, Play and Exit. **Settings**: the Graphics, Controls, Keyboard,
   Gamepad, Split-Screen, Network and Advanced tabs; Back returns to the main screen. A tab longer than the panel scrolls
   (wheel, or by moving the selection).
+- **Achievements** (`src\Achievements.cs`): the current profile's achievements by section (as the game's own
+  Achievements page has them), icons, gamerscore and when each was earned. The names, descriptions and icons are the
+  game's: the game writes them to the shared cache (`Documents\armyoftworecomp_tu2\cache\achievements`) when it
+  starts, so the tab is empty until it has run once; the unlocks are read from the profile's `achievements\4541084C.toml`.
 - **Keyboard / Gamepad** (`src\BindPages.cs`, `src\Bindings.cs`): every key of the game's `keybind_*` and every gamepad
   button of `padbind_*` (plus the sticks swapped / inverted). Enter or a click waits for the key or mouse button (with
   Shift / Ctrl / Alt: a combination; a modifier let go alone binds itself), → or + adds one more key, Delete or × clears;

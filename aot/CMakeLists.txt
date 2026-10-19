@@ -101,6 +101,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/ui_text.cpp
     src/ui_theme.cpp
     src/graphics_menu.cpp
+    src/achievements.cpp
     src/menu_mouse.cpp
     src/gpu/d3d_trace.cpp
     src/gpu/native/native_graphics_system.cpp

@@ -54,6 +54,26 @@ namespace AO2Launcher
             Action<string, string, string, string, string, string> a = (en, ru, fr, de, es, it) =>
                 t[en] = new[] { ru, fr, de, es, it };
 
+            // --- Achievements tab ---
+            a("ACHIEVEMENTS", "ДОСТИЖЕНИЯ", "SUCCÈS", "ERFOLGE", "LOGROS", "OBIETTIVI");
+            a("Story", "Сюжет", "Histoire", "Story", "Historia", "Storia");
+            a("Campaign", "Кампания", "Campagne", "Kampagne", "Campaña", "Campagna");
+            a("Gear and co-op", "Снаряжение и кооп", "Équipement et coop", "Ausrüstung und Koop", "Equipo y coop", "Equipaggiamento e coop");
+            a("Weapons", "Оружие", "Armes", "Waffen", "Armas", "Armi");
+            a("Combat", "Бой", "Combat", "Kampf", "Combate", "Combattimento");
+            a("Versus", "Противостояние", "Versus", "Versus", "Versus", "Versus");
+            a("SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge");
+            a("Profile {0}: {1} of {2} unlocked, {3} of {4} G", "Профиль {0}: получено {1} из {2}, {3} из {4} G",
+              "Profil {0} : {1} sur {2} débloqués, {3} sur {4} G", "Profil {0}: {1} von {2} freigeschaltet, {3} von {4} G",
+              "Perfil {0}: {1} de {2} desbloqueados, {3} de {4} G", "Profilo {0}: {1} di {2} sbloccati, {3} di {4} G");
+            a("Earned {0}", "Получено {0}", "Obtenu le {0}", "Erhalten am {0}", "Conseguido el {0}", "Ottenuto il {0}");
+            a("The list of achievements comes from the game's files: start the game once to see it here.",
+              "Список достижений берется из файлов игры: запустите игру один раз, чтобы он появился здесь.",
+              "La liste des succès vient des fichiers du jeu : lancez le jeu une fois pour la voir ici.",
+              "Die Liste der Erfolge stammt aus den Spieldateien: Starte das Spiel einmal, um sie hier zu sehen.",
+              "La lista de logros sale de los archivos del juego: inicia el juego una vez para verla aquí.",
+              "L'elenco degli obiettivi viene dai file del gioco: avvia il gioco una volta per vederlo qui.");
+
             // --- Title bar, main screen ---
             a("Launcher", "Лаунчер", "Lanceur", "Launcher", "Lanzador", "Launcher");
             a("Installation", "Установка", "Installation", "Installation", "Instalación", "Installazione");

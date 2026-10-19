@@ -21,6 +21,7 @@ namespace AO2Launcher
         Button,
         Info,
         Bind, // a key binding (or with Pad, a gamepad button's)
+        Achievement, // one of the game's achievements (Achievements.cs): nothing to change
     }
 
     sealed class Row
@@ -54,6 +55,8 @@ namespace AO2Launcher
         public Func<string, Confirm> ConfirmOn;
         // Choice: after the value changed
         public Action Changed;
+        // Achievement
+        public Achievements.Entry Ach;
 
         public Func<bool> Visible = () => true;
         public Func<bool> Enabled = () => true;
@@ -122,7 +125,7 @@ namespace AO2Launcher
         Font fTitle, fTitleSub, fBack, fSection, fLcd, fTiny;
         bool padConnected;
 
-        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED", "PROFILES" };
+        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED", "PROFILES", "ACHIEVEMENTS" };
         const int ProfilesTab = 7;
         List<Row>[] tabs;
         UiScreen screen = UiScreen.Main;
@@ -1317,7 +1320,7 @@ namespace AO2Launcher
                 },
             };
 
-            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras, ProfileRows() };
+            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras, ProfileRows(), AchievementRows() };
 
             foreach (Row r in AllRows().Where(r => r.Kind == RowKind.Text))
             {
@@ -1366,6 +1369,7 @@ namespace AO2Launcher
         void LanguageChanged()
         {
             L.Set(S["language"]);
+            RefreshAchievements();
             foreach (Row r in AllRows().Where(r => r.Box != null))
             {
                 SetCueBanner(r);
@@ -2680,6 +2684,11 @@ namespace AO2Launcher
             if (selected)
             {
                 SelectionBar(g, rr);
+            }
+            if (r.Kind == RowKind.Achievement)
+            {
+                DrawAchievementRow(g, r, rr, selected, "row" + tab + "_" + index, index);
+                return;
             }
             Color labelColor = !enabled ? TextOff : selected ? PaperHi : TextLight;
             var lfmt = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };

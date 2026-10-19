@@ -14,6 +14,7 @@
 #include <rex/runtime.h>
 #include <rex/system/gpu_plugin.h>
 
+#include "achievements.h"
 #include "aspect_ratio.h"
 #include "debug_menu.h"
 #include "debug_tools.h"
@@ -92,6 +93,9 @@ public:
     // The game's text (Russian, keyboard keys in place of the controller
     // buttons): mounted before the game reads its localization.
     ao2::lang::Install(runtime(), game_data_root(), user_data_root());
+    // The achievements in that language (the runtime read them in English),
+    // and for the launcher.
+    ao2::ach::Setup(runtime()->cache_root());
 
     // Online co-op: where the game finds EA's (emulated) servers, and the
     // built-in server when this player hosts.

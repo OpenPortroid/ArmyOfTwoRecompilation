@@ -104,6 +104,7 @@ namespace AO2Launcher
             {
                 profileRow.Values = all.ToArray();
             }
+            RefreshAchievements();
         }
 
         List<Row> ProfileRows()

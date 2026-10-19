@@ -277,6 +277,19 @@ namespace
       {"Left", "Влево", "Links", "Gauche", "Izquierda", "Sinistra"},
       {"Right", "Вправо", "Rechts", "Droite", "Derecha", "Destra"},
       {"Space", "Пробел", "Leertaste", "Espace", "Espacio", "Spazio"},
+
+      // --- The Achievements page (Options > Graphics, in the game's fonts) ---
+      {"Achievements", "Достижения", "Erfolge", "Succès", "Logros", "Obiettivi"},
+      {"Earned", "Получено", "Erhalten", "Obtenu", "Conseguido", "Ottenuto"},
+      {"Locked", "Закрыто", "Gesperrt", "Verrouillé", "Bloqueado", "Bloccato"},
+      {"Story", "Сюжет", "Story", "Histoire", "Historia", "Storia"},
+      {"Campaign", "Кампания", "Kampagne", "Campagne", "Campaña", "Campagna"},
+      {"Gear and co-op", "Снаряжение и кооп", "Ausrüstung und Koop", "Équipement et coop", "Equipo y coop",
+       "Equipaggiamento e coop"},
+      {"Weapons", "Оружие", "Waffen", "Armes", "Armas", "Armi"},
+      {"Versus", "Противостояние", "Versus", "Versus", "Versus", "Versus"},
+      {"SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge"},
+      {"Gamerscore", "Очки", "Gamerscore", "Score", "Puntuación", "Punteggio"},
   };
   // clang-format on
 
