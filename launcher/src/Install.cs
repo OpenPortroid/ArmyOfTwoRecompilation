@@ -508,7 +508,8 @@ namespace AO2Launcher
 
         // Moves the packages from the old place into <game folder>\dlc and removes the profiles' links
         // to the old place. A package in dlc\ is always whole (moved there by a rename): one already
-        // there wins and the old copy is deleted. The game does the same when it starts
+        // there wins and the old copy is deleted (an empty folder of its name is no package and is
+        // replaced). The game does the same when it starts
         // (dlc_folder.cpp); the mutex keeps the two from moving at once.
         // Returns how many were moved; throws InstallException if one could not be.
         public static int MoveOldDlc(string gameDir)
@@ -538,12 +539,17 @@ namespace AO2Launcher
                             }
                             try
                             {
-                                if (Directory.Exists(to))
+                                if (Directory.Exists(to) && Directory.EnumerateFileSystemEntries(to).Any())
                                 {
                                     DeleteEntry(from); // installed again, or a move cut short after the rename
                                 }
                                 else
                                 {
+                                    // An empty folder (or a file) of that name is no package: the old copy takes its place.
+                                    if (Directory.Exists(to) || File.Exists(to))
+                                    {
+                                        DeleteEntry(to);
+                                    }
                                     Directory.CreateDirectory(root);
                                     MovePackage(from, to);
                                 }
