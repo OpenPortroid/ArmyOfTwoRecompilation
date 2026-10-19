@@ -1,4 +1,4 @@
-// achievements.cpp - The game's achievements in its language, by section.
+// achievements.cpp - The game's achievements in its language, and for the launcher.
 //
 // The game unlocks its achievements through XGIUserWriteAchievements; the
 // runtime (AchievementManager) keeps them in <user_data_root>\achievements\
@@ -13,12 +13,11 @@
 // (catalog.tsv, icons\<image id>.png), which every launcher profile shares.
 // The unlocks are each profile's own.
 //
-// The sections group the 41 achievements for the Achievements page (Options >
-// Graphics > Achievements, graphics_menu.cpp), at most seven to a section: the
-// page's rows.
+// The sections group the 41 achievements for the launcher's tab.
 #include "achievements.h"
 
 #include <algorithm>
+#include <iterator>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -43,10 +42,10 @@ namespace
   struct Section
   {
     const char *name;
-    uint32_t ids[ao2::ach::kSectionSize]; // 0: no more
+    uint32_t ids[7]; // 0: no more
   };
 
-  constexpr Section kSections[ao2::ach::kSectionCount] = {
+  constexpr Section kSections[] = {
       {"Story", {7, 8, 9, 10, 11, 12, 66}},
       {"Campaign", {15, 17, 22, 24, 40, 54}},
       {"Gear and co-op", {20, 21, 64, 26, 27, 59, 65}},
@@ -58,7 +57,7 @@ namespace
 
   int SectionOf(uint32_t id)
   {
-    for (int s = 0; s < ao2::ach::kSectionCount; ++s)
+    for (int s = 0; s < static_cast<int>(std::size(kSections)); ++s)
     {
       for (uint32_t i : kSections[s].ids)
       {
@@ -281,73 +280,10 @@ namespace ao2::ach
     }
     size_t count = list.size();
     ks->achievements().ReplaceAchievements(std::move(list));
-    REXLOG_INFO("achievements: {} in '{}', {} unlocked", count, code, Count().unlocked);
+    REXLOG_INFO("achievements: {} in '{}'", count, code);
     if (!cache_root.empty())
     {
       Export(cache_root, db);
     }
-  }
-
-  const char *SectionName(int section)
-  {
-    return section >= 0 && section < kSectionCount ? kSections[section].name : "";
-  }
-
-  std::vector<Item> Section(int section)
-  {
-    std::vector<Item> items;
-    auto *ks = rex::system::kernel_state();
-    if (!ks || section < 0 || section >= kSectionCount)
-    {
-      return items;
-    }
-    const auto &manager = ks->achievements();
-    for (uint32_t id : kSections[section].ids)
-    {
-      if (!id)
-      {
-        break;
-      }
-      auto info = manager.FindAchievement(id);
-      if (!info)
-      {
-        continue;
-      }
-      Item item;
-      item.id = id;
-      item.label = info->label;
-      item.unlocked = manager.IsUnlocked(id);
-      item.description = item.unlocked ? info->description : info->unachieved_description;
-      item.gamerscore = info->gamerscore;
-      items.push_back(std::move(item));
-    }
-    return items;
-  }
-
-  Totals Count(int section)
-  {
-    Totals t;
-    auto *ks = rex::system::kernel_state();
-    if (!ks)
-    {
-      return t;
-    }
-    const auto &manager = ks->achievements();
-    for (const auto &info : manager.ListAchievements())
-    {
-      if (section >= 0 && SectionOf(info.id) != section)
-      {
-        continue;
-      }
-      bool unlocked = manager.IsUnlocked(info.id);
-      ++t.count;
-      t.max_gamerscore += static_cast<int>(info.gamerscore);
-      if (unlocked)
-      {
-        ++t.unlocked;
-        t.gamerscore += static_cast<int>(info.gamerscore);
-      }
-    }
-    return t;
   }
 } // namespace ao2::ach
