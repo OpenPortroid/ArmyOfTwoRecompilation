@@ -77,6 +77,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/limiter_wait.cpp
     src/guest_fast.cpp
     src/perf_waits.cpp
+    src/frame_spikes.cpp
     src/hang_watchdog.cpp
     src/coop_link.cpp
     src/coop_cmd.cpp

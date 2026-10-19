@@ -53,6 +53,7 @@
 
 #include "coop.h"
 #include "coop_link.h"
+#include "frame_spikes.h"
 #include "log_files.h"
 
 REXCVAR_DECLARE(bool, ao2_fps_unlock);
@@ -394,6 +395,18 @@ namespace ao2::decouple
 extern "C" REX_FUNC(__imp__sub_82777738);
 extern "C" REX_FUNC(sub_82777738)
 {
+  double spike_start = ao2::spikes::Enabled() ? NowMs() : 0.0;
+  struct SpikeMark
+  {
+    double start;
+    ~SpikeMark()
+    {
+      if (start > 0.0)
+      {
+        ao2::spikes::Mark(ao2::spikes::kEngineTick, NowMs() - start);
+      }
+    }
+  } spike_mark{spike_start};
   if (!g_render_only)
   {
     double start = NowMs();

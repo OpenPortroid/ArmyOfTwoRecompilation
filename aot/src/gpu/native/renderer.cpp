@@ -11,6 +11,8 @@
 // - Index data is copied (with endian swap / primitive conversion) per draw.
 #include "renderer.h"
 
+#include "../../frame_spikes.h"
+
 #include <windows.h>
 
 #include <d3d12.h>
@@ -89,6 +91,7 @@ REXCVAR_DECLARE(std::string, ao2_native_gpu_skip_shaders);
 REXCVAR_DECLARE(bool, ao2_native_gpu_debug_upload_vertices);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_submit_draws);
 REXCVAR_DECLARE(bool, ao2_native_gpu_frame_pacing);
+REXCVAR_DECLARE(int32_t, ao2_native_gpu_pacing_margin_us);
 REXCVAR_DECLARE(bool, ao2_fps_unlock);
 int32_t FpsTarget(); // midasm_hooks.cpp
 
@@ -749,12 +752,27 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           IDXGISwapChain3 *swapchain = swapchain_;
           UINT flags = flags_;
           lock.unlock();
+          auto pace_start = std::chrono::steady_clock::now();
           Pace();
           auto start = std::chrono::steady_clock::now();
+          if (ao2::spikes::Enabled())
+          {
+            ao2::spikes::Mark(ao2::spikes::kPaced, std::chrono::duration<double, std::milli>(start - pace_start).count());
+          }
           // Vertical sync: wait for the refresh; tearing only without it.
           bool vsync = REXCVAR_GET(ao2_native_gpu_vsync);
           HRESULT hr = swapchain->Present(vsync ? 1 : 0, vsync ? flags & ~UINT(DXGI_PRESENT_ALLOW_TEARING) : flags);
           ao2::perf::OnPresent();
+          if (ao2::spikes::Enabled())
+          {
+            auto end = std::chrono::steady_clock::now();
+            ao2::spikes::Mark(ao2::spikes::kPresented, std::chrono::duration<double, std::milli>(end - start).count());
+            ao2::spikes::AfterPresent(
+                last_end_.time_since_epoch().count() ? std::chrono::duration<double, std::milli>(end - last_end_).count()
+                                                     : 0.0,
+                1000.0 / FpsTarget());
+            last_end_ = end;
+          }
           g.time_present_ns += uint64_t(
               std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count());
           lock.lock();
@@ -768,27 +786,72 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       // thread's frames, but not how long each takes to get here: with
       // ao2_decouple a simulation step's frame comes milliseconds later
       // than a render-only one, so at twice the simulation rate the present
-      // intervals took turns being short and long. A frame that is early is
-      // held until the frame time has passed since the last present - a
-      // little less than the limiter's, so that this never becomes the limit
-      // and a late frame's delay is made up for.
+      // intervals took turns being short and long. Frames are presented on
+      // a grid of slots one frame time apart; one that is early waits for
+      // its slot.
+      //
+      // The grid is kept a margin after the latest frames' arrivals: a
+      // simulation step's frame whose world tick or drawing takes a few
+      // milliseconds longer than usual still makes its slot. Held only from
+      // the last present (the grid's margin 0), each such frame was a
+      // visible 12-15 ms spike at 120 FPS (frame_spikes.log). A late frame
+      // is presented at once, and the grid moves on from it with a margin
+      // that much wider; the margin shrinks again while it is not needed,
+      // and the grid follows the arrivals both ways (the limiter's frames
+      // are a little longer than the frame time).
       void Pace()
       {
         using clock = std::chrono::steady_clock;
+        using ms_d = std::chrono::duration<double, std::milli>;
         if (REXCVAR_GET(ao2_native_gpu_frame_pacing) && REXCVAR_GET(ao2_fps_unlock))
         {
-          auto due = last_present_ +
-                     std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(0.97 / FpsTarget()));
-          // The timer wakes ~0.5 ms late in the foreground, milliseconds late in
-          // the background: the sleeper leaves that much, the rest is spun.
-          if (auto now = clock::now(); now < due)
+          const double period = 1000.0 / FpsTarget();
+          const double max_margin = double(REXCVAR_GET(ao2_native_gpu_pacing_margin_us)) / 1000.0;
+          auto arrival = clock::now();
+          double slack = ms_d(next_slot_ - arrival).count();
+          if (next_slot_.time_since_epoch().count() == 0 || slack < -4.0 * period || slack > 2.0 * period)
           {
-            sleeper_.Sleep(std::chrono::duration<double>(due - now).count(), 0.0006);
+            // First frame, or after a load or a hitch: a new grid.
+            next_slot_ = arrival;
+            slack = 0.0;
+            margin_ = std::min(kMinMarginMs, max_margin);
+            window_start_ = arrival;
+            window_min_slack_ = 1e9;
           }
-          while (clock::now() < due)
+          else if (slack < 0.0)
           {
-            YieldProcessor();
+            // Late: presented now, the grid moves to it and keeps a wider margin.
+            next_slot_ = arrival;
+            margin_ = std::min(margin_ - slack, max_margin);
           }
+          else
+          {
+            // The timer wakes ~0.5 ms late in the foreground, milliseconds late in
+            // the background: the sleeper leaves that much, the rest is spun.
+            sleeper_.Sleep(slack / 1000.0, 0.0006);
+            while (clock::now() < next_slot_)
+            {
+              YieldProcessor();
+            }
+          }
+          window_min_slack_ = std::min(window_min_slack_, std::max(slack, 0.0));
+          if (ao2::spikes::Enabled())
+          {
+            ao2::spikes::Mark(ao2::spikes::kPaceSlot, slack);
+            ao2::spikes::Mark(ao2::spikes::kPaceMargin, margin_);
+          }
+          if (ms_d(arrival - window_start_).count() >= kWindowMs)
+          {
+            // The grid moves when the margin is thinner or wider than wanted,
+            // a little at a time (a jump later would itself be a long frame);
+            // the margin shrinks slowly.
+            double error = window_min_slack_ - margin_;
+            next_slot_ -= std::chrono::duration_cast<clock::duration>(ms_d(std::clamp(error, -kLaterStepMs, kEarlierStepMs)));
+            margin_ = std::max(std::min(kMinMarginMs, max_margin), margin_ - kMarginDecayMs);
+            window_start_ = arrival;
+            window_min_slack_ = 1e9;
+          }
+          next_slot_ += std::chrono::duration_cast<clock::duration>(ms_d(period));
         }
         auto now = clock::now();
         // How even the presents are: every 600, to the log.
@@ -818,6 +881,15 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       double interval_sum_ = 0.0, interval_sq_ = 0.0, interval_max_ = 0.0, step_sum_ = 0.0, last_interval_ = 0.0;
 
       std::chrono::steady_clock::time_point last_present_;
+      // The pacing grid (Pace).
+      static constexpr double kMinMarginMs = 0.5;    // the margin it shrinks back to
+      static constexpr double kWindowMs = 250.0;      // how often the grid and the margin are adjusted
+      static constexpr double kEarlierStepMs = 0.05;  // at most this much earlier per window
+      static constexpr double kLaterStepMs = 0.2;     // at most this much later per window
+      static constexpr double kMarginDecayMs = 0.025; // the margin shrinks by this much per window
+      std::chrono::steady_clock::time_point next_slot_, window_start_;
+      double margin_ = kMinMarginMs, window_min_slack_ = 1e9;
+      std::chrono::steady_clock::time_point last_end_; // after Present, as the overlay times it
       ao2::PreciseSleeper sleeper_;
       std::mutex mutex_;
       std::condition_variable wake_, done_;
@@ -1504,7 +1576,14 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       struct AddTime
       {
         std::chrono::steady_clock::time_point start;
-        ~AddTime() { g.time_fence_ns += Elapsed(start); }
+        ~AddTime()
+        {
+          g.time_fence_ns += Elapsed(start);
+          if (ao2::spikes::Enabled())
+          {
+            ao2::spikes::Mark(ao2::spikes::kGpuFence, double(Elapsed(start)) / 1e6);
+          }
+        }
       } add_time{wait_start};
       g.fence->SetEventOnCompletion(value, g.fence_event);
       for (uint32_t seconds = 0; WaitForSingleObject(g.fence_event, 2000) == WAIT_TIMEOUT;)
@@ -9237,6 +9316,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       return;
     }
+    if (ao2::spikes::Enabled())
+    {
+      ao2::spikes::Mark(ao2::spikes::kGpuSwap);
+    }
     BeginFrameIfNeeded();
 
     // The frontbuffer is the destination of the frame's last resolve.
@@ -9259,7 +9342,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
 
     // The previous frame's present (present thread) must be issued before the
     // back buffer index is read or the swap chain resized.
+    auto present_wait_start = std::chrono::steady_clock::now();
     HRESULT present_hr = g_presenter.Wait();
+    double present_wait_ms =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - present_wait_start).count();
     if (FAILED(present_hr) && present_hr != DXGI_ERROR_WAS_STILL_DRAWING)
     {
       NativeLog("Present failed (0x%08X)\n", unsigned(present_hr));
@@ -9341,6 +9427,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       auto present_start = std::chrono::steady_clock::now();
       g_presenter.Submit(g.swapchain.Get(), g.tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+      if (ao2::spikes::Enabled())
+      {
+        ao2::spikes::Mark(ao2::spikes::kGpuSubmitted, present_wait_ms);
+      }
       // Frames the GPU thread spent long on shaders, pipelines or uploads.
       uint64_t stall = g.frame_pso_ns + g.frame_shader_ns + g.frame_upload_ns;
       double interval = g.last_present.time_since_epoch().count()

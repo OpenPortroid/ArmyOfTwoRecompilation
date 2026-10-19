@@ -17,6 +17,7 @@
 
 #include <rex/ppc.h>
 
+#include "frame_spikes.h"
 #include "perf_waits.h"
 
 namespace
@@ -29,13 +30,19 @@ extern "C" REX_FUNC(__imp__sub_825FC128);
 extern "C" REX_FUNC(sub_825FC128)
 {
   bool timed = ao2::perf::WaitsEnabled();
-  auto start = timed ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+  bool spikes = ao2::spikes::Enabled();
+  auto start = timed || spikes ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
   t_in_fence_wait = true;
   __imp__sub_825FC128(ctx, base);
   t_in_fence_wait = false;
   if (timed)
   {
     ao2::perf::AddRenderFenceWait(start);
+  }
+  if (spikes)
+  {
+    ao2::spikes::Mark(ao2::spikes::kRenderFence,
+                      std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count());
   }
 }
 
