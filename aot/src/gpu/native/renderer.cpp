@@ -7488,7 +7488,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       }
       float scale = float(g.scale4) * 0.25f;
       PostCopy(g_post.color[0].resource.Get(), g_post.color[0].state, tex.resource.Get(), tex.state, width, height);
-      uint32_t cur = 0;
+      uint32_t cur = 0, passes = 0;
       auto capture = [&](const char *what) {
         if (g_trace)
         {
@@ -7510,6 +7510,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         if (ok)
         {
           cur ^= 1;
+          ++passes;
         }
         return ok;
       };
@@ -7560,7 +7561,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
           run(kPassSmaaBlend, {In(g_post.weights)});
         }
       }
-      if (cur != 0)
+      // color[0] is a copy as well: an even number of passes ends there.
+      if (passes)
       {
         capture("out");
         PostCopy(tex.resource.Get(), tex.state, g_post.color[cur].resource.Get(), g_post.color[cur].state, width,
