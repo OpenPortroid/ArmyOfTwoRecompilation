@@ -6,7 +6,9 @@
 // not captured; rex_input_set_mouse_look) and here:
 //  - moving the cursor over a button, option or slider walks the focus to it
 //    with the D-pad, as the pad would (some menus' scripts follow the
-//    navigation, not the focus: the weapon upgrades' preview); where a step
+//    navigation, not the focus: the weapon upgrades' preview). Not every
+//    item on the way: the focus is put on the item next to it and one step
+//    goes in (on the Options screen and its pages it is set at once); where a step
 //    does not move it, it is set (UIScreenObject::SetFocus, vtable +328, as
 //    execSetFocus 0x82727C18 calls it with the player index from sub_82973AF0);
 //  - the left button presses A on it (on an option button or a slider: left
@@ -92,6 +94,8 @@ namespace
   constexpr uint32_t kFaceTop = 1;
   constexpr uint32_t kFaceBottom = 3;
   constexpr uint32_t kOwnerScene = 368;    // UIObject.OwnerScene
+  // UIObject.NavigationTargets: the widgets D-pad left, up, right, down go to.
+  constexpr uint32_t kNavigationTargets = 404;
   constexpr uint32_t kRenderBounds = 496;  // UIObject.RenderBounds[4]
   constexpr uint32_t kRenderTarget = 360;  // UIScene.RenderTarget
   constexpr uint32_t kSceneFlags = 412;    // UIScene bitfield
@@ -821,11 +825,20 @@ namespace
     uint32_t target = 0;
     uint16_t then = 0;   // pressed once there (a click), 0 = none
     uint16_t button = 0; // the D-pad direction pressed
-    int polls = 0;       // > 0: held for that many polls, < 0: released for that many
+    int phase = 0;       // 1: the button held, -1: let go, 0: the next step
+    uint32_t since = 0;  // when the phase began (GetTickCount)
     uint32_t from = 0;   // the focus when it was pressed
     int steps = 0, stuck = 0;
+    bool jumped = false; // the focus was put next to the target
   } g_walk;
-  constexpr int kWalkPress = 2, kWalkRelease = 2, kWalkSteps = 16;
+  // A step is held and let go about as long as a finger does: a menu's own
+  // script may read the pad apart from the UI's navigation and miss a
+  // press of a frame or two (the objectives).
+  constexpr uint32_t kWalkPressMs = 50, kWalkReleaseMs = 50;
+  // The objectives move their pick with the left stick, the D-pad steps
+  // there do not reach it: the step is the stick pushed up or down.
+  bool g_walk_stick = false;
+  constexpr int kWalkSteps = 16;
 
   const Widget *Find(const std::vector<Widget> &widgets, uint32_t object)
   {
@@ -851,6 +864,61 @@ namespace
     return 0;
   }
 
+  // The Options screen and its Graphics and Controls pages: nothing follows
+  // the navigation there, so a pointed row gets the focus at once instead of
+  // the focus passing every row on the way.
+  // The objectives (the pause menu's, the briefing's): left and right turn
+  // their pages, so the focus only steps up and down there. They keep their
+  // own pick (its description shown) and move it only with the D-pad's
+  // steps: a focus set directly goes back to it.
+  bool Objectives(const uint8_t *base, uint32_t widget)
+  {
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return scene && ao2::ue3::ObjectName(base, scene).find("Objective") != std::string::npos;
+  }
+
+  bool FocusAtOnce(const uint8_t *base, uint32_t widget)
+  {
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return scene && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene", 0) == 0;
+  }
+
+  // The widget one D-pad step from `target` (up or down first: from an option
+  // a side step changes its value), the one nearest to the focus `now`; 0
+  // if none is pointed at.
+  uint32_t NeighbourOf(const uint8_t *base, const std::vector<Widget> &widgets, const Widget &target, uint32_t now)
+  {
+    const Widget *focus = now ? Find(widgets, now) : nullptr;
+    uint32_t best = 0;
+    float best_d = 1e30f;
+    for (int face : {1, 3, 0, 2})
+    {
+      uint32_t next = LoadU32(base, target.object + kNavigationTargets + face * 4);
+      const Widget *n = next && next != target.object ? Find(widgets, next) : nullptr;
+      bool side = face == 0 || face == 2;
+      if (!n || n->slab != target.slab || (side && (n->kind == Kind::kValue || Objectives(base, target.object))))
+      {
+        continue;
+      }
+      if (next == now)
+      {
+        return 0; // one step already
+      }
+      float d = focus ? std::fabs(n->x0 + n->x1 - focus->x0 - focus->x1) + std::fabs(n->y0 + n->y1 - focus->y0 - focus->y1)
+                      : 0.0f;
+      if (d < best_d)
+      {
+        best_d = d;
+        best = next;
+      }
+      if (face == 3 && best)
+      {
+        break; // above or below found: no side step
+      }
+    }
+    return best;
+  }
+
   void WalkTo(uint32_t target, uint16_t then)
   {
     if (g_walk.target != target)
@@ -871,18 +939,25 @@ namespace
       w = Walk{};
       return 0;
     }
-    if (w.polls > 0)
+    uint32_t tick = GetTickCount();
+    if (w.phase > 0)
     {
-      if (--w.polls == 0)
+      if (tick - w.since < kWalkPressMs)
       {
-        w.polls = -kWalkRelease;
+        return w.button;
       }
-      return w.button;
+      w.phase = -1;
+      w.since = tick;
     }
-    if (w.polls < 0 && ++w.polls < 0)
+    if (w.phase < 0)
     {
-      return 0;
+      if (tick - w.since < kWalkReleaseMs)
+      {
+        return 0;
+      }
+      w.phase = 0;
     }
+    bool objectives = Objectives(base, w.target);
     uint32_t now = FocusedWidget(base, widgets);
     if (w.steps)
     {
@@ -896,14 +971,49 @@ namespace
       }
       w = Walk{};
     };
+    if (now != w.target && FocusAtOnce(base, w.target))
+    {
+      Focus(ctx, base, w.target);
+      now = w.target;
+    }
+    // The objectives keep their own pick and put the focus back on it: only
+    // the D-pad's steps move it there, one at a time.
+    if (now != w.target && !w.steps && !w.jumped && !objectives)
+    {
+      // Not every row on the way: the focus is put next to the target and one
+      // step goes in, so a menu following the navigation sees it arrive.
+      w.jumped = true;
+      if (uint32_t next = NeighbourOf(base, widgets, *target, now))
+      {
+        Focus(ctx, base, next);
+        now = next;
+      }
+    }
     if (now == w.target)
     {
       arrived();
       return 0;
     }
+    if (objectives && !now && !w.steps)
+    {
+      // Nothing picked yet (the menu just opened): the first step picks.
+      w.button = kDpadDown;
+      w.phase = 1;
+      w.since = tick;
+      g_walk_stick = true;
+      ++w.steps;
+      return w.button;
+    }
     const Widget *from = now ? Find(widgets, now) : nullptr;
     if (!from || from->slab != target->slab || w.stuck >= 2 || w.steps >= kWalkSteps)
     {
+      if (objectives)
+      {
+        Logf("objectives: stopped at %s, target %s\n", now ? ao2::ue3::ObjectName(base, now).c_str() : "nothing",
+             ao2::ue3::ObjectName(base, w.target).c_str());
+        w = Walk{}; // set, it would go back: as far as the steps got
+        return 0;
+      }
       Focus(ctx, base, w.target);
       arrived();
       return 0;
@@ -911,7 +1021,8 @@ namespace
     float dx = (target->x0 + target->x1 - from->x0 - from->x1) * 0.5f;
     float dy = (target->y0 + target->y1 - from->y0 - from->y1) * 0.5f;
     // Left / right change an option's value: from one, only up and down.
-    if (std::fabs(dy) >= std::fabs(dx) * 0.5f || from->kind == Kind::kValue)
+    // In the objectives they turn the page.
+    if (std::fabs(dy) >= std::fabs(dx) * 0.5f || from->kind == Kind::kValue || objectives)
     {
       w.button = dy < 0.0f ? kDpadUp : kDpadDown; // the same place (Exit under Extras): down
     }
@@ -920,7 +1031,14 @@ namespace
       w.button = dx < 0.0f ? kDpadLeft : kDpadRight;
     }
     w.from = now;
-    w.polls = kWalkPress;
+    w.phase = 1;
+    w.since = tick;
+    g_walk_stick = objectives;
+    if (objectives)
+    {
+      Logf("objectives: %s from %s to %s\n", w.button == kDpadUp ? "up" : "down",
+           ao2::ue3::ObjectName(base, now).c_str(), ao2::ue3::ObjectName(base, w.target).c_str());
+    }
     ++w.steps;
     return w.button;
   }
@@ -932,10 +1050,11 @@ namespace ao2::menumouse
 
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard)
   {
-    if (ao2::menu::IsOpen())
+    if (ao2::menu::IsOpen() || ao2::gfxmenu::Capturing())
     {
-      // The players window (invites) or the debug menu is up: the mouse and
-      // Enter / Esc are theirs, nothing reaches the game's menus.
+      // The players window (invites) or the debug menu is up, or the
+      // Controls page waits for a key: the mouse and Enter / Esc
+      // are theirs, nothing reaches the game's menus.
       ao2::gpu::RendererSetMenuProbe(0, 0, 0, 0);
       g_inject_polls = 0;
       g_hover = 0;
@@ -1139,7 +1258,11 @@ namespace ao2::menumouse
       }
       else if (hit && entered && !Focused(base, hit->object))
       {
-        WalkTo(hit->object, 0);
+        // The objectives' page arrows are left alone.
+        if (!Objectives(base, hit->object) || hit->kind == Kind::kButton)
+        {
+          WalkTo(hit->object, 0);
+        }
       }
     }
     uint16_t walk = g_inject_polls > 0 ? 0 : WalkStep(ctx, base, widgets);
@@ -1156,8 +1279,15 @@ namespace ao2::menumouse
         --g_inject_polls;
         buttons |= g_inject;
       }
-      buttons |= walk;
+      bool stick = walk && g_walk_stick;
+      buttons |= stick ? 0 : walk;
       store_buttons();
+      if (stick)
+      {
+        // XINPUT_GAMEPAD.sThumbLY, big-endian.
+        p[10] = walk == kDpadUp ? 0x7F : 0x80;
+        p[11] = walk == kDpadUp ? 0xFF : 0x00;
+      }
     }
   }
 } // namespace ao2::menumouse

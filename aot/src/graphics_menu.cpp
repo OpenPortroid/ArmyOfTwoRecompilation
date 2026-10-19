@@ -39,8 +39,26 @@
 // label says what is pending. Every change is saved to settings/hardware.toml and, when the
 // launcher started the game (ao2_launcher_settings), to the launcher's own
 // settings file, whose flags would otherwise win at the next start.
+//
+// The Controls page: on the Graphics page the device button stays,
+// captioned "Controls", and opens a third instance (kControlsTag).
+// Its first row picks a section (movement, combat, inventory, other), the
+// rows below show that section's keyboard binds (keybind_*; the rows it has
+// none for are hidden) and, in the last one, the mouse sensitivity. The
+// inventory's weapon rows are the keys bound to both LB and a D-pad direction;
+// the LB and D-pad rows show only the keys of their own; the device button is "Default keys" (pressed twice).
+// On a bind's row A, Enter, right or a click on its right half waits for a key
+// or a mouse button (kCaptureSeconds; a modifier alone binds when let go,
+// with another key it is a combination), which becomes the bind's first key;
+// left (the left half) adds it as one more. No other bind keeps the key.
+// Esc and Enter are not taken: Esc stops waiting, Enter is ignored.
+// While it waits every pad state is emptied (OnPadPoll, from the
+// XInputGetState hook) and the menus' mouse is off, until the keys are let
+// go again. Binds apply at once (the driver reads the cvars every poll) and
+// are saved to settings/mapping.toml and the launcher's kb_* keys.
 #include "graphics_menu.h"
 
+#include "aspect_ratio.h"
 #include "game_language.h"
 #include "gpu/native/renderer.h"
 #include "log_files.h"
@@ -59,6 +77,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 
 #include <rex/cvar.h>
 #include <rex/ppc.h>
@@ -80,6 +103,7 @@ namespace
   constexpr uint32_t kHiddenWord = 92;   // UIScreenObject.bHidden
   constexpr uint32_t kHiddenMask = 0x80000000;
   constexpr uint32_t kChildren = 96;     // UIScreenObject.Children (TArray)
+  constexpr uint32_t kStateStack = 136;  // UIScreenObject.StateStack (TArray of UIState)
   constexpr uint32_t kOwnerScene = 368;  // UIObject.OwnerScene
   constexpr uint32_t kSceneTag = 340;    // UIScene.SceneTag (FName: index, number)
   constexpr uint32_t kSceneClient = 348; // UIScene.SceneClient
@@ -101,6 +125,7 @@ namespace
   constexpr uint32_t kWrapMask = 0x80000000;
   constexpr uint32_t kGraphicsTag = 0x47465831;      // SceneTag number of the Graphics instance
   constexpr uint32_t kOpeningTag = 0x47465832;       // the Options screen's while it opens
+  constexpr uint32_t kControlsTag = 0x47465833;      // SceneTag number of the Controls instance
 
   constexpr uint32_t kFStringPrintf = 0x8242A860; // (FString *out, const char *format, ...)
   constexpr uint32_t kFStringFree = 0x82309A60;   // FString destructor
@@ -247,13 +272,14 @@ namespace
     const char *label;         // English, through Tr
     const char *label_pending; // while a change waits for Accept or a restart, or nullptr
     When when;
-    const char *cvar;
-    const char *toml;          // hardware.toml value: "s" string, "b" bool, "n" number
+    const char *cvar;          // nullptr: the Controls page's section row
+    const char *toml;          // its value in the file: "s" string, "b" bool, "n" number
     const char *launcher_key;  // the launcher's key, nullptr if it has none
     std::vector<Choice> choices;
     int running = 0;           // the choice the game runs with
     int chosen = 0;            // the one picked
     bool restart = false;      // accepted, but only a restart applies it
+    const char *file = "hardware.toml"; // where it is saved in settings/
   };
 
   std::vector<Setting> &Settings()
@@ -282,6 +308,89 @@ namespace
     };
     return settings;
   }
+
+  // --- The Controls page --------------------------------------------
+
+  // Its first row: which section the other seven show.
+  Setting &SectionSetting()
+  {
+    static Setting section = {"Section", nullptr, When::kNow, nullptr, "n", nullptr,
+                              {{"Movement", "0"}, {"Combat", "1"}, {"Inventory", "2"}, {"Other", "3"}}};
+    return section;
+  }
+
+  // The settings among its rows (mapping.toml holds them).
+  std::vector<Setting> &ControlSettings()
+  {
+    static std::vector<Setting> settings = {
+        {"Mouse sensitivity", nullptr, When::kNow, "ao2_mouse_sensitivity", "n", "mouse_sens",
+         {{"0.5", "0.5"}, {"0.75", "0.75"}, {"1", "1"}, {"1.25", "1.25"}, {"1.5", "1.5"}, {"2", "2"}, {"2.5", "2.5"},
+          {"3", "3"}, {"4", "4"}, {"5", "5"}, {"6", "6"}, {"8", "8"}},
+         0, 0, false, "mapping.toml"},
+    };
+    return settings;
+  }
+
+  // A row of a section: a key bind (keybind_<bind>) or one of
+  // ControlSettings(); no label: the row is hidden in that section.
+  //
+  // LB and the D-pad share keys: one in both presses LB + that direction, a
+  // weapon (1 primary, 2 secondary, 3 special, 4 / G grenades). The Inventory
+  // section's weapon rows (`weapon`, bind the direction) show and set those;
+  // the LB and D-pad rows only the keys of their own.
+  struct ControlItem
+  {
+    const char *label = nullptr; // English, through Tr
+    const char *bind = nullptr;  // nullptr for a setting
+    int setting = 0;
+    bool weapon = false;
+  };
+  constexpr int kSectionRows = 7;
+  constexpr int kSectionCount = 4;
+  constexpr ControlItem kSections[kSectionCount][kSectionRows] = {
+      {{"Move forward", "lstick_up"},
+       {"Move back", "lstick_down"},
+       {"Move left", "lstick_left"},
+       {"Move right", "lstick_right"},
+       {"Crouch", "lstick_press"},
+       {"Roll / cover / vault", "y"},
+       {"Use / heal / confirm", "a"}},
+      {{"Fire", "right_trigger"},
+       {"Aim", "left_trigger"},
+       {"Reload", "x"},
+       {"Co-op commands", "right_shoulder"},
+       {"Cancel / back", "b"},
+       {"Right stick (R3)", "rstick_press"},
+       {}},
+      {{"Inventory (hold)", "left_shoulder"},
+       {"Primary weapon", "dpad_up", 0, true},
+       {"Secondary weapon", "dpad_left", 0, true},
+       {"Special weapon", "dpad_right", 0, true},
+       {"Grenades", "dpad_down", 0, true},
+       {},
+       {}},
+      {{"Advance", "dpad_up"},
+       {"Partner view", "dpad_down"},
+       {"Regroup", "dpad_left"},
+       {"Hold position", "dpad_right"},
+       {"GPS", "back"},
+       {"Pause", "start"},
+       {"Mouse sensitivity", nullptr, 0}},
+  };
+
+  // Every keyboard bind and its default (settings/mapping.toml, the launcher's
+  // Bindings.cs): "Default keys" restores them.
+  constexpr const char *kDefaultBinds[][2] = {
+      {"a", "E,Return"},       {"b", "Q,Backspace"},          {"x", "R"},
+      {"y", "Space"},          {"left_trigger", "RMB"},       {"right_trigger", "LMB"},
+      {"left_shoulder", "Z,1,2,3,4,G"}, {"right_shoulder", "F"}, {"lstick_up", "W"},
+      {"lstick_down", "S"},    {"lstick_left", "A"},          {"lstick_right", "D"},
+      {"lstick_press", "Control,C"}, {"rstick_up", ""},       {"rstick_down", ""},
+      {"rstick_left", ""},     {"rstick_right", ""},          {"rstick_press", "MMB"},
+      {"dpad_up", "Up,1"},     {"dpad_down", "Down,4,G"},     {"dpad_left", "Left,2"},
+      {"dpad_right", "Right,3"}, {"back", "Tab"},             {"start", "Escape"},
+      {"guide", ""},
+  };
 
   // The choice nearest to the cvar's current value.
   int CurrentChoice(const Setting &s)
@@ -316,9 +425,12 @@ namespace
       return;
     }
     done = true;
-    for (Setting &s : Settings())
+    for (auto *list : {&Settings(), &ControlSettings()})
     {
-      s.running = s.chosen = CurrentChoice(s);
+      for (Setting &s : *list)
+      {
+        s.running = s.chosen = CurrentChoice(s);
+      }
     }
   }
 
@@ -333,7 +445,8 @@ namespace
 
   // --- Saving ---------------------------------------------------------------
 
-  // Sets `key = value` in a flat key = value file (the line replaced, or added).
+  // Sets `key = value` in a flat key = value file (the line replaced, or
+  // added). A comment after the old value stays, in its column.
   void SetFileKey(const std::filesystem::path &path, const std::string &key, const std::string &value)
   {
     std::vector<std::string> lines;
@@ -360,7 +473,27 @@ namespace
       size_t after = line.find_first_not_of(" \t", start + key.size());
       if (after != std::string::npos && line[after] == '=')
       {
-        line = key + " = " + value;
+        size_t comment = std::string::npos;
+        bool quoted = false;
+        for (size_t i = after + 1; i < line.size(); ++i)
+        {
+          if (line[i] == '"')
+          {
+            quoted = !quoted;
+          }
+          else if (line[i] == '#' && !quoted)
+          {
+            comment = i;
+            break;
+          }
+        }
+        std::string updated = key + " = " + value;
+        if (comment != std::string::npos)
+        {
+          updated.append(comment > updated.size() + 1 ? comment - updated.size() : 1, ' ');
+          updated += line.substr(comment);
+        }
+        line = updated;
         found = true;
       }
     }
@@ -385,7 +518,7 @@ namespace
     }
     try
     {
-      SetFileKey(utils::SettingsDir() / "hardware.toml", s.cvar, toml);
+      SetFileKey(utils::SettingsDir() / s.file, s.cvar, toml);
       if (std::string(s.cvar) == "ao2_fps_target")
       {
         SetFileKey(utils::SettingsDir() / "hardware.toml", "ao2_fps_unlock", "true");
@@ -448,15 +581,33 @@ namespace
 
   // --- The scenes -----------------------------------------------------------
 
-  uint32_t g_options_scene = 0;   // the Options screen last seen
-  uint32_t g_graphics_scene = 0;  // our instance
+  uint32_t g_options_scene = 0;  // the Options screen last seen
+  uint32_t g_graphics_scene = 0; // the Graphics page
+  uint32_t g_controls_scene = 0; // the Controls page
   bool g_opening = false;
+
+  enum class Page
+  {
+    kGraphics,
+    kControls,
+  };
+
+  // An option button of a page. On the Graphics page `index` is its setting,
+  // on the Controls page its row (0 the section, 1-7 the section's
+  // items).
   struct Row
   {
-    int setting;
+    Page page;
+    int index;
     uint32_t label;
   };
   std::unordered_map<uint32_t, Row> g_rows; // option button -> its row
+
+  int g_section = 0;                                  // the section the Controls page shows
+  uint32_t g_control_buttons[1 + kSectionRows] = {}; // its rows' option buttons
+  uint32_t g_control_labels[1 + kSectionRows] = {};  // and their labels
+  uint32_t g_defaults_button = 0;                    // its "Default keys" button
+  uint32_t g_defaults_armed = 0;                     // GetTickCount of a first press of it, 0 none
 
   bool IsSceneNamed(const uint8_t *base, uint32_t scene)
   {
@@ -464,13 +615,14 @@ namespace
            ao2::ue3::Name(base, LoadU32(base, scene + kSceneTag)) == "AllOptionsUIScene";
   }
 
-  bool IsGraphicsScene(const uint8_t *base, uint32_t scene)
+  bool IsPage(const uint8_t *base, uint32_t scene, Page page)
   {
-    return scene && scene == g_graphics_scene && IsSceneNamed(base, scene) &&
-           LoadU32(base, scene + kSceneTag + 4) == kGraphicsTag;
+    uint32_t ours = page == Page::kGraphics ? g_graphics_scene : g_controls_scene;
+    uint32_t tag = page == Page::kGraphics ? kGraphicsTag : kControlsTag;
+    return scene && scene == ours && IsSceneNamed(base, scene) && LoadU32(base, scene + kSceneTag + 4) == tag;
   }
 
-  // The row of an option button of the Graphics page, nullptr if it is none.
+  // The row of an option button of one of the pages, nullptr if it is none.
   const Row *RowOf(const uint8_t *base, uint32_t button)
   {
     if (g_rows.empty())
@@ -478,11 +630,37 @@ namespace
       return nullptr;
     }
     auto it = g_rows.find(button);
-    if (it == g_rows.end() || !IsGraphicsScene(base, LoadU32(base, button + kOwnerScene)))
+    if (it == g_rows.end() || !IsPage(base, LoadU32(base, button + kOwnerScene), it->second.page))
     {
       return nullptr;
     }
     return &it->second;
+  }
+
+  // The setting a row shows, nullptr for a key bind.
+  Setting *SettingOf(const Row &row)
+  {
+    if (row.page == Page::kGraphics)
+    {
+      return &Settings()[row.index];
+    }
+    if (row.index == 0)
+    {
+      return &SectionSetting();
+    }
+    const ControlItem &item = kSections[g_section][row.index - 1];
+    return item.label && !item.bind ? &ControlSettings()[item.setting] : nullptr;
+  }
+
+  // The key bind a row shows, nullptr for a setting.
+  const ControlItem *BindOf(const Row &row)
+  {
+    if (row.page != Page::kControls || row.index < 1 || row.index > kSectionRows)
+    {
+      return nullptr;
+    }
+    const ControlItem &item = kSections[g_section][row.index - 1];
+    return item.bind ? &item : nullptr;
   }
 
   // The scene on top of the scene client's stack.
@@ -538,6 +716,32 @@ namespace
     }
   }
 
+  bool Focused(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t focused_class = 0;
+    if (!focused_class)
+    {
+      focused_class = ao2::ue3::FindClass(base, "UIState_Focused");
+    }
+    uint32_t data = LoadU32(base, widget + kStateStack);
+    uint32_t count = LoadU32(base, widget + kStateStack + 4);
+    for (uint32_t i = 0; data && i < count && i < 16; ++i)
+    {
+      uint32_t state = LoadU32(base, data + i * 4);
+      if (state && focused_class && ao2::ue3::IsA(base, state, focused_class))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void SetHidden(uint8_t *base, uint32_t widget, bool hidden)
+  {
+    uint32_t word = LoadU32(base, widget + kHiddenWord);
+    StoreU32(base, widget + kHiddenWord, hidden ? word | kHiddenMask : word & ~kHiddenMask);
+  }
+
   void SetLabel(PPCContext &ctx, uint8_t *base, uint32_t label, const char *english)
   {
     Scratch s(ctx);
@@ -550,31 +754,32 @@ namespace
     CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
   }
 
+  // A button's caption, already in the game's 8-bit text: its markup becomes
+  // the text (IUIDataStorePublisher at +848, vtable +4; the option buttons
+  // show their values so).
+  void ShowText(PPCContext &ctx, uint8_t *base, uint32_t button, const std::string &text)
+  {
+    Scratch s(ctx);
+    MakeString(ctx, base, s, s.String(0), text);
+    uint32_t publisher = button + kPublisher;
+    CallGuest(ctx, base, LoadU32(base, LoadU32(base, publisher) + 4), s.top, publisher, s.String(0),
+              static_cast<uint32_t>(-1));
+    CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
+  }
+
   void ShowIndex(PPCContext &ctx, uint8_t *base, uint32_t button, const Setting &setting, int index)
   {
     StoreU32(base, button + kCurrentIndex, static_cast<uint32_t>(index));
-    Scratch s(ctx);
-    MakeString(ctx, base, s, s.String(0), GameTr(setting.choices[index].name));
-    uint32_t publisher = button + kPublisher;
-    CallGuest(ctx, base, LoadU32(base, LoadU32(base, publisher) + 4), s.top, publisher, s.String(0),
-              static_cast<uint32_t>(-1));
-    CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
+    ShowText(ctx, base, button, GameTr(setting.choices[index].name));
   }
 
-  // A label button's caption: its markup becomes the text (IUIDataStorePublisher
-  // at +848, vtable +4, as the option buttons show their values).
   void SetCaption(PPCContext &ctx, uint8_t *base, uint32_t button, const char *english)
   {
-    Scratch s(ctx);
-    MakeString(ctx, base, s, s.String(0), GameTr(english));
-    uint32_t publisher = button + kPublisher;
-    CallGuest(ctx, base, LoadU32(base, LoadU32(base, publisher) + 4), s.top, publisher, s.String(0),
-              static_cast<uint32_t>(-1));
-    CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
+    ShowText(ctx, base, button, GameTr(english));
   }
 
   // The Options screen opened (each of its option buttons refreshes):
-  // "Select Storage Device" becomes "Graphics", once - while its caption is
+  // "Select Storage Device" becomes "Graphics and controls", once - while its caption is
   // still the game's markup (<Strings:...SelectDevice>).
   void NoteOptionsScene(PPCContext &ctx, uint8_t *base, uint32_t scene)
   {
@@ -585,13 +790,746 @@ namespace
     uint32_t markup = button ? LoadU32(base, button + kCaptionMarkup) : 0;
     if (markup && LoadU32(base, button + kCaptionMarkup + 4) > 1 && base[markup] == '<')
     {
-      SetCaption(ctx, base, button, "Graphics");
+      SetCaption(ctx, base, button, "Graphics and controls");
     }
+  }
+
+  // --- Key binds ----------------------------------------------------------------
+
+  std::string BindValue(const char *bind) { return rex::cvar::GetFlagByName(std::string("keybind_") + bind); }
+
+  // A bind's keys ("none" is nothing: the launcher's empty bind).
+  std::vector<std::string> SplitBind(const std::string &value)
+  {
+    std::vector<std::string> keys;
+    std::stringstream in(value);
+    std::string key;
+    while (std::getline(in, key, ','))
+    {
+      size_t a = key.find_first_not_of(" \t"), b = key.find_last_not_of(" \t");
+      key = a == std::string::npos ? std::string() : key.substr(a, b - a + 1);
+      if (!key.empty() && key != "none")
+      {
+        keys.push_back(key);
+      }
+    }
+    return keys;
+  }
+
+  std::string JoinBind(const std::vector<std::string> &keys)
+  {
+    std::string out;
+    for (const std::string &key : keys)
+    {
+      out += (out.empty() ? "" : ",") + key;
+    }
+    return out;
+  }
+
+  // A key as the page shows it ("Control+C" as "Ctrl+C"), in the game's text.
+  std::string KeyCaption(const std::string &token)
+  {
+    size_t plus = token.find('+');
+    if (plus != std::string::npos && plus + 1 < token.size())
+    {
+      return KeyCaption(token.substr(0, plus)) + "+" + KeyCaption(token.substr(plus + 1));
+    }
+    static const std::unordered_map<std::string, const char *> kCaptions = {
+        {"LMB", "LMB"},         {"RMB", "RMB"},         {"MMB", "MMB"},        {"MB4", "Mouse 4"},
+        {"MB5", "Mouse 5"},     {"Up", "Up"},           {"Down", "Down"},      {"Left", "Left"},
+        {"Right", "Right"},     {"Control", "Ctrl"},    {"Return", "Enter"},   {"Escape", "Esc"},
+        {"Backtick", "~"},      {"Minus", "-"},         {"Plus", "="},         {"Comma", ","},
+        {"Period", "."},        {"Semicolon", ";"},     {"Slash", "/"},        {"Backslash", "\\"},
+        {"LBracket", "["},      {"RBracket", "]"},      {"Quote", "'"},        {"PageUp", "PgUp"},
+        {"PageDown", "PgDn"},   {"CapsLock", "Caps"},   {"ScrollLock", "ScrLk"}, {"NumpadPlus", "Num +"},
+        {"NumpadMinus", "Num -"}, {"NumpadStar", "Num *"}, {"NumpadSlash", "Num /"}, {"NumpadEnter", "Num Enter"},
+        {"Space", "Space"},
+    };
+    auto it = kCaptions.find(token);
+    if (it != kCaptions.end())
+    {
+      return GameTr(it->second);
+    }
+    if (token.rfind("Numpad", 0) == 0)
+    {
+      return "Num " + token.substr(6);
+    }
+    return GameText(token.c_str());
+  }
+
+  std::vector<std::string> Keys(const char *bind) { return SplitBind(BindValue(bind)); }
+
+  bool Has(const std::vector<std::string> &keys, const std::string &key)
+  {
+    return std::find(keys.begin(), keys.end(), key) != keys.end();
+  }
+
+  constexpr const char *kLeftShoulder = "left_shoulder";
+  constexpr const char *kDpad[] = {"dpad_up", "dpad_down", "dpad_left", "dpad_right"};
+
+  bool IsDpad(const char *bind) { return std::strncmp(bind, "dpad_", 5) == 0; }
+
+  // The keys a row stands for: a weapon row's are in LB and its direction,
+  // LB's and a direction's are in no such pair, any other bind's are all.
+  std::vector<std::string> OwnKeys(const ControlItem &item)
+  {
+    std::vector<std::string> keys = Keys(item.bind);
+    std::vector<std::string> lb = Keys(kLeftShoulder);
+    auto keep = [&](auto pred) {
+      keys.erase(std::remove_if(keys.begin(), keys.end(), [&](const std::string &k) { return !pred(k); }), keys.end());
+    };
+    if (item.weapon)
+    {
+      keep([&](const std::string &k) { return Has(lb, k); });
+    }
+    else if (std::strcmp(item.bind, kLeftShoulder) == 0)
+    {
+      keep([&](const std::string &k) {
+        for (const char *d : kDpad)
+        {
+          if (Has(Keys(d), k))
+          {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    else if (IsDpad(item.bind))
+    {
+      keep([&](const std::string &k) { return !Has(lb, k); });
+    }
+    return keys;
+  }
+
+  // A row's keys as the page shows them.
+  std::string BindText(const ControlItem *item)
+  {
+    if (!item || !item->bind)
+    {
+      return {};
+    }
+    std::string out;
+    for (const std::string &key : OwnKeys(*item))
+    {
+      out += (out.empty() ? "" : " / ") + KeyCaption(key);
+    }
+    return out.empty() ? std::string("-") : out;
+  }
+
+  // A bind takes `value` now and at the next start: mapping.toml, and the
+  // launcher's settings, whose flags would otherwise win.
+  void SetBind(const char *bind, const std::string &value)
+  {
+    std::string cvar = std::string("keybind_") + bind;
+    // A command line flag needs a value: "none" is the launcher's empty bind.
+    bool ok = rex::cvar::SetFlagByName(cvar, value.empty() ? "none" : value);
+    Logf("%s = %s%s\n", cvar.c_str(), value.c_str(), ok ? "" : " (not set)");
+    try
+    {
+      SetFileKey(utils::SettingsDir() / "mapping.toml", cvar, "\"" + value + "\"");
+      std::string launcher = REXCVAR_GET(ao2_launcher_settings);
+      if (!launcher.empty() && std::filesystem::exists(std::u8string(launcher.begin(), launcher.end())))
+      {
+        SetFileKey(std::filesystem::path(std::u8string(launcher.begin(), launcher.end())), std::string("kb_") + bind,
+                   value);
+      }
+    }
+    catch (const std::exception &e)
+    {
+      Logf("save %s: %s\n", cvar.c_str(), e.what());
+    }
+  }
+
+  // `token` was pressed for `bind`: it becomes the bind's first key (or one
+  // more, `add`), and no other bind keeps it.
+  // A row's keys become `own`, the others of its binds stay: a weapon row's
+  // go into LB and its direction, after the keys of their own.
+  void SetOwnKeys(const ControlItem &item, const std::vector<std::string> &own)
+  {
+    std::vector<std::string> old = OwnKeys(item);
+    auto rebuild = [&](const char *bind, bool own_first) {
+      std::vector<std::string> keys = own_first ? own : std::vector<std::string>{};
+      for (const std::string &k : Keys(bind))
+      {
+        if (!Has(old, k) && !Has(keys, k))
+        {
+          keys.push_back(k);
+        }
+      }
+      for (const std::string &k : own)
+      {
+        if (!Has(keys, k))
+        {
+          keys.push_back(k);
+        }
+      }
+      if (JoinBind(keys) != JoinBind(Keys(bind)))
+      {
+        SetBind(bind, JoinBind(keys));
+      }
+    };
+    if (item.weapon)
+    {
+      rebuild(kLeftShoulder, false);
+      rebuild(item.bind, false);
+    }
+    else
+    {
+      rebuild(item.bind, true);
+    }
+  }
+
+  void TakeKey(const ControlItem &item, const std::string &token, bool add)
+  {
+    for (const auto &entry : kDefaultBinds)
+    {
+      if (std::strcmp(entry[0], item.bind) == 0 || (item.weapon && std::strcmp(entry[0], kLeftShoulder) == 0))
+      {
+        continue;
+      }
+      std::vector<std::string> keys = Keys(entry[0]);
+      auto it = std::find(keys.begin(), keys.end(), token);
+      if (it != keys.end())
+      {
+        keys.erase(it);
+        SetBind(entry[0], JoinBind(keys));
+      }
+    }
+    std::vector<std::string> own = OwnKeys(item);
+    own.erase(std::remove(own.begin(), own.end(), token), own.end());
+    if (add || own.empty())
+    {
+      own.push_back(token);
+    }
+    else
+    {
+      own[0] = token;
+    }
+    SetOwnKeys(item, own);
+  }
+
+  // --- Waiting for a key ----------------------------------------------------------
+
+  constexpr int kCaptureSeconds = 5;
+  constexpr uint16_t kButtonA = 0x1000;
+
+  struct Capture
+  {
+    uint32_t button = 0;       // the row's option button; 0: not waiting
+    const ControlItem *item = nullptr;
+    bool add = false;          // the key is added to the row's
+    uint32_t started = 0;      // GetTickCount
+    bool armed = false;        // every key was let go since it began
+    int shown = -1;            // the seconds left as shown
+    int modifier = 0;          // a modifier held alone so far (VK), 0 none
+    bool swallowing = false;   // after it: no input until every key is let go
+    uint32_t swallow_end = 0;  // or until then
+  };
+  Capture g_capture;
+  bool g_prev_a[4] = {};
+
+  // The keys as the binds name them (rexruntime's key table), nullptr for one
+  // they do not know. Shift, Control and Alt are modifiers.
+  const char *KeyName(int vk)
+  {
+    static const char *names[256] = {};
+    static bool done = false;
+    if (!done)
+    {
+      done = true;
+      static std::string storage[256];
+      auto set = [](int code, std::string name) {
+        storage[code] = std::move(name);
+        names[code] = storage[code].c_str();
+      };
+      for (int c = 'A'; c <= 'Z'; ++c)
+      {
+        set(c, std::string(1, char(c)));
+      }
+      for (int c = '0'; c <= '9'; ++c)
+      {
+        set(c, std::string(1, char(c)));
+      }
+      for (int i = 0; i < 24; ++i)
+      {
+        set(VK_F1 + i, "F" + std::to_string(i + 1));
+      }
+      for (int i = 0; i < 10; ++i)
+      {
+        set(VK_NUMPAD0 + i, "Numpad" + std::to_string(i));
+      }
+      const std::pair<int, const char *> kOthers[] = {
+          {VK_LBUTTON, "LMB"},       {VK_RBUTTON, "RMB"},         {VK_MBUTTON, "MMB"},
+          {VK_XBUTTON1, "MB4"},      {VK_XBUTTON2, "MB5"},        {VK_OEM_3, "Backtick"},
+          {VK_OEM_MINUS, "Minus"},   {VK_OEM_PLUS, "Plus"},       {VK_OEM_COMMA, "Comma"},
+          {VK_OEM_PERIOD, "Period"}, {VK_OEM_1, "Semicolon"},     {VK_OEM_2, "Slash"},
+          {VK_OEM_5, "Backslash"},   {VK_OEM_102, "Backslash"},   {VK_OEM_4, "LBracket"},
+          {VK_OEM_6, "RBracket"},    {VK_OEM_7, "Quote"},         {VK_ESCAPE, "Escape"},
+          {VK_RETURN, "Return"},     {VK_SPACE, "Space"},         {VK_TAB, "Tab"},
+          {VK_BACK, "Backspace"},    {VK_DELETE, "Delete"},       {VK_INSERT, "Insert"},
+          {VK_HOME, "Home"},         {VK_END, "End"},             {VK_PRIOR, "PageUp"},
+          {VK_NEXT, "PageDown"},     {VK_LEFT, "Left"},           {VK_RIGHT, "Right"},
+          {VK_UP, "Up"},             {VK_DOWN, "Down"},           {VK_SHIFT, "Shift"},
+          {VK_CONTROL, "Control"},   {VK_MENU, "Alt"},            {VK_ADD, "NumpadPlus"},
+          {VK_SUBTRACT, "NumpadMinus"}, {VK_MULTIPLY, "NumpadStar"}, {VK_DIVIDE, "NumpadSlash"},
+          {VK_PAUSE, "Pause"},       {VK_CAPITAL, "CapsLock"},    {VK_NUMLOCK, "NumLock"},
+          {VK_SCROLL, "ScrollLock"},
+      };
+      for (const auto &[code, name] : kOthers)
+      {
+        set(code, name);
+      }
+    }
+    return vk > 0 && vk < 256 ? names[vk] : nullptr;
+  }
+
+  bool IsModifier(int vk) { return vk == VK_SHIFT || vk == VK_CONTROL || vk == VK_MENU; }
+
+  bool Down(int vk) { return GetAsyncKeyState(vk) & 0x8000; }
+
+  bool AnyKeyDown()
+  {
+    for (int vk = 1; vk < 256; ++vk)
+    {
+      if (KeyName(vk) && Down(vk))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool GameInFront()
+  {
+    HWND hwnd = static_cast<HWND>(ao2::aspect::Window());
+    return hwnd && GetForegroundWindow() == hwnd;
+  }
+
+  // The Controls page's rows show the section's items; the rows a section
+  // has no item for are hidden. Up and down go along the shown rows and the
+  // button under them, round.
+  void RefreshControls(PPCContext &ctx, uint8_t *base)
+  {
+    std::vector<uint32_t> shown;
+    for (int i = 0; i <= kSectionRows; ++i)
+    {
+      uint32_t button = g_control_buttons[i];
+      const Row *row = button ? RowOf(base, button) : nullptr;
+      if (!row)
+      {
+        continue;
+      }
+      bool hidden = i > 0 && !kSections[g_section][i - 1].label;
+      SetHidden(base, button, hidden);
+      if (g_control_labels[i])
+      {
+        SetHidden(base, g_control_labels[i], hidden);
+      }
+      if (hidden)
+      {
+        continue;
+      }
+      shown.push_back(button);
+      if (i > 0 && g_control_labels[i])
+      {
+        SetLabel(ctx, base, g_control_labels[i], kSections[g_section][i - 1].label);
+      }
+      if (Setting *s = SettingOf(*row))
+      {
+        ShowIndex(ctx, base, button, *s, s->chosen);
+      }
+      else if (button != g_capture.button)
+      {
+        StoreU32(base, button + kCurrentIndex, 0);
+        ShowText(ctx, base, button, BindText(BindOf(*row)));
+      }
+    }
+    if (g_defaults_button)
+    {
+      shown.push_back(g_defaults_button);
+    }
+    for (size_t i = 0; shown.size() > 1 && i < shown.size(); ++i)
+    {
+      uint32_t next = shown[(i + 1) % shown.size()];
+      StoreU32(base, shown[i] + kForcedNavigation + kFaceBottom * 4, next);
+      StoreU32(base, next + kForcedNavigation + kFaceTop * 4, shown[i]);
+    }
+    if (g_controls_scene)
+    {
+      StoreU32(base, g_controls_scene + kSceneFlags,
+               LoadU32(base, g_controls_scene + kSceneFlags) | kUpdateNavigation);
+    }
+  }
+
+  void StartCapture(PPCContext &ctx, uint8_t *base, uint32_t button, const Row &row, bool add)
+  {
+    const ControlItem *item = BindOf(row);
+    if (!item || g_capture.button)
+    {
+      return;
+    }
+    g_capture = Capture{};
+    g_capture.button = button;
+    g_capture.item = item;
+    g_capture.add = add;
+    g_capture.started = GetTickCount();
+    g_capture.shown = kCaptureSeconds;
+    ShowText(ctx, base, button, GameTr("Press a key...") + " " + std::to_string(kCaptureSeconds));
+    Logf("waiting for a key: %s%s\n", item->bind, add ? " (one more)" : "");
+  }
+
+  // The wait ends: `token` pressed, or nothing (time ran out).
+  void FinishCapture(PPCContext &ctx, uint8_t *base, const std::string &token)
+  {
+    const ControlItem *item = g_capture.item;
+    bool add = g_capture.add;
+    g_capture = Capture{};
+    g_capture.swallowing = true;
+    g_capture.swallow_end = GetTickCount() + 3000;
+    if (!token.empty())
+    {
+      TakeKey(*item, token, add);
+    }
+    RefreshControls(ctx, base);
+  }
+
+  void Listen(PPCContext &ctx, uint8_t *base)
+  {
+    Capture &c = g_capture;
+    int left = kCaptureSeconds - static_cast<int>((GetTickCount() - c.started) / 1000);
+    if (left <= 0)
+    {
+      FinishCapture(ctx, base, {});
+      return;
+    }
+    if (left != c.shown)
+    {
+      c.shown = left;
+      ShowText(ctx, base, c.button, GameTr("Press a key...") + " " + std::to_string(left));
+    }
+    if (!c.armed)
+    {
+      // The key or button that began it goes up first.
+      c.armed = !AnyKeyDown();
+      return;
+    }
+    if (!GameInFront())
+    {
+      return;
+    }
+    int modifier = 0;
+    for (int vk = 1; vk < 256; ++vk)
+    {
+      if (!KeyName(vk) || !Down(vk))
+      {
+        continue;
+      }
+      if (IsModifier(vk))
+      {
+        modifier = vk;
+        continue;
+      }
+      // Esc and Enter are the menus' back and accept, never bound here: Esc
+      // stops waiting, Enter does nothing.
+      if (vk == VK_ESCAPE)
+      {
+        FinishCapture(ctx, base, {});
+        return;
+      }
+      if (vk == VK_RETURN)
+      {
+        continue;
+      }
+      std::string token;
+      if (Down(VK_CONTROL))
+      {
+        token += "Control+";
+      }
+      if (Down(VK_SHIFT))
+      {
+        token += "Shift+";
+      }
+      if (Down(VK_MENU))
+      {
+        token += "Alt+";
+      }
+      FinishCapture(ctx, base, token + KeyName(vk));
+      return;
+    }
+    if (modifier)
+    {
+      c.modifier = modifier;
+    }
+    else if (c.modifier)
+    {
+      // A modifier let go alone binds itself.
+      FinishCapture(ctx, base, KeyName(c.modifier));
+    }
+  }
+
+  // "Default keys": the first press asks, a second one within a few seconds
+  // puts every bind back.
+  void DefaultsPressed(PPCContext &ctx, uint8_t *base)
+  {
+    if (!g_defaults_button)
+    {
+      return;
+    }
+    if (!g_defaults_armed)
+    {
+      g_defaults_armed = GetTickCount() | 1;
+      SetCaption(ctx, base, g_defaults_button, "Press again to reset");
+      return;
+    }
+    g_defaults_armed = 0;
+    for (const auto &entry : kDefaultBinds)
+    {
+      if (BindValue(entry[0]) != entry[1] && !(entry[1][0] == 0 && BindValue(entry[0]) == "none"))
+      {
+        SetBind(entry[0], entry[1]);
+      }
+    }
+    Logf("%s\n", "default keys");
+    SetCaption(ctx, base, g_defaults_button, "Default keys");
+    RefreshControls(ctx, base);
+  }
+
+  // Takes the pad state's buttons, triggers and sticks away.
+  void Silence(PPCContext &ctx, uint8_t *base, uint32_t state)
+  {
+    if (ctx.r3.u32 == 0)
+    {
+      std::memset(base + state + 4, 0, 12);
+    }
+  }
+
+  // --- The pages ----------------------------------------------------------------
+
+  // The rows top to bottom: option button, its label.
+  constexpr const char *kRowWidgets[][2] = {
+      {"optbtnPreferChar", "lblPreferredChar"}, {"UIOptionButton_1", "UILabel_1"},
+      {"UIOptionButton_2", "UILabel_2"},        {"UIOptionButton_3", "UILabel_3"},
+      {"UIOptionButton_5", "UILabel_7"},        {"UIOptionButton_4", "UILabel_0"},
+      {"UIOptionButton_0", "UILabel_6"},        {"TVTypeOptionButton", "UILabel_4"},
+  };
+
+  // Down from the last row goes to the button under them (the hidden
+  // brightness slider would stop it), down from that to the first row.
+  void LinkRows(uint8_t *base, uint32_t first, uint32_t last, uint32_t button)
+  {
+    if (!first || !last || first == last)
+    {
+      return;
+    }
+    uint32_t below = button ? button : first;
+    uint32_t above = button ? button : last;
+    StoreU32(base, last + kForcedNavigation + kFaceBottom * 4, below);
+    StoreU32(base, first + kForcedNavigation + kFaceTop * 4, above);
+    if (button)
+    {
+      StoreU32(base, button + kForcedNavigation + kFaceTop * 4, last);
+      StoreU32(base, button + kForcedNavigation + kFaceBottom * 4, first);
+    }
+  }
+
+  void ForgetRows(Page page)
+  {
+    for (auto it = g_rows.begin(); it != g_rows.end();)
+    {
+      it = it->second.page == page ? g_rows.erase(it) : std::next(it);
+    }
+  }
+
+  // Turns a fresh instance of the Options screen into the Graphics page.
+  void SetupGraphics(PPCContext &ctx, uint8_t *base, uint32_t scene)
+  {
+    std::unordered_map<std::string, uint32_t> w;
+    Widgets(base, scene, w);
+    ForgetRows(Page::kGraphics);
+    auto &settings = Settings();
+    for (size_t i = 0; i < std::size(kRowWidgets); ++i)
+    {
+      uint32_t button = w.count(kRowWidgets[i][0]) ? w[kRowWidgets[i][0]] : 0;
+      uint32_t label = w.count(kRowWidgets[i][1]) ? w[kRowWidgets[i][1]] : 0;
+      if (i >= settings.size())
+      {
+        for (uint32_t o : {button, label})
+        {
+          if (o)
+          {
+            SetHidden(base, o, true);
+          }
+        }
+        continue;
+      }
+      if (!button)
+      {
+        Logf("setup: no %s\n", kRowWidgets[i][0]);
+        continue;
+      }
+      g_rows[button] = Row{Page::kGraphics, static_cast<int>(i), label};
+      Setting &s = settings[i];
+      if (s.when == When::kAccept && !s.restart)
+      {
+        s.chosen = s.running; // a pick left with B is dropped
+      }
+      if (label)
+      {
+        SetLabel(ctx, base, label, LabelOf(s));
+      }
+      ShowIndex(ctx, base, button, s, s.chosen);
+    }
+    for (const char *name : {"BrightnessSlider", "UILabel_5"})
+    {
+      if (w.count(name))
+      {
+        SetHidden(base, w[name], true);
+      }
+    }
+    // The device button opens the Controls page.
+    uint32_t button = w.count("UILabelButton_0") ? w["UILabelButton_0"] : 0;
+    if (button)
+    {
+      SetCaption(ctx, base, button, "Controls");
+    }
+    if (w.count("lblOptions"))
+    {
+      SetLabel(ctx, base, w["lblOptions"], "Graphics");
+    }
+    size_t last_index = std::min(settings.size(), std::size(kRowWidgets)) - 1;
+    LinkRows(base, w.count(kRowWidgets[0][0]) ? w[kRowWidgets[0][0]] : 0,
+             w.count(kRowWidgets[last_index][0]) ? w[kRowWidgets[last_index][0]] : 0, button);
+    StoreU32(base, scene + kSceneFlags, LoadU32(base, scene + kSceneFlags) | kUpdateNavigation);
+    Logf("setup: graphics scene %08X\n", scene);
+  }
+
+  // Turns a fresh instance of the Options screen into the Controls page.
+  void SetupControls(PPCContext &ctx, uint8_t *base, uint32_t scene)
+  {
+    std::unordered_map<std::string, uint32_t> w;
+    Widgets(base, scene, w);
+    ForgetRows(Page::kControls);
+    for (int i = 0; i <= kSectionRows; ++i)
+    {
+      uint32_t button = w.count(kRowWidgets[i][0]) ? w[kRowWidgets[i][0]] : 0;
+      uint32_t label = w.count(kRowWidgets[i][1]) ? w[kRowWidgets[i][1]] : 0;
+      g_control_buttons[i] = button;
+      g_control_labels[i] = label;
+      if (!button)
+      {
+        Logf("setup: no %s\n", kRowWidgets[i][0]);
+        continue;
+      }
+      g_rows[button] = Row{Page::kControls, i, label};
+    }
+    if (g_control_labels[0])
+    {
+      SetLabel(ctx, base, g_control_labels[0], SectionSetting().label);
+    }
+    for (const char *name : {"BrightnessSlider", "UILabel_5"})
+    {
+      if (w.count(name))
+      {
+        SetHidden(base, w[name], true);
+      }
+    }
+    g_defaults_button = w.count("UILabelButton_0") ? w["UILabelButton_0"] : 0;
+    g_defaults_armed = 0;
+    if (g_defaults_button)
+    {
+      SetCaption(ctx, base, g_defaults_button, "Default keys");
+    }
+    if (w.count("lblOptions"))
+    {
+      SetLabel(ctx, base, w["lblOptions"], "Controls");
+    }
+    RefreshControls(ctx, base);
+    Logf("setup: controls scene %08X\n", scene);
+  }
+
+  // Another instance of the Options screen over the top scene, its SceneTag
+  // number `tag`; 0 if none opened.
+  uint32_t OpenPage(PPCContext &ctx, uint8_t *base, uint32_t client, uint32_t over, uint32_t tag)
+  {
+    uint32_t options = g_options_scene;
+    uint32_t scene_template = Template(base);
+    if (!scene_template)
+    {
+      Logf("open: no %s\n", "AO2UISkin.AllOptionsUIScene");
+      return 0;
+    }
+    InitSettings();
+    Scratch s(ctx);
+    StoreU32(base, s.Slot(), 0);
+    // The scene client finds an open scene by the template's tag: not the
+    // Options screen (the other pages have their own numbers).
+    StoreU32(base, options + kSceneTag + 4, kOpeningTag);
+    g_opening = true;
+    uint32_t open = LoadU32(base, LoadU32(base, client) + kOpenScene);
+    uint32_t ok = CallGuest(ctx, base, open, s.top, client, scene_template, LoadU32(base, over + kPlayerOwner),
+                            s.Slot(), 0);
+    g_opening = false;
+    StoreU32(base, options + kSceneTag + 4, 0);
+    uint32_t scene = LoadU32(base, s.Slot());
+    Logf("open: client %08X template %08X -> %u, scene %08X\n", client, scene_template, ok, scene);
+    if (!scene || scene == options || scene == over)
+    {
+      return 0;
+    }
+    StoreU32(base, scene + kSceneTag + 4, tag);
+    return scene;
+  }
+
+  // "Select Storage Device": on the Options screen it opens the Graphics
+  // page, on that the Controls page, on that it is "Default keys".
+  bool DeviceButton(PPCContext &ctx, uint8_t *base)
+  {
+    uint32_t options = g_options_scene;
+    if (!IsSceneNamed(base, options) || LoadU32(base, options + kSceneTag + 4) != 0)
+    {
+      return false;
+    }
+    uint32_t client = LoadU32(base, options + kSceneClient);
+    uint32_t top = client ? TopScene(base, client) : 0;
+    if (!top)
+    {
+      return false;
+    }
+    if (top == options)
+    {
+      if (uint32_t scene = OpenPage(ctx, base, client, options, kGraphicsTag))
+      {
+        g_graphics_scene = scene;
+        SetupGraphics(ctx, base, scene);
+      }
+      return true;
+    }
+    if (IsPage(base, top, Page::kGraphics))
+    {
+      if (uint32_t scene = OpenPage(ctx, base, client, top, kControlsTag))
+      {
+        g_controls_scene = scene;
+        SetupControls(ctx, base, scene);
+      }
+      return true;
+    }
+    if (IsPage(base, top, Page::kControls))
+    {
+      DefaultsPressed(ctx, base);
+      return true;
+    }
+    return false;
   }
 
   void Choose(PPCContext &ctx, uint8_t *base, uint32_t button, const Row &row, int index)
   {
-    Setting &setting = Settings()[row.setting];
+    Setting *chosen = SettingOf(row);
+    if (!chosen)
+    {
+      return;
+    }
+    Setting &setting = *chosen;
     int count = static_cast<int>(setting.choices.size());
     if (index < 0 || index >= count)
     {
@@ -602,6 +1540,13 @@ namespace
     ShowIndex(ctx, base, button, setting, index);
     if (!changed)
     {
+      return;
+    }
+    if (&setting == &SectionSetting())
+    {
+      setting.running = index;
+      g_section = index;
+      RefreshControls(ctx, base);
       return;
     }
     if (setting.when == When::kNow)
@@ -617,120 +1562,6 @@ namespace
       SetLabel(ctx, base, row.label, LabelOf(setting));
     }
   }
-
-  // Turns a fresh instance of the Options screen into the Graphics page.
-  void Setup(PPCContext &ctx, uint8_t *base, uint32_t scene)
-  {
-    std::unordered_map<std::string, uint32_t> w;
-    Widgets(base, scene, w);
-    // The rows top to bottom: option button, its label.
-    static const char *const kRowWidgets[][2] = {
-        {"optbtnPreferChar", "lblPreferredChar"}, {"UIOptionButton_1", "UILabel_1"},
-        {"UIOptionButton_2", "UILabel_2"},        {"UIOptionButton_3", "UILabel_3"},
-        {"UIOptionButton_5", "UILabel_7"},        {"UIOptionButton_4", "UILabel_0"},
-        {"UIOptionButton_0", "UILabel_6"},        {"TVTypeOptionButton", "UILabel_4"},
-    };
-    static const char *const kHidden[] = {"BrightnessSlider", "UILabel_5", "UILabelButton_0"};
-
-    g_rows.clear();
-    auto &settings = Settings();
-    for (size_t i = 0; i < std::size(kRowWidgets); ++i)
-    {
-      uint32_t button = w.count(kRowWidgets[i][0]) ? w[kRowWidgets[i][0]] : 0;
-      uint32_t label = w.count(kRowWidgets[i][1]) ? w[kRowWidgets[i][1]] : 0;
-      if (i >= settings.size())
-      {
-        for (uint32_t o : {button, label})
-        {
-          if (o)
-          {
-            StoreU32(base, o + kHiddenWord, LoadU32(base, o + kHiddenWord) | kHiddenMask);
-          }
-        }
-        continue;
-      }
-      if (!button)
-      {
-        Logf("setup: no %s\n", kRowWidgets[i][0]);
-        continue;
-      }
-      g_rows[button] = Row{static_cast<int>(i), label};
-      Setting &s = settings[i];
-      if (s.when == When::kAccept && !s.restart)
-      {
-        s.chosen = s.running; // a pick left with B is dropped
-      }
-      if (label)
-      {
-        SetLabel(ctx, base, label, LabelOf(s));
-      }
-      ShowIndex(ctx, base, button, s, s.chosen);
-    }
-    for (const char *name : kHidden)
-    {
-      if (w.count(name))
-      {
-        StoreU32(base, w[name] + kHiddenWord, LoadU32(base, w[name] + kHiddenWord) | kHiddenMask);
-      }
-    }
-    if (w.count("lblOptions"))
-    {
-      SetLabel(ctx, base, w["lblOptions"], "Graphics");
-    }
-    // Down from the last row would go to the hidden ones (and stop there):
-    // the last and the first row wrap to each other, as the full screen does.
-    uint32_t first = w.count(kRowWidgets[0][0]) ? w[kRowWidgets[0][0]] : 0;
-    size_t last_index = std::min(settings.size(), std::size(kRowWidgets)) - 1;
-    uint32_t last = w.count(kRowWidgets[last_index][0]) ? w[kRowWidgets[last_index][0]] : 0;
-    if (first && last && first != last)
-    {
-      StoreU32(base, last + kForcedNavigation + kFaceBottom * 4, first);
-      StoreU32(base, first + kForcedNavigation + kFaceTop * 4, last);
-    }
-    StoreU32(base, scene + kSceneFlags, LoadU32(base, scene + kSceneFlags) | kUpdateNavigation);
-    Logf("setup: scene %08X, %zu rows\n", scene, g_rows.size());
-  }
-
-  // "Select Storage Device" on the Options screen: opens the Graphics page.
-  bool OpenGraphics(PPCContext &ctx, uint8_t *base)
-  {
-    uint32_t options = g_options_scene;
-    if (!IsSceneNamed(base, options) || LoadU32(base, options + kSceneTag + 4) != 0)
-    {
-      return false;
-    }
-    uint32_t client = LoadU32(base, options + kSceneClient);
-    if (!client || TopScene(base, client) != options)
-    {
-      return false;
-    }
-    uint32_t scene_template = Template(base);
-    if (!scene_template)
-    {
-      Logf("open: no %s\n", "AO2UISkin.AllOptionsUIScene");
-      return false;
-    }
-    InitSettings();
-    Scratch s(ctx);
-    StoreU32(base, s.Slot(), 0);
-    StoreU32(base, options + kSceneTag + 4, kOpeningTag);
-    g_opening = true;
-    uint32_t open = LoadU32(base, LoadU32(base, client) + kOpenScene);
-    uint32_t ok = CallGuest(ctx, base, open, s.top, client, scene_template, LoadU32(base, options + kPlayerOwner),
-                            s.Slot(), 0);
-    g_opening = false;
-    StoreU32(base, options + kSceneTag + 4, 0);
-    uint32_t scene = LoadU32(base, s.Slot());
-    Logf("open: client %08X template %08X -> %u, scene %08X\n", client, scene_template, ok, scene);
-    if (!scene || scene == options)
-    {
-      return scene == options; // already there: nothing more to open
-    }
-    StoreU32(base, scene + kSceneTag + 4, kGraphicsTag);
-    g_graphics_scene = scene;
-    Setup(ctx, base, scene);
-    return true;
-  }
 } // namespace
 
 namespace ao2::gfxmenu
@@ -741,13 +1572,75 @@ namespace ao2::gfxmenu
   {
     ::SetCaption(ctx, base, button, english);
   }
+
+  bool Capturing() { return g_capture.button || g_capture.swallowing; }
+
+  bool OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t user, uint32_t state)
+  {
+    Capture &c = g_capture;
+    if (c.button && !RowOf(base, c.button))
+    {
+      c = Capture{}; // the page is gone
+    }
+    if (c.button)
+    {
+      Listen(ctx, base);
+      Silence(ctx, base, state);
+      return true;
+    }
+    if (c.swallowing)
+    {
+      if (!AnyKeyDown() || static_cast<int32_t>(GetTickCount() - c.swallow_end) >= 0)
+      {
+        c.swallowing = false;
+      }
+      else
+      {
+        Silence(ctx, base, state);
+        return true;
+      }
+    }
+
+    // The Controls page on top: A on a key's row waits for a key
+    // (the page would take it as Accept).
+    uint32_t client = g_controls_scene && IsPage(base, g_controls_scene, Page::kControls)
+                          ? LoadU32(base, g_controls_scene + kSceneClient)
+                          : 0;
+    bool on_top = client && TopScene(base, client) == g_controls_scene;
+    if (on_top && g_defaults_armed && GetTickCount() - g_defaults_armed > 4000)
+    {
+      g_defaults_armed = 0;
+      SetCaption(ctx, base, g_defaults_button, "Default keys");
+    }
+    uint8_t *p = base + state;
+    bool a = ctx.r3.u32 == 0 && ((p[4] << 8 | p[5]) & kButtonA);
+    bool &prev = g_prev_a[user & 3];
+    bool pressed = a && !prev;
+    prev = a;
+    if (!on_top || !pressed)
+    {
+      return false;
+    }
+    for (int i = 1; i <= kSectionRows; ++i)
+    {
+      uint32_t button = g_control_buttons[i];
+      const Row *row = button ? RowOf(base, button) : nullptr;
+      if (row && BindOf(*row) && Focused(base, button))
+      {
+        StartCapture(ctx, base, button, *row, false);
+        Silence(ctx, base, state);
+        return true;
+      }
+    }
+    return false;
+  }
 } // namespace ao2::gfxmenu
 
 // OnlineSubsystemLive::ShowDeviceSelectionUI(this, user, size needed, force).
 extern "C" REX_FUNC(__imp__sub_82AF8380);
 extern "C" REX_FUNC(sub_82AF8380)
 {
-  if (OpenGraphics(ctx, base))
+  if (DeviceButton(ctx, base))
   {
     ctx.r3.u64 = 0;
     return;
@@ -761,7 +1654,8 @@ extern "C" REX_FUNC(sub_8233B598)
 {
   if (const Row *row = RowOf(base, ctx.r3.u32))
   {
-    ctx.r3.u64 = Settings()[row->setting].choices.size();
+    const Setting *setting = SettingOf(*row);
+    ctx.r3.u64 = setting ? setting->choices.size() : 2;
     return;
   }
   __imp__sub_8233B598(ctx, base);
@@ -774,8 +1668,14 @@ extern "C" REX_FUNC(sub_8233B680)
   uint32_t button = ctx.r3.u32;
   if (const Row *row = RowOf(base, button))
   {
+    const Setting *setting = SettingOf(*row);
+    if (!setting)
+    {
+      ctx.r3.u64 = 1; // a key bind: left adds a key
+      return;
+    }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
-    int count = static_cast<int>(Settings()[row->setting].choices.size());
+    int count = static_cast<int>(setting->choices.size());
     int index = static_cast<int32_t>(LoadU32(base, button + kCurrentIndex));
     ctx.r3.u64 = wrap ? count > 1 : index > 0;
     return;
@@ -790,8 +1690,14 @@ extern "C" REX_FUNC(sub_8233B710)
   uint32_t button = ctx.r3.u32;
   if (const Row *row = RowOf(base, button))
   {
+    const Setting *setting = SettingOf(*row);
+    if (!setting)
+    {
+      ctx.r3.u64 = 1; // a key bind: right replaces its key
+      return;
+    }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
-    int count = static_cast<int>(Settings()[row->setting].choices.size());
+    int count = static_cast<int>(setting->choices.size());
     int index = static_cast<int32_t>(LoadU32(base, button + kCurrentIndex));
     ctx.r3.u64 = wrap ? count > 1 : index < count - 1;
     return;
@@ -807,8 +1713,14 @@ extern "C" REX_FUNC(sub_8235AC38)
   if (const Row *row = RowOf(base, button))
   {
     Row r = *row;
+    const Setting *setting = SettingOf(r);
+    if (!setting)
+    {
+      StartCapture(ctx, base, button, r, true);
+      return;
+    }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
-    int count = static_cast<int>(Settings()[r.setting].choices.size());
+    int count = static_cast<int>(setting->choices.size());
     int index = static_cast<int32_t>(LoadU32(base, button + kCurrentIndex));
     if (index > 0)
     {
@@ -831,8 +1743,14 @@ extern "C" REX_FUNC(sub_8235ACF8)
   if (const Row *row = RowOf(base, button))
   {
     Row r = *row;
+    const Setting *setting = SettingOf(r);
+    if (!setting)
+    {
+      StartCapture(ctx, base, button, r, false);
+      return;
+    }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
-    int count = static_cast<int>(Settings()[r.setting].choices.size());
+    int count = static_cast<int>(setting->choices.size());
     int index = static_cast<int32_t>(LoadU32(base, button + kCurrentIndex));
     if (index < count - 1)
     {
@@ -868,16 +1786,18 @@ extern "C" REX_FUNC(sub_82353980)
   uint32_t button = ctx.r3.u32;
   if (const Row *row = RowOf(base, button))
   {
-    const Setting &setting = Settings()[row->setting];
+    const Setting *setting = SettingOf(*row);
     int index = static_cast<int32_t>(ctx.r4.u32);
     uint32_t out = ctx.r5.u32;
-    if (index < 0 || index >= static_cast<int>(setting.choices.size()) || !out)
+    int count = setting ? static_cast<int>(setting->choices.size()) : 2;
+    if (index < 0 || index >= count || !out)
     {
       ctx.r3.u64 = 0;
       return;
     }
     Scratch s(ctx);
-    MakeString(ctx, base, s, s.String(0), GameTr(setting.choices[index].name));
+    MakeString(ctx, base, s, s.String(0),
+               setting ? GameTr(setting->choices[index].name) : BindText(BindOf(*row)));
     CallGuest(ctx, base, kFStringAssign, s.top, out, s.String(0));
     CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
     ctx.r3.u64 = 1;
@@ -893,9 +1813,18 @@ extern "C" REX_FUNC(sub_82353A78)
   uint32_t button = ctx.r3.u32;
   if (const Row *row = RowOf(base, button))
   {
-    const Setting &setting = Settings()[row->setting];
-    Logf("refresh: %s\n", setting.cvar);
-    ShowIndex(ctx, base, button, setting, setting.chosen);
+    if (const Setting *setting = SettingOf(*row))
+    {
+      ShowIndex(ctx, base, button, *setting, setting->chosen);
+    }
+    else if (button == g_capture.button)
+    {
+      ShowText(ctx, base, button, GameTr("Press a key...") + " " + std::to_string(g_capture.shown));
+    }
+    else
+    {
+      ShowText(ctx, base, button, BindText(BindOf(*row)));
+    }
     ctx.r3.u64 = 1;
     return;
   }
@@ -916,12 +1845,12 @@ extern "C" REX_FUNC(sub_8235ADD8)
 {
   if (const Row *row = RowOf(base, ctx.r3.u32 - kPublisher))
   {
-    // The page's Accept publishes every widget's value (UIAction_PublishValue).
-    Setting &setting = Settings()[row->setting];
-    Logf("publish: %s\n", setting.cvar);
-    if (setting.when == When::kAccept)
+    // A page's Accept publishes every widget's value (UIAction_PublishValue).
+    Setting *setting = SettingOf(*row);
+    if (row->page == Page::kGraphics && setting && setting->when == When::kAccept)
     {
-      Accept(setting);
+      Logf("publish: %s\n", setting->cvar);
+      Accept(*setting);
     }
     ctx.r3.u64 = 1;
     return;

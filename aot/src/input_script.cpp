@@ -32,6 +32,7 @@
 
 #include "autopilot.h"
 #include "cutscene_skip.h"
+#include "graphics_menu.h"
 #include "menu_mouse.h"
 #include "mouse_aim.h"
 
@@ -361,6 +362,11 @@ extern "C" REX_FUNC(sub_82B07AF0)
   if (state && (user == 0 || keyboard))
   {
     ao2::menumouse::OnPadPoll(ctx, base, state, keyboard);
+  }
+  // The Controls page waiting for a key takes every player's input.
+  if (state && ao2::gfxmenu::OnPadPoll(ctx, base, user, state))
+  {
+    return;
   }
   if (state && user < 4 && ctx.r3.u32 == 0 && REXCVAR_GET(ao2_toggle_aim))
   {

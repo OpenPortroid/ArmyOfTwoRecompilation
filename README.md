@@ -44,6 +44,7 @@ On the first runs shaders are compiled, so there are short stutters.
 - Online coop mode without reliance on EA servers, supporting both Public and Private Co-op
 - Split-screen on one PC with each player's devices chosen in the launcher
 - Graphics settings inside the game: Options → Graphics
+- Key and mouse rebinding inside the game: Options → Graphics → Controls
 - Render resolution above the console's 720p
 - Optimized performance with stable frame rates
 - Keyboard and mouse support, including keyboard key glyphs in on-screen button prompts
@@ -71,7 +72,8 @@ R3|MMB|R3
 GPS|Tab|Back
 Pause|Esc|Start
 
-Bindings: the launcher's Settings → Keyboard and Gamepad tabs (press the key or button to assign it, combinations
+Bindings: in the game, Options → Graphics → Controls (Enter or a click on a row, then the key; left adds
+one more key); the launcher's Settings → Keyboard and Gamepad tabs (press the key or button to assign it, combinations
 and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind_*`). Gamepads work as on the console.
 
 ## Co-op
