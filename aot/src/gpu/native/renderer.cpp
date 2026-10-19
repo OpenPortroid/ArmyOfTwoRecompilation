@@ -5961,7 +5961,13 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
             ++g.transfers_skipped;
           }
           TransferOrClear(rt, src, interior_tiles, rect, needed & ~overwrite);
-          TransferOrClear(rt, src, edge_tiles, rect, needed);
+          // An edge tile changes hands whole, so all of it comes over, not
+          // only its part inside `rect`: the shadow buffer's border (cleared
+          // through a 4x MSAA surface over the same EDRAM, then a draw claims
+          // only the 5-texel-inset viewport) was otherwise left with stale
+          // depth, and the shadow projection sampled it - dark lines along the
+          // edges of a light's shadow.
+          TransferOrClear(rt, src, edge_tiles, D3D12_RECT{0, 0, LONG(rt.width), LONG(rt.height)}, needed);
         }
       }
       if (changed)
