@@ -41,8 +41,8 @@ REXCVAR_DEFINE_BOOL(ao2_vehicle_wasd, true, "Input",
                     "trigger - the game's gas and brake");
 REXCVAR_DEFINE_BOOL(ao2_toggle_aim, false, "Input",
                     "Aim (LT, the right mouse button) toggles: one press starts aiming, the next ends it, instead "
-                    "of holding the button. On foot only: vehicles, turrets, menus and cutscenes keep the trigger "
-                    "as it is");
+                    "of holding the button. On foot, on turrets and at a vehicle's gun; at the wheel, in the menus "
+                    "and cutscenes the trigger is left as it is");
 REXCVAR_DEFINE_STRING(ao2_input_script, "", "Debug",
                       "Scripted pad input (also from input.script): a b x y start back up down left right lb rb ls "
                       "rs lt rt [+|-] waitNNN mxN myN skip lxN lyN rxN ryN");
@@ -83,19 +83,23 @@ namespace
   uint32_t g_packet = 0x10000;
   clock::time_point g_next_file_check;
 
-  // Toggle aim, per pad: the trigger held at the last poll, aiming latched.
+  // Toggle aim, per pad: the trigger held at the last poll, aiming latched,
+  // and the pawn it is latched on (the character, a turret, a vehicle seat).
   struct ToggleAim
   {
     bool down = false;
     bool on = false;
+    uint32_t pawn = 0;
   };
   ToggleAim g_toggle_aim[4];
 
   // The left trigger of a pad state `p` (XINPUT_STATE) as a switch: each press
-  // flips aiming, the trigger reads fully pulled while it is on. Off the
-  // player's feet the trigger is left alone and aiming starts over unlatched; a trigger held across that change counts
-  // as a press only once released and pressed again. Before the scripted and
-  // autopilot input is merged, so those still hold it as they please.
+  // flips aiming (the zoom on a turret), the trigger reads fully pulled while
+  // it is on. At the wheel, in the menus and cutscenes the trigger is left
+  // alone; there and on another pawn (on foot -> a turret) aiming starts over
+  // unlatched, and a trigger held across that change counts as a press only
+  // once released and pressed again. Before the scripted and autopilot input
+  // is merged, so those still hold it as they please.
   void ApplyToggleAim(PPCContext &ctx, uint8_t *base, uint32_t user, uint8_t *p)
   {
     constexpr uint8_t kPressed = 30; // XINPUT_GAMEPAD_TRIGGER_THRESHOLD
@@ -103,15 +107,22 @@ namespace
     bool down = p[6] >= kPressed;
     bool press = down && !t.down;
     t.down = down;
-    if (!ao2::mouse::OnFoot(ctx, base, user))
+    uint32_t pawn = ao2::mouse::AimTogglePawn(ctx, base, user);
+    if (pawn != t.pawn)
     {
       t.on = false;
+      t.pawn = pawn;
+    }
+    if (!pawn)
+    {
+      ao2::mouse::NoteToggleAim(user, p[6], false);
       return;
     }
     if (press)
     {
       t.on = !t.on;
     }
+    ao2::mouse::NoteToggleAim(user, p[6], t.on);
     p[6] = t.on ? 0xFF : 0;
   }
 

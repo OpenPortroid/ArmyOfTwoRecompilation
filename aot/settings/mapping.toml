@@ -75,7 +75,8 @@ ao2_mouse_invert_y = false
 # Right-stick strength of the mouse where native aiming is unavailable.
 ao2_mouse_stick_sensitivity = 1.0
 # Toggle aim: one press of aim (LT / the right mouse button) starts aiming,
-# the next ends it, instead of holding the button. On foot only.
+# the next ends it, instead of holding the button. On foot, on turrets and at
+# a vehicle's gun; not at the wheel.
 ao2_toggle_aim = false
 
 # ─────────────────────────────────────────────────────────────

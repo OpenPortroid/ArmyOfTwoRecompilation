@@ -25,6 +25,10 @@ namespace ao2::mouse
   // there is nothing to add (also during cutscenes).
   bool PredictedTurn(const uint8_t *base, uint32_t controller, uint32_t step, double alpha, bool interpolated,
                      float &pitch, float &yaw);
+  // The view of `controller` on simulation step `step` (rotation units): on
+  // a turret, whether it is on the gun yet, for the prediction
+  // (interp_camera.cpp; game thread).
+  void NoteView(const uint8_t *base, uint32_t controller, uint32_t step, float pitch, float yaw);
 
   // Online co-op: this machine's player (0 while not known), and a turn of
   // its view towards a point `yaw` / `pitch` rotation units away, at most
@@ -38,11 +42,14 @@ namespace ao2::mouse
   // hovercraft - not on a turret, not a vehicle's gunner). Any thread.
   bool Driving();
 
-  // The player of pad `user` is on foot in play: the game turns its view
-  // (not the menus, the lobby, the pause menu or a cutscene) and its pawn is
-  // its character (not a vehicle or a turret). Online co-op: this machine's
-  // player. Game thread.
-  bool OnFoot(PPCContext &ctx, uint8_t *base, uint32_t user);
+  // The pawn of the player of pad `user` when aim (the left trigger) aims or
+  // zooms: in play (the game turns its view - not the menus, the lobby, the
+  // pause menu or a cutscene), on foot, on a turret or at a vehicle's gun;
+  // 0 otherwise, also at the wheel (the triggers are the gas and the brake).
+  // Online co-op: this machine's player. Game thread.
+  uint32_t AimTogglePawn(PPCContext &ctx, uint8_t *base, uint32_t user);
+  // For the log (ao2_mouse_debug): the trigger as polled, and aiming latched.
+  void NoteToggleAim(uint32_t user, uint8_t trigger, bool on);
 
   // The guest user the keyboard and mouse belong to (rexruntime.dll's
   // rex_input_keyboard_user): 0 unless split-screen gives them to another

@@ -432,17 +432,17 @@ namespace AO2Launcher
             a("Toggle aim", "Прицеливание переключением", "Visée par bascule", "Zielen umschalten",
               "Apuntar alternando", "Mira a commutazione");
             a("One press of aim (right mouse button, LT) starts aiming, the next press ends it, instead of holding " +
-              "the button. On foot only.",
+              "the button. On foot, on turrets and at a vehicle's gun; not at the wheel.",
               "Одно нажатие прицела (правая кнопка мыши, LT) включает прицеливание, следующее выключает — держать " +
-              "кнопку не нужно. Только пешком.",
+              "кнопку не нужно. Пешком, на турелях и у оружия техники; не за рулём.",
               "Un appui sur viser (bouton droit, LT) commence la visée, l'appui suivant l'arrête, au lieu de " +
-              "maintenir le bouton. À pied uniquement.",
+              "maintenir le bouton. À pied, sur les tourelles et aux armes des véhicules ; pas au volant.",
               "Ein Druck auf Zielen (rechte Maustaste, LT) startet das Zielen, der nächste beendet es, statt die " +
-              "Taste zu halten. Nur zu Fuß.",
+              "Taste zu halten. Zu Fuß, an Geschütztürmen und an Fahrzeugwaffen; nicht am Steuer.",
               "Una pulsación de apuntar (botón derecho, LT) empieza a apuntar y la siguiente lo termina, en vez de " +
-              "mantener el botón. Solo a pie.",
+              "mantener el botón. A pie, en torretas y en armas de vehículos; no al volante.",
               "Una pressione di mira (tasto destro, LT) inizia a mirare, la successiva smette, invece di tenere " +
-              "premuto il tasto. Solo a piedi.");
+              "premuto il tasto. A piedi, sulle torrette e alle armi dei veicoli; non alla guida.");
             a("Mouse in vehicles and turrets", "Мышь в технике и турелях", "Souris dans véhicules et tourelles",
               "Maus in Fahrzeugen und Geschützen", "Ratón en vehículos y torretas", "Mouse su veicoli e torrette");
             a("Where the camera cannot be turned directly (turrets, vehicles, menus) the mouse acts as the right stick; " +
