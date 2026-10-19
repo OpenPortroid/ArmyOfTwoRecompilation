@@ -143,6 +143,11 @@ Folder|Contents
 
 Release package: `aot\tools\make_release.ps1 [-Zip]`. Renderer notes: [aot/docs/native_renderer.md](aot/docs/native_renderer.md).
 
+## Special Thanks
+
+- [Nikolay Gorb](https://github.com/nikolaygorb)
+- [rexglue](https://github.com/rexglue/rexglue-sdk)
+
 ## Legal
 
 A fan project, not affiliated with Electronic Arts. Army of Two and related names are trademarks of their owners.
