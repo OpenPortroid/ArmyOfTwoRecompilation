@@ -37,8 +37,6 @@ namespace AO2Launcher
             { "aim_assist", "0" },
             { "stick_sens", "1" },
             { "toggle_aim", "0" },
-            { "skip_cutscenes", "1" },
-            { "skip_unskippable", "1" },
             { "god_mode", "0" },
             { "unlock_all", "0" },
             { "profile", "" },

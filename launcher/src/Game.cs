@@ -164,8 +164,8 @@ namespace AO2Launcher
             a.Add("--ao2_mouse_stick_sensitivity=" + Num(s.Double("stick_sens")));
             a.Add(Flag("ao2_toggle_aim", s.Bool("toggle_aim")));
 
-            a.Add(Flag("ao2_skip_cutscenes", s.Bool("skip_cutscenes")));
-            a.Add(Flag("ao2_skip_unskippable", s.Bool("skip_unskippable")));
+            a.Add(Flag("ao2_skip_cutscenes", true));
+            a.Add(Flag("ao2_skip_unskippable", true));
             a.Add(Flag("ao2_god_mode", s.Bool("god_mode")));
             a.Add(Flag("ao2_unlock_all", s.Bool("unlock_all")));
 

@@ -209,6 +209,9 @@ namespace AO2Launcher
             };
             timer.Start();
             LayoutRows();
+            // Built before the window shows, so it never opens blank.
+            if (bgMainSrc != null) bgMain = MainBackdrop(bgMainSrc);
+            if (bgDimSrc != null) bgDim = DimBackdrop(bgDimSrc);
             // After an update the previous launcher may still be exiting: retry for a few seconds.
             Updates.CleanUp();
             if (Updates.LeftOver)
@@ -819,6 +822,89 @@ namespace AO2Launcher
             }
         }
 
+        // The window is borderless and drawn by hand: its edges resize it (dragged here, not by the
+        // system), keeping the canvas proportions.
+        const int EdgeL = 1, EdgeR = 2, EdgeT = 4, EdgeB = 8, EdgeGrip = 6;
+        int rsEdge;
+        Point rsMouse;
+        Rectangle rsBounds;
+
+        int EdgeAt(Point p)
+        {
+            int e = 0;
+            if (p.X < EdgeGrip) e |= EdgeL;
+            else if (p.X >= ClientSize.Width - EdgeGrip) e |= EdgeR;
+            if (p.Y < EdgeGrip) e |= EdgeT;
+            else if (p.Y >= ClientSize.Height - EdgeGrip) e |= EdgeB;
+            return e;
+        }
+
+        static Cursor EdgeCursor(int e)
+        {
+            if (e == (EdgeL | EdgeT) || e == (EdgeR | EdgeB)) return Cursors.SizeNWSE;
+            if (e == (EdgeR | EdgeT) || e == (EdgeL | EdgeB)) return Cursors.SizeNESW;
+            return (e & (EdgeL | EdgeR)) != 0 ? Cursors.SizeWE : Cursors.SizeNS;
+        }
+
+        void BeginResize(int edge)
+        {
+            // Dragging repaints only a stretched picture of the current frame.
+            try
+            {
+                frozen = new Bitmap(ClientSize.Width, ClientSize.Height, PixelFormat.Format32bppPArgb);
+                using (Graphics fg = Graphics.FromImage(frozen))
+                {
+                    OnPaint(new PaintEventArgs(fg, new Rectangle(Point.Empty, ClientSize)));
+                }
+            }
+            catch
+            {
+                frozen = null;
+            }
+            rsEdge = edge;
+            rsMouse = Cursor.Position;
+            rsBounds = Bounds;
+            sizing = true;
+            Capture = true;
+        }
+
+        void DoResize()
+        {
+            int dx = Cursor.Position.X - rsMouse.X, dy = Cursor.Position.Y - rsMouse.Y;
+            int w;
+            if ((rsEdge & EdgeL) != 0) w = rsBounds.Width - dx;
+            else if ((rsEdge & EdgeR) != 0) w = rsBounds.Width + dx;
+            else
+            {
+                int h0 = (rsEdge & EdgeT) != 0 ? rsBounds.Height - dy : rsBounds.Height + dy;
+                w = (int)Math.Round(h0 * W / H);
+            }
+            Rectangle wa = Screen.FromRectangle(rsBounds).WorkingArea;
+            w = Math.Max((int)(W * 0.5f), Math.Min(w, Math.Min(wa.Width, (int)(wa.Height * W / H))));
+            int h = (int)Math.Round(w * H / W);
+            int x = (rsEdge & EdgeL) != 0 ? rsBounds.Right - w : rsBounds.X;
+            int y = (rsEdge & EdgeT) != 0 ? rsBounds.Bottom - h : rsBounds.Y;
+            if (x != Left || y != Top || w != Width || h != Height)
+            {
+                Bounds = new Rectangle(x, y, w, h);
+                Update(); // paint now: the stretched picture is cheap
+            }
+        }
+
+        void EndResize()
+        {
+            rsEdge = 0;
+            Capture = false;
+            sizing = false;
+            if (frozen != null)
+            {
+                frozen.Dispose();
+                frozen = null;
+            }
+            RebuildScaled();
+            DropBackdrops();
+        }
+
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
@@ -1128,11 +1214,6 @@ namespace AO2Launcher
             // Extras
             var extras = new List<Row>
             {
-                Toggle("Skip cutscenes", "skip_cutscenes",
-                    "Enter or Space skips movies and in-engine cutscenes. Skipping is off in network games."),
-                Toggle("Skip unskippable ones", "skip_unskippable",
-                    "Also allow skipping the cutscenes the original game does not let you skip.",
-                    "NO", "YES"),
                 Toggle("God mode (cheat)", "god_mode", "The player takes no damage. Has no effect in online co-op."),
                 new Row
                 {
@@ -1996,6 +2077,16 @@ namespace AO2Launcher
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            if (rsEdge != 0)
+            {
+                DoResize();
+                return;
+            }
+            if (dragging == null && EdgeAt(e.Location) != 0)
+            {
+                Cursor = EdgeCursor(EdgeAt(e.Location));
+                return;
+            }
             PointF p = Logical(e.Location);
             if (dragging != null)
             {
@@ -2071,6 +2162,11 @@ namespace AO2Launcher
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left && EdgeAt(e.Location) != 0)
+            {
+                BeginResize(EdgeAt(e.Location));
+                return;
+            }
             UsePad(false);
             if (screen == UiScreen.Settings && CaptureMouse(e.Button))
             {
@@ -2115,6 +2211,11 @@ namespace AO2Launcher
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
+            if (rsEdge != 0)
+            {
+                EndResize();
+                return;
+            }
             if (pressed != null)
             {
                 pressed = null;
@@ -2155,6 +2256,54 @@ namespace AO2Launcher
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            if (WindowState == FormWindowState.Minimized)
+            {
+                wasMinimized = true;
+                // Minimizing shrinks the window to nothing: keep the scale and the backdrops, or
+                // restoring would show an unpainted square until they are rebuilt.
+                return;
+            }
+            if (wasMinimized)
+            {
+                // Restored: paint the whole frame at once, before the window is shown again.
+                wasMinimized = false;
+                Invalidate();
+                Update();
+            }
+            if (ClientSize.Width > 0 && tabs != null)
+            {
+                scale = ClientSize.Width / W;
+                LayoutRows(false);
+                if (!sizing)
+                {
+                    RebuildScaled();
+                }
+            }
+            if (sizing)
+            {
+                // Dragging: the old backdrops are just stretched (see OnPaint); real ones come at the end.
+                Invalidate();
+                return;
+            }
+            DropBackdrops();
+        }
+
+        bool wasMinimized;
+        bool sizing;
+        Bitmap frozen; // the frame as it was when dragging began
+
+        void RebuildScaled()
+        {
+            foreach (Row r in AllRows().Where(r => r.Box != null))
+            {
+                Font old = r.Box.Font;
+                r.Box.Font = new Font(famReg, 15f * scale, FontStyle.Regular, GraphicsUnit.Pixel);
+                old.Dispose();
+            }
+        }
+
+        void DropBackdrops()
+        {
             if (bgMain != null)
             {
                 bgMain.Dispose();
@@ -2240,9 +2389,21 @@ namespace AO2Launcher
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
+            if (WindowState == FormWindowState.Minimized || ClientSize.Width < 100)
+            {
+                return;
+            }
+            if (sizing && frozen != null)
+            {
+                g.CompositingMode = CompositingMode.SourceCopy;
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.DrawImage(frozen, new Rectangle(0, 0, ClientSize.Width, ClientSize.Height), 0, 0, frozen.Width, frozen.Height, GraphicsUnit.Pixel);
+                return;
+            }
             hots.Clear();
 
-            if (ClientSize.Width > 0)
+            if (ClientSize.Width > 0 && !sizing)
             {
                 if (bgMain == null && bgMainSrc != null)
                 {
@@ -2257,7 +2418,15 @@ namespace AO2Launcher
             g.CompositingMode = CompositingMode.SourceCopy;
             if (bg != null)
             {
-                g.DrawImageUnscaled(bg, 0, 0);
+                if (bg.Width == ClientSize.Width && bg.Height == ClientSize.Height)
+                {
+                    g.DrawImageUnscaled(bg, 0, 0);
+                }
+                else
+                {
+                    g.InterpolationMode = InterpolationMode.Low;
+                    g.DrawImage(bg, 0, 0, ClientSize.Width, ClientSize.Height);
+                }
             }
             g.CompositingMode = CompositingMode.SourceOver;
 

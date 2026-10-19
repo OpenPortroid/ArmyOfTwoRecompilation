@@ -785,22 +785,6 @@ namespace AO2Launcher
               "gioco del primo. Poi entrambi, nel gioco: Modalità campagna → Partita co-op pubblica.");
 
             // --- Advanced ---
-            a("Skip cutscenes", "Пропуск роликов", "Passer les cinématiques", "Zwischensequenzen überspringen",
-              "Saltar cinemáticas", "Salta filmati");
-            a("Enter or Space skips movies and in-engine cutscenes. Skipping is off in network games.",
-              "Enter или Пробел пропускают видеоролики и катсцены на движке. В сетевой игре пропуск выключен.",
-              "Entrée ou Espace passe les vidéos et les cinématiques du moteur. Désactivé en partie en réseau.",
-              "Enter oder Leertaste überspringt Videos und Zwischensequenzen. In Netzwerkspielen aus.",
-              "Intro o Espacio salta los vídeos y las cinemáticas del motor. Desactivado en partidas en red.",
-              "Invio o Spazio salta i filmati e le scene del motore. Disattivato nelle partite in rete.");
-            a("Skip unskippable ones", "Пропускать непропускаемые", "Même non passables", "Auch nicht überspringbare",
-              "Saltar las no saltables", "Anche quelli non saltabili");
-            a("Also allow skipping the cutscenes the original game does not let you skip.",
-              "Разрешить пропуск и тех роликов, которые оригинальная игра пропускать не даёт.",
-              "Permet aussi de passer les cinématiques que le jeu original ne laisse pas passer.",
-              "Auch Zwischensequenzen überspringen, die das Originalspiel nicht überspringen lässt.",
-              "Permite saltar también las cinemáticas que el juego original no deja saltar.",
-              "Permette di saltare anche i filmati che il gioco originale non lascia saltare.");
             a("God mode (cheat)", "Бессмертие (чит)", "Mode dieu (triche)", "Gottmodus (Cheat)", "Modo dios (truco)",
               "Modalità dio (trucco)");
             a("The player takes no damage. Has no effect in online co-op.",
