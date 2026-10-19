@@ -27,9 +27,11 @@
 // the scene client would otherwise find it by tag as the Options screen. The
 // Options screen's tag is changed during the open for the same reason.
 //
-// Most changes apply at once (fullscreen, frame rate cap, vertical sync, FPS
-// counter, anisotropy, anti-aliasing). The page has eight rows, all taken; the
-// other post effects are launcher settings. The render resolution waits for the page's
+// The page's first row picks a section (display, effects), the seven below
+// show its settings; rows a section has none for are hidden. Most changes
+// apply at once (fullscreen, frame rate cap, vertical sync, FPS counter,
+// anisotropy, anti-aliasing, ambient occlusion, motion blur, depth of field,
+// shadow resolution: the renderer reads their cvars every frame). The render resolution waits for the page's
 // Accept, which publishes every widget's value (SaveSubscriberValue): the
 // native renderer then switches at the end of a frame
 // (RendererSetResolutionScale; the cvar stays as the game started, the
@@ -56,6 +58,14 @@
 // XInputGetState hook) and the menus' mouse is off, until the keys are let
 // go again. Binds apply at once (the driver reads the cvars every poll) and
 // are saved to settings/mapping.toml and the launcher's kb_* keys.
+//
+// The pause menu has its own Options screen (AllOptionsUIScene_IGPM_Xbox: no
+// preferred character row, no device button). Its TV type row becomes a
+// plain button, "Graphics and controls" / "Open" (bHideArrows, no value
+// list; the mouse clicks it as a button): A or a click opens the Graphics
+// page over it from the same template, and the Controls page from there.
+// The A that opened it is swallowed until let go: the page would take it as
+// its Accept.
 #include "graphics_menu.h"
 
 #include "aspect_ratio.h"
@@ -305,9 +315,31 @@ namespace
          {{"Off", "false"}, {"16x", "true"}}},
         {"Anti-aliasing", nullptr, When::kNow, "ao2_anti_aliasing", "s", "aa",
          {{"Off", "off"}, {"FXAA", "fxaa"}, {"SMAA", "smaa"}}},
+        {"Ambient occlusion", nullptr, When::kNow, "ao2_ambient_occlusion", "s", "ao",
+         {{"Off", "off"}, {"SSAO", "ssao"}, {"HBAO", "hbao"}, {"GTAO", "gtao"}}},
+        {"Motion blur", nullptr, When::kNow, "ao2_motion_blur", "n", "motion_blur",
+         {{"Off", "0"}, {"Low", "1"}, {"High", "2"}}},
+        {"Depth of field", nullptr, When::kNow, "ao2_depth_of_field", "n", "dof",
+         {{"Off", "0"}, {"On", "1"}}},
+        {"Shadow resolution", nullptr, When::kNow, "ao2_shadow_resolution", "n", "shadow_res",
+         {{"Auto", "0"}, {"1024", "1024"}, {"2048", "2048"}, {"4096", "4096"}}},
     };
     return settings;
   }
+
+  // The Graphics page's first row picks a section; the seven rows below show
+  // its settings (indices into Settings(), -1: the row is hidden).
+  Setting &GraphicsSectionSetting()
+  {
+    static Setting section = {"Section", nullptr, When::kNow, nullptr, "n", nullptr,
+                              {{"Display", "0"}, {"Effects", "1"}}};
+    return section;
+  }
+  constexpr int kGraphicsRows = 7;
+  constexpr int kGraphicsSections[2][kGraphicsRows] = {
+      {0, 1, 2, 3, 4, 5, -1},
+      {6, 7, 8, 9, 10, 11, -1},
+  };
 
   // --- The Controls page --------------------------------------------
 
@@ -522,8 +554,7 @@ namespace
       if (std::string(s.cvar) == "ao2_fps_target")
       {
         SetFileKey(utils::SettingsDir() / "hardware.toml", "ao2_fps_unlock", "true");
-      }
-      std::string launcher = REXCVAR_GET(ao2_launcher_settings);
+      }      std::string launcher = REXCVAR_GET(ao2_launcher_settings);
       if (s.launcher_key && !launcher.empty() && std::filesystem::exists(std::u8string(launcher.begin(), launcher.end())))
       {
         std::string v = value == "true" ? "1" : (value == "false" ? "0" : value);
@@ -545,8 +576,7 @@ namespace
     s.running = s.chosen;
     std::string value = s.choices[s.chosen].value;
     bool ok = rex::cvar::SetFlagByName(s.cvar, value);
-    Logf("%s = %s%s\n", s.cvar, value.c_str(), ok ? "" : " (not set)");
-    if (std::string(s.cvar) == "fullscreen" && g_window)
+    Logf("%s = %s%s\n", s.cvar, value.c_str(), ok ? "" : " (not set)");    if (std::string(s.cvar) == "fullscreen" && g_window)
     {
       bool fullscreen = value == "true";
       rex::ui::Window *window = g_window;
@@ -584,17 +614,18 @@ namespace
   uint32_t g_options_scene = 0;  // the Options screen last seen
   uint32_t g_graphics_scene = 0; // the Graphics page
   uint32_t g_controls_scene = 0; // the Controls page
+  uint32_t g_pause_options = 0;  // the pause menu's Options screen last seen
   bool g_opening = false;
 
   enum class Page
   {
     kGraphics,
     kControls,
+    kPauseOptions, // its TV type row: "Graphics and controls"
   };
 
-  // An option button of a page. On the Graphics page `index` is its setting,
-  // on the Controls page its row (0 the section, 1-7 the section's
-  // items).
+  // An option button of a page. On the Graphics and Controls pages `index` is
+  // its row (0 the section, 1-7 the section's items).
   struct Row
   {
     Page page;
@@ -603,6 +634,10 @@ namespace
   };
   std::unordered_map<uint32_t, Row> g_rows; // option button -> its row
 
+  int g_graphics_section = 0;                          // the section the Graphics page shows
+  uint32_t g_graphics_buttons[1 + kGraphicsRows] = {}; // its rows' option buttons
+  uint32_t g_graphics_labels[1 + kGraphicsRows] = {};  // and their labels
+  uint32_t g_graphics_device = 0;                      // its "Controls" button
   int g_section = 0;                                  // the section the Controls page shows
   uint32_t g_control_buttons[1 + kSectionRows] = {}; // its rows' option buttons
   uint32_t g_control_labels[1 + kSectionRows] = {};  // and their labels
@@ -615,8 +650,19 @@ namespace
            ao2::ue3::Name(base, LoadU32(base, scene + kSceneTag)) == "AllOptionsUIScene";
   }
 
+  // The pause menu's own Options screen (AllOptionsUIScene_IGPM_Xbox): no
+  // device button there, its TV type row opens the Graphics page instead.
+  bool IsPauseOptions(const uint8_t *base, uint32_t scene)
+  {
+    return scene && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene_IGPM", 0) == 0;
+  }
+
   bool IsPage(const uint8_t *base, uint32_t scene, Page page)
   {
+    if (page == Page::kPauseOptions)
+    {
+      return scene && scene == g_pause_options && IsPauseOptions(base, scene);
+    }
     uint32_t ours = page == Page::kGraphics ? g_graphics_scene : g_controls_scene;
     uint32_t tag = page == Page::kGraphics ? kGraphicsTag : kControlsTag;
     return scene && scene == ours && IsSceneNamed(base, scene) && LoadU32(base, scene + kSceneTag + 4) == tag;
@@ -642,7 +688,16 @@ namespace
   {
     if (row.page == Page::kGraphics)
     {
-      return &Settings()[row.index];
+      if (row.index == 0)
+      {
+        return &GraphicsSectionSetting();
+      }
+      int setting = kGraphicsSections[g_graphics_section][row.index - 1];
+      return setting >= 0 ? &Settings()[setting] : nullptr;
+    }
+    if (row.page == Page::kPauseOptions)
+    {
+      return nullptr; // "Open"
     }
     if (row.index == 0)
     {
@@ -1314,30 +1369,59 @@ namespace
       {"UIOptionButton_0", "UILabel_6"},        {"TVTypeOptionButton", "UILabel_4"},
   };
 
-  // Down from the last row goes to the button under them (the hidden
-  // brightness slider would stop it), down from that to the first row.
-  void LinkRows(uint8_t *base, uint32_t first, uint32_t last, uint32_t button)
-  {
-    if (!first || !last || first == last)
-    {
-      return;
-    }
-    uint32_t below = button ? button : first;
-    uint32_t above = button ? button : last;
-    StoreU32(base, last + kForcedNavigation + kFaceBottom * 4, below);
-    StoreU32(base, first + kForcedNavigation + kFaceTop * 4, above);
-    if (button)
-    {
-      StoreU32(base, button + kForcedNavigation + kFaceTop * 4, last);
-      StoreU32(base, button + kForcedNavigation + kFaceBottom * 4, first);
-    }
-  }
-
   void ForgetRows(Page page)
   {
     for (auto it = g_rows.begin(); it != g_rows.end();)
     {
       it = it->second.page == page ? g_rows.erase(it) : std::next(it);
+    }
+  }
+
+  // The Graphics page's rows show the section's settings; the rows it has
+  // none for are hidden. Up and down go along the shown rows and the
+  // "Controls" button under them, round.
+  void RefreshGraphics(PPCContext &ctx, uint8_t *base)
+  {
+    std::vector<uint32_t> shown;
+    for (int i = 0; i <= kGraphicsRows; ++i)
+    {
+      uint32_t button = g_graphics_buttons[i];
+      const Row *row = button ? RowOf(base, button) : nullptr;
+      if (!row)
+      {
+        continue;
+      }
+      Setting *s = SettingOf(*row);
+      SetHidden(base, button, !s);
+      if (g_graphics_labels[i])
+      {
+        SetHidden(base, g_graphics_labels[i], !s);
+      }
+      if (!s)
+      {
+        continue;
+      }
+      shown.push_back(button);
+      if (g_graphics_labels[i])
+      {
+        SetLabel(ctx, base, g_graphics_labels[i], i == 0 ? s->label : LabelOf(*s));
+      }
+      ShowIndex(ctx, base, button, *s, s->chosen);
+    }
+    if (g_graphics_device)
+    {
+      shown.push_back(g_graphics_device);
+    }
+    for (size_t i = 0; shown.size() > 1 && i < shown.size(); ++i)
+    {
+      uint32_t next = shown[(i + 1) % shown.size()];
+      StoreU32(base, shown[i] + kForcedNavigation + kFaceBottom * 4, next);
+      StoreU32(base, next + kForcedNavigation + kFaceTop * 4, shown[i]);
+    }
+    if (g_graphics_scene)
+    {
+      StoreU32(base, g_graphics_scene + kSceneFlags,
+               LoadU32(base, g_graphics_scene + kSceneFlags) | kUpdateNavigation);
     }
   }
 
@@ -1347,38 +1431,25 @@ namespace
     std::unordered_map<std::string, uint32_t> w;
     Widgets(base, scene, w);
     ForgetRows(Page::kGraphics);
-    auto &settings = Settings();
-    for (size_t i = 0; i < std::size(kRowWidgets); ++i)
+    for (Setting &s : Settings())
+    {
+      if (s.when == When::kAccept && !s.restart)
+      {
+        s.chosen = s.running; // a pick left with B is dropped
+      }
+    }
+    for (int i = 0; i <= kGraphicsRows; ++i)
     {
       uint32_t button = w.count(kRowWidgets[i][0]) ? w[kRowWidgets[i][0]] : 0;
       uint32_t label = w.count(kRowWidgets[i][1]) ? w[kRowWidgets[i][1]] : 0;
-      if (i >= settings.size())
-      {
-        for (uint32_t o : {button, label})
-        {
-          if (o)
-          {
-            SetHidden(base, o, true);
-          }
-        }
-        continue;
-      }
+      g_graphics_buttons[i] = button;
+      g_graphics_labels[i] = label;
       if (!button)
       {
         Logf("setup: no %s\n", kRowWidgets[i][0]);
         continue;
       }
-      g_rows[button] = Row{Page::kGraphics, static_cast<int>(i), label};
-      Setting &s = settings[i];
-      if (s.when == When::kAccept && !s.restart)
-      {
-        s.chosen = s.running; // a pick left with B is dropped
-      }
-      if (label)
-      {
-        SetLabel(ctx, base, label, LabelOf(s));
-      }
-      ShowIndex(ctx, base, button, s, s.chosen);
+      g_rows[button] = Row{Page::kGraphics, i, label};
     }
     for (const char *name : {"BrightnessSlider", "UILabel_5"})
     {
@@ -1388,19 +1459,16 @@ namespace
       }
     }
     // The device button opens the Controls page.
-    uint32_t button = w.count("UILabelButton_0") ? w["UILabelButton_0"] : 0;
-    if (button)
+    g_graphics_device = w.count("UILabelButton_0") ? w["UILabelButton_0"] : 0;
+    if (g_graphics_device)
     {
-      SetCaption(ctx, base, button, "Controls");
+      SetCaption(ctx, base, g_graphics_device, "Controls");
     }
     if (w.count("lblOptions"))
     {
       SetLabel(ctx, base, w["lblOptions"], "Graphics");
     }
-    size_t last_index = std::min(settings.size(), std::size(kRowWidgets)) - 1;
-    LinkRows(base, w.count(kRowWidgets[0][0]) ? w[kRowWidgets[0][0]] : 0,
-             w.count(kRowWidgets[last_index][0]) ? w[kRowWidgets[last_index][0]] : 0, button);
-    StoreU32(base, scene + kSceneFlags, LoadU32(base, scene + kSceneFlags) | kUpdateNavigation);
+    RefreshGraphics(ctx, base);
     Logf("setup: graphics scene %08X\n", scene);
   }
 
@@ -1450,9 +1518,27 @@ namespace
 
   // Another instance of the Options screen over the top scene, its SceneTag
   // number `tag`; 0 if none opened.
+  bool OnStack(const uint8_t *base, uint32_t client, uint32_t scene)
+  {
+    uint32_t data = LoadU32(base, client + kActiveScenes);
+    uint32_t count = LoadU32(base, client + kActiveScenes + 4);
+    for (uint32_t i = 0; scene && data && i < count && i < 64; ++i)
+    {
+      if (LoadU32(base, data + i * 4) == scene)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   uint32_t OpenPage(PPCContext &ctx, uint8_t *base, uint32_t client, uint32_t over, uint32_t tag)
   {
-    uint32_t options = g_options_scene;
+    // The Options screen when it is open (from the pause menu it is not).
+    uint32_t options = OnStack(base, client, g_options_scene) && IsSceneNamed(base, g_options_scene) &&
+                               LoadU32(base, g_options_scene + kSceneTag + 4) == 0
+                           ? g_options_scene
+                           : 0;
     uint32_t scene_template = Template(base);
     if (!scene_template)
     {
@@ -1464,16 +1550,22 @@ namespace
     StoreU32(base, s.Slot(), 0);
     // The scene client finds an open scene by the template's tag: not the
     // Options screen (the other pages have their own numbers).
-    StoreU32(base, options + kSceneTag + 4, kOpeningTag);
+    if (options)
+    {
+      StoreU32(base, options + kSceneTag + 4, kOpeningTag);
+    }
     g_opening = true;
     uint32_t open = LoadU32(base, LoadU32(base, client) + kOpenScene);
     uint32_t ok = CallGuest(ctx, base, open, s.top, client, scene_template, LoadU32(base, over + kPlayerOwner),
                             s.Slot(), 0);
     g_opening = false;
-    StoreU32(base, options + kSceneTag + 4, 0);
+    if (options)
+    {
+      StoreU32(base, options + kSceneTag + 4, 0);
+    }
     uint32_t scene = LoadU32(base, s.Slot());
     Logf("open: client %08X template %08X -> %u, scene %08X\n", client, scene_template, ok, scene);
-    if (!scene || scene == options || scene == over)
+    if (!scene || (options && scene == options) || scene == over)
     {
       return 0;
     }
@@ -1486,17 +1578,17 @@ namespace
   bool DeviceButton(PPCContext &ctx, uint8_t *base)
   {
     uint32_t options = g_options_scene;
-    if (!IsSceneNamed(base, options) || LoadU32(base, options + kSceneTag + 4) != 0)
-    {
-      return false;
-    }
-    uint32_t client = LoadU32(base, options + kSceneClient);
+    uint32_t known = IsPage(base, g_controls_scene, Page::kControls)   ? g_controls_scene
+                     : IsPage(base, g_graphics_scene, Page::kGraphics) ? g_graphics_scene
+                     : IsSceneNamed(base, options) && LoadU32(base, options + kSceneTag + 4) == 0 ? options
+                                                                                                    : 0;
+    uint32_t client = known ? LoadU32(base, known + kSceneClient) : 0;
     uint32_t top = client ? TopScene(base, client) : 0;
     if (!top)
     {
       return false;
     }
-    if (top == options)
+    if (top == options && IsSceneNamed(base, options))
     {
       if (uint32_t scene = OpenPage(ctx, base, client, options, kGraphicsTag))
       {
@@ -1520,6 +1612,65 @@ namespace
       return true;
     }
     return false;
+  }
+
+  // A row's value when it is no setting: a bind's keys, or "Open".
+  std::string RowText(const Row &row)
+  {
+    return row.page == Page::kPauseOptions ? GameTr("Open") : BindText(BindOf(row));
+  }
+
+  // The pause menu's Options screen: its "Graphics and controls" row opens
+  // the Graphics page over it.
+  void OpenFromPause(PPCContext &ctx, uint8_t *base)
+  {
+    uint32_t pause = g_pause_options;
+    uint32_t client = IsPauseOptions(base, pause) ? LoadU32(base, pause + kSceneClient) : 0;
+    if (!client || TopScene(base, client) != pause)
+    {
+      return;
+    }
+    if (uint32_t scene = OpenPage(ctx, base, client, pause, kGraphicsTag))
+    {
+      g_graphics_scene = scene;
+      SetupGraphics(ctx, base, scene);
+      // The A (Enter) that opened it is still held: the page would take it
+      // as a new press, its Accept, and close. No input until it is let go.
+      g_capture.swallowing = true;
+      g_capture.swallow_end = GetTickCount() + 3000;
+    }
+  }
+
+  // An option button of the pause menu's Options screen refreshes: its TV
+  // type row becomes "Graphics and controls" (true: it is that row).
+  bool NotePauseOptions(PPCContext &ctx, uint8_t *base, uint32_t button)
+  {
+    uint32_t scene = LoadU32(base, button + kOwnerScene);
+    if (!IsPauseOptions(base, scene) || ao2::ue3::ObjectName(base, button) != "TVTypeOptionButton")
+    {
+      return false;
+    }
+    g_pause_options = scene;
+    ForgetRows(Page::kPauseOptions);
+    std::unordered_map<std::string, uint32_t> w;
+    Widgets(base, scene, w);
+    uint32_t label = w.count("UILabel_4") ? w["UILabel_4"] : 0;
+    g_rows[button] = Row{Page::kPauseOptions, 0, label};
+    if (label)
+    {
+      SetLabel(ctx, base, label, "Graphics and controls");
+    }
+    StoreU32(base, button + kCurrentIndex, 0);
+    ShowText(ctx, base, button, GameTr("Open"));
+    // A plain button: no arrows (UIOptionButton.bHideArrows).
+    int32_t hide_word = 0;
+    uint32_t hide_mask = 0;
+    if (ao2::ue3::BoolProperty(base, "UIOptionButton", "bHideArrows", hide_word, hide_mask))
+    {
+      StoreU32(base, button + hide_word, LoadU32(base, button + hide_word) | hide_mask);
+    }
+    Logf("pause options %08X: TV type row is Graphics and controls\n", scene);
+    return true;
   }
 
   void Choose(PPCContext &ctx, uint8_t *base, uint32_t button, const Row &row, int index)
@@ -1549,6 +1700,13 @@ namespace
       RefreshControls(ctx, base);
       return;
     }
+    if (&setting == &GraphicsSectionSetting())
+    {
+      setting.running = index;
+      g_graphics_section = index;
+      RefreshGraphics(ctx, base);
+      return;
+    }
     if (setting.when == When::kNow)
     {
       Apply(setting);
@@ -1574,6 +1732,12 @@ namespace ao2::gfxmenu
   }
 
   bool Capturing() { return g_capture.button || g_capture.swallowing; }
+
+  bool IsOpenButton(const uint8_t *base, uint32_t widget)
+  {
+    const Row *row = RowOf(base, widget);
+    return row && row->page == Page::kPauseOptions;
+  }
 
   bool OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t user, uint32_t state)
   {
@@ -1617,7 +1781,29 @@ namespace ao2::gfxmenu
     bool &prev = g_prev_a[user & 3];
     bool pressed = a && !prev;
     prev = a;
-    if (!on_top || !pressed)
+    if (!pressed)
+    {
+      return false;
+    }
+    // The pause menu's Options on top: A on "Graphics and controls" opens
+    // the Graphics page (the screen would take it as Accept and close).
+    uint32_t pause_client = IsPage(base, g_pause_options, Page::kPauseOptions)
+                                ? LoadU32(base, g_pause_options + kSceneClient)
+                                : 0;
+    if (pause_client && TopScene(base, pause_client) == g_pause_options)
+    {
+      for (const auto &[button, row] : g_rows)
+      {
+        if (row.page == Page::kPauseOptions && Focused(base, button))
+        {
+          Silence(ctx, base, state);
+          OpenFromPause(ctx, base);
+          return true;
+        }
+      }
+      return false;
+    }
+    if (!on_top)
     {
       return false;
     }
@@ -1671,7 +1857,7 @@ extern "C" REX_FUNC(sub_8233B680)
     const Setting *setting = SettingOf(*row);
     if (!setting)
     {
-      ctx.r3.u64 = 1; // a key bind: left adds a key
+      ctx.r3.u64 = row->page != Page::kPauseOptions; // a key bind: left adds a key; "Open": no arrows
       return;
     }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
@@ -1693,7 +1879,7 @@ extern "C" REX_FUNC(sub_8233B710)
     const Setting *setting = SettingOf(*row);
     if (!setting)
     {
-      ctx.r3.u64 = 1; // a key bind: right replaces its key
+      ctx.r3.u64 = row->page != Page::kPauseOptions; // a key bind: right replaces its key
       return;
     }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
@@ -1716,6 +1902,11 @@ extern "C" REX_FUNC(sub_8235AC38)
     const Setting *setting = SettingOf(r);
     if (!setting)
     {
+      if (r.page == Page::kPauseOptions)
+      {
+        OpenFromPause(ctx, base);
+        return;
+      }
       StartCapture(ctx, base, button, r, true);
       return;
     }
@@ -1746,6 +1937,11 @@ extern "C" REX_FUNC(sub_8235ACF8)
     const Setting *setting = SettingOf(r);
     if (!setting)
     {
+      if (r.page == Page::kPauseOptions)
+      {
+        OpenFromPause(ctx, base);
+        return;
+      }
       StartCapture(ctx, base, button, r, false);
       return;
     }
@@ -1797,7 +1993,7 @@ extern "C" REX_FUNC(sub_82353980)
     }
     Scratch s(ctx);
     MakeString(ctx, base, s, s.String(0),
-               setting ? GameTr(setting->choices[index].name) : BindText(BindOf(*row)));
+               setting ? GameTr(setting->choices[index].name) : RowText(*row));
     CallGuest(ctx, base, kFStringAssign, s.top, out, s.String(0));
     CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
     ctx.r3.u64 = 1;
@@ -1823,8 +2019,13 @@ extern "C" REX_FUNC(sub_82353A78)
     }
     else
     {
-      ShowText(ctx, base, button, BindText(BindOf(*row)));
+      ShowText(ctx, base, button, RowText(*row));
     }
+    ctx.r3.u64 = 1;
+    return;
+  }
+  if (!g_opening && NotePauseOptions(ctx, base, button))
+  {
     ctx.r3.u64 = 1;
     return;
   }
@@ -1847,10 +2048,18 @@ extern "C" REX_FUNC(sub_8235ADD8)
   {
     // A page's Accept publishes every widget's value (UIAction_PublishValue).
     Setting *setting = SettingOf(*row);
-    if (row->page == Page::kGraphics && setting && setting->when == When::kAccept)
+    if (row->page == Page::kGraphics && setting == &GraphicsSectionSetting())
     {
-      Logf("publish: %s\n", setting->cvar);
-      Accept(*setting);
+      // Once per Accept (the section row is always shown): every setting
+      // waiting for it, whichever section it is in.
+      for (Setting &s : Settings())
+      {
+        if (s.when == When::kAccept)
+        {
+          Logf("publish: %s\n", s.cvar);
+          Accept(s);
+        }
+      }
     }
     ctx.r3.u64 = 1;
     return;

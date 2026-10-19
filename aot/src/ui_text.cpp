@@ -189,6 +189,19 @@ namespace
 
       // --- The Graphics page of the game's Options screen (in the game's fonts) ---
       {"Graphics", "Графика", "Grafik", "Graphismes", "Gráficos", "Grafica"},
+      {"Open", "Открыть", "Öffnen", "Ouvrir", "Abrir", "Apri"},
+      {"Display", "Экран", "Anzeige", "Affichage", "Pantalla", "Schermo"},
+      {"Effects", "Эффекты", "Effekte", "Effets", "Efectos", "Effetti"},
+      {"Ambient occlusion", "Фоновое затенение", "Umgebungsverdeckung", "Occlusion ambiante", "Oclusión ambiental",
+       "Occlusione ambientale"},
+      {"Motion blur", "Размытие в движении", "Bewegungsunschärfe", "Flou de mouvement", "Desenfoque de movimiento",
+       "Sfocatura di movimento"},
+      {"Depth of field", "Глубина резкости", "Tiefenschärfe", "Profondeur de champ", "Profundidad de campo",
+       "Profondità di campo"},
+      {"Shadow resolution", "Разрешение теней", "Schattenauflösung", "Résolution des ombres", "Resolución de sombras",
+       "Risoluzione ombre"},
+      {"Low", "Низкое", "Niedrig", "Faible", "Bajo", "Basso"},
+      {"High", "Высокое", "Hoch", "Élevé", "Alto", "Alto"},
       {"Graphics and controls", "Графика и управление", "Grafik und Steuerung", "Graphismes et commandes",
        "Gráficos y controles", "Grafica e comandi"},
       // The main menu's last item (menu_mouse.cpp).
@@ -214,7 +227,6 @@ namespace
       {"Anisotropic filtering", "Анизотропная фильтрация", "Anisotrope Filterung", "Filtrage anisotrope",
        "Filtrado anisotrópico", "Filtro anisotropico"},
       {"Anti-aliasing", "Сглаживание", "Kantenglättung", "Anticrénelage", "Antialiasing", "Antialiasing"},
-
       // --- The Controls page (Options > Graphics, in the game's fonts) ---
       {"Controls", "Управление", "Steuerung", "Commandes", "Controles", "Comandi"},
       {"Default keys", "Клавиши по умолчанию", "Standardtasten", "Touches par défaut", "Teclas por defecto", "Tasti predefiniti"},

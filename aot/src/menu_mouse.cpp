@@ -293,6 +293,10 @@ namespace
       // The main menu's Exit is hit at its label (below).
       if (Focusable(base, child, kind) && !(scene.slab && ao2::ue3::ObjectName(base, child) == "Exit"))
       {
+        if (kind == Kind::kValue && ao2::gfxmenu::IsOpenButton(base, child))
+        {
+          kind = Kind::kButton; // "Graphics and controls": a click is A
+        }
         Widget w = scene;
         w.object = child;
         w.kind = kind;
