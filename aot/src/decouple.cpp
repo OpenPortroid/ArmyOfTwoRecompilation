@@ -55,6 +55,7 @@
 #include "coop_link.h"
 #include "frame_spikes.h"
 #include "log_files.h"
+#include "tick_profile.h"
 
 REXCVAR_DECLARE(bool, ao2_fps_unlock);
 REXCVAR_DECLARE(bool, ao2_coop_server);
@@ -412,8 +413,10 @@ extern "C" REX_FUNC(sub_82777738)
     double start = NowMs();
     g_world_steps++;
     g_world_step_ms = g_last_draw_ms;
+    ao2::tickprof::Begin();
     __imp__sub_82777738(ctx, base);
     double ms = NowMs() - start;
+    ao2::tickprof::End(ms);
     g_stats.tick_sum += ms;
     g_stats.tick_max = std::max(g_stats.tick_max, ms);
     return;
