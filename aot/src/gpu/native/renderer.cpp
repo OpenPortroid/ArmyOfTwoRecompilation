@@ -6578,10 +6578,20 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       bool failed = false;
       ComPtr<ID3D12RootSignature> root;
+      // Made on the background thread (PostWorkerMain): a pass is skipped
+      // until its pipeline is there. A null pipeline = it failed.
+      std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> pipelines;
+      std::unordered_set<uint64_t> queued;
+      bool worker_started = false;
+      std::mutex worker_mutex;
+      std::condition_variable worker_cv;
+      std::deque<uint64_t> jobs;                                        // under worker_mutex
+      std::vector<std::pair<uint64_t, ComPtr<ID3D12PipelineState>>> done; // under worker_mutex
+      // The background thread's own.
       std::vector<uint8_t> vs;
+      bool vs_failed = false;
       std::vector<uint8_t> ps[kPassCount];
       bool ps_failed[kPassCount] = {};
-      std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> pipelines;
       PostTexture depth, ao[2], color[2], edges, weights, focus[2];
       uint32_t focus_index = 0;
       uint64_t focus_frame = UINT64_MAX; // frame the focus was last eased in
@@ -6880,6 +6890,153 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       return true;
     }
 
+    // Pixel shader of a pass (the background thread's).
+    const std::vector<uint8_t> *PostShader(PostPass pass)
+    {
+      if (!g_post.ps[pass].empty())
+      {
+        return &g_post.ps[pass];
+      }
+      if (g_post.ps_failed[pass])
+      {
+        return nullptr;
+      }
+      D3D_SHADER_MACRO macros[] = {{"DEPTH_MS", "1"}, {nullptr, nullptr}};
+      ComPtr<ID3DBlob> code, errors;
+      auto start = std::chrono::steady_clock::now();
+      if (FAILED(D3DCompile(kPostShader, std::strlen(kPostShader), nullptr,
+                            pass == kPassLinearizeMs ? macros : macros + 1, nullptr, kPassEntries[pass], "ps_5_1",
+                            D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &code, &errors)))
+      {
+        NativeLog("post effects: %s failed: %s\n", kPassEntries[pass],
+                  errors ? static_cast<const char *>(errors->GetBufferPointer()) : "?");
+        g_post.ps_failed[pass] = true;
+        return nullptr;
+      }
+      auto *b = static_cast<const uint8_t *>(code->GetBufferPointer());
+      g_post.ps[pass].assign(b, b + code->GetBufferSize());
+      NativeLog("post effects: %s compiled (%.0f ms)\n", kPassEntries[pass], Elapsed(start) / 1e6);
+      return &g_post.ps[pass];
+    }
+
+    uint64_t PostPipelineKey(PostPass pass, DXGI_FORMAT format, uint32_t blend)
+    {
+      return (uint64_t(pass) << 40) | (uint64_t(blend) << 32) | uint64_t(format);
+    }
+
+    // A pass's pipeline (the background thread's); null when it failed.
+    // blend: 0 none, 1 multiply (dest * src, alpha kept).
+    ComPtr<ID3D12PipelineState> MakePostPipeline(uint64_t key)
+    {
+      auto pass = PostPass(key >> 40);
+      uint32_t blend = uint32_t(key >> 32) & 0xFF;
+      auto format = DXGI_FORMAT(uint32_t(key));
+      if (g_post.vs.empty() && !g_post.vs_failed)
+      {
+        g_post.vs = Compile(kPostShader, "vs", "vs_5_1");
+        g_post.vs_failed = g_post.vs.empty();
+      }
+      const std::vector<uint8_t> *ps = PostShader(pass);
+      if (g_post.vs.empty() || !ps)
+      {
+        return nullptr;
+      }
+      D3D12_GRAPHICS_PIPELINE_STATE_DESC d = {};
+      d.pRootSignature = g_post.root.Get();
+      d.VS = {g_post.vs.data(), g_post.vs.size()};
+      d.PS = {ps->data(), ps->size()};
+      D3D12_RENDER_TARGET_BLEND_DESC &rb = d.BlendState.RenderTarget[0];
+      rb.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+      if (blend == 1)
+      {
+        rb.BlendEnable = TRUE;
+        rb.SrcBlend = D3D12_BLEND_ZERO;
+        rb.DestBlend = D3D12_BLEND_SRC_COLOR;
+        rb.BlendOp = D3D12_BLEND_OP_ADD;
+        rb.SrcBlendAlpha = D3D12_BLEND_ZERO;
+        rb.DestBlendAlpha = D3D12_BLEND_ONE;
+        rb.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+      }
+      d.SampleMask = UINT_MAX;
+      d.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+      d.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+      d.RasterizerState.DepthClipEnable = TRUE;
+      d.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      d.NumRenderTargets = 1;
+      d.RTVFormats[0] = format;
+      d.SampleDesc.Count = 1;
+      ComPtr<ID3D12PipelineState> pso;
+      if (FAILED(g.device->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso))))
+      {
+        NativeLog("post effects: pipeline %s failed (format %u)\n", kPassEntries[pass], unsigned(format));
+        pso = nullptr;
+      }
+      return pso;
+    }
+
+    // The post effects' shaders (FXC: tens to hundreds of ms each) and
+    // pipelines are made here, off the GPU thread, so turning an effect on
+    // does not stall a frame: a pass runs from the first frame its pipeline
+    // is there (until then the picture is without it).
+    void PostWorkerMain()
+    {
+      for (;;)
+      {
+        uint64_t key;
+        {
+          std::unique_lock lock(g_post.worker_mutex);
+          g_post.worker_cv.wait(lock, [] { return !g_post.jobs.empty(); });
+          key = g_post.jobs.front();
+          g_post.jobs.pop_front();
+        }
+        ComPtr<ID3D12PipelineState> pso = MakePostPipeline(key);
+        std::lock_guard lock(g_post.worker_mutex);
+        g_post.done.emplace_back(key, std::move(pso));
+      }
+    }
+
+    // Hands a pipeline to the background thread (once).
+    void QueuePostPipeline(uint64_t key)
+    {
+      if (!g_post.queued.insert(key).second)
+      {
+        return;
+      }
+      if (!g_post.worker_started)
+      {
+        g_post.worker_started = true;
+        std::thread(PostWorkerMain).detach();
+      }
+      {
+        std::lock_guard lock(g_post.worker_mutex);
+        g_post.jobs.push_back(key);
+      }
+      g_post.worker_cv.notify_one();
+    }
+
+    // Whether the settings use a pass.
+    bool PostPassUsed(PostPass pass, const PostSettings &s)
+    {
+      switch (pass)
+      {
+      case kPassLinearize:
+      case kPassLinearizeMs: return s.NeedsDepth();
+      case kPassAo:
+      case kPassAoBlur:
+      case kPassAoApply: return s.ao != 0;
+      case kPassMotionBlur: return s.motion_blur > 0;
+      case kPassDofFocus:
+      case kPassDof: return s.dof > 0;
+      case kPassFxaa: return s.aa == 1;
+      case kPassSmaaEdges:
+      case kPassSmaaWeights:
+      case kPassSmaaBlend: return s.aa == 2;
+      default: return false;
+      }
+    }
+
+    // The root signature; every pass's pipeline goes to the background thread,
+    // those of the effects that are on first.
     bool InitPost()
     {
       if (g_post.root)
@@ -6923,90 +7080,66 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         NativeLog("post effects: root signature failed\n");
         return false;
       }
-      g_post.vs = Compile(kPostShader, "vs", "vs_5_1");
-      if (g_post.vs.empty())
-      {
-        g_post.root.Reset();
-        return false;
-      }
       g_post.failed = false;
+      // Each pass with the format it draws into (PostStage1, PostBeforeSample).
+      static const struct
+      {
+        PostPass pass;
+        DXGI_FORMAT format;
+        uint32_t blend;
+      } kPipelines[] = {
+          {kPassLinearize, DXGI_FORMAT_R32_FLOAT, 0},
+          {kPassLinearizeMs, DXGI_FORMAT_R32_FLOAT, 0},
+          {kPassAo, DXGI_FORMAT_R16G16_FLOAT, 0},
+          {kPassAoBlur, DXGI_FORMAT_R16G16_FLOAT, 0},
+          {kPassAoApply, DXGI_FORMAT_R16G16B16A16_FLOAT, 1},
+          {kPassMotionBlur, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassDofFocus, DXGI_FORMAT_R32_FLOAT, 0},
+          {kPassDof, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassFxaa, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassSmaaEdges, DXGI_FORMAT_R8G8_UNORM, 0},
+          {kPassSmaaWeights, DXGI_FORMAT_R8G8B8A8_UNORM, 0},
+          {kPassSmaaBlend, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+      };
+      const PostSettings &s = CurrentPostSettings();
+      for (bool used : {true, false})
+      {
+        for (const auto &p : kPipelines)
+        {
+          if (PostPassUsed(p.pass, s) == used)
+          {
+            QueuePostPipeline(PostPipelineKey(p.pass, p.format, p.blend));
+          }
+        }
+      }
       return true;
     }
 
-    // Pixel shader of a pass, compiled when first used.
-    const std::vector<uint8_t> *PostShader(PostPass pass)
-    {
-      if (!g_post.ps[pass].empty())
-      {
-        return &g_post.ps[pass];
-      }
-      if (g_post.ps_failed[pass])
-      {
-        return nullptr;
-      }
-      D3D_SHADER_MACRO macros[] = {{"DEPTH_MS", "1"}, {nullptr, nullptr}};
-      ComPtr<ID3DBlob> code, errors;
-      auto start = std::chrono::steady_clock::now();
-      if (FAILED(D3DCompile(kPostShader, std::strlen(kPostShader), nullptr,
-                            pass == kPassLinearizeMs ? macros : macros + 1, nullptr, kPassEntries[pass], "ps_5_1",
-                            D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &code, &errors)))
-      {
-        NativeLog("post effects: %s failed: %s\n", kPassEntries[pass],
-                  errors ? static_cast<const char *>(errors->GetBufferPointer()) : "?");
-        g_post.ps_failed[pass] = true;
-        return nullptr;
-      }
-      auto *b = static_cast<const uint8_t *>(code->GetBufferPointer());
-      g_post.ps[pass].assign(b, b + code->GetBufferSize());
-      NativeLog("post effects: %s compiled (%.0f ms)\n", kPassEntries[pass], Elapsed(start) / 1e6);
-      return &g_post.ps[pass];
-    }
-
-    // blend: 0 none, 1 multiply (dest * src, alpha kept).
+    // A pass's pipeline; null while the background thread is making it (the
+    // pass is skipped) or when it failed.
     ID3D12PipelineState *GetPostPipeline(PostPass pass, DXGI_FORMAT format, uint32_t blend)
     {
-      uint64_t key = (uint64_t(pass) << 40) | (uint64_t(blend) << 32) | uint64_t(format);
+      uint64_t key = PostPipelineKey(pass, format, blend);
       auto it = g_post.pipelines.find(key);
       if (it != g_post.pipelines.end())
       {
         return it->second.Get();
       }
-      const std::vector<uint8_t> *ps = PostShader(pass);
-      if (!ps)
       {
-        return nullptr;
+        std::lock_guard lock(g_post.worker_mutex);
+        for (auto &d : g_post.done)
+        {
+          g_post.pipelines[d.first] = std::move(d.second);
+        }
+        g_post.done.clear();
       }
-      D3D12_GRAPHICS_PIPELINE_STATE_DESC d = {};
-      d.pRootSignature = g_post.root.Get();
-      d.VS = {g_post.vs.data(), g_post.vs.size()};
-      d.PS = {ps->data(), ps->size()};
-      D3D12_RENDER_TARGET_BLEND_DESC &rb = d.BlendState.RenderTarget[0];
-      rb.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-      if (blend == 1)
+      it = g_post.pipelines.find(key);
+      if (it != g_post.pipelines.end())
       {
-        rb.BlendEnable = TRUE;
-        rb.SrcBlend = D3D12_BLEND_ZERO;
-        rb.DestBlend = D3D12_BLEND_SRC_COLOR;
-        rb.BlendOp = D3D12_BLEND_OP_ADD;
-        rb.SrcBlendAlpha = D3D12_BLEND_ZERO;
-        rb.DestBlendAlpha = D3D12_BLEND_ONE;
-        rb.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+        return it->second.Get();
       }
-      d.SampleMask = UINT_MAX;
-      d.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-      d.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-      d.RasterizerState.DepthClipEnable = TRUE;
-      d.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-      d.NumRenderTargets = 1;
-      d.RTVFormats[0] = format;
-      d.SampleDesc.Count = 1;
-      ComPtr<ID3D12PipelineState> pso;
-      if (FAILED(g.device->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso))))
-      {
-        NativeLog("post effects: pipeline %s failed (format %u)\n", kPassEntries[pass], unsigned(format));
-      }
-      g_post.pipelines.emplace(key, pso);
-      return pso.Get();
+      QueuePostPipeline(key);
+      return nullptr;
     }
 
     bool EnsurePostTexture(PostTexture &t, uint32_t width, uint32_t height, DXGI_FORMAT format)
@@ -9231,6 +9364,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g_post.waiting_color = nullptr;
     ApplyRequestedScale();
     ApplyShadowResolution();
+    if (CurrentPostSettings().Any())
+    {
+      InitPost(); // the post effects' pipelines are made before the scene needs them
+    }
     WriteCaptures();
     UpdateTraceFrame();
     auto now = std::chrono::steady_clock::now();
