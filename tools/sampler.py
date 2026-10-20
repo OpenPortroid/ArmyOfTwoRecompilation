@@ -254,6 +254,20 @@ def main():
         print("--- source lines (self) ---")
         for p, c in by_line.most_common(top):
             print(f"{100.0 * c / n:6.2f}%  {p}")
+    if "--callers" in opts:
+        # Call paths into a function (--callers NAME [depth=4]): the frames above its first frame.
+        target = opts[opts.index("--callers") + 1]
+        i = opts.index("--callers") + 2
+        depth = int(opts[i]) if i < len(opts) and opts[i].isdigit() else 4
+        paths = collections.Counter()
+        for st in stacks:
+            fr = [names[a] for a in st]
+            k = next((j for j, f in enumerate(fr) if f == target), None)
+            if k is not None:
+                paths[" <- ".join(fr[k:k + 1 + depth])] += 1
+        print(f"--- callers of {target} ---")
+        for p_, c in paths.most_common(top):
+            print(f"{100.0 * c / n:6.2f}%  {p_}")
     if "--stacks" in opts:
         # Most common call paths (leaf first), cut at the first frame of our own code.
         depth = int(opts[opts.index("--stacks") + 1])

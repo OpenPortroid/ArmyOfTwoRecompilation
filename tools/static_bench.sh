@@ -2,8 +2,9 @@
 # static_bench.sh <exe> <label> [extra args...]
 # Iraq 05_00, standing at the start: 20 s of fps, engine tick, GPU ms and CPU ms per frame of the busiest threads.
 exe="$1"; label="$2"; shift 2
-S=/c/aot2/tools
-dir=/c/aot2/aot/out/build/win-amd64-release
+R=$(cd "$(dirname "$0")/.." && pwd)
+S=$R/tools
+dir=$R/aot/out/build/win-amd64-release
 cd "$dir" || exit 1
 rm -f native_gpu.log decouple.log autopilot.log input.script autopilot.path
 args=(--log_to_files=true --fullscreen=true --ao2_start_checkpoint=05_00 --ao2_god_mode=true --ao2_fps_unlock

@@ -28,6 +28,8 @@ namespace ao2::gpu
   // Occlusion query results were written to guest memory: a counter that
   // changes with each batch (wait on it with WaitOnAddress).
   volatile uint32_t &OcclusionResultGeneration();
+  // A MEM_WRITE packet stores to `address` (physical, endian bits included).
+  void RendererMemWrite(uint32_t address);
   // Counts written to guest memory outside the renderer (pm4.cpp).
   void RendererNotifyOcclusion();
   // Changes the resolution scale (ao2_native_gpu_resolution_scale, in steps

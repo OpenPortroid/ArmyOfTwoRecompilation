@@ -491,6 +491,10 @@ namespace ao2::gpu
     case kMemWrite:
     {
       uint32_t address = LoadBE32(p);
+      if (n >= 2 && LoadBE32(p + 1) == 0xFFFFFEEDu) // D3D's "not done" occlusion marker
+      {
+        RendererMemWrite(address);
+      }
       for (uint32_t m = 1; m < n; ++m)
       {
         StoreGuest(address, LoadBE32(p + m));
