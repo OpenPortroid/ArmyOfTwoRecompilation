@@ -32,6 +32,12 @@ namespace ao2::gpu
       // the guest texture) are written to color 0 instead of the colors, 0 =
       // none (the menu probe, renderer.cpp).
       uint64_t probe_binding : 5;
+      // PS: the alpha test is on (RB_COLORCONTROL, not "always"): only then
+      // has the shader a discard for it. A discard anywhere in a shader keeps
+      // the GPU from writing depth before the shader runs, so the opaque
+      // passes lost their early depth rejection to an alpha test they never
+      // use.
+      uint64_t alpha_test : 1;
     };
   };
 

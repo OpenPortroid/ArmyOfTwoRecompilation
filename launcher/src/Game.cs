@@ -168,6 +168,7 @@ namespace AO2Launcher
             a.Add(Flag("ao2_skip_unskippable", true));
             a.Add(Flag("ao2_god_mode", s.Bool("god_mode")));
             a.Add(Flag("ao2_unlock_all", s.Bool("unlock_all")));
+            a.Add(Flag("ao2_achievement_notices", s.Bool("ach_notices")));
 
             // A profile other than the main one: its own user data folder, the main one's shader cache.
             string profile = s["profile"];

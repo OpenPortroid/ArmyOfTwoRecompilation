@@ -87,27 +87,35 @@ float ps_linearize(VO i) : SV_Target {
 }
 
 // ---------------------------------------------------------------- Ambient occlusion
-// Half resolution: t0 = view depth (full resolution). Output: x = visibility,
-// y = the pixel's view depth (for the depth-aware blur and upsampling).
-// p0: x = radius (world units), y = largest radius in pixels, z = strength
-// (power), w = distance where it has faded out; i0: y = directions / slices,
-// z = steps per direction.
+// Half resolution: t0 = view depth at half resolution (ps_depth_half: the top
+// left pixel of each 2x2, the one the occlusion is computed for). Output: x =
+// visibility, y = the pixel's view depth (for the depth-aware blur and
+// upsampling). p0: x = radius (world units), y = largest radius in (full
+// resolution) pixels, z = strength (power), w = distance where it has faded
+// out; i0: y = directions / slices, z = steps per direction.
+// The taps read the half resolution depth: scattered reads of the full one
+// miss the texture cache.
 
-float DepthAt(int2 fp) {
-  fp = clamp(fp, int2(0, 0), int2(view_size.xy) - 1);
-  return t0.Load(int3(fp, 0)).r;
+float ps_depth_half(VO i) : SV_Target {
+  return t0.Load(int3(int2(i.pos.xy) * 2, 0)).r;
 }
 
-float3 PosAt(int2 fp) {
-  fp = clamp(fp, int2(0, 0), int2(view_size.xy) - 1);
-  return RayOf((float2(fp) + 0.5) * view_size.zw) * min(t0.Load(int3(fp, 0)).r, kSky);
+float DepthAt(int2 hp) {
+  hp = clamp(hp, int2(0, 0), int2(target_size.xy) - 1);
+  return t0.Load(int3(hp, 0)).r;
+}
+
+// hp: a half resolution pixel, at the centre of its full resolution top left one.
+float3 PosAt(int2 hp) {
+  hp = clamp(hp, int2(0, 0), int2(target_size.xy) - 1);
+  return RayOf((float2(hp * 2) + 0.5) * view_size.zw) * min(t0.Load(int3(hp, 0)).r, kSky);
 }
 
 // Normal from the neighbours on the nearer side of each axis (no smearing
 // across silhouettes), facing the camera.
-float3 NormalAt(int2 fp, float3 P) {
-  float3 l = PosAt(fp + int2(-1, 0)), r = PosAt(fp + int2(1, 0));
-  float3 u = PosAt(fp + int2(0, -1)), d = PosAt(fp + int2(0, 1));
+float3 NormalAt(int2 hp, float3 P) {
+  float3 l = PosAt(hp + int2(-1, 0)), r = PosAt(hp + int2(1, 0));
+  float3 u = PosAt(hp + int2(0, -1)), d = PosAt(hp + int2(0, 1));
   float3 dx = dot(r - P, r - P) < dot(P - l, P - l) ? r - P : P - l;
   float3 dy = dot(d - P, d - P) < dot(P - u, P - u) ? d - P : P - u;
   float3 n = normalize(cross(dx, dy));
@@ -118,7 +126,7 @@ float3 NormalAt(int2 fp, float3 P) {
 // hemisphere over the surface are projected onto the screen; one that lies
 // behind what the depth buffer holds there is occluded (counted only when that
 // surface is within the radius).
-float AoSsao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
+float AoSsao(int2 hp, float3 P, float3 N, float radius_px, float noise) {
   int taps = int(i0.y);
   float r = p0.x;
   float w = dot(float4(P, 1.0), float4(vp[0].w, vp[1].w, vp[2].w, vp[3].w));
@@ -147,10 +155,10 @@ float AoSsao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
 
 // Horizon-based (Bavoil et al.): along each direction the horizon rises over
 // the tangent plane; each rise occludes, weighted by distance.
-float AoHbao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
+float AoHbao(int2 hp, float3 P, float3 N, float radius_px, float noise) {
   int dirs = int(i0.y), steps = int(i0.z);
   float r2 = p0.x * p0.x;
-  float step_px = radius_px / float(steps);
+  float step_px = radius_px * 0.5 / float(steps); // in half resolution pixels
   float ao = 0.0;
   [loop] for (int d = 0; d < dirs; ++d) {
     float angle = (float(d) + noise) * 2.0 * kPi / float(dirs);
@@ -160,7 +168,7 @@ float AoHbao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
     float occlusion = 0.0;
     [loop] for (int s = 0; s < steps; ++s) {
       float2 off = dir * max((float(s) + jitter) * step_px, 1.0 + float(s));
-      float3 v = PosAt(fp + int2(round(off))) - P;
+      float3 v = PosAt(hp + int2(round(off))) - P;
       float vv = dot(v, v);
       float h = dot(v, N) * rsqrt(vv + 1.0e-6);
       if (h > top) {
@@ -178,7 +186,7 @@ float IntegrateArc(float h, float n) { return 0.25 * (-cos(2.0 * h - n) + cos(n)
 // Ground-truth ambient occlusion (Jimenez et al.): per slice through the view
 // vector the two horizons are found and the cosine-weighted visible arc
 // between them is integrated around the normal projected into the slice.
-float AoGtao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
+float AoGtao(int2 hp, float3 P, float3 N, float radius_px, float noise) {
   int slices = int(i0.y), steps = int(i0.z);
   float r2 = p0.x * p0.x;
   float3 V = normalize(-P);
@@ -198,9 +206,9 @@ float AoGtao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
     float jitter = frac(noise * 5.31 + float(s) * 0.618);
     [loop] for (int k = 0; k < steps; ++k) {
       float t = (float(k) + jitter) / float(steps);
-      float off = max(t * t * radius_px, 1.0 + float(k));
-      float3 v1 = PosAt(fp + int2(round(d * off))) - P;
-      float3 v0 = PosAt(fp - int2(round(d * off))) - P;
+      float off = max(t * t * radius_px * 0.5, 1.0 + float(k)); // in half resolution pixels
+      float3 v1 = PosAt(hp + int2(round(d * off))) - P;
+      float3 v0 = PosAt(hp - int2(round(d * off))) - P;
       float l1 = dot(v1, v1), l0 = dot(v0, v0);
       c1 = max(c1, lerp(-1.0, dot(v1, V) * rsqrt(l1 + 1.0e-6), saturate(1.0 - l1 / r2)));
       c0 = max(c0, lerp(-1.0, dot(v0, V) * rsqrt(l0 + 1.0e-6), saturate(1.0 - l0 / r2)));
@@ -214,23 +222,22 @@ float AoGtao(int2 fp, float3 P, float3 N, float radius_px, float noise) {
 
 float2 ps_ao(VO i) : SV_Target {
   int2 hp = int2(i.pos.xy);
-  int2 fp = hp * 2;
-  float w = DepthAt(fp);
+  float w = DepthAt(hp);
   if (w >= p0.w) {
     return float2(1.0, min(w, 60000.0));
   }
-  float3 P = RayOf((float2(fp) + 0.5) * view_size.zw) * w;
-  float3 N = NormalAt(fp, P);
+  float3 P = RayOf((float2(hp * 2) + 0.5) * view_size.zw) * w;
+  float3 N = NormalAt(hp, P);
   float radius_px = min(p0.x * depth_params.z / w, p0.y);
   float ao = 1.0;
   if (radius_px >= 2.0) {
     float noise = Noise(hp);
     if (i0.x == 1u) {
-      ao = AoSsao(fp, P, N, radius_px, noise);
+      ao = AoSsao(hp, P, N, radius_px, noise);
     } else if (i0.x == 2u) {
-      ao = AoHbao(fp, P, N, radius_px, noise);
+      ao = AoHbao(hp, P, N, radius_px, noise);
     } else {
-      ao = AoGtao(fp, P, N, radius_px, noise);
+      ao = AoGtao(hp, P, N, radius_px, noise);
     }
   }
   ao = pow(saturate(ao), p0.z);

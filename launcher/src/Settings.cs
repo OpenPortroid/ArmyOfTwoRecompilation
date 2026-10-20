@@ -38,6 +38,7 @@ namespace AO2Launcher
             { "stick_sens", "1" },
             { "toggle_aim", "0" },
             { "god_mode", "0" },
+            { "ach_notices", "1" },
             { "unlock_all", "0" },
             { "profile", "" },
             { "new_profile", "" },

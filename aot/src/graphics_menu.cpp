@@ -66,18 +66,7 @@
 // page over it from the same template, and the Controls page from there.
 // The A that opened it is swallowed until let go: the page would take it as
 // its Accept.
-//
-// The Achievements page: the Graphics page's last row (hidden in both of its
-// sections) is "Achievements" / "Open", and opens a fourth instance
-// (kAchievementsTag). Its first row picks a section (achievements.cpp: story,
-// campaign, gear and co-op, weapons, combat, versus, SSC Challenge), the seven
-// below are that section's achievements: the name as the label, "Earned" or
-// "Locked" as the value, no arrows. The device button under them shows the
-// focused one's description and gamerscore (the section row's: the totals)
-// and does nothing; up and down skip it. The title has the count unlocked.
 #include "graphics_menu.h"
-
-#include "achievements.h"
 
 #include "aspect_ratio.h"
 #include "game_language.h"
@@ -148,7 +137,6 @@ namespace
   constexpr uint32_t kGraphicsTag = 0x47465831;      // SceneTag number of the Graphics instance
   constexpr uint32_t kOpeningTag = 0x47465832;       // the Options screen's while it opens
   constexpr uint32_t kControlsTag = 0x47465833;      // SceneTag number of the Controls instance
-  constexpr uint32_t kAchievementsTag = 0x47465834;  // SceneTag number of the Achievements instance
 
   constexpr uint32_t kFStringPrintf = 0x8242A860; // (FString *out, const char *format, ...)
   constexpr uint32_t kFStringFree = 0x82309A60;   // FString destructor
@@ -211,7 +199,7 @@ namespace
   };
 
   // UTF-8 -> the game's 8-bit text: CP1251 in Russian (game_language.cpp),
-  // Latin-1 otherwise. '%' doubled: the text is a Printf format.
+  // Latin-1 otherwise. No '%': the text is a Printf format.
   std::string GameText(const char *utf8)
   {
     bool russian = ao2::lang::Russian();
@@ -229,14 +217,9 @@ namespace
         }
       }
       char ch = '?';
-      if (c == '%')
+      if (c < 0x80)
       {
-        out += '%';
-        ch = '%';
-      }
-      else if (c < 0x80)
-      {
-        ch = static_cast<char>(c);
+        ch = c == '%' ? ' ' : static_cast<char>(c);
       }
       else if (russian && c >= 0x410 && c <= 0x44F)
       {
@@ -358,22 +341,6 @@ namespace
       {0, 1, 2, 3, 4, 5, -1},
       {6, 7, 8, 9, 10, 11, -1},
   };
-
-  // --- The Achievements page ---------------------------------------------
-  // Its first row: which section the other seven show.
-  Setting &AchievementSectionSetting()
-  {
-    static Setting section = [] {
-      Setting s{"Section", nullptr, When::kNow, nullptr, "n", nullptr, {}};
-      static const char *kValues[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-      for (int i = 0; i < ao2::ach::kSectionCount; ++i)
-      {
-        s.choices.push_back({ao2::ach::SectionName(i), kValues[i]});
-      }
-      return s;
-    }();
-    return section;
-  }
 
   // --- The Controls page --------------------------------------------
 
@@ -671,7 +638,6 @@ namespace
   uint32_t g_graphics_scene = 0; // the Graphics page
   uint32_t g_controls_scene = 0; // the Controls page
   uint32_t g_pause_options = 0;  // the pause menu's Options screen last seen
-  uint32_t g_achievements_scene = 0; // the Achievements page
   bool g_opening = false;
 
   enum class Page
@@ -679,7 +645,6 @@ namespace
     kGraphics,
     kControls,
     kPauseOptions, // its TV type row: "Graphics and controls"
-    kAchievements,
   };
 
   // An option button of a page. On the Graphics and Controls pages `index` is
@@ -701,12 +666,6 @@ namespace
   uint32_t g_control_labels[1 + kSectionRows] = {};  // and their labels
   uint32_t g_defaults_button = 0;                    // its "Default keys" button
   uint32_t g_defaults_armed = 0;                     // GetTickCount of a first press of it, 0 none
-  int g_achievement_section = 0;                                   // the section the Achievements page shows
-  uint32_t g_achievement_buttons[1 + ao2::ach::kSectionSize] = {}; // its rows' option buttons
-  uint32_t g_achievement_labels[1 + ao2::ach::kSectionSize] = {};  // and their labels
-  uint32_t g_achievement_info = 0;                                 // its device button: the focused row's text
-  uint32_t g_achievement_title = 0;                                // its title
-  uint32_t g_achievement_focus = 0;                                // the row the info shows, 0 none yet
 
   bool IsSceneNamed(const uint8_t *base, uint32_t scene)
   {
@@ -727,10 +686,8 @@ namespace
     {
       return scene && scene == g_pause_options && IsPauseOptions(base, scene);
     }
-    uint32_t ours = page == Page::kGraphics   ? g_graphics_scene
-                    : page == Page::kControls ? g_controls_scene
-                                              : g_achievements_scene;
-    uint32_t tag = page == Page::kGraphics ? kGraphicsTag : page == Page::kControls ? kControlsTag : kAchievementsTag;
+    uint32_t ours = page == Page::kGraphics ? g_graphics_scene : g_controls_scene;
+    uint32_t tag = page == Page::kGraphics ? kGraphicsTag : kControlsTag;
     return scene && scene == ours && IsSceneNamed(base, scene) && LoadU32(base, scene + kSceneTag + 4) == tag;
   }
 
@@ -749,22 +706,11 @@ namespace
     return &it->second;
   }
 
-  // A row that is a plain button with "Open": the pause menu's "Graphics and
-  // controls", the Graphics page's "Achievements" (its last row).
-  bool IsOpenRow(const Row &row)
-  {
-    return row.page == Page::kPauseOptions || (row.page == Page::kGraphics && row.index == kGraphicsRows);
-  }
-
   // The setting a row shows, nullptr for a key bind.
   Setting *SettingOf(const Row &row)
   {
     if (row.page == Page::kGraphics)
     {
-      if (row.index == kGraphicsRows)
-      {
-        return nullptr; // "Achievements"
-      }
       if (row.index == 0)
       {
         return &GraphicsSectionSetting();
@@ -775,10 +721,6 @@ namespace
     if (row.page == Page::kPauseOptions)
     {
       return nullptr; // "Open"
-    }
-    if (row.page == Page::kAchievements)
-    {
-      return row.index == 0 ? &AchievementSectionSetting() : nullptr;
     }
     if (row.index == 0)
     {
@@ -878,32 +820,16 @@ namespace
     StoreU32(base, widget + kHiddenWord, hidden ? word | kHiddenMask : word & ~kHiddenMask);
   }
 
-  // A plain button: no arrows (UIOptionButton.bHideArrows).
-  void HideArrows(uint8_t *base, uint32_t button)
-  {
-    int32_t hide_word = 0;
-    uint32_t hide_mask = 0;
-    if (ao2::ue3::BoolProperty(base, "UIOptionButton", "bHideArrows", hide_word, hide_mask))
-    {
-      StoreU32(base, button + hide_word, LoadU32(base, button + hide_word) | hide_mask);
-    }
-  }
-
-  // A label's text, already in the game's 8-bit text.
-  void SetLabelText(PPCContext &ctx, uint8_t *base, uint32_t label, const std::string &text)
+  void SetLabel(PPCContext &ctx, uint8_t *base, uint32_t label, const char *english)
   {
     Scratch s(ctx);
+    std::string text = GameTr(english);
     // The binding's markup too: a refresh would bring the old text back.
     CallGuest(ctx, base, kFStringFree, s.top, label + kLabelMarkup);
     MakeString(ctx, base, s, label + kLabelMarkup, text);
     MakeString(ctx, base, s, s.String(0), text);
     CallGuest(ctx, base, kLabelSetValue, s.top, label, s.String(0));
     CallGuest(ctx, base, kFStringFree, s.top, s.String(0));
-  }
-
-  void SetLabel(PPCContext &ctx, uint8_t *base, uint32_t label, const char *english)
-  {
-    SetLabelText(ctx, base, label, GameTr(english));
   }
 
   // A button's caption, already in the game's 8-bit text: its markup becomes
@@ -1488,19 +1414,6 @@ namespace
       {
         continue;
       }
-      if (IsOpenRow(*row))
-      {
-        SetHidden(base, button, false);
-        if (g_graphics_labels[i])
-        {
-          SetHidden(base, g_graphics_labels[i], false);
-          SetLabel(ctx, base, g_graphics_labels[i], "Achievements");
-        }
-        StoreU32(base, button + kCurrentIndex, 0);
-        ShowText(ctx, base, button, GameTr("Open"));
-        shown.push_back(button);
-        continue;
-      }
       Setting *s = SettingOf(*row);
       SetHidden(base, button, !s);
       if (g_graphics_labels[i])
@@ -1560,10 +1473,6 @@ namespace
         continue;
       }
       g_rows[button] = Row{Page::kGraphics, i, label};
-      if (i == kGraphicsRows)
-      {
-        HideArrows(base, button); // "Achievements": a plain button
-      }
     }
     for (const char *name : {"BrightnessSlider", "UILabel_5"})
     {
@@ -1628,135 +1537,6 @@ namespace
     }
     RefreshControls(ctx, base);
     Logf("setup: controls scene %08X\n", scene);
-  }
-
-  // The Achievements page's device button: the focused row's description
-  // and gamerscore, the section row's the totals.
-  void ShowAchievementInfo(PPCContext &ctx, uint8_t *base, uint32_t focused)
-  {
-    g_achievement_focus = focused;
-    if (!g_achievement_info)
-    {
-      return;
-    }
-    std::string text;
-    std::vector<ao2::ach::Item> items = ao2::ach::Section(g_achievement_section);
-    for (int i = 1; i <= ao2::ach::kSectionSize; ++i)
-    {
-      if (focused && focused == g_achievement_buttons[i] && i - 1 < static_cast<int>(items.size()))
-      {
-        const ao2::ach::Item &item = items[i - 1];
-        text = GameText(item.description.c_str()) + "  (" + std::to_string(item.gamerscore) + " G)";
-      }
-    }
-    if (text.empty())
-    {
-      ao2::ach::Totals all = ao2::ach::Count();
-      text = GameTr("Gamerscore") + std::string(": ") + std::to_string(all.gamerscore) + " / " +
-             std::to_string(all.max_gamerscore) + " G";
-    }
-    ShowText(ctx, base, g_achievement_info, text);
-  }
-
-  // The Achievements page's rows show the section's achievements; the rows
-  // it has none for are hidden. Up and down go along the shown rows, round.
-  void RefreshAchievements(PPCContext &ctx, uint8_t *base)
-  {
-    std::vector<ao2::ach::Item> items = ao2::ach::Section(g_achievement_section);
-    std::vector<uint32_t> shown;
-    for (int i = 0; i <= ao2::ach::kSectionSize; ++i)
-    {
-      uint32_t button = g_achievement_buttons[i];
-      const Row *row = button ? RowOf(base, button) : nullptr;
-      if (!row)
-      {
-        continue;
-      }
-      bool hidden = i > 0 && i - 1 >= static_cast<int>(items.size());
-      SetHidden(base, button, hidden);
-      if (g_achievement_labels[i])
-      {
-        SetHidden(base, g_achievement_labels[i], hidden);
-      }
-      if (hidden)
-      {
-        continue;
-      }
-      shown.push_back(button);
-      if (i == 0)
-      {
-        ShowIndex(ctx, base, button, AchievementSectionSetting(), g_achievement_section);
-        continue;
-      }
-      const ao2::ach::Item &item = items[i - 1];
-      if (g_achievement_labels[i])
-      {
-        SetLabelText(ctx, base, g_achievement_labels[i], GameText(item.label.c_str()));
-      }
-      StoreU32(base, button + kCurrentIndex, 0);
-      ShowText(ctx, base, button, GameTr(item.unlocked ? "Earned" : "Locked"));
-    }
-    for (size_t i = 0; shown.size() > 1 && i < shown.size(); ++i)
-    {
-      uint32_t next = shown[(i + 1) % shown.size()];
-      StoreU32(base, shown[i] + kForcedNavigation + kFaceBottom * 4, next);
-      StoreU32(base, next + kForcedNavigation + kFaceTop * 4, shown[i]);
-    }
-    if (g_achievement_title)
-    {
-      ao2::ach::Totals all = ao2::ach::Count();
-      SetLabelText(ctx, base, g_achievement_title,
-                   GameTr("Achievements") + std::string("  ") + std::to_string(all.unlocked) + "/" +
-                       std::to_string(all.count));
-    }
-    if (g_achievements_scene)
-    {
-      StoreU32(base, g_achievements_scene + kSceneFlags,
-               LoadU32(base, g_achievements_scene + kSceneFlags) | kUpdateNavigation);
-    }
-    ShowAchievementInfo(ctx, base, g_achievement_focus);
-  }
-
-  // Turns a fresh instance of the Options screen into the Achievements page.
-  void SetupAchievements(PPCContext &ctx, uint8_t *base, uint32_t scene)
-  {
-    std::unordered_map<std::string, uint32_t> w;
-    Widgets(base, scene, w);
-    ForgetRows(Page::kAchievements);
-    g_achievement_focus = 0;
-    for (int i = 0; i <= ao2::ach::kSectionSize; ++i)
-    {
-      uint32_t button = w.count(kRowWidgets[i][0]) ? w[kRowWidgets[i][0]] : 0;
-      uint32_t label = w.count(kRowWidgets[i][1]) ? w[kRowWidgets[i][1]] : 0;
-      g_achievement_buttons[i] = button;
-      g_achievement_labels[i] = label;
-      if (!button)
-      {
-        Logf("setup: no %s\n", kRowWidgets[i][0]);
-        continue;
-      }
-      g_rows[button] = Row{Page::kAchievements, i, label};
-      if (i > 0)
-      {
-        HideArrows(base, button); // nothing to pick
-      }
-    }
-    if (g_achievement_labels[0])
-    {
-      SetLabel(ctx, base, g_achievement_labels[0], AchievementSectionSetting().label);
-    }
-    for (const char *name : {"BrightnessSlider", "UILabel_5"})
-    {
-      if (w.count(name))
-      {
-        SetHidden(base, w[name], true);
-      }
-    }
-    g_achievement_info = w.count("UILabelButton_0") ? w["UILabelButton_0"] : 0;
-    g_achievement_title = w.count("lblOptions") ? w["lblOptions"] : 0;
-    RefreshAchievements(ctx, base);
-    ao2::ach::Totals all = ao2::ach::Count();
-    Logf("setup: achievements scene %08X, %d of %d unlocked\n", scene, all.unlocked, all.count);
   }
 
   // Another instance of the Options screen over the top scene, its SceneTag
@@ -1831,10 +1611,6 @@ namespace
     {
       return false;
     }
-    if (IsPage(base, top, Page::kAchievements))
-    {
-      return true; // the focused row's text, no button
-    }
     if (top == options && IsSceneNamed(base, options))
     {
       if (uint32_t scene = OpenPage(ctx, base, client, options, kGraphicsTag))
@@ -1864,18 +1640,7 @@ namespace
   // A row's value when it is no setting: a bind's keys, or "Open".
   std::string RowText(const Row &row)
   {
-    if (IsOpenRow(row))
-    {
-      return GameTr("Open");
-    }
-    if (row.page == Page::kAchievements)
-    {
-      std::vector<ao2::ach::Item> items = ao2::ach::Section(g_achievement_section);
-      int i = row.index - 1;
-      return i >= 0 && i < static_cast<int>(items.size()) ? GameTr(items[i].unlocked ? "Earned" : "Locked")
-                                                         : std::string();
-    }
-    return BindText(BindOf(row));
+    return row.page == Page::kPauseOptions ? GameTr("Open") : BindText(BindOf(row));
   }
 
   // The pause menu's Options screen: its "Graphics and controls" row opens
@@ -1896,39 +1661,6 @@ namespace
       // as a new press, its Accept, and close. No input until it is let go.
       g_capture.swallowing = true;
       g_capture.swallow_end = GetTickCount() + 3000;
-    }
-  }
-
-  // The Graphics page's "Achievements": the Achievements page over it.
-  void OpenAchievements(PPCContext &ctx, uint8_t *base)
-  {
-    uint32_t graphics = g_graphics_scene;
-    uint32_t client = IsPage(base, graphics, Page::kGraphics) ? LoadU32(base, graphics + kSceneClient) : 0;
-    if (!client || TopScene(base, client) != graphics)
-    {
-      return;
-    }
-    if (uint32_t scene = OpenPage(ctx, base, client, graphics, kAchievementsTag))
-    {
-      g_achievements_scene = scene;
-      SetupAchievements(ctx, base, scene);
-      // The A (Enter, a click) that opened it is still held: the page would
-      // take it as its Accept and close.
-      g_capture.swallowing = true;
-      g_capture.swallow_end = GetTickCount() + 3000;
-    }
-  }
-
-  // An open row was chosen: the page it opens.
-  void OpenRow(PPCContext &ctx, uint8_t *base, const Row &row)
-  {
-    if (row.page == Page::kPauseOptions)
-    {
-      OpenFromPause(ctx, base);
-    }
-    else
-    {
-      OpenAchievements(ctx, base);
     }
   }
 
@@ -1953,7 +1685,13 @@ namespace
     }
     StoreU32(base, button + kCurrentIndex, 0);
     ShowText(ctx, base, button, GameTr("Open"));
-    HideArrows(base, button);
+    // A plain button: no arrows (UIOptionButton.bHideArrows).
+    int32_t hide_word = 0;
+    uint32_t hide_mask = 0;
+    if (ao2::ue3::BoolProperty(base, "UIOptionButton", "bHideArrows", hide_word, hide_mask))
+    {
+      StoreU32(base, button + hide_word, LoadU32(base, button + hide_word) | hide_mask);
+    }
     Logf("pause options %08X: TV type row is Graphics and controls\n", scene);
     return true;
   }
@@ -1992,13 +1730,6 @@ namespace
       RefreshGraphics(ctx, base);
       return;
     }
-    if (&setting == &AchievementSectionSetting())
-    {
-      setting.running = index;
-      g_achievement_section = index;
-      RefreshAchievements(ctx, base);
-      return;
-    }
     if (setting.when == When::kNow)
     {
       Apply(setting);
@@ -2028,7 +1759,7 @@ namespace ao2::gfxmenu
   bool IsOpenButton(const uint8_t *base, uint32_t widget)
   {
     const Row *row = RowOf(base, widget);
-    return row && IsOpenRow(*row);
+    return row && row->page == Page::kPauseOptions;
   }
 
   bool OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t user, uint32_t state)
@@ -2068,22 +1799,6 @@ namespace ao2::gfxmenu
       g_defaults_armed = 0;
       SetCaption(ctx, base, g_defaults_button, "Default keys");
     }
-    // The Achievements page on top: its device button follows the focus.
-    uint32_t ach_client = IsPage(base, g_achievements_scene, Page::kAchievements)
-                              ? LoadU32(base, g_achievements_scene + kSceneClient)
-                              : 0;
-    if (ach_client && TopScene(base, ach_client) == g_achievements_scene)
-    {
-      for (uint32_t button : g_achievement_buttons)
-      {
-        if (button && button != g_achievement_focus && Focused(base, button))
-        {
-          ShowAchievementInfo(ctx, base, button);
-          break;
-        }
-      }
-    }
-
     uint8_t *p = base + state;
     bool a = ctx.r3.u32 == 0 && ((p[4] << 8 | p[5]) & kButtonA);
     bool &prev = g_prev_a[user & 3];
@@ -2108,21 +1823,6 @@ namespace ao2::gfxmenu
           OpenFromPause(ctx, base);
           return true;
         }
-      }
-      return false;
-    }
-    // The Graphics page on top: A on "Achievements" opens that page.
-    uint32_t graphics_client = IsPage(base, g_graphics_scene, Page::kGraphics)
-                                   ? LoadU32(base, g_graphics_scene + kSceneClient)
-                                   : 0;
-    if (graphics_client && TopScene(base, graphics_client) == g_graphics_scene)
-    {
-      uint32_t button = g_graphics_buttons[kGraphicsRows];
-      if (button && Focused(base, button))
-      {
-        Silence(ctx, base, state);
-        OpenAchievements(ctx, base);
-        return true;
       }
       return false;
     }
@@ -2180,7 +1880,7 @@ extern "C" REX_FUNC(sub_8233B680)
     const Setting *setting = SettingOf(*row);
     if (!setting)
     {
-      ctx.r3.u64 = row->page == Page::kControls; // a key bind: left adds a key; "Open", an achievement: no arrows
+      ctx.r3.u64 = row->page != Page::kPauseOptions; // a key bind: left adds a key; "Open": no arrows
       return;
     }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
@@ -2202,7 +1902,7 @@ extern "C" REX_FUNC(sub_8233B710)
     const Setting *setting = SettingOf(*row);
     if (!setting)
     {
-      ctx.r3.u64 = row->page == Page::kControls; // a key bind: right replaces its key
+      ctx.r3.u64 = row->page != Page::kPauseOptions; // a key bind: right replaces its key
       return;
     }
     bool wrap = LoadU32(base, button + kWrapWord) & kWrapMask;
@@ -2225,9 +1925,9 @@ extern "C" REX_FUNC(sub_8235AC38)
     const Setting *setting = SettingOf(r);
     if (!setting)
     {
-      if (IsOpenRow(r))
+      if (r.page == Page::kPauseOptions)
       {
-        OpenRow(ctx, base, r);
+        OpenFromPause(ctx, base);
         return;
       }
       StartCapture(ctx, base, button, r, true);
@@ -2260,9 +1960,9 @@ extern "C" REX_FUNC(sub_8235ACF8)
     const Setting *setting = SettingOf(r);
     if (!setting)
     {
-      if (IsOpenRow(r))
+      if (r.page == Page::kPauseOptions)
       {
-        OpenRow(ctx, base, r);
+        OpenFromPause(ctx, base);
         return;
       }
       StartCapture(ctx, base, button, r, false);

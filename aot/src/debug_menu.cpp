@@ -19,6 +19,7 @@
 //   then its level), loaded with the console's "checkpoint <name> <difficulty>"
 //   (console_cmd.cpp). The loaded checkpoint becomes the profile's current
 //   one when the game saves it.
+// - F5 (ao2_achievement_test_key): unlocks a random achievement (achievements.h).
 //
 // Online co-op is a lockstep simulation (coop.h): there both go through the
 // lockstep input to both machines (coop_cmd.cpp) - god mode for this
@@ -29,6 +30,7 @@
 // listener (it would capture the mouse on clicks): the overlay takes no input.
 #include "debug_menu.h"
 
+#include "achievements.h"
 #include "console_cmd.h"
 #include "coop.h"
 #include "coop_cmd.h"
@@ -73,6 +75,8 @@ REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
                       "Key that opens the debug menu (god mode, checkpoints); empty = none");
 REXCVAR_DEFINE_STRING(ao2_fps_overlay_key, "F2", "GPU",
                       "Key that switches the frame rate overlay (off, FPS, detailed); empty = none");
+REXCVAR_DEFINE_STRING(ao2_achievement_test_key, "F5", "Debug",
+                      "Key that unlocks a random locked achievement (to test the notice); empty = none");
 
 namespace
 {
@@ -251,7 +255,10 @@ namespace
   std::atomic<int> g_modal{0};
   std::mutex g_notice_mutex;
   std::function<bool()> g_notice; // under g_notice_mutex
-  std::atomic<bool> g_notice_on{false};
+  std::function<bool()> g_toast;  // under g_notice_mutex (SetToast)
+  uint64_t g_notice_gen = 0, g_toast_gen = 0; // under g_notice_mutex: each set
+  std::atomic<bool> g_notice_on{false}; // either of them
+  rex::ui::ImmediateDrawer *g_sdk_immediate = nullptr;
 
   // The game gets no input: the menu or a port window is open.
   bool Blocking()
@@ -434,19 +441,34 @@ namespace
     g_frames_wanted = g_own_drawer != nullptr;
   }
 
-  // UI thread: draws the notice (SetNotice); clears it once it is over.
+  // UI thread: draws the notice (SetNotice) and the toast (SetToast);
+  // clears each once it is over.
   void DrawNotice()
   {
-    std::function<bool()> draw;
+    std::function<bool()> notice, toast;
+    uint64_t notice_gen, toast_gen;
     {
       std::lock_guard lock(g_notice_mutex);
-      draw = g_notice;
+      notice = g_notice;
+      toast = g_toast;
+      notice_gen = g_notice_gen;
+      toast_gen = g_toast_gen;
     }
-    if (draw && !draw())
+    bool notice_over = notice && !notice();
+    bool toast_over = toast && !toast();
+    if (notice_over || toast_over)
     {
       std::lock_guard lock(g_notice_mutex);
-      g_notice = nullptr;
-      g_notice_on = false;
+      // Unless set again meanwhile.
+      if (notice_over && g_notice_gen == notice_gen)
+      {
+        g_notice = nullptr;
+      }
+      if (toast_over && g_toast_gen == toast_gen)
+      {
+        g_toast = nullptr;
+      }
+      g_notice_on = g_notice || g_toast;
     }
   }
 
@@ -613,6 +635,14 @@ namespace
           ao2::perf::CycleMode();
         }
       }
+      else if (IsKey(e, REXCVAR_GET(ao2_achievement_test_key)))
+      {
+        e.set_handled(true);
+        if (!e.prev_state())
+        {
+          ao2::ach::UnlockRandom();
+        }
+      }
       else if (IsKey(e, REXCVAR_GET(ao2_players_key)))
       {
         e.set_handled(true);
@@ -656,14 +686,15 @@ namespace
 
 namespace ao2::menu
 {
-  void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::input::InputSystem *input,
-              const std::filesystem::path &game_data_root)
+  void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::ui::ImmediateDrawer *sdk_immediate,
+              rex::input::InputSystem *input, const std::filesystem::path &game_data_root)
   {
     if (!window || g_window)
     {
       return;
     }
     g_window = window;
+    g_sdk_immediate = sdk_drawer ? sdk_immediate : nullptr;
     g_checkpoint_dir = game_data_root / "AO2Game" / "Checkpoints";
     g_content_dir = ao2::dlc::Dir();
     g_drawer = sdk_drawer;
@@ -767,13 +798,38 @@ namespace ao2::menu
     });
   }
 
+  void ShowNoticeDialog();
+
   void SetNotice(std::function<bool()> draw)
   {
     {
       std::lock_guard lock(g_notice_mutex);
       g_notice = std::move(draw);
-      g_notice_on = g_notice != nullptr;
+      ++g_notice_gen;
+      g_notice_on = g_notice || g_toast;
     }
+    ShowNoticeDialog();
+  }
+
+  void SetToast(std::function<bool()> draw)
+  {
+    {
+      std::lock_guard lock(g_notice_mutex);
+      g_toast = std::move(draw);
+      ++g_toast_gen;
+      g_notice_on = g_notice || g_toast;
+    }
+    ShowNoticeDialog();
+  }
+
+  rex::ui::ImmediateDrawer *NoticeImmediateDrawer()
+  {
+    return g_perf_drawer ? g_perf_immediate.get() : g_sdk_immediate;
+  }
+
+  // Xenos presenter: the dialog that draws the notices on the SDK's drawer.
+  void ShowNoticeDialog()
+  {
     if (!g_window || g_perf_drawer)
     {
       return; // native renderer: the next frame request draws it

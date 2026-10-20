@@ -48,6 +48,7 @@ cbuffer xe_system : register(b1) {
   uint4 xe_bool_loop[10];
   uint4 xe_tex_info[16];
   uint4 xe_vfetch[48];
+  float4 xe_tex_size[16];
 };
 ByteAddressBuffer xe_shared_memory : register(t0, space1);
 
@@ -1188,8 +1189,10 @@ float4 xe_tex_post(float4 v, uint4 info) {
       // live in larger host resources (pitch x height), xe_tex_info.zw =
       // guest size / host size.
       bool is_1d = instr.dimension == xenos::FetchOpDimension::k1D;
+      // The host size comes from the constants: GetDimensions is a texture
+      // instruction of its own (TXQ), as costly as the fetch on some GPUs.
       Line(fmt::format("float2 xe_ts = asfloat(xe_tex_info[{}].zw);", binding));
-      Line(fmt::format("float xe_tw, xe_th; {}.GetDimensions(xe_tw, xe_th);", tex));
+      Line(fmt::format("float xe_tw = xe_tex_size[{0}].x, xe_th = xe_tex_size[{0}].y;", binding));
       Line("float2 xe_host_size = float2(xe_tw, xe_th);");
       // Host texels per guest texel of a resolved texture, in quarters (0: not resolved).
       Line(fmt::format("float xe_tscale = max(float((xe_tex_info[{}].x >> 16) & 0xFFu) * 0.25, 1.0);", binding));
@@ -1230,7 +1233,8 @@ float4 xe_tex_post(float4 v, uint4 info) {
     }
     case xenos::FetchOpDimension::k3DOrStacked:
     {
-      Line(fmt::format("float xe_tw, xe_th, xe_td; {}.GetDimensions(xe_tw, xe_th, xe_td);", tex));
+      Line(fmt::format("float xe_tw = xe_tex_size[{0}].x, xe_th = xe_tex_size[{0}].y, xe_td = xe_tex_size[{0}].z;",
+                       binding));
       Line("float3 xe_uvw = xe_tc.xyz;");
       if (at.unnormalized_coordinates)
       {
@@ -1443,7 +1447,9 @@ float4 xe_tex_post(float4 v, uint4 info) {
                          uint32_t(mod.param_gen_register));
       }
       s += body_;
-      s += R"(  if ((xe_flags & 8u) != 0u) {
+      if (mod.alpha_test)
+      {
+        s += R"(  if ((xe_flags & 8u) != 0u) {
     float a = xe_color[0].a;
     bool xe_pass = true;
     switch (xe_alpha_func) {
@@ -1459,6 +1465,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
     if (!xe_pass) { discard; }
   }
 )";
+      }
       if (probe)
       {
         s += "  if (xe_probe.w == 0.0) { discard; }\n  xe_result.c0 = xe_probe;\n";

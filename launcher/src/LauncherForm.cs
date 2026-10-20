@@ -2621,17 +2621,32 @@ namespace AO2Launcher
             AddHot(later, "upd_later", ClosePrompt);
         }
 
+        float[] tabSlots;
+
+        // Each tab's width: its longest name in any language, so the tabs stay put when the language changes.
+        float[] TabSlots(Graphics g)
+        {
+            if (tabSlots == null)
+            {
+                float[] widths = tabNames.Select(n => L.All(n).Max(s => CapsWidth(g, s, fTab, 1.8f))).ToArray();
+                float pad = Math.Min(36, Math.Max(12, (W - 40 - widths.Sum()) / widths.Length));
+                tabSlots = widths.Select(w => w + pad).ToArray();
+            }
+            return tabSlots;
+        }
+
         void DrawSettings(Graphics g)
         {
             // Tabs: text, the current one underlined.
             Fill(g, Color.FromArgb(230, InkDeep), new RectangleF(0, 40, W, 44));
             Line(g, Hairline, 0, 83.5f, W, 83.5f);
+            float[] slots = TabSlots(g);
             float x = 20;
             for (int i = 0; i < tabNames.Length; i++)
             {
                 string name = L.T(tabNames[i]);
                 float tw = CapsWidth(g, name, fTab, 1.8f);
-                var r = new RectangleF(x, 40, tw + 36, 44);
+                var r = new RectangleF(x, 40, slots[i], 44);
                 bool on = i == tab;
                 bool hv = IsHover("tab" + i);
                 if (hv && !on)
@@ -2641,7 +2656,7 @@ namespace AO2Launcher
                 Caps(g, name, fTab, on ? PaperHi : hv ? Color.FromArgb(214, 218, 226) : Color.FromArgb(130, 142, 160), r, 1.8f);
                 if (on)
                 {
-                    Fill(g, Paper, new RectangleF(r.X + 14, r.Bottom - 3, r.Width - 28, 2));
+                    Fill(g, Paper, new RectangleF(r.X + (r.Width - tw) / 2 - 4, r.Bottom - 3, tw + 8, 2));
                 }
                 int t = i;
                 AddHot(r, "tab" + i, () => SetTab(t));

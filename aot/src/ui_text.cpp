@@ -36,6 +36,9 @@ namespace
 
   // clang-format off
   const Row kRows[] = {
+      // --- Achievements: the unlock toast ---
+      {"ACHIEVEMENT UNLOCKED", "ДОСТИЖЕНИЕ ПОЛУЧЕНО", "ERFOLG FREIGESCHALTET", "SUCCÈS DÉBLOQUÉ", "LOGRO DESBLOQUEADO",
+       "OBIETTIVO SBLOCCATO"},
       // --- Invites: notices ---
       {"INCOMING INVITE", "ВХОДЯЩЕЕ ПРИГЛАШЕНИЕ", "EINLADUNG", "INVITATION REÇUE", "INVITATION RECIBIDA", "INVITO RICEVUTO"},
       {"invites you to a private co-op game", "зовёт вас в приватную кооперативную игру", "lädt dich zu einem privaten Koop-Spiel ein",
@@ -277,19 +280,6 @@ namespace
       {"Left", "Влево", "Links", "Gauche", "Izquierda", "Sinistra"},
       {"Right", "Вправо", "Rechts", "Droite", "Derecha", "Destra"},
       {"Space", "Пробел", "Leertaste", "Espace", "Espacio", "Spazio"},
-
-      // --- The Achievements page (Options > Graphics, in the game's fonts) ---
-      {"Achievements", "Достижения", "Erfolge", "Succès", "Logros", "Obiettivi"},
-      {"Earned", "Получено", "Erhalten", "Obtenu", "Conseguido", "Ottenuto"},
-      {"Locked", "Закрыто", "Gesperrt", "Verrouillé", "Bloqueado", "Bloccato"},
-      {"Story", "Сюжет", "Story", "Histoire", "Historia", "Storia"},
-      {"Campaign", "Кампания", "Kampagne", "Campagne", "Campaña", "Campagna"},
-      {"Gear and co-op", "Снаряжение и кооп", "Ausrüstung und Koop", "Équipement et coop", "Equipo y coop",
-       "Equipaggiamento e coop"},
-      {"Weapons", "Оружие", "Waffen", "Armes", "Armas", "Armi"},
-      {"Versus", "Противостояние", "Versus", "Versus", "Versus", "Versus"},
-      {"SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge"},
-      {"Gamerscore", "Очки", "Gamerscore", "Score", "Puntuación", "Punteggio"},
   };
   // clang-format on
 

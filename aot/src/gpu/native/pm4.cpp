@@ -4,6 +4,7 @@
 
 #include <chrono>
 
+#include "fast_hash.h"
 #include "renderer.h"
 #include <cstring>
 
@@ -146,7 +147,7 @@ namespace ao2::gpu
   // computed once per distinct microcode, found again by its (much faster) XXH3.
   uint64_t ShaderHash(const uint32_t *p, uint32_t count)
   {
-    static thread_local std::unordered_map<uint64_t, uint64_t> known;
+    static thread_local std::unordered_map<uint64_t, uint64_t, FastHash> known;
     uint64_t fast = XXH3_64bits(p, size_t(count) * 4) ^ (uint64_t(count) << 48);
     auto it = known.find(fast);
     if (it != known.end())

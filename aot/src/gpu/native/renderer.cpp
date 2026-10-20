@@ -18,6 +18,7 @@
 #include <d3d12.h>
 #include <d3dcompiler.h>
 #include <dxgi1_6.h>
+#include <intrin.h>
 #include <wrl/client.h>
 
 #include <algorithm>
@@ -45,6 +46,7 @@
 #include <rex/runtime.h>
 #include <rex/system/xmemory.h>
 
+#include "fast_hash.h"
 #include "hlsl_shared.h"
 #include "native_graphics_system.h"
 #include "post_effects.h"
@@ -172,17 +174,19 @@ void main(triangle XeVertexOut v[3], inout TriangleStream<XeVertexOut> s) {
     // Fullscreen triangle sampling the [0, uv_scale] part of the source, then
     // the guest display gamma ramp (256-entry DC_LUT table, 10 bits per
     // component: blue 0:9, green 10:19, red 20:29), interpolated because the
-    // source is scaled.
+    // source is scaled. The ramp is a buffer, not a constant buffer: every
+    // pixel reads other entries, and constant reads that differ across a wave
+    // run one after another (0.3 ms of the present at 2560x1600).
     const char kBlitShader[] = R"(
 Texture2D t : register(t0);
 SamplerState smp : register(s0);
 cbuffer c : register(b0) { float2 uv_scale; uint swap_red_blue; };
-cbuffer g : register(b1) { uint4 gamma_ramp[64]; };
+StructuredBuffer<uint> gamma_ramp : register(t1);
 struct VO { float4 p : SV_Position; float2 uv : TEXCOORD0; };
 VO vs(uint id : SV_VertexID) {
   VO o; o.uv = float2((id << 1) & 2, id & 2); o.p = float4(o.uv * float2(2, -2) + float2(-1, 1), 0, 1); return o;
 }
-float Ramp(uint i, uint shift) { return float((gamma_ramp[i >> 2][i & 3] >> shift) & 0x3FFu) * (1.0 / 1023.0); }
+float Ramp(uint i, uint shift) { return float((gamma_ramp[i] >> shift) & 0x3FFu) * (1.0 / 1023.0); }
 float4 ps(VO i) : SV_Target {
   float3 c = t.Sample(smp, i.uv * uv_scale).rgb;
   c = saturate(swap_red_blue != 0u ? c.bgr : c) * 255.0;
@@ -468,16 +472,16 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint32_t cpu_views_used = 0, rtvs_used = 0, dsvs_used = 0, samplers_used = 0;
       D3D12_CPU_DESCRIPTOR_HANDLE null_srv_2d = {}, null_srv_3d = {}, null_srv_cube = {};
       ComPtr<ID3D12DescriptorHeap> cpu_sampler_heap;
-      std::unordered_map<uint32_t, uint32_t> sampler_descriptors; // key -> cpu heap index
-      std::unordered_map<uint64_t, uint32_t> sampler_tables;      // keys hash -> visible heap index
+      std::unordered_map<uint32_t, uint32_t, FastHash> sampler_descriptors; // key -> cpu heap index
+      std::unordered_map<uint64_t, uint32_t, FastHash> sampler_tables;      // keys hash -> visible heap index
 
-      std::unordered_map<uint64_t, std::unique_ptr<CachedTexture>> textures;
+      std::unordered_map<uint64_t, std::unique_ptr<CachedTexture>, FastHash> textures;
       std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints;
       std::vector<UINT> footprint_rows;
       std::vector<UINT64> footprint_row_bytes;
 
-      std::unordered_map<uint64_t, std::unique_ptr<RenderTarget>> render_targets;
-      std::unordered_map<uint32_t, std::unique_ptr<HostTexture>> resolved;
+      std::unordered_map<uint64_t, std::unique_ptr<RenderTarget>, FastHash> render_targets;
+      std::unordered_map<uint32_t, std::unique_ptr<HostTexture>, FastHash> resolved;
       // Other formats/sizes recently resolved to the same address (games
       // alternate them within a frame - the scene and its 2_10_10_10 copy,
       // two views' downsamples): reused instead of recreated every time.
@@ -582,7 +586,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         CachedTexture *texture;
         uint64_t frame;
       };
-      std::unordered_map<uint64_t, FetchCacheEntry> fetch_cache;
+      std::unordered_map<uint64_t, FetchCacheEntry, FastHash> fetch_cache;
       // Guest display gamma ramp (DC_LUT 256-entry table), applied when presenting.
       uint32_t gamma_ramp[256] = {};
       uint64_t resolves_copied = 0, resolves_drawn = 0, lowres_copies = 0;
@@ -959,9 +963,12 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     void PostBeforeSample(HostTexture &tex, uint32_t address);
     uint32_t ShadowScale4(uint32_t base, uint32_t format, uint32_t pitch, uint32_t *rows = nullptr);
 
+    // The runtime's memory lives as long as the process (asked for per texel
+    // and per page in places).
     rex::memory::Memory *Mem()
     {
-      return rex::Runtime::instance()->memory();
+      static rex::memory::Memory *const mem = rex::Runtime::instance()->memory();
+      return mem;
     }
 
     uint64_t Elapsed(std::chrono::steady_clock::time_point start)
@@ -972,13 +979,37 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
 
     // Time spent in the phases of RendererDraw (stats line).
     const char *const kPhaseNames[10] = {"setup", "rt", "pso", "vertex", "tex", "smp", "tables", "edram", "const", "record"};
+    // Nanoseconds per time stamp counter tick, measured once against the
+    // steady clock. Draws time themselves with the TSC: a dozen
+    // QueryPerformanceCounter calls per draw were ~5% of the GPU thread.
+    double NsPerTsc()
+    {
+      static const double ns = [] {
+        auto c0 = std::chrono::steady_clock::now();
+        uint64_t t0 = __rdtsc();
+        while (std::chrono::steady_clock::now() - c0 < std::chrono::milliseconds(5))
+        {
+        }
+        uint64_t t1 = __rdtsc();
+        auto c1 = std::chrono::steady_clock::now();
+        return double(std::chrono::duration_cast<std::chrono::nanoseconds>(c1 - c0).count()) / double(t1 - t0);
+      }();
+      return ns;
+    }
+
+    uint64_t TscElapsedNs(uint64_t start)
+    {
+      return uint64_t(double(__rdtsc() - start) * NsPerTsc());
+    }
+
     struct PhaseTimer
     {
-      std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
+      double ns_per_tsc = NsPerTsc();
+      uint64_t t = __rdtsc();
       void Mark(uint32_t phase)
       {
-        auto now = std::chrono::steady_clock::now();
-        g.phase_ns[phase] += uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(now - t).count());
+        uint64_t now = __rdtsc();
+        g.phase_ns[phase] += uint64_t(double(now - t) * ns_per_tsc);
         t = now;
       }
     };
@@ -1898,8 +1929,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       bp[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
       bp[1].Constants.Num32BitValues = 3;
       bp[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-      // Gamma ramp (b1).
-      bp[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+      // Gamma ramp (t1).
+      bp[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
       bp[2].Descriptor.ShaderRegister = 1;
       bp[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
       D3D12_STATIC_SAMPLER_DESC ss = {};
@@ -4507,10 +4538,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         }
         if (!reload && t.checked_epoch != now)
         {
-          auto check_start = std::chrono::steady_clock::now();
+          uint64_t check_start = __rdtsc();
           reload = WrittenSince(desc.base_address, desc.base_size, t.epoch) ||
                    WrittenSince(desc.mip_address, desc.mip_size, t.epoch);
-          g.time_hash_ns += Elapsed(check_start);
+          g.time_hash_ns += TscElapsedNs(check_start);
           t.checked_epoch = now;
         }
         if (reload)
@@ -4641,7 +4672,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
 
     // `lowres`: the draw renders into a small target (see SmallTarget).
     void PrepareTextures(const CompiledShader *s, const RegisterFile &r, TextureTable &table,
-                         uint32_t tex_info[16][4], uint32_t &tex_info_used, bool lowres)
+                         uint32_t tex_info[16][4], float tex_size[16][4], uint32_t &tex_info_used, bool lowres)
     {
       if (!s)
       {
@@ -4798,6 +4829,15 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           tex_info[index][0] = signs;
           std::memcpy(&tex_info[index][1], &exp_scale, 4);
           std::memcpy(&tex_info[index][2], uv_scale, 8);
+          // What GetDimensions gives: the bound resource's top level (no
+          // resource: a null view, 0).
+          if (ID3D12Resource *res = table.resources[index])
+          {
+            D3D12_RESOURCE_DESC rd = res->GetDesc();
+            tex_size[index][0] = float(rd.Width);
+            tex_size[index][1] = float(rd.Height);
+            tex_size[index][2] = float(rd.DepthOrArraySize);
+          }
         }
       }
     }
@@ -4864,7 +4904,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
 
     // Tables written this frame by content (materials recur all over a frame;
     // the frame's descriptor range stays valid until its fence).
-    std::unordered_map<uint64_t, D3D12_GPU_DESCRIPTOR_HANDLE> g_frame_tables;
+    std::unordered_map<uint64_t, D3D12_GPU_DESCRIPTOR_HANDLE, FastHash> g_frame_tables;
     uint64_t g_frame_tables_frame = ~0ull;
 
     uint64_t TableKey(const TextureTable &table)
@@ -5106,6 +5146,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     // ------------------------------------------------------------ Constants
 
     void FillSystemConstants(const RegisterFile &r, const Viewport &vp, const uint32_t tex_info[16][4],
+                             const float tex_size[16][4],
                              const DrawPacket *index_fetch, uint32_t scale4, XeSystemConstants &c)
     {
       std::memset(&c, 0, sizeof(c));
@@ -5162,6 +5203,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       std::memcpy(c.bool_loop, &r.v[0x4900], sizeof(c.bool_loop));
       std::memcpy(c.tex_info, tex_info, sizeof(c.tex_info));
       std::memcpy(c.vfetch, &r.v[0x4800], sizeof(c.vfetch));
+      std::memcpy(c.tex_size, tex_size, sizeof(c.tex_size));
     }
 
     D3D12_GPU_VIRTUAL_ADDRESS UploadFloatConstants(const RegisterFile &r, bool pixel)
@@ -5308,17 +5350,41 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     }
 
     // Tiles of `rect` (guest pixels) completely inside it.
+    // ForEachTile's walk with each tile's rectangle from its row and column
+    // (TileRect's divisions per tile were a few % of the GPU thread); a
+    // surface running past the end of EDRAM wraps, as TileRect sees it.
     void TilesInside(const RenderTarget &rt, const D3D12_RECT &rect, std::vector<uint32_t> &out)
     {
       out.clear();
-      ForEachTile(rt, rect, [&](uint32_t tile) {
-        D3D12_RECT t = TileRect(rt, tile);
+      EdramLayout l = GetEdramLayout(rt);
+      int32_t x1 = std::min<int32_t>(rect.right, int32_t(rt.width));
+      int32_t y1 = std::min<int32_t>(rect.bottom, int32_t(rt.height));
+      if (rect.left >= x1 || rect.top >= y1)
+      {
+        return;
+      }
+      uint32_t c0 = uint32_t(rect.left) * l.scale_x / l.tile_w, c1 = (uint32_t(x1) * l.scale_x - 1) / l.tile_w;
+      uint32_t r0 = uint32_t(rect.top) * l.scale_y / 16, r1 = (uint32_t(y1) * l.scale_y - 1) / 16;
+      auto inside = [&](const D3D12_RECT &t) {
         LONG right = std::min(t.right, LONG(rt.width)), bottom = std::min(t.bottom, LONG(rt.height));
-        if (t.left >= rect.left && t.top >= rect.top && right <= rect.right && bottom <= rect.bottom)
+        return t.left >= rect.left && t.top >= rect.top && right <= rect.right && bottom <= rect.bottom;
+      };
+      for (uint32_t row = r0; row <= r1; ++row)
+      {
+        LONG top = LONG(row * 16 / l.scale_y), bottom = LONG((row + 1) * 16 / l.scale_y);
+        for (uint32_t col = c0; col <= c1; ++col)
         {
-          out.push_back(tile);
+          uint32_t index = row * l.pitch_tiles + col;
+          uint32_t tile = (l.base + index) % kEdramTiles;
+          D3D12_RECT t = index < kEdramTiles && col < l.pitch_tiles ? D3D12_RECT{LONG(col * l.tile_w / l.scale_x), top,
+                                                          LONG((col + 1) * l.tile_w / l.scale_x), bottom}
+                                             : TileRect(rt, tile);
+          if (inside(t))
+          {
+            out.push_back(tile);
+          }
         }
-      });
+      }
     }
 
     // Records that `tiles` of component `c` of `rt` now hold `value`; tiles
@@ -6150,11 +6216,12 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
       }
       bool all = texels && IsGuestPhysicalReadable(lowest, highest - lowest);
       uint8_t *out = wb.before.data();
+      rex::memory::Memory *mem = Mem();
       for (uint32_t &address : wb.addresses)
       {
         if (all || IsGuestPhysicalReadable(address, wb.bytes_per_texel))
         {
-          std::memcpy(out, Mem()->TranslatePhysical(address), wb.bytes_per_texel);
+          std::memcpy(out, mem->TranslatePhysical(address), wb.bytes_per_texel);
         }
         else
         {
@@ -6177,6 +6244,7 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
     // the CPU's data. Unchanged = as recorded, or as our last write-back left it.
     void ApplyWritebacks(Frame &f)
     {
+      rex::memory::Memory *mem = Mem();
       for (const Writeback &wb : f.writebacks)
       {
         // The memory may have been released since the resolve.
@@ -6205,7 +6273,7 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
             {
               continue;
             }
-            uint8_t *dst = Mem()->TranslatePhysical(*address);
+            uint8_t *dst = mem->TranslatePhysical(*address);
             if (std::memcmp(dst, before, wb.bytes_per_texel) != 0 &&
                 (!ours || std::memcmp(dst, ours, wb.bytes_per_texel) != 0))
             {
@@ -6621,11 +6689,13 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       kPassSmaaEdges,
       kPassSmaaWeights,
       kPassSmaaBlend,
+      kPassDepthHalf,
       kPassCount,
     };
     const char *const kPassEntries[kPassCount] = {
         "ps_linearize", "ps_linearize", "ps_ao",     "ps_ao_blur",    "ps_ao_apply",     "ps_motion_blur",
         "ps_dof_focus", "ps_dof",       "ps_fxaa",   "ps_smaa_edges", "ps_smaa_weights", "ps_smaa_blend",
+        "ps_depth_half",
     };
 
     // cbuffer PostConstants (post_effects.h).
@@ -6677,7 +6747,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       bool vs_failed = false;
       std::vector<uint8_t> ps[kPassCount];
       bool ps_failed[kPassCount] = {};
-      PostTexture depth, ao[2], color[2], edges, weights, focus[2];
+      PostTexture depth, depth_half, ao[2], color[2], edges, weights, focus[2];
       uint32_t focus_index = 0;
       uint64_t focus_frame = UINT64_MAX; // frame the focus was last eased in
 
@@ -7107,6 +7177,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       {
       case kPassLinearize:
       case kPassLinearizeMs: return s.NeedsDepth();
+      case kPassDepthHalf:
       case kPassAo:
       case kPassAoBlur:
       case kPassAoApply: return s.ao != 0;
@@ -7186,6 +7257,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
           {kPassSmaaEdges, DXGI_FORMAT_R8G8_UNORM, 0},
           {kPassSmaaWeights, DXGI_FORMAT_R8G8B8A8_UNORM, 0},
           {kPassSmaaBlend, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassDepthHalf, DXGI_FORMAT_R32_FLOAT, 0},
       };
       const PostSettings &s = CurrentPostSettings();
       for (bool used : {true, false})
@@ -7403,9 +7475,11 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       c.i0[2] = kSteps[s.ao];
       c.p1[0] = float(hw);
       c.p1[1] = float(hh);
-      bool ok = EnsurePostTexture(g_post.ao[0], hw, hh, DXGI_FORMAT_R16G16_FLOAT) &&
+      bool ok = EnsurePostTexture(g_post.depth_half, hw, hh, DXGI_FORMAT_R32_FLOAT) &&
+                EnsurePostTexture(g_post.ao[0], hw, hh, DXGI_FORMAT_R16G16_FLOAT) &&
                 EnsurePostTexture(g_post.ao[1], hw, hh, DXGI_FORMAT_R16G16_FLOAT) &&
-                PostDraw(kPassAo, g_post.ao[0], 0, {In(g_post.depth)}, c);
+                PostDraw(kPassDepthHalf, g_post.depth_half, 0, {In(g_post.depth)}, c) &&
+                PostDraw(kPassAo, g_post.ao[0], 0, {In(g_post.depth_half)}, c);
       c.i0[0] = 0;
       ok = ok && PostDraw(kPassAoBlur, g_post.ao[1], 0, {In(g_post.ao[0])}, c);
       c.i0[0] = 1;
@@ -7991,7 +8065,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       return;
     }
 
-    auto shader_start = std::chrono::steady_clock::now();
+    uint64_t shader_start = __rdtsc();
     HlslModification vm;
     vm.register_count = program_cntl.vs_num_reg + 1;
     const CompiledShader *vs =
@@ -8004,6 +8078,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       HlslModification pm;
       pm.register_count = program_cntl.ps_num_reg + 1;
       pm.param_gen_register = program_cntl.param_gen ? (context_misc.param_gen_pos & 31) : 31;
+      auto colorcontrol = r.Get<reg::RB_COLORCONTROL>();
+      pm.alpha_test = colorcontrol.alpha_test_enable && colorcontrol.alpha_func != xenos::CompareFunction::kAlways;
       ps = shaders.Get(xenos::ShaderType::kPixel, ps_code.dwords, ps_code.dword_count, ps_code.hash, pm.value);
       uint32_t probe_size = g_probe_size.load(std::memory_order_relaxed);
       if (ps && probe_size && ps->shader)
@@ -8029,7 +8105,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       }
     }
     {
-      uint64_t shader_ns = Elapsed(shader_start);
+      uint64_t shader_ns = TscElapsedNs(shader_start);
       g.frame_shader_ns += shader_ns;
       if (shader_ns > 200000)
       {
@@ -8189,12 +8265,13 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     // Everything that may submit the command list mid-frame (texture uploads,
     // sampler heap reset) happens before this draw's state is recorded.
     uint32_t tex_info[16][4] = {};
+    float tex_size[16][4] = {};
     uint32_t tex_info_used = 0;
     TextureTable ps_textures, vs_textures;
     bool lowres = rtv_count && SmallTarget(surface.surface_pitch, key.samples);
     g_post.draw_target = color_rts[0];
-    PrepareTextures(ps, r, ps_textures, tex_info, tex_info_used, lowres);
-    PrepareTextures(vs, r, vs_textures, tex_info, tex_info_used, lowres);
+    PrepareTextures(ps, r, ps_textures, tex_info, tex_size, tex_info_used, lowres);
+    PrepareTextures(vs, r, vs_textures, tex_info, tex_size, tex_info_used, lowres);
     g_post.draw_target = nullptr;
     timer.Mark(4);
     ReserveSamplerTables(2);
@@ -8318,7 +8395,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     }
     timer.Mark(7);
     XeSystemConstants sys;
-    FillSystemConstants(r, vp, tex_info, index_fetch ? &d : nullptr, scale4, sys);
+    FillSystemConstants(r, vp, tex_info, tex_size, index_fetch ? &d : nullptr, scale4, sys);
     if (depth_offset != 0.0f)
     {
       // Host NDC z [0, 1] spans the viewport's depth range: offset / range in
@@ -9359,7 +9436,15 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       Transition(bb, bb_state, D3D12_RESOURCE_STATE_RENDER_TARGET);
       float black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
       GpuMark(kGpuPresent);
-      g.list->ClearRenderTargetView(g.backbuffer_rtv[bb_index], black, 0, nullptr);
+      // Letterbox the guest frame into the window keeping its aspect ratio;
+      // the bars are cleared (no clear when the frame covers the window).
+      float sw = float(g.swapchain_width), sh = float(g.swapchain_height);
+      float fit = width && height ? std::min(sw / float(width), sh / float(height)) : 0.0f;
+      float vw = std::floor(float(width) * fit), vh = std::floor(float(height) * fit);
+      if (!source || vw < sw || vh < sh)
+      {
+        g.list->ClearRenderTargetView(g.backbuffer_rtv[bb_index], black, 0, nullptr);
+      }
       if (source && width && height)
       {
         Transition(source->resource.Get(), source->state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -9376,10 +9461,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         sd.Texture2D.MipLevels = 1;
         g.device->CreateShaderResourceView(source->resource.Get(), &sd, cpu);
 
-        // Letterbox the guest frame into the window keeping its aspect ratio.
-        float sw = float(g.swapchain_width), sh = float(g.swapchain_height);
-        float scale = std::min(sw / float(width), sh / float(height));
-        float vw = std::floor(float(width) * scale), vh = std::floor(float(height) * scale);
         D3D12_VIEWPORT vp = {std::floor((sw - vw) * 0.5f), std::floor((sh - vh) * 0.5f), vw, vh, 0, 1};
         D3D12_RECT sc = {0, 0, LONG(g.swapchain_width), LONG(g.swapchain_height)};
         // uv scale (the part of the host texture the frame takes), red/blue swap.
@@ -9398,7 +9479,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         g.list->SetGraphicsRootDescriptorTable(0, gpu);
         g.list->SetGraphicsRoot32BitConstants(1, 3, blit_constants, 0);
         std::memcpy(f.upload_mapped, g.gamma_ramp, sizeof(g.gamma_ramp));
-        g.list->SetGraphicsRootConstantBufferView(2, f.upload->GetGPUVirtualAddress());
+        g.list->SetGraphicsRootShaderResourceView(2, f.upload->GetGPUVirtualAddress());
         g.list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         g.list->DrawInstanced(3, 1, 0, 0);
       }

@@ -41,6 +41,20 @@ namespace AO2Launcher
             return row[lang];
         }
 
+        // `en` and every translation of it (to lay out text the same in every language).
+        public static IEnumerable<string> All(string en)
+        {
+            yield return en;
+            string[] row;
+            if (en != null && Table.TryGetValue(en, out row))
+            {
+                foreach (string s in row)
+                {
+                    yield return s;
+                }
+            }
+        }
+
         public static string F(string en, params object[] args)
         {
             return string.Format(T(en), args);
@@ -66,6 +80,30 @@ namespace AO2Launcher
             a("Profile {0}: {1} of {2} unlocked, {3} of {4} G", "Профиль {0}: получено {1} из {2}, {3} из {4} G",
               "Profil {0} : {1} sur {2} débloqués, {3} sur {4} G", "Profil {0}: {1} von {2} freigeschaltet, {3} von {4} G",
               "Perfil {0}: {1} de {2} desbloqueados, {3} de {4} G", "Profilo {0}: {1} di {2} sbloccati, {3} di {4} G");
+            a("Unlock notices", "Уведомления о достижениях", "Notifications de succès", "Erfolgsbenachrichtigungen", "Avisos de logros", "Notifiche degli obiettivi");
+            a("Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently.",
+              "Показывать в игре уведомление со звуком при получении достижения. Если выключено, достижения все равно открываются, но молча.",
+              "Afficher une notification sonore dans le jeu quand un succès est débloqué. Désactivé : les succès se débloquent quand même, en silence.",
+              "Im Spiel eine Meldung mit Ton zeigen, wenn ein Erfolg freigeschaltet wird. Aus: Erfolge werden trotzdem freigeschaltet, nur still.",
+              "Mostrar un aviso con sonido en el juego al desbloquear un logro. Desactivado: los logros se desbloquean igual, en silencio.",
+              "Mostra nel gioco una notifica con suono quando si sblocca un obiettivo. Disattivato: gli obiettivi si sbloccano comunque, in silenzio.");
+            a("Reset achievements", "Сбросить достижения", "Réinitialiser les succès", "Erfolge zurücksetzen", "Restablecer logros", "Azzera obiettivi");
+            a("Lock every achievement of the current profile again. Saves and progress in the game are not changed.",
+              "Снова закрыть все достижения текущего профиля. Сохранения и прогресс в игре не меняются.",
+              "Verrouiller à nouveau tous les succès du profil actuel. Les sauvegardes et la progression ne changent pas.",
+              "Alle Erfolge des aktuellen Profils wieder sperren. Spielstände und Fortschritt bleiben unverändert.",
+              "Volver a bloquear todos los logros del perfil actual. Las partidas guardadas y el progreso no cambian.",
+              "Blocca di nuovo tutti gli obiettivi del profilo attuale. Salvataggi e progressi non cambiano.");
+            a("RESET ACHIEVEMENTS", "СБРОС ДОСТИЖЕНИЙ", "RÉINITIALISER LES SUCCÈS", "ERFOLGE ZURÜCKSETZEN", "RESTABLECER LOGROS", "AZZERA OBIETTIVI");
+            a("Every achievement of profile {0} will be locked again. This cannot be undone.",
+              "Все достижения профиля {0} снова станут закрытыми. Это нельзя отменить.",
+              "Tous les succès du profil {0} seront de nouveau verrouillés. Action irréversible.",
+              "Alle Erfolge des Profils {0} werden wieder gesperrt. Das lässt sich nicht rückgängig machen.",
+              "Todos los logros del perfil {0} volverán a bloquearse. No se puede deshacer.",
+              "Tutti gli obiettivi del profilo {0} saranno di nuovo bloccati. Non si può annullare.");
+            a("Achievements reset", "Достижения сброшены", "Succès réinitialisés", "Erfolge zurückgesetzt", "Logros restablecidos", "Obiettivi azzerati");
+            a("Could not reset the achievements", "Не удалось сбросить достижения", "Impossible de réinitialiser les succès",
+              "Erfolge konnten nicht zurückgesetzt werden", "No se pudieron restablecer los logros", "Impossibile azzerare gli obiettivi");
             a("Earned {0}", "Получено {0}", "Obtenu le {0}", "Erhalten am {0}", "Conseguido el {0}", "Ottenuto il {0}");
             a("The list of achievements comes from the game's files: start the game once to see it here.",
               "Список достижений берется из файлов игры: запустите игру один раз, чтобы он появился здесь.",
