@@ -32,6 +32,7 @@
 #include "console_cmd.h"
 
 #include "coop.h"
+#include "coop_cmd.h"
 #include "cutscene_skip.h"
 #include "log_files.h"
 
@@ -251,6 +252,34 @@ namespace ao2::console
   {
     if (ao2::coop::InNetworkGame(base))
     {
+      // console.txt in a network game: a checkpoint load goes to both machines through the lockstep
+      // (coop_cmd.cpp, as the F1 menu's), a port setting is this machine's own; the rest stays local-only
+      // game state, which would desync - left out.
+      static clock::time_point next_check{};
+      auto now = clock::now();
+      if (now < next_check)
+      {
+        return;
+      }
+      next_check = now + std::chrono::milliseconds(250);
+      for (const std::string &line : TakeFile())
+      {
+        char name[64];
+        int difficulty = REXCVAR_GET(ao2_start_difficulty);
+        if (std::sscanf(line.c_str(), "checkpoint %63s %d", name, &difficulty) >= 1)
+        {
+          ao2::coop::cmd::Send("checkpoint " + std::string(name) + " " + std::to_string(difficulty));
+          Logf("co-op: \"%s\" sent to both machines\n", line.c_str());
+        }
+        else if (line.rfind("set ", 0) == 0)
+        {
+          Exec(ctx, base, line);
+        }
+        else
+        {
+          Logf("co-op: \"%s\" ignored (local game state would desync)\n", line.c_str());
+        }
+      }
       return;
     }
 

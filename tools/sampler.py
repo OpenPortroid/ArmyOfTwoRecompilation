@@ -3,7 +3,7 @@
 Usage: python sampler.py <pid> list  (thread ids and names)
        (a thread is chosen by a substring of its name, or by its id)
        python sampler.py <pid> <thread name substring> [seconds=10] [hz=1000] [--top N] [--tree DEPTH]
-              [--lines]  (self time by innermost inlined function and source line)
+              [--lines]  (self time by innermost inlined function and source line) [--dump FILE] (every stack)
 
 Suspends the thread ~hz times per second, walks its stack (dbghelp
 StackWalk64 with the modules' unwind info), and prints:
@@ -195,6 +195,11 @@ def main():
             names[a] = fn if fn and fn != "??" else f"{os.path.basename(mod)}+{off:#x}"
 
     n = len(stacks)
+    if "--dump" in opts:
+        # Every sample's stack (leaf first, " <- " between frames), one per line, for offline analysis.
+        with open(opts[opts.index("--dump") + 1], "w") as f:
+            for s in stacks:
+                f.write(" <- ".join(names[a] for a in s) + "\n")
     self_c = collections.Counter(names[s[0]] for s in stacks)
     incl = collections.Counter()
     for s in stacks:

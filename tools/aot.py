@@ -38,7 +38,7 @@ import menustate  # noqa: E402
 
 REPO = os.path.dirname(HERE)
 GAME = os.path.join(REPO, 'aot', 'out', 'build', 'win-amd64-release')
-EXE = os.path.join(GAME, 'armyoftworecomp.exe')
+EXE = os.environ.get('AOT_EXE') or os.path.join(GAME, 'armyoftworecomp.exe')  # AOT_EXE: another build in GAME (A/B)
 BASE = os.path.join(HERE, 'coop', 'local')
 def _documents():
     """The user's Documents folder (may be redirected, e.g. to OneDrive), as the game finds it."""
@@ -80,7 +80,7 @@ def save_state(st):
 
 def alive(pid):
     out = subprocess.run(['tasklist', '/fi', 'PID eq %d' % pid, '/nh'], capture_output=True, text=True, errors='replace').stdout or ''
-    return 'armyoftworecomp' in out.lower()
+    return os.path.splitext(os.path.basename(EXE))[0].lower() in out.lower()  # also an AOT_EXE build
 
 
 class Inst:
@@ -661,7 +661,7 @@ def _autopilot(a):
                 if time.time() - last_report > 10:
                     last_report = time.time()
                     log('%s: %s' % (i.name, ln))
-            elif ln.startswith('pos '):
+            elif ln.startswith('pos ') or ln.startswith('drive ('):  # on foot / at the wheel
                 pos = ln
                 seg = int(ln.split(' seg ')[1].split('/')[0])
                 if seg > best:

@@ -94,6 +94,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/perf_waits.cpp
     src/frame_spikes.cpp
     src/tick_profile.cpp
+    src/actor_profile.cpp
     src/hang_watchdog.cpp
     src/coop_link.cpp
     src/coop_cmd.cpp
