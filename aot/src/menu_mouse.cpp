@@ -1171,7 +1171,11 @@ namespace ao2::menumouse
     }
 
     bool menu = scene && REXCVAR_GET(ao2_menu_mouse);
-    SetMenuMode(menu);
+    // Between two menus (the camera moving along the slabs, the press of
+    // Start on the title screen) one scene is closed before the next opens:
+    // only scenes taking no input are left (UIScene_0, the help text). The
+    // cursor stays the menus' until the stack is empty, as it is in the game.
+    SetMenuMode(menu || (g_menu && !scenes.empty() && REXCVAR_GET(ao2_menu_mouse)));
     bool left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
     bool left_pressed = left && !g_left;
     g_left = left;
