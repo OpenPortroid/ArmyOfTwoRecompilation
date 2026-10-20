@@ -62,11 +62,38 @@ namespace AO2Launcher
             return b;
         }
 
+        static string UnlocksPath(string profile)
+        {
+            return Path.Combine(Profiles.Root(profile), "achievements", "4541084C.toml");
+        }
+
+        // Locks every achievement of a profile again: its unlocks file goes. False when it could not be deleted.
+        public static bool Reset(string profile)
+        {
+            try
+            {
+                string path = UnlocksPath(profile);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
         // The ids a profile has unlocked, with when.
         static Dictionary<int, DateTime> Unlocks(string profile)
         {
             var map = new Dictionary<int, DateTime>();
-            string path = Path.Combine(Profiles.Root(profile), "achievements", "4541084C.toml");
+            string path = UnlocksPath(profile);
             if (!File.Exists(path))
             {
                 return map;
@@ -213,6 +240,8 @@ namespace AO2Launcher
         void RefreshAchievements()
         {
             achievementRows.Clear();
+            achievementRows.Add(Toggle("Unlock notices", "ach_notices",
+                "Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently."));
             List<Achievements.Entry> all = Achievements.Load(S["profile"]);
             if (all.Count == 0)
             {
@@ -231,6 +260,12 @@ namespace AO2Launcher
             {
                 Kind = RowKind.Info,
                 Text = () => L.F("Profile {0}: {1} of {2} unlocked, {3} of {4} G", profile, got, all.Count, score, max)
+            });
+            achievementRows.Add(new Row
+            {
+                Kind = RowKind.Button, Label = "Reset achievements", ButtonText = () => "RESET",
+                Click = ResetAchievements, Enabled = () => got > 0,
+                Desc = "Lock every achievement of the current profile again. Saves and progress in the game are not changed."
             });
             foreach (var section in all.GroupBy(e => e.Section))
             {
@@ -253,6 +288,35 @@ namespace AO2Launcher
                     achievementRows.Add(new Row { Kind = RowKind.Achievement, Label = e.Label, Desc = desc, Ach = e });
                 }
             }
+        }
+
+        void ResetAchievements()
+        {
+            if (Game.IsRunning())
+            {
+                ShowToast(L.T("Close the game first."), true);
+                return;
+            }
+            string id = S["profile"];
+            Ask(new Confirm
+            {
+                Title = "RESET ACHIEVEMENTS",
+                Text = L.F("Every achievement of profile {0} will be locked again. This cannot be undone.", ProfileName(id)),
+                Ok = "RESET",
+                Danger = true,
+                OnOk = _ =>
+                {
+                    if (Game.IsRunning())
+                    {
+                        ShowToast(L.T("Close the game first."), true);
+                        return;
+                    }
+                    bool ok = Achievements.Reset(id);
+                    RefreshAchievements();
+                    LayoutRows();
+                    ShowToast(L.T(ok ? "Achievements reset" : "Could not reset the achievements"), !ok);
+                },
+            });
         }
 
         void DrawAchievementRow(Graphics g, Row r, RectangleF rr, bool selected, string id, int index)

@@ -150,7 +150,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(WIN32)
-    target_link_libraries(armyoftworecomp PRIVATE d3d12 dxgi d3dcompiler ws2_32 iphlpapi synchronization dbghelp pdh gdi32)
+    target_link_libraries(armyoftworecomp PRIVATE d3d12 dxgi d3dcompiler ws2_32 iphlpapi synchronization dbghelp pdh gdi32 winmm)
 endif()
 
 # Standalone co-op lobby server (the server the game runs with

@@ -13,6 +13,7 @@
 #include <rex/rex_app.h>
 #include <rex/runtime.h>
 #include <rex/system/gpu_plugin.h>
+#include <rex/ui/overlay/achievement_notification.h>
 
 #include "achievements.h"
 #include "aspect_ratio.h"
@@ -111,7 +112,7 @@ public:
       ao2::skip::Attach(window());
       ao2::gfxmenu::Attach(window());
       ao2::menumouse::Attach(window());
-      ao2::menu::Attach(window(), imgui_drawer(),
+      ao2::menu::Attach(window(), imgui_drawer(), immediate_drawer(),
                         static_cast<rex::input::InputSystem *>(runtime()->input_system()), game_data_root());
       if (!window()->IsFullscreen())
       {
@@ -139,6 +140,13 @@ public:
   void OnConfigureFonts(ImFontAtlas *atlas) override
   {
     ao2::menu::ConfigureFonts(atlas);
+  }
+
+  // The unlock notice is the port's (achievements.cpp): the SDK's toast is
+  // drawn by no one with the native renderer.
+  std::unique_ptr<rex::ui::AchievementNotificationDialog> CreateAchievementNotificationDialog() override
+  {
+    return nullptr;
   }
 
   void OnShutdown() override

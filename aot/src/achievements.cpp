@@ -14,6 +14,18 @@
 // The unlocks are each profile's own.
 //
 // The sections group the 41 achievements for the launcher's tab.
+//
+// The unlock notice is the port's own (the SDK's toast is off: with the
+// native renderer nothing draws it): a toast in the notices' overlay layer
+// (debug_menu.h SetToast). A gold medallion with the icon pops in at the
+// bottom of the screen, bursts, unfolds into a card with the name, a shine
+// runs over it, and it folds back. Unlocks that come together queue up.
+// Each toast plays a short soft tone as it shows (ao2_achievement_sound),
+// synthesized here and played with PlaySound beside the game's audio.
+// ao2_achievement_notices off (the launcher's switch): neither.
+//
+// UnlockRandom (debug key, F5): unlocks a random locked achievement, to see
+// the toast; the launcher's Achievements tab resets them.
 #include "achievements.h"
 
 #include <algorithm>
@@ -33,7 +45,34 @@
 #include <rex/system/util/xdbf_utils.h>
 #include <rex/system/xcontent.h>
 
+#include "debug_menu.h"
 #include "game_language.h"
+#include "ui_text.h"
+#include "ui_theme.h"
+
+#include <cmath>
+#include <deque>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <vector>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <mmsystem.h>
+
+#include <imgui.h>
+
+#include <rex/runtime.h>
+#include <rex/ui/immediate_drawer.h>
+#include <rex/ui/overlay/achievement_icon_cache.h>
+
+REXCVAR_DEFINE_BOOL(ao2_achievement_notices, true, "General",
+                    "Show the achievement unlock notice (and its sound); off: achievements still unlock, silently");
+REXCVAR_DEFINE_DOUBLE(ao2_achievement_sound, 0.4, "General",
+                      "Volume of the achievement unlock sound, 0..1; 0 = no sound");
 
 namespace
 {
@@ -246,6 +285,400 @@ namespace
     }
     WriteIfChanged(dir / "catalog.tsv", tsv);
   }
+
+  // --- The unlock toast ---
+
+  constexpr float kLife = 6.2f; // seconds on screen
+  constexpr ImU32 kGold = IM_COL32(236, 192, 96, 255);
+  constexpr ImU32 kGoldLight = IM_COL32(255, 232, 170, 255);
+
+  struct Toast
+  {
+    rex::system::AchievementInfo info;
+    double start = -1.0; // ImGui time it showed; < 0: waiting
+  };
+
+  std::mutex g_toast_mutex;
+  std::deque<Toast> g_toasts; // under g_toast_mutex
+  std::unique_ptr<rex::ui::AchievementIconCache> g_icons; // UI thread
+  rex::ui::ImmediateDrawer *g_icons_drawer = nullptr;
+
+  rex::ui::ImmediateTexture *IconOf(const rex::system::AchievementInfo &info)
+  {
+    rex::ui::ImmediateDrawer *drawer = ao2::menu::NoticeImmediateDrawer();
+    if (!drawer)
+    {
+      return nullptr;
+    }
+    if (!g_icons || g_icons_drawer != drawer)
+    {
+      g_icons = std::make_unique<rex::ui::AchievementIconCache>(drawer, rex::Runtime::instance());
+      g_icons_drawer = drawer;
+    }
+    return g_icons->GetIcon(info);
+  }
+
+  // 0..1 over [from, from + len].
+  float Seg(float t, float from, float len)
+  {
+    return ao2::ui::Clamp01((t - from) / len);
+  }
+
+  float EaseInCubic(float t)
+  {
+    t = ao2::ui::Clamp01(t);
+    return t * t * t;
+  }
+
+  // A band of light across [x0, x1] (bright in the middle, clear at the
+  // edges), its top shifted by `slant`.
+  void Shine(ImDrawList *dl, float x0, float x1, float top, float bottom, float slant, ImU32 col)
+  {
+    const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
+    ImU32 clear = col & ~IM_COL32_A_MASK;
+    const float xs[3] = {x0, (x0 + x1) * 0.5f, x1};
+    const ImU32 cs[3] = {clear, col, clear};
+    dl->PrimReserve(12, 6);
+    auto base = static_cast<ImDrawIdx>(dl->_VtxCurrentIdx);
+    for (int i = 0; i < 3; ++i)
+    {
+      dl->PrimWriteVtx(ImVec2(xs[i] + slant, top), uv, cs[i]);
+      dl->PrimWriteVtx(ImVec2(xs[i], bottom), uv, cs[i]);
+    }
+    for (int i = 0; i < 2; ++i)
+    {
+      auto v = static_cast<ImDrawIdx>(base + i * 2);
+      dl->PrimWriteIdx(v);
+      dl->PrimWriteIdx(static_cast<ImDrawIdx>(v + 2));
+      dl->PrimWriteIdx(static_cast<ImDrawIdx>(v + 3));
+      dl->PrimWriteIdx(v);
+      dl->PrimWriteIdx(static_cast<ImDrawIdx>(v + 3));
+      dl->PrimWriteIdx(static_cast<ImDrawIdx>(v + 1));
+    }
+  }
+
+  // A four-pointed sparkle.
+  void Sparkle(ImDrawList *dl, ImVec2 c, float r, ImU32 col)
+  {
+    float w = r * 0.28f;
+    dl->AddQuadFilled(ImVec2(c.x, c.y - r), ImVec2(c.x + w, c.y), ImVec2(c.x, c.y + r), ImVec2(c.x - w, c.y), col);
+    dl->AddQuadFilled(ImVec2(c.x - r, c.y), ImVec2(c.x, c.y - w), ImVec2(c.x + r, c.y), ImVec2(c.x, c.y + w), col);
+  }
+
+  // --- The unlock sound ---
+  //
+  // Short and soft, in the spirit of a console's unlock notice: a quick
+  // rising pop, then a round tone (E6 over its lower octave) that dies away
+  // in half a second, a little wide, with a small room. A 16-bit stereo WAV
+  // in memory.
+
+  constexpr int kRate = 44100;
+  constexpr double kPi = 3.14159265358979, kTau = 2.0 * kPi;
+
+  // A small room (Schroeder): four damped feedback combs, two allpasses;
+  // `stretch` lengthens the delays (the right channel's, for width).
+  std::vector<double> Room(const std::vector<double> &in, double stretch)
+  {
+    const int n = int(in.size());
+    std::vector<double> wet(n, 0.0);
+    for (double ms : {29.7, 37.1, 41.1, 43.7})
+    {
+      int d = int(ms * stretch * kRate / 1000.0);
+      std::vector<double> buf(d, 0.0);
+      double damp = 0.0;
+      for (int i = 0; i < n; ++i)
+      {
+        double y = buf[i % d];
+        damp = 0.6 * y + 0.4 * damp;
+        buf[i % d] = in[i] + 0.7 * damp;
+        wet[i] += 0.25 * y;
+      }
+    }
+    for (double ms : {5.0, 1.7})
+    {
+      int d = int(ms * stretch * kRate / 1000.0);
+      std::vector<double> buf(d, 0.0);
+      for (int i = 0; i < n; ++i)
+      {
+        double b = buf[i % d];
+        double x = wet[i] + 0.5 * b;
+        buf[i % d] = x;
+        wet[i] = b - 0.5 * x;
+      }
+    }
+    return wet;
+  }
+
+  std::vector<uint8_t> MakeUnlockSound(double volume)
+  {
+    constexpr double kSeconds = 1.0;
+    const int n = int(kRate * kSeconds);
+    std::vector<double> left(n, 0.0), right(n, 0.0);
+    double pop_phase = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+      double t = double(i) / kRate;
+      // The pop: 40 ms, swept up from 380 to 1320 Hz.
+      double sweep = 1.0 - std::exp(-t / 0.012);
+      pop_phase += kTau * (380.0 + 940.0 * sweep) / kRate;
+      double pop = t < 0.05 ? std::sin(pop_phase) * std::sin(kPi * std::min(1.0, t / 0.04)) * 0.45 : 0.0;
+      // The tone from 25 ms: a smooth 10 ms attack, then it dies away.
+      double tt = t - 0.025;
+      double tone_l = 0.0, tone_r = 0.0;
+      if (tt > 0.0)
+      {
+        double attack = std::sin(0.5 * kPi * std::min(1.0, tt / 0.010));
+        double env = attack * attack * std::exp(-tt * 6.5);
+        // E6 with a little of its octave below; each side a hair detuned.
+        for (double cents : {-4.0, 4.0})
+        {
+          double k = std::pow(2.0, cents / 1200.0);
+          double v = std::sin(kTau * 1318.51 * k * tt) + 0.35 * std::sin(kTau * 659.26 * k * tt) +
+                     0.08 * std::exp(-tt * 10.0) * std::sin(kTau * 2637.02 * k * tt);
+          (cents < 0.0 ? tone_l : tone_r) = env * v;
+        }
+      }
+      left[i] = pop + 0.5 * tone_l;
+      right[i] = pop + 0.5 * tone_r;
+    }
+    std::vector<double> wl = Room(left, 1.0), wr = Room(right, 1.07);
+    for (int i = 0; i < n; ++i)
+    {
+      left[i] += 0.18 * wl[i];
+      right[i] += 0.18 * wr[i];
+    }
+
+    double peak = 1e-9;
+    for (int i = 0; i < n; ++i)
+    {
+      peak = std::max({peak, std::abs(left[i]), std::abs(right[i])});
+    }
+    double gain = 0.85 / peak * std::clamp(volume, 0.0, 1.0);
+    int fade = kRate / 5; // the last 200 ms
+    std::vector<uint8_t> wav(44 + size_t(n) * 4);
+    auto put32 = [&](size_t at, uint32_t v) { std::memcpy(&wav[at], &v, 4); };
+    auto put16 = [&](size_t at, uint16_t v) { std::memcpy(&wav[at], &v, 2); };
+    std::memcpy(&wav[0], "RIFF", 4);
+    put32(4, uint32_t(wav.size() - 8));
+    std::memcpy(&wav[8], "WAVEfmt ", 8);
+    put32(16, 16);
+    put16(20, 1); // PCM
+    put16(22, 2); // stereo
+    put32(24, kRate);
+    put32(28, kRate * 4);
+    put16(32, 4);
+    put16(34, 16);
+    std::memcpy(&wav[36], "data", 4);
+    put32(40, uint32_t(n * 4));
+    for (int i = 0; i < n; ++i)
+    {
+      double g = gain * std::min(1.0, double(n - i) / fade);
+      put16(44 + size_t(i) * 4, uint16_t(int16_t(std::clamp(left[i] * g, -1.0, 1.0) * 32767.0)));
+      put16(46 + size_t(i) * 4, uint16_t(int16_t(std::clamp(right[i] * g, -1.0, 1.0) * 32767.0)));
+    }
+    return wav;
+  }
+
+  // UI thread, as a toast shows. Asynchronous; the next one cuts this one.
+  void PlayUnlockSound()
+  {
+    static std::vector<uint8_t> sound;
+    static double sound_volume = -1.0;
+    double volume = REXCVAR_GET(ao2_achievement_sound);
+    if (volume <= 0.0)
+    {
+      return;
+    }
+    if (volume != sound_volume)
+    {
+      PlaySoundW(nullptr, nullptr, 0); // the old buffer is about to go
+      sound = MakeUnlockSound(volume);
+      sound_volume = volume;
+    }
+    PlaySoundW(reinterpret_cast<LPCWSTR>(sound.data()), nullptr, SND_MEMORY | SND_ASYNC | SND_NODEFAULT);
+  }
+
+  // One toast `t` seconds after it showed; false when it is over.
+  bool DrawToast(const Toast &toast, float t)
+  {
+    namespace ui = ao2::ui;
+    using ui::FontKind;
+    if (t >= kLife)
+    {
+      return false;
+    }
+    const auto &info = toast.info;
+    ImDrawList *dl = ImGui::GetForegroundDrawList();
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    float s = ui::Scale();
+    float now = float(ImGui::GetTime());
+
+    // Medallion in, card unfolds, text in ... text out, card folds, medallion out.
+    float pop = ui::EaseOutBack(Seg(t, 0.0f, 0.45f));
+    float unfold = ui::EaseOutCubic(Seg(t, 0.35f, 0.55f)) * (1.0f - EaseInCubic(Seg(t, kLife - 0.75f, 0.45f)));
+    float text_a = Seg(t, 0.65f, 0.35f) * (1.0f - Seg(t, kLife - 0.95f, 0.25f));
+    float out = EaseInCubic(Seg(t, kLife - 0.32f, 0.32f));
+    float a = ui::Clamp01(t / 0.15f) * (1.0f - out);
+
+    const char *caption = ao2::text::Tr("ACHIEVEMENT UNLOCKED");
+    char score[16];
+    std::snprintf(score, sizeof(score), "%u G", info.gamerscore);
+
+    float R = 38.0f * s; // the medallion's radius
+    float h = 2.0f * R + 8.0f * s;
+    float text_w = std::max(ui::TextSize(FontKind::kHeading, info.label.c_str()).x,
+                            ui::CapsSize(FontKind::kLabel, caption).x + 90.0f * s);
+    float full_w = std::clamp(h + text_w + 60.0f * s, 420.0f * s, vp->Size.x * 0.7f);
+    float w = h + (full_w - h) * unfold;
+    float cx = vp->Pos.x + vp->Size.x * 0.5f;
+    float bottom = vp->Pos.y + vp->Size.y * 0.88f + out * 40.0f * s;
+    ImVec2 mn(cx - w * 0.5f, bottom - h);
+    ImVec2 mx(cx + w * 0.5f, bottom);
+    float round = h * 0.5f;
+    ImVec2 c(mn.x + h * 0.5f, mn.y + h * 0.5f); // the medallion's centre
+
+    // The card: a soft shadow, a navy pill, a gold hairline that breathes.
+    if (unfold > 0.0f)
+    {
+      float ca = a * ui::Clamp01(unfold * 3.0f);
+      for (int i = 3; i >= 1; --i)
+      {
+        float g = float(i) * 5.0f * s;
+        dl->AddRectFilled(ImVec2(mn.x - g, mn.y - g + 6.0f * s), ImVec2(mx.x + g, mx.y + g + 6.0f * s),
+                          ui::Fade(IM_COL32(0, 0, 0, 255), 0.09f * ca), round + g);
+      }
+      dl->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.96f * ca), round);
+      float breathe = 0.5f + 0.5f * std::sin(now * 3.0f);
+      dl->AddRect(mn, mx, ui::Fade(kGold, (0.35f + 0.35f * breathe) * ca), round, ImDrawFlags_None, 1.5f * s);
+
+      dl->PushClipRect(mn, mx, true);
+      // A shine runs over it once the card is open, and once more later.
+      for (float at : {0.85f, 3.2f})
+      {
+        float k = Seg(t, at, 0.9f);
+        if (k > 0.0f && k < 1.0f)
+        {
+          float bw = 90.0f * s;
+          float x = mn.x - bw + (w + 2.0f * bw) * ui::EaseOutCubic(k);
+          Shine(dl, x - bw * 0.5f, x + bw * 0.5f, mn.y, mx.y, 30.0f * s, ui::Fade(kGoldLight, 0.22f * ca));
+        }
+      }
+      // The text slides out of the medallion.
+      if (text_a > 0.0f)
+      {
+        float slide = (1.0f - ui::EaseOutCubic(Seg(t, 0.65f, 0.5f))) * 18.0f * s;
+        float tx = mn.x + h + 10.0f * s - slide;
+        float ta = a * text_a;
+        ui::Caps(dl, FontKind::kLabel, ImVec2(tx, mn.y + 16.0f * s), ui::Fade(kGold, ta), caption);
+        ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 38.0f * s), ui::Fade(ui::kText, ta), info.label.c_str());
+        // The gamerscore: a gold pill at the right of the caption line.
+        ImVec2 ss = ui::TextSize(FontKind::kSmall, score);
+        ImVec2 pmx(mx.x - round * 0.6f, mn.y + 16.0f * s + ss.y);
+        ImVec2 pmn(pmx.x - ss.x - 16.0f * s, mn.y + 12.0f * s);
+        float pr = (pmx.y - pmn.y) * 0.5f;
+        dl->AddRectFilled(pmn, pmx, ui::Fade(kGold, 0.16f * ta), pr);
+        dl->AddRect(pmn, pmx, ui::Fade(kGold, 0.6f * ta), pr, ImDrawFlags_None, 1.0f * s);
+        ui::Text(dl, FontKind::kSmall, ImVec2(pmn.x + 8.0f * s, pmn.y + 2.0f * s), ui::Fade(kGoldLight, ta), score);
+      }
+      dl->PopClipRect();
+    }
+
+    // The burst as the medallion lands: a ring spreading out, sparks flying.
+    float burst = Seg(t, 0.25f, 0.9f);
+    if (burst > 0.0f && burst < 1.0f)
+    {
+      float e = ui::EaseOutCubic(burst);
+      dl->AddCircle(c, R * (1.0f + 0.9f * e), ui::Fade(kGoldLight, (1.0f - burst) * 0.8f * a), 48,
+                    (3.0f - 2.0f * burst) * s);
+      std::minstd_rand rng(info.id * 2654435761u + 1);
+      for (int i = 0; i < 10; ++i)
+      {
+        float ang = 6.2831853f * (float(i) + float(rng() % 100) / 100.0f) / 10.0f;
+        float dist = R * (1.05f + (0.7f + float(rng() % 60) / 100.0f) * e);
+        ImVec2 p(c.x + std::cos(ang) * dist, c.y + std::sin(ang) * dist);
+        Sparkle(dl, p, (4.0f + float(rng() % 4)) * s * (1.0f - burst * 0.6f),
+                ui::Fade(i % 2 ? kGold : kGoldLight, (1.0f - burst) * a));
+      }
+    }
+
+    // The medallion: a pulsing glow, the gold rim, the icon inside, two arcs turning.
+    float r = R * pop * (1.0f - out);
+    if (r > 0.5f)
+    {
+      float glow = 0.5f + 0.5f * std::sin(now * 4.0f);
+      for (int i = 3; i >= 1; --i)
+      {
+        dl->AddCircleFilled(c, r + float(i) * 4.0f * s, ui::Fade(kGold, (0.05f + 0.04f * glow) * a), 48);
+      }
+      dl->AddCircleFilled(c, r, ui::Fade(ui::Mix(ui::kPanel, kGold, 0.25f), a), 48);
+      float ir = (r - 5.0f * s) * 0.72f;
+      if (rex::ui::ImmediateTexture *icon = IconOf(info))
+      {
+        dl->AddImageRounded(reinterpret_cast<ImTextureID>(icon), ImVec2(c.x - ir, c.y - ir), ImVec2(c.x + ir, c.y + ir),
+                            ImVec2(0, 0), ImVec2(1, 1), ui::Fade(ui::kWhite, a), ir * 0.25f);
+      }
+      else
+      {
+        ui::Check(dl, c, ir * 1.2f, 4.0f * s, ui::Fade(kGoldLight, a));
+      }
+      dl->AddCircle(c, r, ui::Fade(kGold, a), 48, 3.0f * s);
+      dl->AddCircle(c, r - 5.0f * s, ui::Fade(kGoldLight, 0.35f * a), 48, 1.0f * s);
+      float turn = now * 2.2f;
+      for (float off : {0.0f, 3.14159f})
+      {
+        dl->PathArcTo(c, r + 4.0f * s, turn + off, turn + off + 0.9f, 16);
+        dl->PathStroke(ui::Fade(kGoldLight, 0.8f * a), ImDrawFlags_None, 2.0f * s);
+      }
+    }
+    return true;
+  }
+
+  // The toast slot (UI thread, in an ImGui frame): the queue's first toast,
+  // then the next; false once the queue is empty.
+  bool DrawToasts()
+  {
+    Toast toast;
+    double now = ImGui::GetTime();
+    bool ring = false;
+    {
+      std::lock_guard lock(g_toast_mutex);
+      if (g_toasts.empty())
+      {
+        return false;
+      }
+      if (g_toasts.front().start < 0.0)
+      {
+        g_toasts.front().start = now;
+        ring = true;
+      }
+      toast = g_toasts.front();
+    }
+    if (ring)
+    {
+      PlayUnlockSound();
+    }
+    if (DrawToast(toast, float(now - toast.start)))
+    {
+      return true;
+    }
+    std::lock_guard lock(g_toast_mutex);
+    g_toasts.pop_front();
+    return !g_toasts.empty();
+  }
+
+  // Any thread (the achievement manager's notification).
+  void PushToast(const rex::system::AchievementInfo &info)
+  {
+    if (!REXCVAR_GET(ao2_achievement_notices))
+    {
+      return;
+    }
+    {
+      std::lock_guard lock(g_toast_mutex);
+      g_toasts.push_back({info});
+    }
+    ao2::menu::SetToast(DrawToasts);
+  }
 } // namespace
 
 namespace ao2::ach
@@ -280,10 +713,44 @@ namespace ao2::ach
     }
     size_t count = list.size();
     ks->achievements().ReplaceAchievements(std::move(list));
+    static bool registered = false;
+    if (!registered)
+    {
+      registered = true;
+      ks->achievements().RegisterNotificationCallback(
+          [](const rex::system::AchievementEvent &e) { PushToast(e.achievement); });
+    }
     REXLOG_INFO("achievements: {} in '{}'", count, code);
     if (!cache_root.empty())
     {
       Export(cache_root, db);
     }
+  }
+
+  void UnlockRandom()
+  {
+    auto *ks = rex::system::kernel_state();
+    if (!ks)
+    {
+      return;
+    }
+    auto &am = ks->achievements();
+    std::vector<rex::system::AchievementInfo> locked;
+    for (auto &a : am.ListAchievements())
+    {
+      if (!am.IsUnlocked(a.id))
+      {
+        locked.push_back(std::move(a));
+      }
+    }
+    if (locked.empty())
+    {
+      REXLOG_INFO("achievements: all unlocked (the launcher resets them)");
+      return;
+    }
+    static std::mt19937 rng{std::random_device{}()};
+    const auto &a = locked[std::uniform_int_distribution<size_t>(0, locked.size() - 1)(rng)];
+    am.UnlockAchievement(a.id, rex::system::AchievementNotification::kShow);
+    REXLOG_INFO("achievements: test unlock {} '{}'", a.id, a.label);
   }
 } // namespace ao2::ach

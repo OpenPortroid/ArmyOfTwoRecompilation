@@ -36,6 +36,9 @@ namespace
 
   // clang-format off
   const Row kRows[] = {
+      // --- Achievements: the unlock toast ---
+      {"ACHIEVEMENT UNLOCKED", "ДОСТИЖЕНИЕ ПОЛУЧЕНО", "ERFOLG FREIGESCHALTET", "SUCCÈS DÉBLOQUÉ", "LOGRO DESBLOQUEADO",
+       "OBIETTIVO SBLOCCATO"},
       // --- Invites: notices ---
       {"INCOMING INVITE", "ВХОДЯЩЕЕ ПРИГЛАШЕНИЕ", "EINLADUNG", "INVITATION REÇUE", "INVITATION RECIBIDA", "INVITO RICEVUTO"},
       {"invites you to a private co-op game", "зовёт вас в приватную кооперативную игру", "lädt dich zu einem privaten Koop-Spiel ein",
