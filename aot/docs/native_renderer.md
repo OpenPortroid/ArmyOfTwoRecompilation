@@ -217,3 +217,31 @@ sampling 111D0000 into 544) -> shadow depth (below) and its projection, transluc
   many host texels across (4096: 5.5x, 4224 texels), only as tall as it is resolved. Depth-only draws into it take that
   scale; a draw with color targets on it un-learns it. The projection samples the resolve at guest coordinates: the
   same PCF footprint over finer depth texels.
+
+## Frame rate at 1440p (2026-10-20)
+Measured on a Ryzen 7 7840H + RTX 4060 Laptop, scale 2 (2304x1440 in a 2560x1600 window), SSAO, 240 FPS target,
+decoupled at 60 steps/s; Iraq 05_00 walked by the autopilot from the start up the hill into the first fight
+(two runs each): 148 -> 182 FPS on average, 155 -> 188 in the fight; GPU 5.9 -> 4.7 ms per frame.
+- Alpha test: every translated pixel shader ended in the alpha test's `discard` (switched by a system constant), and a
+  discard anywhere keeps the GPU from writing depth before the shader runs: the opaque passes lost early depth
+  rejection (the terrain shader alone 0.5 ms). It is a shader modification now (`HlslModification::alpha_test`, set
+  when RB_COLORCONTROL enables it with another function than always): `draw` 3.8 -> 3.2 ms.
+- Present: the display gamma ramp was a constant buffer indexed per pixel; constant reads that differ within a wave
+  are serialized (0.42 ms for the 2560x1600 blit). A structured buffer (root SRV) instead: 0.06 ms.
+- SSAO taps read a half resolution copy of the view depth (`ps_depth_half`, the pixel the occlusion is computed for)
+  instead of scattered reads of the full one: `post` 0.78 -> 0.60 ms.
+- Texture fetches take the host size from `xe_tex_size` (system constants) instead of GetDimensions (no measurable
+  change on this GPU; GetDimensions is a texture instruction of its own on some).
+- GPU thread (5.6 -> 5.1 ms per frame, ~12 us per draw): per-draw phase timers read the TSC (13
+  QueryPerformanceCounter calls per draw were ~5%), the maps keyed by addresses and hashes use `FastHash` (MSVC's
+  std::hash is byte-wise FNV-1a), `TilesInside` takes tile rectangles from rows and columns, `Mem()` is cached.
+- Profile-guided optimization (`pgo/ao2.profdata`, build.cmd): game thread tick and rendering thread 6-11% less CPU
+  time per frame.
+- Russian fonts are looked for by time (1 s, then 10 s) instead of every 60 frames (a walk over every object).
+- What is left: in fights the world tick takes 6-12 ms per step on the game thread, and the game's own render fence
+  allows one frame in flight, so the rendering thread and the GPU idle through the rest of a long tick. Two frames in
+  flight (the fence wait's count) crashed the rendering thread while a level loaded (NULL+1 in sub_8262BD90):
+  UE3 relies on one frame of lag. `ao2_sim_hz=30` halves the ticks (heavy part of 05_00: ~120 -> ~155 FPS) but
+  particles and material time are not interpolated yet.
+- Tools: `tools/sampler.py <pid> "Native GPU commands" 15 1000 --lines`, the tick profile
+  (`--ao2_tick_profile_ms`), `gpu ms/frame` lines and traced frames (`gpu_draws.txt`).

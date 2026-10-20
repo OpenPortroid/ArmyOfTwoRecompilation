@@ -28,6 +28,7 @@ namespace ao2::gpu
     uint32_t bool_loop[40];       // 96: 8 bool dwords, 32 loop constants
     uint32_t tex_info[16][4];     // 256: x = per-component mode, y = exp scale (float bits)
     uint32_t vfetch[192];         // 512: 96 vertex fetch constants
+    float tex_size[16][4];        // 1280: the bound host resource's width, height, depth (what GetDimensions gives)
   };
-  static_assert(sizeof(XeSystemConstants) == 1280);
+  static_assert(sizeof(XeSystemConstants) == 1536);
 } // namespace ao2::gpu
