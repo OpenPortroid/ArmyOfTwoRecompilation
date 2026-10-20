@@ -2,7 +2,7 @@
 # route_bench.sh <exe> <label> [extra args...]
 # Iraq 05_00: autopilot up the hill into the first fight, 40 s of fighting at the end.
 # Averages decouple.log fps / engine tick and native_gpu.log GPU ms over the run.
-exe="$1"; label="$2"; shift 2
+exe=$(realpath "$1"); label="$2"; shift 2
 R=$(cd "$(dirname "$0")/.." && pwd)
 S=$R/tools
 # BENCH_DIR: the game folder (logs, cwd); BENCH_LEGACY=1 leaves out the quality flags
@@ -23,6 +23,7 @@ wexe=$(cygpath -w "$exe")
 powershell -NoProfile -Command "\$p = Start-Process -FilePath '$wexe' -ArgumentList '${args[*]}' -WorkingDirectory '$(cygpath -w $dir)' -PassThru; \$p.Id" > /tmp/bench_pid.txt
 pid=$(tr -d '\r' < /tmp/bench_pid.txt)
 echo "$label pid $pid"
+[ -n "$pid" ] || { echo "the game did not start"; exit 1; }
 until grep -E "^  [0-9.]+ fps" native_gpu.log 2>/dev/null | tail -2 | awk '{s+=$1} END{exit !(NR==2 && s/2>45)}'; do
   tasklist | grep -q " $pid " || { echo "game exited"; exit 1; }
   sleep 3
