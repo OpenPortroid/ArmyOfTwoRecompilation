@@ -47,6 +47,9 @@ namespace AO2Launcher
         public Action Click;
         // Info
         public Func<string> Text;
+        // Info: a progress bar under the text, 0..1, with a counter at the right (null: none)
+        public Func<float> Frac;
+        public Func<string> Count;
         // Bind: a gamepad button (Values: the physical controls) instead of keys
         public bool Pad;
         // Choice: Enter or a click opens the list of all the choices
@@ -105,6 +108,7 @@ namespace AO2Launcher
         const float ColX = 280, ColW = 640, RowsTop = 132, DescTop = 500;
         const float RowH = 34;
         const float ValueW = 186;
+        const float InfoCountW = 110, InfoBarH = 14; // an Info row's counter and bar (Row.Count, Row.Frac)
 
         // Light text on the cover's deep navy (Skin.cs); the accent is its paper grey.
         static readonly Color Amber = Color.FromArgb(224, 220, 212);
@@ -184,6 +188,12 @@ namespace AO2Launcher
             {
                 S.Reload();
                 RefreshProfiles();
+                // The rows were made again (the achievements): without a layout they have no place yet
+                // and stay unseen until the wheel lays them out.
+                if (ClientSize.Width > 0 && WindowState != FormWindowState.Minimized)
+                {
+                    LayoutRows(false);
+                }
                 Invalidate();
             };
 
@@ -579,7 +589,11 @@ namespace AO2Launcher
             {
                 float th = Math.Max(24, body.Height * notesFit / notesLines);
                 float ty = body.Y + (body.Height - th) * notesScroll / Math.Max(1, notesLines - notesFit);
-                Fill(g, Color.FromArgb(70, 255, 255, 255), new RectangleF(box.Right - 22, ty, 3, th));
+                DrawGrabBar(g, new RectangleF(box.Right - 22, body.Y, 3, body.Height), ty, th, 20, 90,
+                    f =>
+                    {
+                        notesScroll = Math.Max(0, Math.Min(notesLines - notesFit, (int)Math.Round(f * (notesLines - notesFit))));
+                    });
             }
 
             var close = new RectangleF(box.X + (box.Width - 180) / 2, box.Bottom - 64, 180, 42);
@@ -1433,8 +1447,8 @@ namespace AO2Launcher
                     Row r = rows[i];
                     if (r.Kind == RowKind.Info)
                     {
-                        SizeF sz = g.MeasureString(r.Text(), fSmall, (int)(ColW - 36));
-                        r.H = sz.Height + 16;
+                        SizeF sz = g.MeasureString(r.Text(), fSmall, (int)(ColW - 36 - (r.Count != null ? InfoCountW : 0)));
+                        r.H = sz.Height + 16 + (r.Frac != null ? InfoBarH : 0);
                     }
                     else
                     {
@@ -2093,6 +2107,11 @@ namespace AO2Launcher
                 return;
             }
             PointF p = Logical(e.Location);
+            if (sbDragging)
+            {
+                SbMove(p);
+                return;
+            }
             if (dragging != null)
             {
                 dragging.Drag(p.X);
@@ -2101,7 +2120,7 @@ namespace AO2Launcher
             Hot h = HitTest(p);
             string old = hover == null ? null : hover.Id;
             hover = h;
-            Cursor = h != null && (h.Click != null || h.Drag != null) ? Cursors.Hand : Cursors.Default;
+            Cursor = SbHit(p) || (h != null && (h.Click != null || h.Drag != null)) ? Cursors.Hand : Cursors.Default;
             // Windows also sends mouse moves without a move (after a repaint, a window shown): only a
             // real move hands the highlight to the mouse, so keyboard focus is not lost to them.
             bool moved = e.Location != lastMouse;
@@ -2182,6 +2201,11 @@ namespace AO2Launcher
                 return;
             }
             PointF p = Logical(e.Location);
+            if (SbDown(p))
+            {
+                ActiveControl = null;
+                return;
+            }
             Hot h = HitTest(p);
             SelectFromHot(h);
             if (h != null && h.Row >= 0)
@@ -2220,6 +2244,11 @@ namespace AO2Launcher
             {
                 EndResize();
                 return;
+            }
+            if (sbDragging)
+            {
+                sbDragging = false;
+                Invalidate();
             }
             if (pressed != null)
             {
@@ -2407,6 +2436,7 @@ namespace AO2Launcher
                 return;
             }
             hots.Clear();
+            sbSet = null;
 
             if (ClientSize.Width > 0 && !sizing)
             {
@@ -2446,6 +2476,7 @@ namespace AO2Launcher
                 if (PromptShown)
                 {
                     hots.Clear();
+                    sbSet = null;
                     DrawPrompt(g);
                 }
                 else if (NotesShown)
@@ -2621,18 +2652,13 @@ namespace AO2Launcher
             AddHot(later, "upd_later", ClosePrompt);
         }
 
-        float[] tabSlots;
-
-        // Each tab's width: its longest name in any language, so the tabs stay put when the language changes.
+        // Each tab's slot: its name in the current language plus one gap, the same for all, spread over the
+        // whole bar, so the space between the names is equal.
         float[] TabSlots(Graphics g)
         {
-            if (tabSlots == null)
-            {
-                float[] widths = tabNames.Select(n => L.All(n).Max(s => CapsWidth(g, s, fTab, 1.8f))).ToArray();
-                float pad = Math.Min(36, Math.Max(12, (W - 40 - widths.Sum()) / widths.Length));
-                tabSlots = widths.Select(w => w + pad).ToArray();
-            }
-            return tabSlots;
+            float[] widths = tabNames.Select(n => CapsWidth(g, L.T(n), fTab, 1.8f)).ToArray();
+            float gap = Math.Max(12, (W - 40 - widths.Sum()) / widths.Length);
+            return widths.Select(w => w + gap).ToArray();
         }
 
         void DrawSettings(Graphics g)
@@ -2691,7 +2717,23 @@ namespace AO2Launcher
             var rr = new RectangleF(ColX, r.Y, ColW, r.H);
             if (r.Kind == RowKind.Info)
             {
-                DrawText(g, r.Text(), fSmall, TextDim, new RectangleF(ColX + 16, r.Y + 8, ColW - 32, r.H - 8), StringFormat.GenericDefault);
+                float countW = r.Count != null ? InfoCountW : 0;
+                DrawText(g, r.Text(), fSmall, TextDim, new RectangleF(ColX + 16, r.Y + 8, ColW - 32 - countW, r.H - 8), StringFormat.GenericDefault);
+                if (r.Count != null)
+                {
+                    var cfmt = new StringFormat { Alignment = StringAlignment.Far, FormatFlags = StringFormatFlags.NoWrap };
+                    DrawText(g, r.Count(), fSmall, TextLight, new RectangleF(ColX + ColW - 16 - countW, r.Y + 8, countW, r.H - 8), cfmt);
+                }
+                if (r.Frac != null)
+                {
+                    float f = Math.Max(0, Math.Min(1, r.Frac()));
+                    var bar = new RectangleF(ColX + 16, r.Y + r.H - InfoBarH + 2, ColW - 32, 6);
+                    Fill(g, Color.FromArgb(40, 255, 255, 255), bar);
+                    if (f > 0)
+                    {
+                        Fill(g, f >= 1 ? Good : Paper, new RectangleF(bar.X, bar.Y, bar.Width * f, bar.Height));
+                    }
+                }
                 return;
             }
             bool enabled = r.Enabled();

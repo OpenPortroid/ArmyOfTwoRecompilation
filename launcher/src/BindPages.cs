@@ -444,10 +444,66 @@ namespace AO2Launcher
                 return;
             }
             float x = ColX + ColW + 12, top = RowsTop, h = RowsView;
-            Fill(g, Color.FromArgb(30, 255, 255, 255), new RectangleF(x, top, 3, h));
             float th = Math.Max(24, h * h / (h + maxScroll));
             float ty = top + (h - th) * scroll / maxScroll;
-            Fill(g, Color.FromArgb(150, Paper), new RectangleF(x, ty, 3, th));
+            DrawGrabBar(g, new RectangleF(x, top, 3, h), ty, th, 30, 150, f =>
+            {
+                float old = scroll;
+                scroll = Math.Max(0, Math.Min(maxScroll, (float)Math.Round(f * maxScroll / RowH) * RowH));
+                if (scroll != old)
+                {
+                    LayoutRows(false);
+                }
+            });
+        }
+
+        // The scroll bar that can be taken with the mouse: the one drawn last (Settings or the update notes).
+        RectangleF sbTrack;
+        float sbThumbY, sbThumbH, sbGrab;
+        Action<float> sbSet; // 0..1 along the track -> scroll position; null: no bar shown
+        bool sbDragging;
+
+        // Draws a track and its thumb and makes them grabbable; `set` gets the wanted position 0..1.
+        void DrawGrabBar(Graphics g, RectangleF track, float thumbY, float thumbH, int trackAlpha, int thumbAlpha, Action<float> set)
+        {
+            bool live = sbDragging || SbHit(Logical(PointToClient(Cursor.Position)));
+            Fill(g, Color.FromArgb(trackAlpha, 255, 255, 255), track);
+            Fill(g, live ? PaperHi : Color.FromArgb(thumbAlpha, Paper), new RectangleF(track.X, thumbY, track.Width, thumbH));
+            sbTrack = track;
+            sbThumbY = thumbY;
+            sbThumbH = thumbH;
+            sbSet = set;
+        }
+
+        // A wide strip around the thin bar, so it is easy to hit.
+        bool SbHit(PointF p)
+        {
+            return sbSet != null && dropRow == null && confirm == null &&
+                   new RectangleF(sbTrack.X - 10, sbTrack.Y, sbTrack.Width + 20, sbTrack.Height).Contains(p);
+        }
+
+        bool SbDown(PointF p)
+        {
+            if (!SbHit(p))
+            {
+                return false;
+            }
+            // On the thumb: keep the point that was grabbed; on the track: the thumb centres there.
+            sbGrab = p.Y >= sbThumbY && p.Y <= sbThumbY + sbThumbH ? p.Y - sbThumbY : sbThumbH / 2;
+            sbDragging = true;
+            SbMove(p);
+            return true;
+        }
+
+        void SbMove(PointF p)
+        {
+            float range = sbTrack.Height - sbThumbH;
+            if (range <= 0 || sbSet == null)
+            {
+                return;
+            }
+            sbSet(Math.Max(0, Math.Min(1, (p.Y - sbGrab - sbTrack.Y) / range)));
+            Invalidate();
         }
 
         // ------------------------------------------------------------------

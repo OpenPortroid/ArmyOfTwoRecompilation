@@ -259,7 +259,9 @@ namespace AO2Launcher
             achievementRows.Add(new Row
             {
                 Kind = RowKind.Info,
-                Text = () => L.F("Profile {0}: {1} of {2} unlocked, {3} of {4} G", profile, got, all.Count, score, max)
+                Text = () => L.F("Profile {0}: {1} of {2} unlocked, {3} of {4} G", profile, got, all.Count, score, max),
+                Frac = () => max > 0 ? (float)score / max : 0,
+                Count = () => score + " / " + max + " G"
             });
             achievementRows.Add(new Row
             {
@@ -276,7 +278,9 @@ namespace AO2Launcher
                 achievementRows.Add(new Row
                 {
                     Kind = RowKind.Info,
-                    Text = () => name.ToUpper(CultureInfo.CurrentCulture) + "   " + sGot + " / " + sCount
+                    Text = () => name.ToUpper(CultureInfo.CurrentCulture),
+                    Frac = () => sCount > 0 ? (float)sGot / sCount : 0,
+                    Count = () => sGot + " / " + sCount
                 });
                 foreach (Achievements.Entry e in section)
                 {
