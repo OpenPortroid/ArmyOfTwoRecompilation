@@ -41,6 +41,20 @@ namespace AO2Launcher
             return row[lang];
         }
 
+        // `en` and every translation of it (to lay out text the same in every language).
+        public static IEnumerable<string> All(string en)
+        {
+            yield return en;
+            string[] row;
+            if (en != null && Table.TryGetValue(en, out row))
+            {
+                foreach (string s in row)
+                {
+                    yield return s;
+                }
+            }
+        }
+
         public static string F(string en, params object[] args)
         {
             return string.Format(T(en), args);
