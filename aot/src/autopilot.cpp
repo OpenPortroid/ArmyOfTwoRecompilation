@@ -20,6 +20,18 @@
 // The aimbot shoots enemies in sight while the run goes on; in single player
 // it sets the look rotation and ao2_autopilot_infinite_ammo keeps the weapon
 // full, online its turn is lockstep input (mouse_aim.h TurnTowards).
+//
+// Vehicles (the hovercraft on the river in China): on foot, an empty boat
+// (AO2HoverVehicle / AO2BoatVehicle, not hidden, no driver) within
+// ao2_autopilot_board_range is walked to and boarded with A. At the wheel
+// (the pawn is an AO2Vehicle) the left stick steers by the vehicle's own
+// heading, RT is the gas (with ao2_autopilot_drive_corner less in sharp
+// turns), the target is the average of ao2_autopilot_drive_points points over
+// the stretch of route the vehicle covers in
+// ao2_autopilot_drive_lookahead_time; stuck, it backs up (LT) with the wheel
+// the other way. No aimbot, Y or A there (A would get out). Where the level
+// shows a dock (a green boat outline) the boat is steered there and B gets
+// out; at the end of a route with no dock and no new route, B too.
 // Log: autopilot.log.
 #include "autopilot.h"
 
@@ -60,6 +72,35 @@ REXCVAR_DEFINE_DOUBLE(ao2_autopilot_aim_range, 2500.0, "Debug", "Autopilot aimbo
 REXCVAR_DEFINE_DOUBLE(ao2_autopilot_aim_rate, 540.0, "Debug", "Autopilot aimbot: fastest turn (degrees per second)");
 REXCVAR_DEFINE_DOUBLE(ao2_autopilot_turn, 1.5, "Debug",
                       "Autopilot: right stick per radian of view error (0 = the view is not turned)");
+REXCVAR_DEFINE_BOOL(ao2_autopilot_drive, true, "Debug",
+                    "Autopilot: board an empty boat (hovercraft) near the player and drive it along the route");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_board_range, 1500.0, "Debug",
+                      "Autopilot: farthest empty boat that is walked to and boarded (world units)");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_lookahead, 866.0, "Debug",
+                      "Autopilot at the wheel: least distance along the route it looks ahead (world units)");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_lookahead_time, 1.23, "Debug",
+                      "Autopilot at the wheel: it looks ahead as far as the vehicle goes in this many seconds "
+                      "(at least ao2_autopilot_drive_lookahead) and steers to the average of ao2_autopilot_drive_points points "
+                      "over that stretch of the route");
+REXCVAR_DEFINE_INT32(ao2_autopilot_drive_points, 1, "Debug",
+                     "Autopilot at the wheel: how many points over the look-ahead stretch are averaged into the target");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_corner, 0.0, "Debug",
+                      "Autopilot at the wheel: gas off before bends - per radian the route turns over the next "
+                      "ao2_autopilot_drive_corner_time seconds (0 = off)");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_corner_time, 2.0, "Debug",
+                      "Autopilot at the wheel: how far ahead (seconds at the current speed) bends slow it down");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_min_gas, 0.49, "Debug", "Autopilot at the wheel: least gas while moving on");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_slip, 0.0, "Debug",
+                      "Autopilot at the wheel: 0 = steer by where the vehicle points, 1 = by where it moves (drift)");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_predict, 0.59, "Debug",
+                      "Autopilot at the wheel: steer from where the vehicle will be in this many seconds at its "
+                      "current velocity (its momentum), not from where it is");
+REXCVAR_DEFINE_BOOL(ao2_autopilot_drive_telemetry, false, "Debug",
+                    "Autopilot at the wheel: write drive_telemetry.csv (30 Hz: time, position, heading, velocity, "
+                    "inputs, route segment) for tools/boat_model.py");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_steer, 3.19, "Debug",
+                      "Autopilot at the wheel: left stick per radian of heading error");
+REXCVAR_DEFINE_DOUBLE(ao2_autopilot_gas, 1.0, "Debug", "Autopilot at the wheel: most gas (RT), 0..1");
 
 namespace
 {
@@ -69,6 +110,7 @@ namespace
   constexpr uint32_t kControllerPawn = 452;
   constexpr uint32_t kActorLocation = 228;
   constexpr uint32_t kActorYaw = 244; // Rotation (pitch, yaw, roll) at +240
+  constexpr uint32_t kActorVelocity = 252;
   constexpr uint32_t kMoviePlayer = 0x831E6E64;  // full-screen movie player (+88 playing), as cutscene_skip.cpp
   constexpr uint32_t kCinematicMode = 0x00020000; // PlayerController +808
   constexpr uint16_t kButtonY = 0x8000;
@@ -198,6 +240,8 @@ namespace
     kIsAIBase = 2,
     kIsPartner = 4,
     kIsCharacter = 8,
+    kIsVehicle = 16, // AO2Vehicle: the pawn of whoever drives it
+    kIsBoat = 32,    // AO2HoverVehicle / AO2BoatVehicle
   };
 
   std::vector<uint32_t> g_enemies; // pawns of the last scan
@@ -238,7 +282,8 @@ namespace
     {
       std::string n = NameOf(base, c);
       flags |= n == "Pawn" ? kIsPawn : n == "AO2AIBaseNative" ? kIsAIBase : n == "AO2Partner" ? kIsPartner
-               : n == "AO2CharacterNative" ? kIsCharacter : 0;
+               : n == "AO2CharacterNative" ? kIsCharacter : n == "AO2Vehicle" ? kIsVehicle
+               : n == "AO2HoverVehicle" || n == "AO2BoatVehicle" ? kIsBoat : 0;
     }
     cache.emplace(cls, flags);
     return flags;
@@ -324,6 +369,119 @@ namespace
       {
         g_enemies.push_back(o);
       }
+    }
+  }
+
+  // ---- Boats: the nearest empty one in reach, rescanned once a second.
+  constexpr uint32_t kActorFlags = 112;       // Actor.bHidden is bit 0x40000000 of this word
+  constexpr uint32_t kHiddenMask = 0x40000000;
+  constexpr uint32_t kVehicleDriver = 992;    // Vehicle.Driver
+  constexpr float kBoardDistance = 250.0f;    // A boards from this close
+  clock::time_point g_next_boat_scan, g_next_board_press;
+  uint32_t g_boat = 0;
+  uint32_t g_left_boat = 0; // got out of it at the end of a route: not boarded again
+
+  bool EmptyBoat(const uint8_t *base, uint32_t o)
+  {
+    return (ClassFlags(base, LoadU32(base, o + 52)) & kIsBoat) && !(LoadU32(base, o + kActorFlags) & kHiddenMask) &&
+           !LoadU32(base, o + kVehicleDriver) && NameOf(base, o).rfind("Default__", 0) != 0;
+  }
+
+  uint32_t BoatNear(const uint8_t *base, float x, float y, clock::time_point now)
+  {
+    float range = float(REXCVAR_GET(ao2_autopilot_board_range));
+    if (now >= g_next_boat_scan)
+    {
+      g_next_boat_scan = now + std::chrono::seconds(1);
+      uint32_t best = 0;
+      float best_d2 = range * range;
+      uint32_t objects = LoadU32(base, kObjects), count = LoadU32(base, kObjects + 4);
+      for (uint32_t i = 0; objects && i < count; ++i)
+      {
+        uint32_t o = LoadU32(base, objects + i * 4);
+        if (!o || o == g_left_boat || !EmptyBoat(base, o))
+        {
+          continue;
+        }
+        float dx = LoadF32(base, o + kActorLocation) - x, dy = LoadF32(base, o + kActorLocation + 4) - y;
+        if (dx * dx + dy * dy < best_d2)
+        {
+          best_d2 = dx * dx + dy * dy, best = o;
+        }
+      }
+      if (best != g_boat && best)
+      {
+        Logf("board: %s at %.0f\n", NameOf(base, best).c_str(), std::sqrt(best_d2));
+      }
+      g_boat = best;
+    }
+    return g_boat && EmptyBoat(base, g_boat) ? g_boat : 0;
+  }
+
+  // At the wheel: backing up after getting stuck, until this time.
+  clock::time_point g_reverse_until;
+  float g_reverse_steer = 0;
+  // At the end of a route at the wheel: B (get out - the boat docks itself)
+  // from this time on, unless a new route comes first.
+  clock::time_point g_exit_from = clock::time_point::max(), g_next_exit_press;
+  constexpr float kArriveDrive = 600.0f;      // the end counts as reached this close at the wheel
+  constexpr float kArriveDriveStuck = 1600.0f; // ... or stuck this close (the end is on the bank)
+  constexpr auto kExitWait = std::chrono::seconds(6);
+  constexpr uint16_t kButtonB = 0x2000;
+
+  // Docks: the green boat outline the level shows where the boat is to be
+  // left (StaticMeshComponent of the mesh Hovercraft_GPS, material
+  // GPS_green_maker). A shown one away from where the boat was boarded,
+  // within kDockRange, is steered to (the route's yellow line ends on the
+  // bank); kDockArrive from it B gets out.
+  constexpr uint32_t kComponentFlags = 448;        // PrimitiveComponent: HiddenGame is bit 0x20000000
+  constexpr uint32_t kHiddenGameMask = 0x20000000;
+  constexpr uint32_t kComponentOwner = 76;
+  constexpr uint32_t kLocalToWorldOrigin = 112 + 48; // PrimitiveComponent.LocalToWorld, 4th row
+  constexpr uint32_t kStaticMesh = 680;
+  constexpr float kDockRange = 8000.0f, kDockArrive = 300.0f, kDockAway = 2000.0f;
+  struct Dock
+  {
+    float x, y;
+  };
+  std::vector<Dock> g_docks; // shown ones
+  clock::time_point g_next_dock_scan;
+  uint32_t g_driven = 0; // the vehicle driven, and where it was boarded
+  float g_board_x = 0, g_board_y = 0;
+  // This drive's numbers (logged at the dock): time, distance off the route
+  // (sampled every 100 ms), times it backed up.
+  clock::time_point g_drive_start, g_next_off_sample, g_next_telemetry;
+  double g_off_sum = 0;
+  float g_off_max = 0;
+  int g_off_n = 0, g_backups = 0;
+
+  void ScanDocks(const uint8_t *base, clock::time_point now)
+  {
+    if (now < g_next_dock_scan)
+    {
+      return;
+    }
+    g_next_dock_scan = now + std::chrono::seconds(1);
+    g_docks.clear();
+    uint32_t objects = LoadU32(base, kObjects), count = LoadU32(base, kObjects + 4);
+    for (uint32_t i = 0; objects && i < count; ++i)
+    {
+      uint32_t o = LoadU32(base, objects + i * 4);
+      if (!o || NameOf(base, LoadU32(base, o + 52)) != "StaticMeshComponent")
+      {
+        continue;
+      }
+      uint32_t mesh = LoadU32(base, o + kStaticMesh);
+      if (!mesh || NameOf(base, mesh) != "Hovercraft_GPS" || (LoadU32(base, o + kComponentFlags) & kHiddenGameMask))
+      {
+        continue;
+      }
+      uint32_t owner = LoadU32(base, o + kComponentOwner);
+      if (owner && (LoadU32(base, owner + kActorFlags) & kHiddenMask))
+      {
+        continue;
+      }
+      g_docks.push_back({LoadF32(base, o + kLocalToWorldOrigin), LoadF32(base, o + kLocalToWorldOrigin + 4)});
     }
   }
 
@@ -603,6 +761,269 @@ namespace
     }
     return best;
   }
+
+  // Where (x, y) is on the route (g_seg: ahead of the last segment, or
+  // anywhere when far off) and the point `ahead` further along it. False at
+  // the end of the route.
+  bool RouteTarget(float x, float y, float ahead, float &tx, float &ty, float &to_end, float &d2)
+  {
+    size_t segments = g_route.size() - 1;
+    float t = 0;
+    d2 = INFINITY;
+    if (g_seg != SIZE_MAX)
+    {
+      // Ahead only up to kSearchAhead along the route: a route that comes back
+      // past its start (a loop) must not count as done at once.
+      size_t to = g_seg + 1;
+      for (float along = 0; to < segments && along < kSearchAhead; ++to)
+      {
+        along += std::hypot(g_route[to].x - g_route[to - 1].x, g_route[to].y - g_route[to - 1].y);
+      }
+      size_t seg = Nearest(g_seg, std::min(segments, to), x, y, t, d2);
+      if (d2 < kLost * kLost)
+      {
+        g_seg = seg;
+      }
+    }
+    if (g_seg == SIZE_MAX || d2 >= kLost * kLost)
+    {
+      g_seg = Nearest(0, segments, x, y, t, d2);
+    }
+    const Point &last = g_route.back();
+    to_end = std::hypot(last.x - x, last.y - y);
+    if (g_seg == segments - 1 && to_end < kArrive)
+    {
+      return false;
+    }
+    size_t i = g_seg;
+    tx = g_route[i].x + (g_route[i + 1].x - g_route[i].x) * t;
+    ty = g_route[i].y + (g_route[i + 1].y - g_route[i].y) * t;
+    while (ahead > 0)
+    {
+      float sx = g_route[i + 1].x - tx, sy = g_route[i + 1].y - ty;
+      float len = std::hypot(sx, sy);
+      if (len >= ahead)
+      {
+        tx += sx * ahead / len, ty += sy * ahead / len;
+        break;
+      }
+      ahead -= len;
+      tx = g_route[i + 1].x, ty = g_route[i + 1].y;
+      if (++i >= segments)
+      {
+        break;
+      }
+    }
+    return true;
+  }
+
+  // At the wheel: steer by the vehicle's own heading, RT for gas.
+  void Drive(uint8_t *base, uint32_t pawn, float x, float y, clock::time_point now)
+  {
+    g_target.store(0, std::memory_order_relaxed);
+    g_on_target.store(false, std::memory_order_relaxed);
+    if (g_driven != pawn)
+    {
+      g_driven = pawn, g_board_x = x, g_board_y = y;
+      g_drive_start = now, g_off_sum = 0, g_off_max = 0, g_off_n = 0, g_backups = 0;
+      Logf("drive: at the wheel of %s at (%.0f %.0f)\n", NameOf(base, pawn).c_str(), x, y);
+    }
+    // B now and then (get out: the boat docks itself), standing still.
+    auto get_out = [&](const char *why) {
+      uint16_t buttons = 0;
+      if (now >= g_next_exit_press)
+      {
+        g_next_exit_press = now + std::chrono::seconds(2);
+        g_press_until = now + kPressTime;
+        g_left_boat = pawn;
+        Logf("drive: %s at (%.0f %.0f): B (get out)\n", why, x, y);
+      }
+      if (now < g_press_until)
+      {
+        buttons = kButtonB;
+      }
+      SetPad(0, 0, 0, 0, buttons);
+    };
+
+    // A dock shown away from where the boat was boarded: steer there.
+    ScanDocks(base, now);
+    const Dock *dock = nullptr;
+    float dock_d = kDockRange;
+    for (const Dock &d : g_docks)
+    {
+      float dd = std::hypot(d.x - x, d.y - y);
+      if (dd < dock_d && std::hypot(d.x - g_board_x, d.y - g_board_y) > kDockAway)
+      {
+        dock = &d, dock_d = dd;
+      }
+    }
+    if (dock && dock_d < kDockArrive)
+    {
+      if (g_left_boat != pawn)
+      {
+        Logf("drive: done in %.1f s, off avg %.0f max %.0f, backups %d\n",
+             std::chrono::duration<double>(now - g_drive_start).count(), g_off_n ? g_off_sum / g_off_n : 0.0,
+             g_off_max, g_backups);
+      }
+      get_out("at the dock");
+      return;
+    }
+
+    // The target: the average of 4 points over the stretch of the route the
+    // vehicle covers in ao2_autopilot_drive_lookahead_time (Actor.Velocity):
+    // it turns early into a bend instead of chasing one point past it.
+    float vx = LoadF32(base, pawn + kActorVelocity), vy = LoadF32(base, pawn + kActorVelocity + 4);
+    float ahead = std::max(float(REXCVAR_GET(ao2_autopilot_drive_lookahead)),
+                           std::hypot(vx, vy) * float(REXCVAR_GET(ao2_autopilot_drive_lookahead_time)));
+    float speed = std::hypot(vx, vy);
+    // Momentum: route and heading error from where it will be shortly.
+    float predict = float(REXCVAR_GET(ao2_autopilot_drive_predict));
+    float x0 = x, y0 = y;
+    x += vx * predict, y += vy * predict;
+    float tx = 0, ty = 0, to_end = 0, d2 = 0;
+    bool route = !g_route.empty();
+    int points = std::clamp(REXCVAR_GET(ao2_autopilot_drive_points), 1, 16);
+    for (int k = 1; route && k <= points; ++k)
+    {
+      float px, py;
+      route = RouteTarget(x, y, ahead * k / points, px, py, to_end, d2);
+      tx += px / points, ty += py / points;
+    }
+    // How much the route turns over the next ao2_autopilot_drive_corner_time:
+    // the direction of its first half against its second.
+    float bend = 0;
+    if (route && REXCVAR_GET(ao2_autopilot_drive_corner) > 0)
+    {
+      float far = std::max(400.0f, speed * float(REXCVAR_GET(ao2_autopilot_drive_corner_time)));
+      float ax, ay, bx, by, cx, cy, e, dd;
+      RouteTarget(x, y, 0, ax, ay, e, dd);
+      RouteTarget(x, y, far / 2, bx, by, e, dd);
+      RouteTarget(x, y, far, cx, cy, e, dd);
+      bend = std::fabs(std::remainder(std::atan2(cy - by, cx - bx) - std::atan2(by - ay, bx - ax), 6.2831853f));
+    }
+    if (route && now >= g_next_off_sample)
+    {
+      g_next_off_sample = now + std::chrono::milliseconds(100);
+      float off = std::sqrt(d2);
+      g_off_sum += off, ++g_off_n, g_off_max = std::max(g_off_max, off);
+    }
+    if (route && g_seg + 2 >= g_route.size() && to_end < kArriveDrive)
+    {
+      route = false;
+    }
+    if (!route && !g_route.empty())
+    {
+      Stop("arrived", false);
+      g_exit_from = now + kExitWait;
+    }
+    if (dock)
+    {
+      tx = dock->x, ty = dock->y;
+    }
+    else if (!route)
+    {
+      // No dock shown: with no new route for a while, B gets out.
+      if (now >= g_exit_from)
+      {
+        get_out("end of the route");
+      }
+      else
+      {
+        SetPad(0, 0, 0, 0, 0);
+      }
+      return;
+    }
+    g_exit_from = route ? clock::time_point::max() : g_exit_from;
+    float yaw = float(int32_t(LoadU32(base, pawn + kActorYaw))) * (6.2831853f / 65536.0f);
+    // Drift: blend in the direction it moves.
+    if (float slip = float(REXCVAR_GET(ao2_autopilot_drive_slip)); slip > 0 && speed > 200.0f)
+    {
+      yaw = std::atan2((1 - slip) * std::sin(yaw) + slip * vy / speed, (1 - slip) * std::cos(yaw) + slip * vx / speed);
+    }
+    float dx = tx - x, dy = ty - y;
+    float error = std::atan2(-dx * std::sin(yaw) + dy * std::cos(yaw), dx * std::cos(yaw) + dy * std::sin(yaw));
+    float steer = std::clamp(error * float(REXCVAR_GET(ao2_autopilot_steer)), -1.0f, 1.0f);
+    // Full gas up to ~30 degrees off, down to a third at 90 and beyond; slow
+    // down coming in to a dock.
+    float min_gas = float(REXCVAR_GET(ao2_autopilot_drive_min_gas));
+    float gas = float(REXCVAR_GET(ao2_autopilot_gas)) *
+                std::clamp(1.0f - (std::fabs(error) - 0.5f) / 1.5f, min_gas, 1.0f);
+    if (bend > 0.35f)
+    {
+      gas *= std::clamp(1.0f - float(REXCVAR_GET(ao2_autopilot_drive_corner)) * (bend - 0.35f), min_gas, 1.0f);
+    }
+    if (dock)
+    {
+      gas = std::min(gas, std::clamp(dock_d / 2000.0f, 0.25f, 1.0f));
+    }
+
+    x = x0, y = y0;
+    // Stuck (a bank, a rock): back up for a while with the wheel the other way.
+    constexpr float kStuckDrive = 60.0f;
+    constexpr auto kStuckDriveTime = std::chrono::milliseconds(1500);
+    constexpr auto kReverseTime = std::chrono::milliseconds(1200);
+    // Boarding plays an animation with the boat still: not stuck then.
+    constexpr auto kBoardingTime = std::chrono::seconds(3);
+    if (std::hypot(x - g_stuck_x, y - g_stuck_y) > kStuckDrive || now - g_drive_start < kBoardingTime)
+    {
+      g_stuck_x = x, g_stuck_y = y, g_stuck_since = now;
+    }
+    else if (now - g_stuck_since > kStuckDriveTime && now >= g_reverse_until && !dock && to_end < kArriveDriveStuck &&
+             g_seg + 2 >= g_route.size())
+    {
+      Stop("arrived (stuck near the end)", false);
+      g_exit_from = now + kExitWait;
+      SetPad(0, 0, 0, 0, 0);
+      return;
+    }
+    else if (now - g_stuck_since > kStuckDriveTime && now >= g_reverse_until)
+    {
+      g_stuck_since = now + kReverseTime;
+      g_reverse_until = now + kReverseTime;
+      g_reverse_steer = steer >= 0 ? -1.0f : 1.0f;
+      ++g_backups;
+      Logf("drive: stuck at (%.0f %.0f), segment %zu: backing up\n", x, y, g_seg);
+    }
+    bool reverse = now < g_reverse_until;
+    if (reverse)
+    {
+      SetPad(g_reverse_steer, 0, 0, 0, 0, 255, 0);
+    }
+    else
+    {
+      SetPad(steer, 0, 0, 0, 0, 0, uint8_t(gas * 255.0f));
+    }
+    if (REXCVAR_GET(ao2_autopilot_drive_telemetry) && now >= g_next_telemetry)
+    {
+      g_next_telemetry = now + std::chrono::milliseconds(33);
+      static FILE *f = nullptr;
+      if (!f && (f = ao2::OpenLogFile("drive_telemetry.csv")))
+      {
+        std::fprintf(f, "t,x,y,z,yaw,vx,vy,steer,gas,brake,seg,off,route_x,route_y\n");
+      }
+      if (f)
+      {
+        float rx, ry, e, dd;
+        bool on = !g_route.empty() && RouteTarget(x, y, 0, rx, ry, e, dd);
+        std::fprintf(f, "%.3f,%.1f,%.1f,%.1f,%.4f,%.1f,%.1f,%.3f,%.3f,%d,%zu,%.0f,%.1f,%.1f\n",
+                     std::chrono::duration<double>(now - g_drive_start).count(), x, y,
+                     LoadF32(base, pawn + kActorLocation + 8),
+                     float(int32_t(LoadU32(base, pawn + kActorYaw))) * (6.2831853f / 65536.0f), vx, vy,
+                     reverse ? g_reverse_steer : steer, reverse ? 0.0f : gas, reverse ? 1 : 0, g_seg,
+                     on ? std::sqrt(dd) : -1.0f, on ? rx : 0.0f, on ? ry : 0.0f);
+        std::fflush(f);
+      }
+    }
+    if (now >= g_next_log)
+    {
+      g_next_log = now + std::chrono::milliseconds(500);
+      Logf("drive (%.0f %.0f) seg %zu/%zu off %.0f target (%.0f %.0f)%s yaw %.0f err %.0f deg, speed %.0f bend %.0f deg, gas %.2f, "
+           "to end %.0f\n",
+           x, y, route ? g_seg : 0, route ? g_route.size() - 1 : 0, std::sqrt(d2), tx, ty, dock ? " dock" : "",
+           yaw * 57.29578f, error * 57.29578f, speed, bend * 57.29578f, now < g_reverse_until ? -1.0f : gas,
+           dock ? dock_d : to_end);
+    }
+  }
 } // namespace
 
 namespace ao2::autopilot
@@ -653,6 +1074,12 @@ namespace ao2::autopilot
     }
     float x = LoadF32(base, pawn + kActorLocation), y = LoadF32(base, pawn + kActorLocation + 4);
     float yaw = float(int32_t(LoadU32(base, controller + kActorYaw))) * (6.2831853f / 65536.0f);
+    bool drive = REXCVAR_GET(ao2_autopilot_drive);
+    if (drive && (ClassFlags(base, LoadU32(base, pawn + 52)) & kIsVehicle))
+    {
+      Drive(base, pawn, x, y, now);
+      return;
+    }
 
     bool network = ao2::coop::InNetworkGame(base);
     uint32_t weapon = LoadU32(base, pawn + kPawnWeapon);
@@ -764,57 +1191,26 @@ namespace ao2::autopilot
       return;
     }
 
-    // Where on the route: ahead of the last segment, or anywhere when far off.
-    size_t segments = g_route.size() - 1;
-    float t = 0, d2 = INFINITY;
-    if (g_seg != SIZE_MAX)
-    {
-      // Ahead only up to kSearchAhead along the route: a route that comes back
-      // past its start (a loop) must not count as done at once.
-      size_t to = g_seg + 1;
-      for (float along = 0; to < segments && along < kSearchAhead; ++to)
-      {
-        along += std::hypot(g_route[to].x - g_route[to - 1].x, g_route[to].y - g_route[to - 1].y);
-      }
-      size_t seg = Nearest(g_seg, std::min(segments, to), x, y, t, d2);
-      if (d2 < kLost * kLost)
-      {
-        g_seg = seg;
-      }
-    }
-    if (g_seg == SIZE_MAX || d2 >= kLost * kLost)
-    {
-      g_seg = Nearest(0, segments, x, y, t, d2);
-    }
-    const Point &last = g_route.back();
-    float to_end = std::hypot(last.x - x, last.y - y);
-    if (g_seg == segments - 1 && to_end < kArrive)
+    float tx, ty, to_end, d2;
+    if (!RouteTarget(x, y, float(REXCVAR_GET(ao2_autopilot_lookahead)), tx, ty, to_end, d2))
     {
       Stop("arrived", false);
       return;
     }
-
-    // The target: lookahead along the route from the projection.
-    float ahead = float(REXCVAR_GET(ao2_autopilot_lookahead));
-    size_t i = g_seg;
-    float tx = g_route[i].x + (g_route[i + 1].x - g_route[i].x) * t;
-    float ty = g_route[i].y + (g_route[i + 1].y - g_route[i].y) * t;
-    while (ahead > 0)
+    // An empty boat near the player: walk to it, A from close by.
+    if (uint32_t boat = drive && !target ? BoatNear(base, x, y, now) : 0)
     {
-      float sx = g_route[i + 1].x - tx, sy = g_route[i + 1].y - ty;
-      float len = std::hypot(sx, sy);
-      if (len >= ahead)
+      tx = LoadF32(base, boat + kActorLocation), ty = LoadF32(base, boat + kActorLocation + 4);
+      if (std::hypot(tx - x, ty - y) < kBoardDistance && now >= g_next_board_press)
       {
-        tx += sx * ahead / len, ty += sy * ahead / len;
-        break;
-      }
-      ahead -= len;
-      tx = g_route[i + 1].x, ty = g_route[i + 1].y;
-      if (++i >= segments)
-      {
-        break;
+        g_next_board_press = now + std::chrono::milliseconds(1500);
+        g_press_until = now + kPressTime;
+        g_press_button = kButtonA;
+        g_stuck_since = now;
+        Logf("board: A at (%.0f %.0f)\n", x, y);
       }
     }
+    size_t segments = g_route.size() - 1;
 
     float dx = tx - x, dy = ty - y;
     float len = std::max(std::hypot(dx, dy), 1.0f);

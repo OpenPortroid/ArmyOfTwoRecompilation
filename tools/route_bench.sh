@@ -5,14 +5,14 @@
 exe=$(realpath "$1"); label="$2"; shift 2
 R=$(cd "$(dirname "$0")/.." && pwd)
 S=$R/tools
-# BENCH_DIR: the game folder (logs, cwd); BENCH_LEGACY=1 leaves out the quality flags
+# BENCH_CP: the checkpoint (05_00). BENCH_DIR: the game folder (logs, cwd); BENCH_LEGACY=1 leaves out the quality flags
 # that releases before 1.3 don't know
 dir=${BENCH_DIR:-$R/aot/out/build/win-amd64-release}
 cd "$dir" || exit 1
 # a game still closing keeps the logs open
 while tasklist | grep -qi "^$(basename "$exe") "; do sleep 1; done
 rm -f native_gpu.log decouple.log autopilot.log input.script autopilot.path
-args=(--log_to_files=true --fullscreen=true --ao2_start_checkpoint=05_00 --ao2_god_mode=true --ao2_fps_unlock
+args=(--log_to_files=true --fullscreen=true --ao2_start_checkpoint=${BENCH_CP:-05_00} --ao2_god_mode=true --ao2_fps_unlock
       --ao2_fps_target=240 --ao2_decouple=true --ao2_native_gpu_resolution_scale=2 --ao2_fps_overlay=0
       --ao2_native_gpu_vsync=false --ao2_native_gpu_stats_every=240 --ao2_decouple_debug=true
       --ao2_skip_cutscenes=true --ao2_skip_unskippable=true)
@@ -47,7 +47,9 @@ for i in $(seq 1 120); do
   if [ $(( $(date +%s) - $(stat -c %Y decouple.log) )) -gt 20 ]; then echo "game hung"; break; fi
   cur=$(grep "^pos" autopilot.log | tail -1 | sed 's/.*to end //')
   if [ "$cur" = "$last" ]; then same=$((same+1)); else same=0; fi
-  if [ $same -ge 2 ] && [ "${cur:-0}" -gt 8000 ] && [ ! -f input.script ]; then echo "b wait600 b" > input.script; same=0; fi
+  seg=$(grep "^pos" autopilot.log | tail -1 | sed -n 's/.* seg \([0-9]*\)\/.*/\1/p')
+  # stuck on the first segments: the shop dialog near the start, close it with B
+  if [ $same -ge 2 ] && [ "${seg:-99}" -lt 10 ] && [ ! -f input.script ]; then echo "b wait600 b" > input.script; same=0; fi
   last=$cur
   if [ "${cur:-9999}" -lt 400 ]; then endt=$((endt+1)); fi
   [ $endt -ge 8 ] && break
