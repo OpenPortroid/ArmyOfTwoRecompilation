@@ -19,6 +19,12 @@
 //       second, models blinking).
 //   true - wait like the console, sleeping between polls until the renderer
 //       publishes results (OcclusionResultGeneration), at most 2 ms.
+// The menus (ao2::menumouse::MenuOpen) always wait: without the wait the
+// shop's board and the weapon on it (a scene capture drawn only while the
+// board is) were taken for hidden in some frames and the world behind them
+// showed through - the shop flickered, and at 30 FPS showed no weapon at all
+// (issue #26); the contacts' globe flickered too. The game itself keeps the
+// frame rate.
 // D3D then issues queries again that were not read: renderer.cpp
 // (RendererMemWrite) drops the old issue's counts.
 #include <windows.h>
@@ -29,6 +35,7 @@
 #include <rex/ppc.h>
 
 #include "native/renderer.h"
+#include "../menu_mouse.h"
 #include "../perf_waits.h"
 
 REXCVAR_DEFINE_BOOL(ao2_occlusion_wait, false, "GPU",
@@ -68,6 +75,14 @@ namespace
   }
 } // namespace
 
+namespace ao2::gpu
+{
+  bool OcclusionWaitOn()
+  {
+    return REXCVAR_GET(ao2_occlusion_wait) || ao2::menumouse::MenuOpen();
+  }
+} // namespace ao2::gpu
+
 extern "C" REX_FUNC(__imp__sub_82AA14D0);
 extern "C" REX_FUNC(sub_82AA14D0)
 {
@@ -84,7 +99,7 @@ extern "C" REX_FUNC(sub_82AA14D0)
     ctx.r3.u64 = 0;
     return;
   }
-  if (!REXCVAR_GET(ao2_occlusion_wait))
+  if (!ao2::gpu::OcclusionWaitOn())
   {
     *reinterpret_cast<uint32_t *>(base + data) = __builtin_bswap32(1u); // one sample: visible
     ctx.r3.u64 = 1;

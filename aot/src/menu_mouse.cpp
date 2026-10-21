@@ -59,6 +59,7 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <atomic>
 #include <bit>
 #include <cmath>
 #include <cstdio>
@@ -1079,6 +1080,13 @@ namespace ao2::menumouse
 {
   void Attach(rex::ui::Window *window) { g_window = window; }
 
+  namespace
+  {
+    std::atomic<bool> g_menu_open{false};
+  }
+
+  bool MenuOpen() { return g_menu_open.load(std::memory_order_relaxed); }
+
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard)
   {
     if (ao2::menu::IsOpen() || ao2::gfxmenu::Capturing())
@@ -1111,6 +1119,15 @@ namespace ao2::menumouse
     };
 
     std::vector<uint32_t> scenes = Scenes(base);
+    bool menu_open = false;
+    for (uint32_t s : scenes)
+    {
+      menu_open = menu_open || base[s + kSceneInputMode] != 0;
+    }
+    if (g_menu_open.exchange(menu_open, std::memory_order_relaxed) != menu_open)
+    {
+      Logf("menu open %d (occlusion results waited for)\n", menu_open);
+    }
     std::vector<Widget> widgets;
     uint32_t scene = REXCVAR_GET(ao2_menu_mouse) || REXCVAR_GET(ao2_menu_exit) ? ActiveMenu(base, scenes, widgets) : 0;
 
