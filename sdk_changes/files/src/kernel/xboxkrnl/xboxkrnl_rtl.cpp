@@ -22,6 +22,7 @@
 #include <rex/kernel/xboxkrnl/threading.h>
 #include <rex/logging.h>
 #include <rex/hook.h>
+#include <rex/platform.h>
 #include <rex/types.h>
 #include <rex/string.h>
 #include <rex/system/kernel_state.h>
@@ -32,8 +33,25 @@
 #include <rex/thread.h>
 #include <rex/thread/atomic.h>
 
+#include <atomic>
+#include <bit>
+
 #include <immintrin.h>
 
+#if REX_PLATFORM_WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
+REXCVAR_DEFINE_STRING(critical_section_spin, "off", "Kernel",
+                      "Spin on a held critical section before sleeping on it (experimental): off, on, auto (only with "
+                      "6+ logical processors available to the game, and a lock is no longer spun on while its spins "
+                      "keep failing)");
 REXCVAR_DEFINE_INT32(critical_section_min_spin, 1024, "Kernel",
                      "Spin at least this many times (pause) on a held critical section before sleeping on it "
                      "(guest code mostly creates them with no spin; a game's allocator lock is short and contended)")
@@ -384,6 +402,43 @@ u32 RtlInitializeCriticalSectionAndSpinCount_entry(ppc_ptr_t<X_RTL_CRITICAL_SECT
   return xeRtlInitializeCriticalSectionAndSpinCount(cs, cs.guest_address(), spin_count);
 }
 
+// Logical processors the game may run on (its affinity, not the whole machine).
+static uint32_t AvailableProcessorCount() {
+#if REX_PLATFORM_WIN32
+  DWORD_PTR process_mask = 0, system_mask = 0;
+  if (GetProcessAffinityMask(GetCurrentProcess(), &process_mask, &system_mask) && process_mask) {
+    return uint32_t(std::popcount(uint64_t(process_mask)));
+  }
+#endif
+  return rex::thread::logical_processor_count();
+}
+
+// critical_section_spin = auto: the game keeps about four threads busy (game, rendering, GPU commands, driver and
+// sound). With fewer than six logical processors a spinner mostly takes the processor from the lock's holder.
+static bool AutoSpinAllowed() {
+  static const bool allowed = [] {
+    uint32_t count = AvailableProcessorCount();
+    REXKRNL_INFO("Critical sections: {} logical processors available, auto spin {}", count,
+                 count >= 6 ? "on" : "off");
+    return count >= 6;
+  }();
+  return allowed;
+}
+
+// auto: failed spins per lock, in a table hashed by the lock's guest address (collisions only share a record).
+// A spin that ended asleep adds 2, one that got the lock takes 1 away, so a lock held long, or whose holder lost
+// its processor, is no longer spun on (8 and up). Every 16th wait of a thread on such a lock spins anyway: the
+// lock comes back once spinning pays again.
+constexpr uint32_t kSpinRecordBits = 12;
+constexpr uint8_t kSpinRecordOff = 8;
+constexpr uint8_t kSpinRecordMax = 16;
+static std::atomic<uint8_t> spin_records[1u << kSpinRecordBits];
+static thread_local uint32_t spin_skips = 0;
+
+static std::atomic<uint8_t>& SpinRecord(uint32_t cs_ptr) {
+  return spin_records[(cs_ptr * 0x9E3779B1u) >> (32 - kSpinRecordBits)];
+}
+
 void RtlEnterCriticalSection_entry(ppc_ptr_t<X_RTL_CRITICAL_SECTION> cs) {
   uint32_t cur_thread = XThread::GetCurrentThread()->guest_object();
   uint32_t spin_count = cs->header.absolute * 256;
@@ -397,16 +452,42 @@ void RtlEnterCriticalSection_entry(ppc_ptr_t<X_RTL_CRITICAL_SECTION> cs) {
 
   // Spin loop: try only when it looks free, pause in between. A kernel wait and the wake-up of a
   // short, contended lock (the game's malloc) cost far more than the lock is held.
-  spin_count = std::max<uint32_t>(spin_count, uint32_t(REXCVAR_GET(critical_section_min_spin)));
+  const std::string& mode = REXCVAR_GET(critical_section_spin);
+  std::atomic<uint8_t>* record = nullptr;
+  if (mode == "on") {
+    spin_count = std::max<uint32_t>(spin_count, uint32_t(REXCVAR_GET(critical_section_min_spin)));
+  } else if (mode != "off" && AutoSpinAllowed()) {
+    record = &SpinRecord(cs.guest_address());
+    if (record->load(std::memory_order_relaxed) < kSpinRecordOff || ++spin_skips % 16 == 0) {
+      spin_count = std::max<uint32_t>(spin_count, uint32_t(REXCVAR_GET(critical_section_min_spin)));
+    } else {
+      record = nullptr;
+    }
+  }
   while (spin_count--) {
-    if (*reinterpret_cast<volatile int32_t*>(&cs->lock_count) == -1 &&
-        rex::thread::atomic_cas(-1, 0, &cs->lock_count)) {
+    int32_t lock_count = *reinterpret_cast<volatile int32_t*>(&cs->lock_count);
+    if (lock_count == -1 && rex::thread::atomic_cas(-1, 0, &cs->lock_count)) {
       // Acquired.
       cs->owning_thread = cur_thread;
       cs->recursion_count = 1;
+      if (record) {
+        uint8_t failures = record->load(std::memory_order_relaxed);
+        if (failures) {
+          record->store(failures - 1, std::memory_order_relaxed);
+        }
+      }
       return;
     }
+    if (record && lock_count > 0) {
+      // Others already sleep on it: the lock goes to them, not to a spinner.
+      record = nullptr;
+      break;
+    }
     _mm_pause();
+  }
+  if (record) {
+    uint8_t failures = record->load(std::memory_order_relaxed);
+    record->store(std::min<uint8_t>(failures + 2, kSpinRecordMax), std::memory_order_relaxed);
   }
 
   if (rex::thread::atomic_inc(&cs->lock_count) != 0) {

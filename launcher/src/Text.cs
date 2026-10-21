@@ -864,6 +864,26 @@ namespace AO2Launcher
               "Der Spieler erleidet keinen Schaden. Wirkt nicht im Online-Koop.",
               "El jugador no recibe daño. No funciona en el cooperativo en línea.",
               "Il giocatore non subisce danni. Non ha effetto nella cooperativa online.");
+            a("Processor lock waits", "Ожидание потоков CPU", "Attente des verrous (processeur)", "Sperr-Warten (Prozessor)",
+              "Espera de bloqueos (procesador)", "Attesa dei lock (processore)");
+            a("Experimental. The game's threads first wait for each other busily for a moment instead of sleeping straight away: " +
+              "more FPS, but only on a powerful processor with threads to spare. Turn it on if you have one. Auto turns it on " +
+              "with 6 or more processor threads and stops where it does not pay. Turn it off if the game stutters.",
+              "Экспериментальная функция. Потоки игры сначала коротко ждут друг друга активно, а не засыпают сразу: " +
+              "больше FPS, но только на мощном процессоре со свободными потоками. Включайте, если процессор мощный. Авто включает " +
+              "её при 6 и более потоках процессора и отключает там, где она не окупается. Если игра подтормаживает, выключите.",
+              "Expérimental. Les threads du jeu s'attendent d'abord activement un court instant au lieu de se mettre en veille : " +
+              "plus d'IPS, mais seulement avec un processeur puissant ayant des threads libres. Activez-la si c'est votre cas. Auto " +
+              "l'active à partir de 6 threads processeur et l'arrête là où elle ne paie pas. Désactivez-la si le jeu saccade.",
+              "Experimentell. Die Threads des Spiels warten zuerst kurz aktiv aufeinander, statt gleich zu schlafen: " +
+              "mehr FPS, aber nur mit einem starken Prozessor mit freien Threads. Mit einem solchen einschalten. Auto schaltet " +
+              "sie ab 6 Prozessor-Threads ein und hört dort auf, wo es sich nicht lohnt. Bei Rucklern ausschalten.",
+              "Experimental. Los hilos del juego primero se esperan activamente un momento en lugar de dormir directamente: " +
+              "más FPS, pero solo con un procesador potente con hilos libres. Actívala si tienes uno. Auto la activa con 6 o más " +
+              "hilos de procesador y deja de hacerlo donde no compensa. Desactívala si el juego da tirones.",
+              "Sperimentale. I thread del gioco prima si aspettano attivamente per un attimo invece di andare subito in pausa: " +
+              "più FPS, ma solo con un processore potente con thread liberi. Attivala se ne hai uno. Auto la attiva con 6 o più " +
+              "thread del processore e smette dove non conviene. Disattivala se il gioco scatta.");
             a("Close the launcher", "Закрывать лаунчер", "Fermer le lanceur", "Launcher schließen", "Cerrar el lanzador",
               "Chiudi il launcher");
             a("Close this window once the game has started.", "Закрывать это окно после запуска игры.",

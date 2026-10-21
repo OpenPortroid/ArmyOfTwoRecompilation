@@ -70,7 +70,6 @@ REXCVAR_DECLARE(int32_t, ao2_native_gpu_capture_frame);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_writeback_texels);
 REXCVAR_DECLARE(bool, ao2_native_gpu_debug_layer);
 REXCVAR_DECLARE(bool, ao2_native_gpu_async_pipelines);
-REXCVAR_DECLARE(bool, ao2_occlusion_wait); // occlusion_wait.cpp
 REXCVAR_DEFINE_BOOL(ao2_prompts_debug, false, "Debug",
                     "Log where split-screen button pictures are drawn (native_gpu.log)");
 REXCVAR_DECLARE(double, ao2_native_gpu_resolution_scale);
@@ -2499,8 +2498,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         return;
       }
       // Ended queries are urgent only while the rendering thread waits for them
-      // (ao2_occlusion_wait).
-      bool ended = !g.occlusion_ended.empty() && REXCVAR_GET(ao2_occlusion_wait);
+      // (OcclusionWaitOn).
+      bool ended = !g.occlusion_ended.empty() && OcclusionWaitOn();
       if (ended || g.fence->GetCompletedValue() >= g.fence_value)
       {
         SubmitOpenList();
