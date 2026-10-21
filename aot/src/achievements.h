@@ -14,8 +14,4 @@ namespace ao2::ach
   // Any thread (ao2_achievements_key, F7): opens the achievements menu, or
   // closes it when it is open.
   void ToggleMenu();
-
-  // Any thread (ao2_achievement_test_key, F5): unlocks a random locked
-  // achievement, with its notice. The launcher resets them.
-  void UnlockRandom();
 } // namespace ao2::ach

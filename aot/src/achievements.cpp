@@ -27,9 +27,6 @@
 // The menu (ao2_achievements_key, F7): every achievement by section with its
 // icon, score and unlock date, in a window of the menu's drawer (debug_menu.h
 // OpenWindow); the texts are the game's, in its language.
-//
-// UnlockRandom (debug key, F5): unlocks a random locked achievement, to see
-// the toast; the launcher's Achievements tab resets them.
 #include "achievements.h"
 
 #include <algorithm>
@@ -1116,32 +1113,5 @@ namespace ao2::ach
     g_menu_close = false;
     auto menu = std::make_shared<AchievementsMenu>(ks->achievements().ListAchievements());
     ao2::menu::OpenWindow("achievements", [menu]() { return menu->Draw(); }, /*own_escape=*/true);
-  }
-
-  void UnlockRandom()
-  {
-    auto *ks = rex::system::kernel_state();
-    if (!ks)
-    {
-      return;
-    }
-    auto &am = ks->achievements();
-    std::vector<rex::system::AchievementInfo> locked;
-    for (auto &a : am.ListAchievements())
-    {
-      if (!am.IsUnlocked(a.id))
-      {
-        locked.push_back(std::move(a));
-      }
-    }
-    if (locked.empty())
-    {
-      REXLOG_INFO("achievements: all unlocked (the launcher resets them)");
-      return;
-    }
-    static std::mt19937 rng{std::random_device{}()};
-    const auto &a = locked[std::uniform_int_distribution<size_t>(0, locked.size() - 1)(rng)];
-    am.UnlockAchievement(a.id, rex::system::AchievementNotification::kShow);
-    REXLOG_INFO("achievements: test unlock {} '{}'", a.id, a.label);
   }
 } // namespace ao2::ach

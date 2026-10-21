@@ -19,7 +19,7 @@
 //   then its level), loaded with the console's "checkpoint <name> <difficulty>"
 //   (console_cmd.cpp). The loaded checkpoint becomes the profile's current
 //   one when the game saves it.
-// - F5 (ao2_achievement_test_key): unlocks a random achievement (achievements.h).
+// - F7 (ao2_achievements_key): the achievements menu (achievements.h).
 //
 // Online co-op is a lockstep simulation (coop.h): there both go through the
 // lockstep input to both machines (coop_cmd.cpp) - god mode for this
@@ -76,8 +76,6 @@ REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
                       "Key that opens the debug menu (god mode, checkpoints); empty = none");
 REXCVAR_DEFINE_STRING(ao2_fps_overlay_key, "F2", "GPU",
                       "Key that switches the frame rate overlay (off, FPS, detailed); empty = none");
-REXCVAR_DEFINE_STRING(ao2_achievement_test_key, "F5", "Debug",
-                      "Key that unlocks a random locked achievement (to test the notice); empty = none");
 
 namespace
 {
@@ -634,14 +632,6 @@ namespace
         if (!e.prev_state())
         {
           ao2::perf::CycleMode();
-        }
-      }
-      else if (IsKey(e, REXCVAR_GET(ao2_achievement_test_key)))
-      {
-        e.set_handled(true);
-        if (!e.prev_state())
-        {
-          ao2::ach::UnlockRandom();
         }
       }
       else if (IsKey(e, REXCVAR_GET(ao2_achievements_key)))
