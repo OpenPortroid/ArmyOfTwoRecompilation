@@ -10,7 +10,7 @@ namespace AO2Launcher
     // package. Version is bumped with every release (the tag is "v" + Version).
     static class Updates
     {
-        public const string Version = "1.3";
+        public const string Version = "1.3.1";
         // The version compared with the latest release: Version, or --pretend-version=<ver> (debug: test an update).
         public static string Current = Version;
         public const string Repo = "OpenPortroid/ArmyOfTwoRecompilation";
