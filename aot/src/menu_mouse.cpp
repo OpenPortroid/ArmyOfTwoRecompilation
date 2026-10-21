@@ -881,6 +881,30 @@ namespace
     return scene && ao2::ue3::ObjectName(base, scene).find("Objective") != std::string::npos;
   }
 
+  // The masks (UIScene_Masks) keep their pick in CurrentButtonIndex and step
+  // it with the D-pad, the focus following it: a focus set directly is left
+  // behind by the next step. There the pick is put next to the target, not
+  // the focus (it would show that mask first): the step goes from the
+  // focused mask straight to the target. False if `widget` is not a mask.
+  bool SetMaskIndex(uint8_t *base, uint32_t widget)
+  {
+    static int32_t index = ao2::ue3::PropertyOffset(base, "UIScene_Masks", "CurrentButtonIndex");
+    static uint32_t masks = ao2::ue3::FindClass(base, "UIScene_Masks");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    if (index < 0 || !masks || !scene || !ao2::ue3::IsA(base, scene, masks))
+    {
+      return false;
+    }
+    std::string name = ao2::ue3::ObjectName(base, widget);
+    size_t digits = name.find_last_not_of("0123456789") + 1;
+    if (name.rfind("lblbtnArmor", 0) != 0 || digits >= name.size())
+    {
+      return false;
+    }
+    StoreU32(base, scene + index, uint32_t(std::stoi(name.substr(digits)))); // the buttons are lblbtnArmor0, 1...
+    return true;
+  }
+
   bool FocusAtOnce(const uint8_t *base, uint32_t widget)
   {
     uint32_t scene = LoadU32(base, widget + kOwnerScene);
@@ -989,7 +1013,10 @@ namespace
       w.jumped = true;
       if (uint32_t next = NeighbourOf(base, widgets, *target, now))
       {
-        Focus(ctx, base, next);
+        if (!SetMaskIndex(base, next))
+        {
+          Focus(ctx, base, next);
+        }
         now = next;
       }
     }
