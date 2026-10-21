@@ -1128,6 +1128,7 @@ namespace ao2::mouse
     uint32_t pawn = LoadU32(base, controller + 452), holder = LoadU32(base, controller + 2024);
     if (!pawn || pawn == holder || IsDrivenVehicle(base, pawn))
     {
+      g_gun_view_pawn = 0; // off the turret: getting on again starts over
       return;
     }
     // Mid-way the view is 30-60 units off still, an animation's start
@@ -1136,7 +1137,11 @@ namespace ao2::mouse
     float gun_pitch, gun_yaw;
     GunRotation(base, controller, pawn, gun_pitch, gun_yaw);
     float off_pitch = std::remainder(pitch - gun_pitch, 65536.0f), off_yaw = std::remainder(yaw - gun_yaw, 65536.0f);
-    bool on = std::fabs(off_pitch) <= kOnGun && std::fabs(off_yaw) <= kOnGun;
+    // Firing shakes the view off the gun as far (30-60 units every few
+    // steps): once on the gun it stays on, or the prediction went on and
+    // off with the shots and the view jumped by the whole predicted turn.
+    bool on = (pawn == g_gun_view_pawn && g_gun_view_on) ||
+              (std::fabs(off_pitch) <= kOnGun && std::fabs(off_yaw) <= kOnGun);
     if ((on != g_gun_view_on || pawn != g_gun_view_pawn) && REXCVAR_GET(ao2_mouse_debug) && DebugLog())
     {
       std::fprintf(DebugLog(), "step %u turret %08X view %s the gun (off by %.0f,%.0f)\n", step, pawn,
