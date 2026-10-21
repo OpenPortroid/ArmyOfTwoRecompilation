@@ -885,23 +885,78 @@ namespace
   // it with the D-pad, the focus following it: a focus set directly is left
   // behind by the next step. There the pick is put next to the target, not
   // the focus (it would show that mask first): the step goes from the
-  // focused mask straight to the target. False if `widget` is not a mask.
+  // focused mask straight to the target.
+  // Each step also steps the shell armor pawn's own pick by one
+  // (ScrollMaskUpgrades: the hero's MaskCollection.Index, wrapping), the mask
+  // put on the character and bought. It is put next to the target too, or
+  // the list and the character part: the mask shown and bought is not the
+  // one picked in the list.
+  bool IsMask(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t masks = ao2::ue3::FindClass(base, "UIScene_Masks");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return masks && scene && ao2::ue3::IsA(base, scene, masks) &&
+           ao2::ue3::ObjectName(base, widget).rfind("lblbtnArmor", 0) == 0;
+  }
+
+  // The hero's AO2MaskCollection the shell armor pawn steps, 0 if not found:
+  // the pawn of the scene's player, else the only one there is.
+  uint32_t MaskCollection(const uint8_t *base, uint32_t scene)
+  {
+    static uint32_t armor = ao2::ue3::FindClass(base, "AO2ShellArmorPawn");
+    static int32_t owner = ao2::ue3::PropertyOffset(base, "UIScene", "PlayerOwner");
+    static int32_t pawn = ao2::ue3::PropertyOffset(base, "Controller", "Pawn");
+    static int32_t hero = ao2::ue3::PropertyOffset(base, "AO2ShellArmorPawn", "PlayerPawn");
+    static int32_t collection = ao2::ue3::PropertyOffset(base, "AO2Character", "MaskCollection");
+    if (!armor || owner < 0 || pawn < 0 || hero < 0 || collection < 0)
+    {
+      return 0;
+    }
+    uint32_t found = 0;
+    uint32_t player = LoadU32(base, scene + owner);
+    uint32_t controller = player ? LoadU32(base, player + 64) : 0; // LocalPlayer +64 = its PlayerController
+    uint32_t p = controller ? LoadU32(base, controller + pawn) : 0;
+    if (p && ao2::ue3::IsA(base, p, armor))
+    {
+      found = p;
+    }
+    else
+    {
+      uint32_t objects = LoadU32(base, kObjects), count = LoadU32(base, kObjects + 4);
+      for (uint32_t i = 0; objects && i < count; ++i)
+      {
+        uint32_t o = LoadU32(base, objects + i * 4);
+        if (o && ao2::ue3::IsA(base, o, armor) && ao2::ue3::ObjectName(base, o).rfind("Default__", 0) != 0)
+        {
+          if (found)
+          {
+            return 0; // one per player: whose is not known
+          }
+          found = o;
+        }
+      }
+    }
+    uint32_t h = found ? LoadU32(base, found + hero) : 0;
+    return h ? LoadU32(base, h + collection) : 0;
+  }
+
+  // Puts both picks on mask `widget`; false if the pawn's is not found (the
+  // walk then steps through every mask on the way, as the D-pad does).
   bool SetMaskIndex(uint8_t *base, uint32_t widget)
   {
     static int32_t index = ao2::ue3::PropertyOffset(base, "UIScene_Masks", "CurrentButtonIndex");
-    static uint32_t masks = ao2::ue3::FindClass(base, "UIScene_Masks");
-    uint32_t scene = LoadU32(base, widget + kOwnerScene);
-    if (index < 0 || !masks || !scene || !ao2::ue3::IsA(base, scene, masks))
-    {
-      return false;
-    }
+    static int32_t pick = ao2::ue3::PropertyOffset(base, "AO2MaskCollection", "Index");
     std::string name = ao2::ue3::ObjectName(base, widget);
     size_t digits = name.find_last_not_of("0123456789") + 1;
-    if (name.rfind("lblbtnArmor", 0) != 0 || digits >= name.size())
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    uint32_t collection = index >= 0 && pick >= 0 && digits < name.size() ? MaskCollection(base, scene) : 0;
+    if (!collection)
     {
       return false;
     }
-    StoreU32(base, scene + index, uint32_t(std::stoi(name.substr(digits)))); // the buttons are lblbtnArmor0, 1...
+    uint32_t i = uint32_t(std::stoi(name.substr(digits))); // the buttons are lblbtnArmor0, 1...
+    StoreU32(base, scene + index, i);
+    StoreU32(base, collection + pick, i);
     return true;
   }
 
@@ -1013,11 +1068,15 @@ namespace
       w.jumped = true;
       if (uint32_t next = NeighbourOf(base, widgets, *target, now))
       {
-        if (!SetMaskIndex(base, next))
+        if (!IsMask(base, next))
         {
           Focus(ctx, base, next);
+          now = next;
         }
-        now = next;
+        else if (SetMaskIndex(base, next))
+        {
+          now = next;
+        }
       }
     }
     if (now == w.target)
@@ -1043,6 +1102,11 @@ namespace
         Logf("objectives: stopped at %s, target %s\n", now ? ao2::ue3::ObjectName(base, now).c_str() : "nothing",
              ao2::ue3::ObjectName(base, w.target).c_str());
         w = Walk{}; // set, it would go back: as far as the steps got
+        return 0;
+      }
+      if (IsMask(base, w.target))
+      {
+        w = Walk{}; // a focus set directly would part the list from the character
         return 0;
       }
       Focus(ctx, base, w.target);
