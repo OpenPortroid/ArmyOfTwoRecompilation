@@ -166,10 +166,17 @@ void UserProfile::SaveSetting(UserProfile::Setting* setting) {
   if (setting->is_title_specific()) {
     auto serialized_setting = setting->Serialize();
     auto content_dir = kernel_state_->content_manager()->ResolveGameUserContentPath(name_);
-    std::filesystem::create_directories(content_dir);
+    // A folder the user can't write to (Controlled Folder Access, a read-only
+    // or synced Documents) keeps the setting in memory only.
+    std::error_code ec;
+    std::filesystem::create_directories(content_dir, ec);
     auto setting_id = fmt::format("{:08X}", setting->setting_id);
     auto file_path = content_dir / setting_id;
     auto file = rex::filesystem::OpenFile(file_path, "wb");
+    if (!file) {
+      REXSYS_ERROR("Can't save profile setting {} to {}", setting_id, rex::path_to_utf8(file_path));
+      return;
+    }
     fwrite(serialized_setting.data(), 1, serialized_setting.size(), file);
     fclose(file);
   } else {
