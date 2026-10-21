@@ -54,6 +54,7 @@
 #include "gpu/native/renderer.h"
 #include "graphics_menu.h"
 #include "log_files.h"
+#include "mouse_aim.h"
 #include "ue3_reflect.h"
 
 #include <windows.h>
@@ -1265,8 +1266,10 @@ namespace ao2::menumouse
     // Between two menus (the camera moving along the slabs, the press of
     // Start on the title screen) one scene is closed before the next opens:
     // only scenes taking no input are left (UIScene_0, the help text). The
-    // cursor stays the menus' until the stack is empty, as it is in the game.
-    SetMenuMode(menu || (g_menu && !scenes.empty() && REXCVAR_GET(ao2_menu_mouse)));
+    // cursor stays the menus' until the stack is empty. Only in the front end:
+    // in the game the HUD's scenes stay on the stack, and after the pause menu
+    // the cursor would never go back to the camera.
+    SetMenuMode(menu || (g_menu && !scenes.empty() && ao2::mouse::InFrontEnd() && REXCVAR_GET(ao2_menu_mouse)));
     bool left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
     bool left_pressed = left && !g_left;
     g_left = left;
