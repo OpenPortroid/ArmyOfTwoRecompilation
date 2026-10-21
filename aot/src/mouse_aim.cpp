@@ -478,23 +478,74 @@ namespace
   // in the step than the mouse's turn is added (the rotation reads 7100 after
   // UpdateLookingAction, 6498 when the next step starts), so only the part of
   // a turn within them shows; the drawn view (PredictedTurn) must not add
-  // more, or it looks past the limit and springs back. kPitchUp / kPitchDown
-  // are the on-foot ones; a lower one (another camera) is learnt while the
-  // game cuts the turns short at it.
-  constexpr float kPitchUp = 6498.0f, kPitchDown = -7500.0f;
-  float g_pitch_top = kPitchUp, g_pitch_bottom = kPitchDown;
+  // more, or it looks past the limit and springs back. The on-foot limits
+  // are the character's (ModePitchLimits); a narrower one (cover, another
+  // camera) is learnt while the game cuts the turns short at it.
+  float g_pitch_top = 6498.0f, g_pitch_bottom = -9102.0f;
   bool g_pitch_asked = false;    // the last step turned the pitch...
   float g_pitch_asked_to = 0.0f; // ...to this
 
-  // The local player's pitch as a step starts, before its turn: a turn the
-  // game cut short marks the limit there, otherwise the usual ones hold.
-  void LearnPitchLimits(float pitch)
+  // The on-foot look limits of character `holder` (rotation units), from the
+  // game's settings: aiming (AO2Pawn.bIsInPrecisionMode) the character's
+  // Precision_Aiming_Min/MaxPitch (-77 / 77 degrees), otherwise its
+  // CameraSettings' Suppression_Minimum/MaximumPitch (-50 / 35.7). Aiming
+  // looks almost twice as far down; the prediction held to the limits
+  // without aim did not turn the view below them and it stuttered. The
+  // measured values while the properties are not found.
+  void ModePitchLimits(const uint8_t *base, uint32_t holder, float &bottom, float &top)
   {
+    static int32_t precision = -1, aim_min = -1, aim_max = -1, settings = -1, min = -1, max = -1;
+    static uint32_t precision_mask = 0;
+    if (precision < 0 || aim_min < 0 || aim_max < 0 || settings < 0 || min < 0 || max < 0)
+    {
+      ao2::ue3::BoolProperty(base, "AO2Pawn", "bIsInPrecisionMode", precision, precision_mask);
+      aim_min = ao2::ue3::PropertyOffset(base, "AO2Character", "Precision_Aiming_MinPitch");
+      aim_max = ao2::ue3::PropertyOffset(base, "AO2Character", "Precision_Aiming_MaxPitch");
+      settings = ao2::ue3::PropertyOffset(base, "AO2Character", "CameraSettings");
+      min = ao2::ue3::PropertyOffset(base, "AO2CameraSettings", "Suppression_MinimumPitch");
+      max = ao2::ue3::PropertyOffset(base, "AO2CameraSettings", "Suppression_MaximumPitch");
+    }
+    constexpr float kUnitsPerDegree = 65536.0f / 360.0f;
+    bool aiming = precision >= 0 && precision_mask && (LoadU32(base, holder + precision) & precision_mask);
+    uint32_t camera = settings >= 0 ? LoadU32(base, holder + settings) : 0;
+    if (aiming && aim_min >= 0 && aim_max >= 0)
+    {
+      bottom = LoadF32(base, holder + aim_min) * kUnitsPerDegree;
+      top = LoadF32(base, holder + aim_max) * kUnitsPerDegree;
+    }
+    else if (aiming)
+    {
+      bottom = -14017.0f;
+      top = 14017.0f;
+    }
+    else if (camera && min >= 0 && max >= 0)
+    {
+      bottom = LoadF32(base, camera + min) * kUnitsPerDegree;
+      top = LoadF32(base, camera + max) * kUnitsPerDegree;
+    }
+    else
+    {
+      bottom = -9102.0f;
+      top = 6498.0f;
+    }
+    if (!(bottom < 0.0f && top > 0.0f && top - bottom < 65536.0f))
+    {
+      bottom = aiming ? -14017.0f : -9102.0f;
+      top = aiming ? 14017.0f : 6498.0f;
+    }
+  }
+
+  // The local player's pitch as a step starts, before its turn: a turn the
+  // game cut short marks the limit there, otherwise the character's hold.
+  void LearnPitchLimits(const uint8_t *base, uint32_t holder, float pitch)
+  {
+    float bottom, top;
+    ModePitchLimits(base, holder, bottom, top);
     pitch = std::remainder(pitch, 65536.0f);
     bool cut_top = g_pitch_asked && pitch > 0.0f && g_pitch_asked_to > pitch + 1.0f;
     bool cut_bottom = g_pitch_asked && pitch < 0.0f && g_pitch_asked_to < pitch - 1.0f;
-    g_pitch_top = cut_top ? pitch : kPitchUp;
-    g_pitch_bottom = cut_bottom ? pitch : kPitchDown;
+    g_pitch_top = cut_top ? pitch : top;
+    g_pitch_bottom = cut_bottom ? pitch : bottom;
     g_pitch_asked = false;
   }
 
@@ -1461,7 +1512,7 @@ extern "C" REX_FUNC(sub_82365150)
     {
       g_native_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
       g_view_locked = !PlayerTurnsView(ctx, base, holder);
-      LearnPitchLimits(LoadF32(base, holder + 3620));
+      LearnPitchLimits(base, holder, LoadF32(base, holder + 3620));
     }
     auto it = g_pending.find(controller);
     if (it != g_pending.end())
@@ -1501,7 +1552,7 @@ extern "C" REX_FUNC(sub_82365150)
   uint32_t rotation = holder + 3620;
   float pitch = LoadF32(base, rotation);
   float yaw = LoadF32(base, rotation + 4);
-  LearnPitchLimits(pitch);
+  LearnPitchLimits(base, holder, pitch);
   bool invert = (LoadU32(base, controller + 2772) & 0x80000000) != 0;
   if (REXCVAR_GET(ao2_mouse_invert_y))
   {
