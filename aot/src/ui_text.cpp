@@ -39,6 +39,18 @@ namespace
       // --- Achievements: the unlock toast ---
       {"ACHIEVEMENT UNLOCKED", "ДОСТИЖЕНИЕ ПОЛУЧЕНО", "ERFOLG FREIGESCHALTET", "SUCCÈS DÉBLOQUÉ", "LOGRO DESBLOQUEADO",
        "OBIETTIVO SBLOCCATO"},
+      // --- Achievements: the menu ---
+      {"ACHIEVEMENTS", "ДОСТИЖЕНИЯ", "ERFOLGE", "SUCCÈS", "LOGROS", "OBIETTIVI"},
+      {"SECRET ACHIEVEMENT", "СЕКРЕТНОЕ ДОСТИЖЕНИЕ", "GEHEIMER ERFOLG", "SUCCÈS SECRET", "LOGRO SECRETO",
+       "OBIETTIVO SEGRETO"},
+      {"STORY", "СЮЖЕТ", "HANDLUNG", "HISTOIRE", "HISTORIA", "STORIA"},
+      {"CAMPAIGN", "КАМПАНИЯ", "KAMPAGNE", "CAMPAGNE", "CAMPAÑA", "CAMPAGNA"},
+      {"GEAR AND CO-OP", "СНАРЯЖЕНИЕ И КООП", "AUSRÜSTUNG UND KOOP", "ÉQUIPEMENT ET COOP", "EQUIPO Y COOP",
+       "EQUIPAGGIAMENTO E COOP"},
+      {"WEAPONS", "ОРУЖИЕ", "WAFFEN", "ARMES", "ARMAS", "ARMI"},
+      {"COMBAT", "БОЙ", "KAMPF", "COMBAT", "COMBATE", "COMBATTIMENTO"},
+      {"VERSUS", "ПРОТИВОСТОЯНИЕ", "VERSUS", "VERSUS", "VERSUS", "VERSUS"},
+      {"SSC CHALLENGE", "SSC CHALLENGE", "SSC CHALLENGE", "SSC CHALLENGE", "SSC CHALLENGE", "SSC CHALLENGE"},
       // --- Invites: notices ---
       {"INCOMING INVITE", "ВХОДЯЩЕЕ ПРИГЛАШЕНИЕ", "EINLADUNG", "INVITATION REÇUE", "INVITATION RECIBIDA", "INVITO RICEVUTO"},
       {"invites you to a private co-op game", "зовёт вас в приватную кооперативную игру", "lädt dich zu einem privaten Koop-Spiel ein",

@@ -24,11 +24,16 @@
 // synthesized here and played with PlaySound beside the game's audio.
 // ao2_achievement_notices off (the launcher's switch): neither.
 //
+// The menu (ao2_achievements_key, F7): every achievement by section with its
+// icon, score and unlock date, in a window of the menu's drawer (debug_menu.h
+// OpenWindow); the texts are the game's, in its language.
+//
 // UnlockRandom (debug key, F5): unlocks a random locked achievement, to see
 // the toast; the launcher's Achievements tab resets them.
 #include "achievements.h"
 
 #include <algorithm>
+#include <atomic>
 #include <iterator>
 #include <cstdio>
 #include <cstring>
@@ -71,6 +76,8 @@
 
 REXCVAR_DEFINE_BOOL(ao2_achievement_notices, true, "General",
                     "Show the achievement unlock notice (and its sound); off: achievements still unlock, silently");
+REXCVAR_DEFINE_STRING(ao2_achievements_key, "F7", "General",
+                      "Key that opens the achievements menu; empty = none");
 REXCVAR_DEFINE_DOUBLE(ao2_achievement_sound, 0.4, "General",
                       "Volume of the achievement unlock sound, 0..1; 0 = no sound");
 
@@ -679,6 +686,373 @@ namespace
     }
     ao2::menu::SetToast(DrawToasts);
   }
+
+  // --- The achievements menu ---
+
+  std::atomic<bool> g_menu_open = false;
+  std::atomic<bool> g_menu_close = false; // the menu key, from any thread
+
+  const char *SectionTitle(int section)
+  {
+    static const char *const kNames[] = {"STORY", "CAMPAIGN", "GEAR AND CO-OP", "WEAPONS",
+                                         "COMBAT", "VERSUS", "SSC CHALLENGE"};
+    static_assert(std::size(kNames) == std::size(kSections));
+    return ao2::text::Tr(kNames[section]);
+  }
+
+  // "dd.mm.yyyy" in local time; empty without a time.
+  std::string DateOf(uint64_t filetime)
+  {
+    if (!filetime)
+    {
+      return {};
+    }
+    FILETIME utc{DWORD(filetime), DWORD(filetime >> 32)}, local;
+    SYSTEMTIME st;
+    if (!FileTimeToLocalFileTime(&utc, &local) || !FileTimeToSystemTime(&local, &st))
+    {
+      return {};
+    }
+    char text[16];
+    std::snprintf(text, sizeof(text), "%02u.%02u.%04u", unsigned(st.wDay), unsigned(st.wMonth), unsigned(st.wYear));
+    return text;
+  }
+
+  // The menu (UI thread, inside an ImGui frame): a full screen overlay in the
+  // look of the players window (coop_invite.cpp). The achievements by
+  // section, the unlocked ones with their icon, score and date, the locked
+  // ones dimmed (a secret one hides its name and icon). The wheel, the arrows,
+  // Page Up / Down, Home and End scroll; Esc, the key and Close play it out.
+  struct AchievementsMenu
+  {
+    static constexpr float kOpenTime = 0.35f;
+    static constexpr float kCloseTime = 0.2f;
+
+    struct Group
+    {
+      int section;
+      std::vector<rex::system::AchievementInfo> items;
+    };
+
+    std::vector<Group> groups;
+    double opened = -1.0;
+    double closing = -1.0;
+    float scroll = 0.0f, scroll_target = 0.0f;
+
+    explicit AchievementsMenu(const std::vector<rex::system::AchievementInfo> &list)
+    {
+      for (int s = 0; s < static_cast<int>(std::size(kSections)); ++s)
+      {
+        Group group{s, {}};
+        for (uint32_t id : kSections[s].ids)
+        {
+          if (!id)
+          {
+            break;
+          }
+          auto it = std::find_if(list.begin(), list.end(), [id](const auto &a) { return a.id == id; });
+          if (it != list.end())
+          {
+            group.items.push_back(*it);
+          }
+        }
+        if (!group.items.empty())
+        {
+          groups.push_back(std::move(group));
+        }
+      }
+    }
+
+    bool Draw()
+    {
+      namespace ui = ao2::ui;
+      using ui::FontKind;
+      auto *ks = rex::system::kernel_state();
+      if (!ks)
+      {
+        g_menu_open = false;
+        return false;
+      }
+      auto &am = ks->achievements();
+      double now = ImGui::GetTime();
+      if (opened < 0.0)
+      {
+        opened = now;
+      }
+      float a = ui::EaseOutCubic(float(now - opened) / kOpenTime);
+      if (closing >= 0.0)
+      {
+        float c = float(now - closing) / kCloseTime;
+        if (c >= 1.0f)
+        {
+          g_menu_open = false;
+          return false;
+        }
+        a *= 1.0f - ui::EaseOutCubic(c);
+      }
+      bool live = closing < 0.0;
+      float s = ui::Scale();
+
+      int total = 0, got = 0;
+      uint32_t score = 0, score_total = 0;
+      for (const Group &g : groups)
+      {
+        for (const auto &info : g.items)
+        {
+          ++total;
+          score_total += info.gamerscore;
+          if (am.IsUnlocked(info.id))
+          {
+            ++got;
+            score += info.gamerscore;
+          }
+        }
+      }
+
+      const ImGuiViewport *vp = ImGui::GetMainViewport();
+      ImGui::SetNextWindowPos(vp->Pos);
+      ImGui::SetNextWindowSize(vp->Size);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+      ImGui::Begin("##achievements", nullptr,
+                   ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
+                       ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+      ImGui::PopStyleVar(2);
+      if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || g_menu_close.exchange(false)))
+      {
+        closing = now;
+        live = false;
+      }
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+
+      // --- Backdrop and panel ---
+      const float pad = 32.0f * s;
+      const float pw = std::min(880.0f * s, vp->Size.x - 40.0f * s);
+      const float ph = std::min(940.0f * s, vp->Size.y - 60.0f * s);
+      ImVec2 center = vp->GetCenter();
+      float x0 = center.x - pw * 0.5f - (1.0f - a) * 40.0f * s;
+      float y0 = center.y - ph * 0.5f;
+      float x1 = x0 + pw, y1 = y0 + ph;
+      float cx0 = x0 + pad, cx1 = x1 - pad;
+      dl->AddRectFilled(vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y),
+                        ui::Fade(ui::kInk, 0.78f * a));
+      dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.96f * a));
+      dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+
+      // --- Header: kicker, title, the counts, the progress ---
+      float y = y0 + pad;
+      ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), "ARMY OF TWO");
+      y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
+      const char *title = ao2::text::Tr("ACHIEVEMENTS");
+      ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title);
+      ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title);
+      {
+        char status[64];
+        std::snprintf(status, sizeof(status), "%d/%d  ·  %u/%u G", got, total, unsigned(score), unsigned(score_total));
+        ImVec2 ss = ui::CapsSize(FontKind::kLabel, status);
+        float chip_h = ss.y + 12.0f * s;
+        ImVec2 cmx(cx1, y + (title_size.y + chip_h) * 0.5f);
+        ImVec2 cmn(cmx.x - ss.x - 28.0f * s, cmx.y - chip_h);
+        dl->AddRectFilled(cmn, cmx, ui::Fade(kGold, 0.12f * a));
+        dl->AddRect(cmn, cmx, ui::Fade(kGold, 0.55f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+        ui::Caps(dl, FontKind::kLabel, ImVec2(cmn.x + 14.0f * s, cmn.y + 6.0f * s), ui::Fade(kGoldLight, a), status);
+      }
+      y += title_size.y + 16.0f * s;
+      float bar_h = 4.0f * s;
+      dl->AddRectFilled(ImVec2(cx0, y), ImVec2(cx1, y + bar_h), ui::Fade(ui::kWhite, 0.10f * a));
+      float frac = total ? float(got) / float(total) : 0.0f;
+      dl->AddRectFilled(ImVec2(cx0, y), ImVec2(cx0 + (cx1 - cx0) * frac * ui::EaseOutCubic(a), y + bar_h),
+                        ui::Fade(kGold, a));
+      y += bar_h + 22.0f * s;
+
+      // --- The list's area, and the footer under it ---
+      const float kh = 24.0f * s;
+      const float list_top = y;
+      const float footer_y = y1 - pad - kh;
+      const float list_bottom = footer_y - 16.0f * s;
+      const float list_h = list_bottom - list_top;
+      const float row_h = 76.0f * s, gap = 8.0f * s;
+      const float head_h = ui::FontSize(FontKind::kLabel) + 14.0f * s;
+      float content_h = 0.0f;
+      for (const Group &g : groups)
+      {
+        content_h += head_h + float(g.items.size()) * (row_h + gap) + 14.0f * s;
+      }
+      float max_scroll = std::max(0.0f, content_h - list_h);
+      if (live)
+      {
+        const ImGuiIO &io = ImGui::GetIO();
+        scroll_target -= io.MouseWheel * 90.0f * s;
+        float step = (row_h + gap);
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, true))
+        {
+          scroll_target += step;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, true))
+        {
+          scroll_target -= step;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_PageDown, true))
+        {
+          scroll_target += list_h * 0.9f;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_PageUp, true))
+        {
+          scroll_target -= list_h * 0.9f;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_Home, false))
+        {
+          scroll_target = 0.0f;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_End, false))
+        {
+          scroll_target = max_scroll;
+        }
+      }
+      scroll_target = std::clamp(scroll_target, 0.0f, max_scroll);
+      scroll = ui::Approach(scroll, scroll_target, 18.0f);
+
+      const float sb_w = 4.0f * s;
+      const float rx0 = cx0, rx1 = max_scroll > 0.0f ? cx1 - sb_w - 10.0f * s : cx1;
+      dl->PushClipRect(ImVec2(x0 + 1.0f, list_top), ImVec2(x1 - 1.0f, list_bottom), true);
+      y = list_top - scroll;
+      for (const Group &g : groups)
+      {
+        int unlocked = 0;
+        for (const auto &info : g.items)
+        {
+          unlocked += am.IsUnlocked(info.id) ? 1 : 0;
+        }
+        {
+          const char *label = SectionTitle(g.section);
+          ui::Caps(dl, FontKind::kLabel, ImVec2(rx0, y), ui::Fade(ui::kMuted, a), label);
+          float lx = rx0 + ui::CapsSize(FontKind::kLabel, label).x + 10.0f * s;
+          std::string n = std::to_string(unlocked) + "/" + std::to_string(g.items.size());
+          ui::Caps(dl, FontKind::kLabel, ImVec2(lx, y), ui::Fade(ui::kAccent, a), n.c_str());
+          lx += ui::CapsSize(FontKind::kLabel, n.c_str()).x + 10.0f * s;
+          float ly = y + ui::FontSize(FontKind::kLabel) * 0.65f;
+          dl->AddLine(ImVec2(lx, ly), ImVec2(rx1, ly), ui::Fade(ui::kWhite, 0.10f * a), 1.0f * s);
+        }
+        y += head_h;
+        for (const auto &info : g.items)
+        {
+          if (y + row_h >= list_top && y <= list_bottom)
+          {
+            DrawRow(dl, info, am.IsUnlocked(info.id), am.GetUnlockTime(info.id), ImVec2(rx0, y), ImVec2(rx1, y + row_h),
+                    a);
+          }
+          y += row_h + gap;
+        }
+        y += 14.0f * s;
+      }
+      dl->PopClipRect();
+
+      if (max_scroll > 0.0f)
+      {
+        float tx = cx1 - sb_w;
+        float thumb_h = std::max(30.0f * s, list_h * list_h / content_h);
+        float thumb_y = list_top + (list_h - thumb_h) * (scroll / max_scroll);
+        dl->AddRectFilled(ImVec2(tx, list_top), ImVec2(tx + sb_w, list_bottom), ui::Fade(ui::kWhite, 0.06f * a));
+        dl->AddRectFilled(ImVec2(tx, thumb_y), ImVec2(tx + sb_w, thumb_y + thumb_h), ui::Fade(ui::kAccent, 0.7f * a));
+      }
+
+      // --- Footer ---
+      dl->AddLine(ImVec2(cx0, footer_y - 8.0f * s), ImVec2(cx1, footer_y - 8.0f * s), ui::Fade(ui::kWhite, 0.08f * a),
+                  1.0f * s);
+      {
+        const char *label = ao2::text::Tr("CLOSE");
+        float label_w = ui::CapsSize(FontKind::kLabel, label).x;
+        float key_w = std::max(kh, ui::CapsSize(FontKind::kLabel, "ESC").x + kh * 0.8f); // as ui::KeyCap
+        float total_w = key_w + 8.0f * s + label_w;
+        ImVec2 pos(cx1 - total_w, footer_y);
+        ImGui::SetCursorScreenPos(pos);
+        if (ImGui::InvisibleButton("##close", ImVec2(total_w, kh)) && live)
+        {
+          closing = now;
+        }
+        bool hovered = ImGui::IsItemHovered();
+        if (hovered)
+        {
+          ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        }
+        ui::KeyCap(dl, pos, kh, "ESC", a);
+        ui::Caps(dl, FontKind::kLabel,
+                 ImVec2(pos.x + key_w + 8.0f * s, footer_y + (kh - ui::FontSize(FontKind::kLabel)) * 0.5f - 1.0f * s),
+                 ui::Fade(hovered ? ui::kAccentLight : ui::kText, a), label);
+      }
+      ImGui::End();
+      return true;
+    }
+
+    // One row in [mn, mx]; `a` is the menu's fade.
+    static void DrawRow(ImDrawList *dl, const rex::system::AchievementInfo &info, bool unlocked, uint64_t when,
+                        ImVec2 mn, ImVec2 mx, float a)
+    {
+      namespace ui = ao2::ui;
+      using ui::FontKind;
+      float s = ui::Scale();
+      bool secret = !(info.flags & 0x8) && !unlocked;
+      float h = mx.y - mn.y;
+      dl->AddRectFilled(mn, mx, ui::Fade(unlocked ? kGold : ui::kWhite, (unlocked ? 0.07f : 0.035f) * a));
+      dl->AddRect(mn, mx, ui::Fade(unlocked ? kGold : ui::kWhite, (unlocked ? 0.28f : 0.08f) * a), 0.0f,
+                  ImDrawFlags_None, 1.0f * s);
+      dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(unlocked ? kGold : ui::kMuted, a));
+
+      float isz = h - 24.0f * s;
+      ImVec2 imn(mn.x + 16.0f * s, mn.y + 12.0f * s), imx(imn.x + isz, imn.y + isz);
+      rex::ui::ImmediateTexture *icon = secret ? nullptr : IconOf(info);
+      if (icon)
+      {
+        dl->AddImageRounded(reinterpret_cast<ImTextureID>(icon), imn, imx, ImVec2(0, 0), ImVec2(1, 1),
+                            ui::Fade(ui::kWhite, (unlocked ? 1.0f : 0.35f) * a), isz * 0.2f);
+      }
+      else
+      {
+        dl->AddRectFilled(imn, imx, ui::Fade(ui::kWhite, 0.06f * a), isz * 0.2f);
+        ImVec2 q = ui::TextSize(FontKind::kHeading, "?");
+        ui::Text(dl, FontKind::kHeading, ImVec2(imn.x + (isz - q.x) * 0.5f, imn.y + (isz - q.y) * 0.5f),
+                 ui::Fade(ui::kMuted, a), "?");
+      }
+      if (unlocked)
+      {
+        dl->AddRect(imn, imx, ui::Fade(kGold, 0.8f * a), isz * 0.2f, ImDrawFlags_None, 1.5f * s);
+      }
+
+      // The score pill and the date, at the right.
+      char score[16];
+      std::snprintf(score, sizeof(score), "%u G", info.gamerscore);
+      ImVec2 ss = ui::TextSize(FontKind::kSmall, score);
+      float pill_h = ss.y + 4.0f * s, pill_w = ss.x + 18.0f * s;
+      ImVec2 pmn(mx.x - 16.0f * s - pill_w, mn.y + 12.0f * s), pmx(pmn.x + pill_w, pmn.y + pill_h);
+      ImU32 tone = unlocked ? kGold : ui::kMuted;
+      dl->AddRectFilled(pmn, pmx, ui::Fade(tone, 0.16f * a), pill_h * 0.5f);
+      dl->AddRect(pmn, pmx, ui::Fade(tone, 0.6f * a), pill_h * 0.5f, ImDrawFlags_None, 1.0f * s);
+      ui::Text(dl, FontKind::kSmall, ImVec2(pmn.x + 9.0f * s, pmn.y + 2.0f * s),
+               ui::Fade(unlocked ? kGoldLight : ui::kMuted, a), score);
+      if (unlocked)
+      {
+        std::string date = DateOf(when);
+        if (!date.empty())
+        {
+          ImVec2 ds = ui::TextSize(FontKind::kSmall, date.c_str());
+          ui::Text(dl, FontKind::kSmall, ImVec2(mx.x - 16.0f * s - ds.x, pmx.y + 8.0f * s), ui::Fade(ui::kMuted, a),
+                   date.c_str());
+        }
+      }
+
+      // The name and the description, clipped before the pill.
+      float tx = imx.x + 16.0f * s;
+      dl->PushClipRect(ImVec2(tx, mn.y), ImVec2(pmn.x - 12.0f * s, mx.y), true);
+      const std::string &name = secret ? std::string(ao2::text::Tr("SECRET ACHIEVEMENT")) : info.label;
+      ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 12.0f * s), ui::Fade(unlocked ? ui::kText : ui::kMuted, a),
+               name.c_str());
+      const std::string &desc =
+          !unlocked && !info.unachieved_description.empty() ? info.unachieved_description : info.description;
+      ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 14.0f * s + ui::FontSize(FontKind::kHeading)),
+               ui::Fade(ui::kMuted, a), desc.c_str());
+      dl->PopClipRect();
+    }
+  };
 } // namespace
 
 namespace ao2::ach
@@ -725,6 +1099,23 @@ namespace ao2::ach
     {
       Export(cache_root, db);
     }
+  }
+
+  void ToggleMenu()
+  {
+    auto *ks = rex::system::kernel_state();
+    if (!ks)
+    {
+      return;
+    }
+    if (g_menu_open.exchange(true))
+    {
+      g_menu_close = true; // open: the next frame plays it out
+      return;
+    }
+    g_menu_close = false;
+    auto menu = std::make_shared<AchievementsMenu>(ks->achievements().ListAchievements());
+    ao2::menu::OpenWindow("achievements", [menu]() { return menu->Draw(); }, /*own_escape=*/true);
   }
 
   void UnlockRandom()

@@ -69,6 +69,7 @@
 REXCVAR_DECLARE(bool, ao2_god_mode);
 REXCVAR_DECLARE(int32_t, ao2_start_difficulty);
 REXCVAR_DECLARE(std::string, ao2_players_key);
+REXCVAR_DECLARE(std::string, ao2_achievements_key);
 REXCVAR_DECLARE(std::string, ao2_invite_accept_key);
 
 REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
@@ -641,6 +642,14 @@ namespace
         if (!e.prev_state())
         {
           ao2::ach::UnlockRandom();
+        }
+      }
+      else if (IsKey(e, REXCVAR_GET(ao2_achievements_key)))
+      {
+        e.set_handled(true);
+        if (!e.prev_state())
+        {
+          ao2::ach::ToggleMenu();
         }
       }
       else if (IsKey(e, REXCVAR_GET(ao2_players_key)))
