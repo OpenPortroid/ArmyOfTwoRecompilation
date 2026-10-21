@@ -14,10 +14,7 @@ What the changes cover:
   mounted over the game data (keyboard button prompts overlay `AO2Game\Localization`); `host_path_device.cpp` and
   `content_manager.cpp` let a content package's files be replaced by those of an overlay folder
   (`content_overlay_root`: the Russian text of the downloadable content's `.int` files)
-- **Performance**: `timer_queue.cpp` waits on a high-resolution timer instead of spinning; `xboxkrnl_rtl.cpp`: a held critical
-  section can be spun on (experimental `critical_section_spin`: off by default, on, or auto with 6+ logical processors
-  and per-lock back-off; `critical_section_min_spin`, 1024 pauses) before the thread sleeps on it - the game's malloc
-  lock, taken by the game and rendering threads all the time, slept the game thread ~14% of a frame on China's river
+- **Performance**: `timer_queue.cpp` waits on a high-resolution timer instead of spinning
 - **Codegen** (`rexglue.exe`, not `rexruntime.dll`): `codegen/builders/context.cpp` emits a conditional tail call
   like an unconditional one, so with `non_volatile_as_local` a `share_registers` target gets the caller's
   registers through ctx and the save / restore helpers stay elided (D3D's `beq` into its epilogue fragment

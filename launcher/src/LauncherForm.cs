@@ -1542,14 +1542,6 @@ namespace AO2Launcher
                     Desc = "Unlocks every difficulty and gives 9,999,999 money " +
                            "(kept at the maximum while on). Saved in the current profile. Has no effect in online co-op."
                 },
-                new Row
-                {
-                    Kind = RowKind.Choice, Label = "Processor lock waits", Key = "cpu_spin",
-                    Values = new[] { "off", "on", "auto" }, Names = new[] { "OFF", "ON", "AUTO" },
-                    Desc = "Experimental. The game's threads first wait for each other busily for a moment instead of sleeping straight away: " +
-                           "more FPS, but only on a powerful processor with threads to spare. Turn it on if you have one. Auto turns it on " +
-                           "with 6 or more processor threads and stops where it does not pay. Turn it off if the game stutters."
-                },
                 Toggle("Close the launcher", "close_on_launch", "Close this window once the game has started.", "NO", "YES"),
                 new Row
                 {

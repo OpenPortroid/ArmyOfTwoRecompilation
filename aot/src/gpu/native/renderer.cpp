@@ -366,7 +366,6 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint32_t fallback = 1000;          // samples reported when unknown
       bool unknown = false;              // a draw was not counted: report the fallback count
       uint32_t expect[8] = {};           // the struct as the end event left it (WriteOcclusionResult)
-      bool released = false;             // D3D issued the query again before it was read (RendererMemWrite)
     };
 
     struct Frame
@@ -593,8 +592,6 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint64_t resolves_copied = 0, resolves_drawn = 0, lowres_copies = 0;
       uint64_t transfers_skipped = 0; // claims of fully overwritten rectangles
       uint64_t transfers_cleared = 0; // transfers of uniform tiles done as clears
-      uint64_t stencil_fills_redirected = 0; // RedirectStencilFill
-      uint64_t scene_restores_dropped = 0;   // DropSceneRestore
       uint64_t resources_created = 0; // committed resources created (kernel calls) since the last stats line
 
       RenderTarget *edram_owner[2048] = {};
@@ -2318,13 +2315,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     // 2-5 - got sample counts written over its pointers, and the garbage
     // collector then freed "pointers" like 0x463C and crashed in the pool
     // allocator's Free (sub_8254A088, null + 12) while loading a level.
-    void WriteOcclusionResult(uint32_t address, uint32_t samples, const uint32_t *expect, bool released = false)
+    void WriteOcclusionResult(uint32_t address, uint32_t samples, const uint32_t *expect)
     {
-      if (released)
-      {
-        ++g.occlusion_stale;
-        return;
-      }
       uint8_t *mem = Mem()->TranslatePhysical(address);
       if (std::memcmp(mem, expect, 32) != 0)
       {
@@ -2381,7 +2373,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           }
           samples = (samples * 16 + host_per_guest16 - 1) / host_per_guest16;
         }
-        WriteOcclusionResult(q.address, uint32_t(std::min<uint64_t>(samples, 0xFFFFFFFFu)), q.expect, q.released);
+        WriteOcclusionResult(q.address, uint32_t(std::min<uint64_t>(samples, 0xFFFFFFFFu)), q.expect);
         if (trace)
         {
           Trace("occlusion result %08X: %llu samples%s\n", q.address, (unsigned long long)samples,
@@ -2484,12 +2476,12 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       ++g.occlusion_submits;
     }
 
-    // The GPU must not sit idle while the command thread records a whole
-    // frame and then get it all at the swap (CPU and GPU would take turns).
-    // After a few dozen draws the open list is submitted when the GPU has
-    // nothing left to do, or - when the rendering thread waits for occlusion
-    // results of the previous frame early in the next one (ao2_occlusion_wait) -
-    // when it holds ended occlusion queries.
+    // The rendering thread reads occlusion results of the previous frame
+    // early in the next one, and waits for them: the GPU must not sit idle
+    // while the command thread records a whole frame and then get it all at
+    // the swap (CPU and GPU would take turns). After a few dozen draws the
+    // open list is submitted when the GPU has nothing left to do, or when it
+    // holds ended occlusion queries.
     void MaybeSubmitEarly()
     {
       uint32_t every = uint32_t(std::max(REXCVAR_GET(ao2_native_gpu_submit_draws), 0));
@@ -2497,9 +2489,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       {
         return;
       }
-      // Ended queries are urgent only while the rendering thread waits for them
-      // (OcclusionWaitOn).
-      bool ended = !g.occlusion_ended.empty() && OcclusionWaitOn();
+      bool ended = !g.occlusion_ended.empty();
       if (ended || g.fence->GetCompletedValue() >= g.fence_value)
       {
         SubmitOpenList();
@@ -6137,186 +6127,6 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
       rt.claimed = rect;
     }
 
-    // D3D clears the stencil of the scene's depth by drawing a rectangle with
-    // "stencil := ref" on a 4x MSAA depth surface over the same EDRAM (half the
-    // width and height: the same tiles) - twice in the gameplay frame, around
-    // the scene restore. Claiming that surface moved the whole depth buffer
-    // into it and back (a depth pass and 8 stencil-bit passes each way, ~0.5 ms
-    // at 1440p). When the rectangle covers whole tiles that other depth
-    // surfaces of the same format own, their stencil is cleared there instead
-    // and the draw is dropped.
-    bool RedirectStencilFill(const RegisterFile &r, RenderTarget &ds, const reg::RB_DEPTHCONTROL &dc,
-                             const D3D12_RECT &covered)
-    {
-      if (!dc.stencil_enable || dc.z_enable)
-      {
-        return false;
-      }
-      auto sref = r.Get<reg::RB_STENCILREFMASK>();
-      auto replaces = [](xenos::CompareFunction func, xenos::StencilOp zpass) {
-        return func == xenos::CompareFunction::kAlways && zpass == xenos::StencilOp::kReplace;
-      };
-      if (sref.stencilwritemask != 0xFF || !replaces(dc.stencilfunc, dc.stencilzpass) ||
-          (dc.backface_enable && !replaces(dc.stencilfunc_bf, dc.stencilzpass_bf)))
-      {
-        return false;
-      }
-      static std::vector<uint32_t> inside;
-      TilesInside(ds, covered, inside);
-      uint32_t touched = 0;
-      ForEachTile(ds, covered, [&](uint32_t) { ++touched; });
-      if (inside.empty() || inside.size() != touched)
-      {
-        return false;
-      }
-      constexpr uint32_t kMaxOwners = 4;
-      RenderTarget *owners[kMaxOwners] = {};
-      static std::vector<uint32_t> owned[kMaxOwners];
-      uint32_t owner_count = 0;
-      for (uint32_t tile : inside)
-      {
-        RenderTarget *o = g.edram_owner[tile];
-        if (!o || o == &ds || !o->depth || o->is_64bpp || o->edram_format != ds.edram_format)
-        {
-          return false;
-        }
-        uint32_t i = 0;
-        while (i < owner_count && owners[i] != o)
-        {
-          ++i;
-        }
-        if (i == owner_count)
-        {
-          if (owner_count == kMaxOwners)
-          {
-            return false;
-          }
-          owners[owner_count] = o;
-          owned[owner_count++].clear();
-        }
-        owned[i].push_back(tile);
-      }
-      static std::vector<D3D12_RECT> rects;
-      for (uint32_t i = 0; i < owner_count; ++i)
-      {
-        RenderTarget &o = *owners[i];
-        TileRects(o, owned[i], D3D12_RECT{0, 0, LONG(o.width), LONG(o.height)}, rects);
-        Transition(o.resource.Get(), o.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-        GpuMark(kGpuClear);
-        ClearDsvRects(o.view, D3D12_CLEAR_FLAG_STENCIL, 0.0f, uint8_t(sref.stencilref), rects);
-        SetUniform(o, 1, owned[i], sref.stencilref);
-        o.stencil_used = true;
-      }
-      ds.stencil_used = true;
-      ++g.stencil_fills_redirected;
-      Trace("  stencil := %u in %zu tiles, cleared in %u owner(s) instead\n", unsigned(sref.stencilref), inside.size(),
-            owner_count);
-      return true;
-    }
-
-    // The scene's first resolve (before translucency) clears the scene color,
-    // and the next draw into it - the scene restore, PS D5EE530D, a quad that
-    // copies the resolved texture back, times the inverse of the resolve's
-    // exponent bias - puts the same picture back (with ambient occlusion
-    // multiplied into the texture in between: then it is needed). The clear is
-    // held back; the restore drops it and itself (~0.2 ms at 1440p). Anything
-    // else that draws into or resolves from those tiles first gets the clear.
-    constexpr uint64_t kSceneRestorePS = 0xD5EE530D00D7147Dull;
-
-    struct DeferredClear
-    {
-      RenderTarget *rt = nullptr;
-      D3D12_RECT rect = {};
-      float color[4] = {};
-      uint32_t cv = 0;
-      bool uniform = false;
-      uint32_t texture = 0; // resolve destination the restore samples
-      uint64_t generation = 0;
-      float scale = 1.0f;   // the resolve's factor (exponent bias)
-      std::bitset<2048> tiles;
-    };
-    DeferredClear g_deferred_clear;
-
-    void ApplyColorClear(RenderTarget &rt, const D3D12_RECT &rect, const float c[4], uint32_t cv, bool uniform)
-    {
-      Transition(rt.resource.Get(), rt.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
-      GpuMark(kGpuClear);
-      Crumb("resolve color clear", uint64_t(rt.resource.Get()), (uint64_t(rect.right) << 32) | uint64_t(rect.left),
-            (uint64_t(rect.bottom) << 32) | uint64_t(rect.top), rt.width | (uint64_t(rt.height) << 32));
-      D3D12_RECT host_rect = ScaleRect(rect, rt.scale4);
-      if (RectFits(rt.resource.Get(), host_rect, "resolve color clear"))
-      {
-        g.list->ClearRenderTargetView(rt.view, c, 1, &host_rect);
-      }
-      ForgetUniform(rt, 0, rect);
-      if (uniform)
-      {
-        static std::vector<uint32_t> inside;
-        TilesInside(rt, rect, inside);
-        SetUniform(rt, 0, inside, cv);
-      }
-    }
-
-    void FlushDeferredClear()
-    {
-      if (RenderTarget *rt = g_deferred_clear.rt)
-      {
-        g_deferred_clear.rt = nullptr;
-        ApplyColorClear(*rt, g_deferred_clear.rect, g_deferred_clear.color, g_deferred_clear.cv,
-                        g_deferred_clear.uniform);
-      }
-    }
-
-    // Flushes the held back clear when `rect` of `rt` shares EDRAM tiles with it.
-    void FlushDeferredClearFor(const RenderTarget *rt, const D3D12_RECT &rect)
-    {
-      if (!g_deferred_clear.rt || !rt)
-      {
-        return;
-      }
-      bool overlaps = false;
-      ForEachTile(*rt, rect, [&](uint32_t tile) { overlaps = overlaps || g_deferred_clear.tiles[tile]; });
-      if (overlaps)
-      {
-        FlushDeferredClear();
-      }
-    }
-
-    // The draw is the scene restore of the held back clear: drop both.
-    bool DropSceneRestore(const RegisterFile &r, const CompiledShader *ps, RenderTarget *const color_rts[4],
-                          uint32_t rtv_count, const RenderTarget *ds, uint64_t blend0)
-    {
-      const DeferredClear &dc = g_deferred_clear;
-      if (!dc.rt || !ps || ps->shader->ucode_data_hash() != kSceneRestorePS || rtv_count != 1 ||
-          color_rts[0] != dc.rt || ds || blend0 != 0 || (r.v[XE_GPU_REG_RB_COLOR_MASK] & 0xF) != 0xF ||
-          g.occlusion_active)
-      {
-        return false;
-      }
-      auto fetch = r.Get<xenos::xe_gpu_texture_fetch_t>(XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0);
-      auto it = g.resolved.find((fetch.base_address << 12) & 0x1FFFFFFF);
-      if (fetch.type != xenos::FetchConstantType::kTexture || it == g.resolved.end() || !it->second ||
-          it->first != dc.texture || it->second->generation != dc.generation)
-      {
-        return false;
-      }
-      // c0.x undoes the resolve's factor; c3.x == c255.x skips the shader's gamma.
-      uint32_t base = r.v[XE_GPU_REG_SQ_PS_CONST] & 0x1FF;
-      auto constant = [&](uint32_t c) { return r.F(0x4000 + (base + c) * 4); };
-      if (base + 255 >= 512 || constant(0) * dc.scale != 1.0f || constant(3) != constant(255))
-      {
-        return false;
-      }
-      // A full screen quad over the cleared rectangle.
-      float w = float(dc.rect.right - dc.rect.left), h = float(dc.rect.bottom - dc.rect.top);
-      if (r.F(XE_GPU_REG_PA_CL_VPORT_XSCALE) != w * 0.5f || r.F(XE_GPU_REG_PA_CL_VPORT_XOFFSET) != w * 0.5f ||
-          std::abs(r.F(XE_GPU_REG_PA_CL_VPORT_YSCALE)) != h * 0.5f || r.F(XE_GPU_REG_PA_CL_VPORT_YOFFSET) != h * 0.5f)
-      {
-        return false;
-      }
-      return true;
-    }
-
     // ------------------------------------------------------------ Resolve write back
 
     // Scaled destinations up to this size (guest texels) are written back
@@ -8433,17 +8243,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       rt_height = ds->height;
     }
-    if (g_deferred_clear.rt)
-    {
-      if (DropSceneRestore(r, ps, color_rts, rtv_count, ds, key.blend[0]))
-      {
-        ForgetUniform(*g_deferred_clear.rt, 0, g_deferred_clear.rect);
-        g_deferred_clear.rt = nullptr;
-        ++g.scene_restores_dropped;
-        Trace("    scene restore dropped together with the clear before it\n");
-        return;
-      }
-    }
 
     timer.Mark(1);
     auto mode = r.Get<reg::PA_SU_SC_MODE_CNTL>();
@@ -8524,19 +8323,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     if (exact_rect)
     {
       GetClearDrawValues(r, vs, ps, d, vp, clear_values);
-    }
-    if (ds && !rtv_count && !g.occlusion_active && exact_rect && may_discard && clear_values.vertices_ok &&
-        RedirectStencilFill(r, *ds, depth_control, covered))
-    {
-      return;
-    }
-    if (g_deferred_clear.rt)
-    {
-      for (uint32_t i = 0; i < rtv_count; ++i)
-      {
-        FlushDeferredClearFor(color_rts[i], covered);
-      }
-      FlushDeferredClearFor(ds, covered);
     }
     static std::vector<uint32_t> covered_tiles;
     for (uint32_t i = 0; i < 4; ++i)
@@ -8954,13 +8740,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       return;
     }
-    FlushDeferredClearFor(src, D3D12_RECT{x0, y0, x1, y1});
     ClaimEdram(*src, D3D12_RECT{x0, y0, x1, y1});
 
-    // The color resolved here (for holding back its clear, see DeferredClear).
-    HostTexture *resolved_tex = nullptr;
-    uint32_t resolved_base = 0;
-    float resolved_scale = 1.0f;
     if (copy.copy_command == xenos::CopyCommand::kRaw || copy.copy_command == xenos::CopyCommand::kConvert)
     {
       ResolveFormat rf = GetResolveFormat(uint32_t(dest_info.copy_dest_format), is_depth);
@@ -9082,12 +8863,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         }
       }
       D3D12_RECT rect = {x0, y0, std::min(x1, int32_t(w)), std::min(y1, int32_t(h))};
-      if (!is_depth && !dest_row && !src_fixed16 && !rf.fixed16)
-      {
-        resolved_tex = tex.get();
-        resolved_base = dest_base;
-        resolved_scale = scale;
-      }
       bool same_family = !is_depth && TypelessFormat(src->format) == TypelessFormat(rf.rtv);
       // Red and blue swapped on the way (e.g. ABGR render target -> ARGB texture).
       bool swap_red_blue = !is_depth && dest_info.copy_dest_swap;
@@ -9216,26 +8991,22 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       default:
         break;
       }
-      uint32_t clear_format = uint32_t(KeyColorFormat(color_info.color_format));
-      bool uniform = clear_format == 0 || clear_format == 2 || clear_format == 3;
-      FlushDeferredClear();
-      if (resolved_tex && !x0 && !y0 && !CurrentPostSettings().ao)
+      Transition(src->resource.Get(), src->state, D3D12_RESOURCE_STATE_RENDER_TARGET);
+      GpuMark(kGpuClear);
+      Crumb("resolve color clear", uint64_t(src->resource.Get()), (uint64_t(rect.right) << 32) | uint64_t(rect.left),
+            (uint64_t(rect.bottom) << 32) | uint64_t(rect.top), src->width | (uint64_t(src->height) << 32));
+      D3D12_RECT host_rect = ScaleRect(rect, src->scale4);
+      if (RectFits(src->resource.Get(), host_rect, "resolve color clear"))
       {
-        DeferredClear &dc = g_deferred_clear;
-        dc.rt = src;
-        dc.rect = rect;
-        std::memcpy(dc.color, c, sizeof(dc.color));
-        dc.cv = cv;
-        dc.uniform = uniform;
-        dc.texture = resolved_base;
-        dc.generation = resolved_tex->generation;
-        dc.scale = resolved_scale;
-        dc.tiles.reset();
-        ForEachTile(*src, rect, [&](uint32_t tile) { dc.tiles.set(tile); });
+        g.list->ClearRenderTargetView(src->view, c, 1, &host_rect);
       }
-      else
+      ForgetUniform(*src, 0, rect);
+      uint32_t clear_format = uint32_t(KeyColorFormat(color_info.color_format));
+      if (clear_format == 0 || clear_format == 2 || clear_format == 3)
       {
-        ApplyColorClear(*src, rect, c, cv, uniform);
+        static std::vector<uint32_t> inside;
+        TilesInside(*src, rect, inside);
+        SetUniform(*src, 0, inside, cv);
       }
     }
     if (copy.depth_clear_enable)
@@ -9249,7 +9020,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         float z = depth_info.depth_format == xenos::DepthRenderTargetFormat::kD24FS8 ? xenos::Float20e4To32(d24)
                                                                                       : xenos::UNorm24To32(d24);
         D3D12_RECT drect = {x0, y0, std::min(x1, int32_t(depth->width)), std::min(y1, int32_t(depth->height))};
-        FlushDeferredClearFor(depth, drect);
         ClaimEdram(*depth, drect);
         Transition(depth->resource.Get(), depth->state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
         GpuMark(kGpuClear);
@@ -9334,31 +9104,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     }
     g.occlusion_ended.push_back(q);
     return true;
-  }
-
-  void RendererMemWrite(uint32_t address)
-  {
-    // D3D issuing a query again that was not read (occlusion_wait.cpp does not
-    // wait for queries the GPU has not counted) has the GPU write the "not
-    // done" marker into the struct of the old issue and wait until it is there
-    // (Issue sub_82B0FEB8: MEM_WRITE 0xFFFFFEED, WAIT_REG_MEM == 0xFFFFFEED).
-    // Counts written after that would make the wait endless: they are dropped.
-    address &= ~3u;
-    for (OcclusionQuery &q : g.occlusion_ended)
-    {
-      if (address - q.address < 32)
-      {
-        q.released = true;
-      }
-    }
-    std::lock_guard lock(g.occlusion_mutex);
-    for (OcclusionQuery &q : g.occlusion_pending)
-    {
-      if (address - q.address < 32)
-      {
-        q.released = true;
-      }
-    }
   }
 
   volatile uint32_t &OcclusionResultGeneration()
@@ -9653,7 +9398,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       ao2::spikes::Mark(ao2::spikes::kGpuSwap);
     }
     BeginFrameIfNeeded();
-    FlushDeferredClear();
 
     // The frontbuffer is the destination of the frame's last resolve.
     HostTexture *source = nullptr;
@@ -9846,7 +9590,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       g.pso_created = 0;
       NativeLog("native frame %llu: draws=%llu skipped=%llu pending=%llu pipelines=%zu rts=%zu resolved=%zu "
                 "front=%08X present=%08X vertex_upload=%.1fMB textures=%zu binds tex/resolved/null="
-                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu) stencil fills redirected %llu scene restores dropped %llu writebacks=%llu\n",
+                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu) writebacks=%llu\n",
                 (unsigned long long)g.frame_number, (unsigned long long)g.draws,
                 (unsigned long long)g.draws_skipped, (unsigned long long)g.draws_pending, g.pipelines.size(), g.render_targets.size(),
                 g.resolved.size(), frontbuffer, g.present_address, double(g.mirror_bytes) / 1048576.0,
@@ -9856,7 +9600,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                 (unsigned long long)g.resolves_copied, (unsigned long long)g.resolves_drawn,
                 (unsigned long long)g.lowres_copies,
                 (unsigned long long)g.transfers, (unsigned long long)g.transfers_skipped,
-                (unsigned long long)g.transfers_cleared, (unsigned long long)g.stencil_fills_redirected, (unsigned long long)g.scene_restores_dropped,
+                (unsigned long long)g.transfers_cleared,
                 (unsigned long long)g.writebacks);
       NativeLog("  occlusion queries: %llu (%llu visible, %llu unknown, %llu stale), mid-frame submits %llu (early %llu, %llu of them for an idle GPU) | "
                 "stale write-back texels %llu | resolve pages "
@@ -9878,8 +9622,6 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g.transfers = 0;
     g.transfers_skipped = 0;
     g.transfers_cleared = 0;
-    g.stencil_fills_redirected = 0;
-    g.scene_restores_dropped = 0;
     g.writebacks = 0;
   }
 

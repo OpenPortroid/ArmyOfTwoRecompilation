@@ -40,7 +40,6 @@ namespace AO2Launcher
             { "god_mode", "0" },
             { "ach_notices", "1" },
             { "unlock_all", "0" },
-            { "cpu_spin", "off" },
             { "profile", "" },
             { "new_profile", "" },
             { "host_ip", "" },
