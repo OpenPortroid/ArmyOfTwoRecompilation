@@ -51,6 +51,12 @@ REXCVAR_DEFINE_INT32(net_debug_delay_ms, 0, "Network",
                      "Testing: hold every outgoing datagram (sendto) this long, as a slow link would");
 REXCVAR_DEFINE_INT32(net_debug_jitter_ms, 0, "Network",
                      "Testing: hold every outgoing datagram a random 0..N ms longer (uneven arrival, reordering)");
+REXCVAR_DEFINE_BOOL(net_dump_vdp, false, "Network",
+                    "Debug: write every VDP datagram (game traffic between consoles) to net.log as hex");
+
+namespace rex::kernel::xam::live {
+void NetLogLine(const std::string& line);
+}
 
 namespace rex::system {
 
@@ -466,6 +472,17 @@ bool XSocket::GetPeerName(XSOCKADDR_IN* name) {
 }
 
 namespace {
+// net_dump_vdp: "vdp > 127.0.0.2:1000 24 B: 00 14 ..." (first 160 bytes).
+void DumpVdp(const char* dir, const sockaddr_in& peer, const uint8_t* buf, int len) {
+  if (len < 0 || !REXCVAR_GET(net_dump_vdp)) return;
+  char ip[INET_ADDRSTRLEN] = {};
+  inet_ntop(AF_INET, &peer.sin_addr, ip, sizeof(ip));
+  std::string line = fmt::format("vdp {} {}:{} {} B:", dir, ip, ntohs(peer.sin_port), len);
+  for (int i = 0; i < std::min(len, 160); i++) line += fmt::format(" {:02X}", buf[i]);
+  if (len > 160) line += " ...";
+  rex::kernel::xam::live::NetLogLine(line);
+}
+
 void CountSend(XSocket::Traffic& t, int ret, const sockaddr_in* to) {
   if (ret < 0) {
     t.send_errors++;
@@ -513,6 +530,7 @@ int XSocket::RecvFrom(uint8_t* buf, uint32_t buf_len, uint32_t flags, XSOCKADDR_
   int ret = recvfrom(native_handle_, reinterpret_cast<char*>(buf), buf_len, flags,
                      reinterpret_cast<sockaddr*>(&addr), &addr_len);
   CountRecv(traffic_, ret, proto_ == X_IPPROTO_TCP ? nullptr : &addr);
+  if (vdp_) DumpVdp("<", addr, buf, ret);
   if (ret >= 0) {
     if (proto_ == X_IPPROTO_TCP) {
       socklen_t peer_len = sizeof(addr);
@@ -532,6 +550,7 @@ int XSocket::SendTo(const uint8_t* buf, uint32_t buf_len, uint32_t flags,
     return Send(buf, buf_len, flags);
   }
   sockaddr_in addr = ToHost(to);
+  if (vdp_) DumpVdp(">", addr, buf, int(buf_len));
   if (int delay = g_delayed_sender.Delay(); delay > 0) {
     g_delayed_sender.Send(uint64_t(native_handle_), buf, buf_len, int(flags), addr, delay);
     CountSend(traffic_, int(buf_len), &addr);

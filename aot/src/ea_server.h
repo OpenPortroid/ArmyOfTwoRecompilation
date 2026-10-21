@@ -39,6 +39,7 @@ namespace ao2::ea
     uint64_t host_xuid = 0;
     bool is_private = false;
     int players = 0;
+    bool playgroup = false; // TYPE=P: a versus party (Custom Match), joined as a playgroup
   };
   bool FindHostedGame(const std::string &host_name, HostedGame *out);
 } // namespace ao2::ea

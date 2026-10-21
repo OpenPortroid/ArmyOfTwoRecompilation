@@ -32,6 +32,9 @@ REXCVAR_DECLARE(bool, ao2_god_mode);
 int32_t CoopLeadFrames(int32_t latency_ms);
 
 REXCVAR_DEFINE_BOOL(ao2_coop_debug, false, "Debug", "Log the online co-op lobby flow to coop_debug.log");
+REXCVAR_DEFINE_BOOL(ao2_versus_client_server, false, "Online",
+                    "Versus party: the host connects to an invited player the co-op way (client-server) "
+                    "instead of peer to peer; only for a player that joined the party as a game");
 
 namespace
 {
@@ -462,6 +465,91 @@ extern "C" REX_FUNC(sub_82223700)
   LogStack();
   __imp__sub_82223700(ctx, base);
 }
+
+// GameManager peer connections (versus: both sides connect, neither accepts).
+// sub_8224A4A0(peer, flag): makes the connection to a peer (MakeConnId), flag
+// from a player id comparison in the mesh code; sub_8223F1F8(peer): the other
+// MakeConnId path; sub_82246180 / sub_82249728 call the first with flag 1.
+extern "C" REX_FUNC(__imp__sub_8224A4A0);
+extern "C" REX_FUNC(sub_8224A4A0)
+{
+  auto rd = [&](uint32_t a) {
+    uint8_t *p = base + a;
+    return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3];
+  };
+  uint32_t game = rd(ctx.r3.u32 + 8);
+  Log("GM connect peer=%08X flag=%u game=%08X +156=%u +361=%u", ctx.r3.u32, ctx.r4.u32 & 0xFF, game,
+      rd(game + 156), uint32_t(base[game + 361]));
+  LogStack();
+  // The host's versus party (playgroup) game opens its peer connections peer to peer
+  // (+156 = 1 -> 6002), but the invited player joined it as a game (+156 = 0 -> 6001,
+  // sub_8223B940): both sides send their own connect and neither accepts the other's.
+  // Make the host's side match for the call; +361 is what a mode 0 game gets.
+  uint8_t *mode = base + game + 156;
+  uint8_t saved[4] = {mode[0], mode[1], mode[2], mode[3]};
+  uint8_t saved361 = base[game + 361];
+  bool force = REXCVAR_GET(ao2_versus_client_server) && rd(game + 156) == 1;
+  if (force)
+  {
+    mode[3] = 0;
+    base[game + 361] = 1;
+    Log("GM connect: playgroup game, connecting client-server");
+  }
+  __imp__sub_8224A4A0(ctx, base);
+  if (force)
+  {
+    std::memcpy(mode, saved, 4);
+    base[game + 361] = saved361;
+  }
+}
+
+extern "C" REX_FUNC(__imp__sub_8223F1F8);
+extern "C" REX_FUNC(sub_8223F1F8)
+{
+  auto rd = [&](uint32_t a) {
+    uint8_t *p = base + a;
+    return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3];
+  };
+  Log("GM connect2 this=%08X r4=%08X r5=%08X +156=%u +361=%u", ctx.r3.u32, ctx.r4.u32, ctx.r5.u32,
+      rd(ctx.r3.u32 + 156), uint32_t(base[ctx.r3.u32 + 361]));
+  LogStack();
+  __imp__sub_8223F1F8(ctx, base);
+}
+
+extern "C" REX_FUNC(__imp__sub_82246180);
+extern "C" REX_FUNC(sub_82246180)
+{
+  Log("GM hello path this=%08X r4=%08X r5=%08X", ctx.r3.u32, ctx.r4.u32, ctx.r5.u32);
+  __imp__sub_82246180(ctx, base);
+}
+
+extern "C" REX_FUNC(__imp__sub_82249728);
+extern "C" REX_FUNC(sub_82249728)
+{
+  Log("GM join path this=%08X r4=%08X r5=%08X", ctx.r3.u32, ctx.r4.u32, ctx.r5.u32);
+  __imp__sub_82249728(ctx, base);
+}
+
+// Game object creation: mode (+156) 1 = playgroup (peer to peer), 0 = game.
+// sub_8227C4F8 / C598 / C638 create or join with mode 1, sub_8223B338 joins
+// with mode 0 (co-op, and so far versus invites too).
+#define AO2_GM_TRACE(addr, what)                                                                        \
+  extern "C" REX_FUNC(__imp__sub_##addr);                                                               \
+  extern "C" REX_FUNC(sub_##addr)                                                                       \
+  {                                                                                                     \
+    Log("GM " what " (sub_" #addr ") r3=%08X r4=%08X r5=%08X r6=%08X", ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, \
+        ctx.r6.u32);                                                                                    \
+    LogStack();                                                                                         \
+    __imp__sub_##addr(ctx, base);                                                                       \
+  }
+AO2_GM_TRACE(8227C4F8, "playgroup api 1")
+AO2_GM_TRACE(8227C598, "playgroup api 2")
+AO2_GM_TRACE(8227C638, "playgroup api 3 (xuid)")
+AO2_GM_TRACE(8223B338, "join game (mode 0)")
+AO2_GM_TRACE(8223B540, "game wrapper 2")
+AO2_GM_TRACE(8223B740, "game wrapper 3")
+AO2_GM_TRACE(8223B940, "game wrapper 4")
+#undef AO2_GM_TRACE
 
 // Theater EGRS (host's answer to a join request):
 // (packet, lid, gid, allowed, pid, reason).

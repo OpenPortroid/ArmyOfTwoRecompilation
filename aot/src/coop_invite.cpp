@@ -416,6 +416,7 @@ namespace
     std::vector<uint8_t> xnaddr; // 36 bytes, addresses already the inviter's
     std::string server_ip;       // the inviter's EA server
     bool is_private = false;
+    bool playgroup = false;      // a versus party: joined with the playgroup manager
     Clock::time_point received;
   };
 
@@ -598,6 +599,7 @@ namespace
                                     {"xnaddr", Hex(game.xnaddr)},
                                     {"xuid", xuid},
                                     {"private", game.is_private ? "1" : "0"},
+                                    {"playgroup", game.playgroup ? "1" : "0"},
                                     {"players", std::to_string(game.players)}}));
       }
     }
@@ -609,6 +611,7 @@ namespace
       game.xnaddr = Unhex(Get(f, "xnaddr"));
       game.host_xuid = std::strtoull(Get(f, "xuid").c_str(), nullptr, 16);
       game.is_private = Get(f, "private") == "1";
+      game.playgroup = Get(f, "playgroup") == "1";
       game.players = std::atoi(Get(f, "players", "1").c_str());
       if (game.session_id && game.xnaddr.size() == 36)
       {
@@ -629,6 +632,7 @@ namespace
       inv.session_id = std::strtoull(Get(f, "session").c_str(), nullptr, 16);
       inv.xnaddr = Unhex(Get(f, "xnaddr"));
       inv.is_private = Get(f, "private") == "1";
+      inv.playgroup = Get(f, "playgroup") == "1";
       // The inviter's lobby server; a loopback address means the inviter's
       // own PC (unless both run on this one).
       Address server;
@@ -802,6 +806,7 @@ namespace
                                 {"session", session},
                                 {"xnaddr", Hex(game.xnaddr)},
                                 {"private", game.is_private ? "1" : "0"},
+                                {"playgroup", game.playgroup ? "1" : "0"},
                                 {"server", rex::cvar::GetFlagByName("net_title_server_ip")}});
     s.next_send = Clock::now();
     Log("inviting %s (%s:%u) to game %u, session %s", name.c_str(), IpString(to.ip).c_str(), to.port, game.gid,
@@ -1719,4 +1724,45 @@ extern "C" REX_FUNC(sub_82C41388)
       (unsigned long long)invitee, inv.name.c_str(), (unsigned long long)inv.inviter_xuid,
       (unsigned long long)inv.session_id);
   ctx.r3.u64 = 0;
+}
+
+// Joining the inviter after an accepted invite: the online state machine
+// (sub_82A2B340) calls sub_82A27E18(this, &inviter_xuid), which asks the game
+// manager (EA root +212) to join the inviter's game (vfunc +32, sub_8223B940).
+// A versus party (Custom Match) is a playgroup on the inviter's side, peer to
+// peer; joined as a game, the two sides connect differently and the host's
+// playgroup packets find no handler here. Join it with the playgroup manager
+// (EA root +220, vfunc +36, sub_8227C638: the XUID by value) instead.
+extern "C" REX_FUNC(__imp__sub_82A27E18);
+extern "C" REX_FUNC(sub_82A279A8);
+extern "C" REX_FUNC(sub_8227C638);
+extern "C" REX_FUNC(sub_82A27E18)
+{
+  ReceivedInvite inv;
+  bool playgroup = false;
+  {
+    std::lock_guard lock(state().mutex);
+    if (state().have_accepted && state().accepted.playgroup)
+    {
+      inv = state().accepted;
+      playgroup = true;
+    }
+  }
+  uint64_t xuid = Load64(base, ctx.r4.u32);
+  if (!playgroup || xuid != inv.inviter_xuid)
+  {
+    __imp__sub_82A27E18(ctx, base);
+    return;
+  }
+  sub_82A279A8(ctx, base); // join parameters, as the original passes them
+  uint32_t params = ctx.r3.u32;
+  uint32_t root = uint32_t(Load64(base, 0x8321D0D4) >> 32);
+  uint32_t manager = uint32_t(Load64(base, root + 220) >> 32);
+  Log("joining %s's versus party %016llx as a playgroup (manager %08X)", inv.name.c_str(),
+      (unsigned long long)xuid, manager);
+  ctx.r3.u64 = manager;
+  ctx.r4.u64 = xuid;
+  ctx.r5.u64 = params;
+  ctx.r6.u64 = 0;
+  sub_8227C638(ctx, base);
 }

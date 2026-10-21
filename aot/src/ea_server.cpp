@@ -450,6 +450,9 @@ namespace ao2::ea
       Fields fields; // CGAM, updated by UGAM
       int joined = 1;
       std::string xnaddr; // host's R-XNADDR
+      // Player ids count within the game, the host's own entry is 1: the game manager
+      // decides which of two peers opens the connection by comparing them (versus mesh).
+      uint32_t next_pid = 1;
     };
 
     struct State
@@ -457,8 +460,7 @@ namespace ao2::ea
       std::mutex mutex;
       std::map<uint32_t, Game> games;
       uint32_t next_gid = 1;
-      uint32_t next_pid = 1;
-      std::map<uint32_t, std::weak_ptr<TheaterConn>> pending; // pid -> entering player
+      std::map<std::pair<uint32_t, uint32_t>, std::weak_ptr<TheaterConn>> pending; // (gid, pid) -> entering player
       std::map<uint64_t, std::string> names;                  // userId -> gamertag
       std::map<uint64_t, std::string> xuids;                  // userId -> XUID (decimal)
     };
@@ -603,8 +605,10 @@ namespace ao2::ea
       // (loopback) - wherever the viewer found the server.
       static uint32_t PlayerIpFor(const TheaterConn &player, const TheaterConn &viewer)
       {
+        // A loopback address is only useless to a viewer on another machine: a second
+        // instance on this PC (127.0.0.2) must be reached there, not at the server's.
         uint32_t ip = player.peer_ip();
-        return IsLoopback(ip) ? viewer.local_ip() : ip;
+        return IsLoopback(ip) && !IsLoopback(viewer.peer_ip()) ? viewer.local_ip() : ip;
       }
 
       Fields Summary(const Game &game, const std::string &tid)
@@ -748,14 +752,19 @@ namespace ao2::ea
         else if (t == "RGAM")
         {
           {
+            // The game named (a versus host removes its party after creating the
+            // game the party moves to, which is gid_ by then).
             std::lock_guard lock(st.mutex);
-            st.games.erase(gid_);
+            st.games.erase(uint32_t(ToU64(Get(f, "GID", std::to_string(gid_)))));
           }
           Send("RGAM", 0, {{"TID", tid}});
         }
         else if (t == "GLST")
         {
           bool not_private = Get(f, "FILTER-NOT-PRIVATE") == "1";
+          // Versus: the host's party session (TYPE=P, "Custom Match" screen) lives on
+          // next to its game (TYPE=G, ready room); a quick match must find the game.
+          std::string type = Get(f, "TYPE");
           std::vector<Fields> found;
           {
             std::lock_guard lock(st.mutex);
@@ -763,7 +772,8 @@ namespace ao2::ea
             {
               uint64_t max = ToU64(Get(g.fields, "MAX-PLAYERS", "2"), 2);
               if (g.host.get() == this || g.host->closed() || uint64_t(g.joined) >= max ||
-                  (not_private && Get(g.fields, "B-U-Private") == "1"))
+                  (not_private && Get(g.fields, "B-U-Private") == "1") ||
+                  (!type.empty() && Get(g.fields, "TYPE", "G") != type))
               {
                 continue;
               }
@@ -880,8 +890,8 @@ namespace ao2::ea
             {
               it->second.xnaddr = Get(f, "R-XNADDR");
             }
-            pid = st.next_pid++;
-            st.pending[pid] = self();
+            pid = it->second.next_pid++;
+            st.pending[{gid, pid}] = self();
           }
           auto x = st.xuids.find(uid_);
           xuid = x != st.xuids.end() ? x->second : Get(f, "R-U-XUID", "0");
@@ -933,13 +943,14 @@ namespace ao2::ea
         bool have_game = false;
         {
           std::lock_guard lock(st.mutex);
-          auto p = st.pending.find(pid);
+          uint32_t gid = uint32_t(ToU64(Get(f, "GID", std::to_string(gid_))));
+          auto p = st.pending.find({gid, pid});
           if (p != st.pending.end())
           {
             joiner = p->second.lock();
             st.pending.erase(p);
           }
-          auto it = st.games.find(gid_);
+          auto it = st.games.find(gid);
           if (it != st.games.end())
           {
             if (joiner && joiner.get() != this && Get(f, "ALLOWED", "1") == "1")
@@ -1192,6 +1203,7 @@ namespace ao2::ea
       out->host_xuid = x != st.xuids.end() ? ToU64(x->second) : 0;
       out->is_private = Get(g.fields, "B-U-Private") == "1";
       out->players = g.joined;
+      out->playgroup = Get(g.fields, "TYPE") == "P";
       return out->session_id != 0 && out->xnaddr.size() == 36;
     }
     return false;
