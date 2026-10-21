@@ -185,6 +185,19 @@ namespace AO2Launcher
             a("Could not load the release notes", "Не удалось загрузить список изменений", "Impossible de charger les notes de version",
               "Die Versionshinweise konnten nicht geladen werden", "No se pudieron cargar las notas de la versión",
               "Impossibile caricare le note di rilascio");
+            a("Could not load the release list", "Не удалось загрузить список версий", "Impossible de charger la liste des versions",
+              "Die Versionsliste konnte nicht geladen werden", "No se pudo cargar la lista de versiones",
+              "Impossibile caricare l'elenco delle versioni");
+            a("VERSION", "ВЕРСИЯ", "VERSION", "VERSION", "VERSIÓN", "VERSIONE");
+            a("VERSIONS", "ВЕРСИИ", "VERSIONS", "VERSIONEN", "VERSIONES", "VERSIONI");
+            a("latest", "последняя", "dernière", "neueste", "última", "ultima");
+            a("installed", "установлена", "installée", "installiert", "instalada", "installata");
+            a("BACK", "НАЗАД", "RETOUR", "ZURÜCK", "ATRÁS", "INDIETRO");
+            a("DOWNLOAD", "ЗАГРУЗИТЬ", "TÉLÉCHARGER", "HERUNTERLADEN", "DESCARGAR", "SCARICA");
+            a("INSTALL AN OLDER VERSION", "УСТАНОВКА ПРОШЛОЙ ВЕРСИИ", "INSTALLER UNE ANCIENNE VERSION", "ÄLTERE VERSION INSTALLIEREN",
+              "INSTALAR UNA VERSIÓN ANTERIOR", "INSTALLA UNA VERSIONE PRECEDENTE");
+            a("Go back to {0}? You have {1}.", "Вернуться на {0}? Сейчас у вас {1}.", "Revenir à la {0} ? Vous avez la {1}.",
+              "Zu {0} zurückkehren? Sie haben {1}.", "¿Volver a la {0}? Tienes la {1}.", "Tornare alla {0}? Hai la {1}.");
             a("This release has no notes", "У этой версии нет описания", "Cette version n'a pas de notes", "Diese Version hat keine Hinweise",
               "Esta versión no tiene notas", "Questa versione non ha note");
             a("Update cancelled","Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",

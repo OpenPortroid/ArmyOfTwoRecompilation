@@ -425,6 +425,18 @@ namespace AO2Launcher
                 ScrollNotes(e.Delta > 0 ? -3 : 3);
                 return;
             }
+            if (RelShown)
+            {
+                if (relPick >= 0)
+                {
+                    ScrollNotes(e.Delta > 0 ? -3 : 3);
+                }
+                else
+                {
+                    RelScroll(e.Delta > 0 ? -2 : 2);
+                }
+                return;
+            }
             if (screen != UiScreen.Settings || maxScroll <= 0 || capturing != null)
             {
                 return;

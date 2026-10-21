@@ -23,6 +23,65 @@ namespace AO2Launcher
         {
             public string Version;  // "1.1" (the tag without the leading v)
             public string Url;      // the .zip asset, else the release page
+            public string Date;     // "2026-10-21" (when published); "" when unknown
+            public string Body;     // the release description (markdown); "" when none
+        }
+
+        // Every release on GitHub, newest first, or null when it could not be reached. Blocks: call off the UI thread.
+        public static System.Collections.Generic.List<Release> All()
+        {
+            if (Override != null)
+            {
+                var one = new System.Collections.Generic.List<Release>();
+                one.Add(new Release { Version = Override.TrimStart('v', 'V'), Url = ReleasesPage, Date = "", Body = NotesFor(Current) ?? "" });
+                if (Override.TrimStart('v', 'V') != Current)
+                {
+                    one.Add(new Release { Version = Current, Url = ReleasesPage, Date = "", Body = NotesFor(Current) ?? "" });
+                }
+                return one;
+            }
+            try
+            {
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases?per_page=50");
+                req.UserAgent = "ArmyOfTwoLauncher/" + Current;
+                req.Accept = "application/vnd.github+json";
+                req.Timeout = 8000;
+                req.ReadWriteTimeout = 8000;
+                string json;
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    json = rd.ReadToEnd();
+                }
+                // A release's own fields (tag, date, assets, body) follow its "tag_name"; the next release's
+                // header fields come after this body, which no key of ours reads.
+                var list = new System.Collections.Generic.List<Release>();
+                string[] parts = Regex.Split(json, "\"tag_name\"\\s*:\\s*\"");
+                for (int i = 1; i < parts.Length; i++)
+                {
+                    string p = parts[i];
+                    string tag = p.Substring(0, Math.Max(0, p.IndexOf('"')));
+                    if (tag.Length == 0 || Regex.IsMatch(p, "\"draft\"\\s*:\\s*true"))
+                    {
+                        continue;
+                    }
+                    Match zip = Regex.Match(p, "\"browser_download_url\"\\s*:\\s*\"([^\"]+\\.zip)\"");
+                    Match date = Regex.Match(p, "\"published_at\"\\s*:\\s*\"(\\d{4}-\\d{2}-\\d{2})");
+                    list.Add(new Release
+                    {
+                        Version = tag.TrimStart('v', 'V'),
+                        Url = zip.Success ? zip.Groups[1].Value : "https://github.com/" + Repo + "/releases/tag/" + tag,
+                        Date = date.Success ? date.Groups[1].Value : "",
+                        Body = JsonString(p, "body") ?? "",
+                    });
+                }
+                return list;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // The latest release, or null when GitHub could not be reached. Blocks: call off the UI thread.
