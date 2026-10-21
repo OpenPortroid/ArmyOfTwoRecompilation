@@ -163,45 +163,104 @@ namespace AO2Launcher
         // Runs the tool; every output line goes to onLine. Returns the error text or null.
         static string RunTool(string gameDir, string args, Action<string> onLine, Func<bool> cancelled)
         {
-            var psi = new ProcessStartInfo(Tool(gameDir), args)
+            string tool = Tool(gameDir);
+            var psi = new ProcessStartInfo(tool, args)
             {
                 WorkingDirectory = gameDir,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
             };
+            Log.Write("run: {0} {1} (in {2})", tool, args, gameDir);
             string error = null;
-            using (Process p = Process.Start(psi))
+            int lastBucket = -1;
+            var stderr = new StringBuilder();
+            try
             {
-                string line;
-                while ((line = p.StandardOutput.ReadLine()) != null)
+                using (Process p = Process.Start(psi))
                 {
-                    if (cancelled != null && cancelled())
+                    // Read the error stream too: a crash of the tool says why there.
+                    p.ErrorDataReceived += (s, e) =>
                     {
-                        try
+                        if (e.Data != null)
                         {
-                            p.Kill();
+                            lock (stderr)
+                            {
+                                stderr.AppendLine(e.Data);
+                            }
                         }
-                        catch
+                    };
+                    p.BeginErrorReadLine();
+                    string line;
+                    while ((line = p.StandardOutput.ReadLine()) != null)
+                    {
+                        if (cancelled != null && cancelled())
                         {
+                            Log.Write("cancelled by the user, killing {0}", ToolName);
+                            try
+                            {
+                                p.Kill();
+                            }
+                            catch
+                            {
+                            }
+                            throw new OperationCanceledException();
                         }
-                        throw new OperationCanceledException();
+                        if (line.StartsWith("PROGRESS "))
+                        {
+                            // Every tenth of the work, not every update.
+                            string[] pr = line.Split(' ');
+                            long done, all;
+                            if (pr.Length >= 3 && long.TryParse(pr[1], out done) && long.TryParse(pr[2], out all) && all > 0)
+                            {
+                                int bucket = (int)(done * 10 / all);
+                                if (bucket != lastBucket)
+                                {
+                                    lastBucket = bucket;
+                                    Log.Write("tool: {0}", line);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Log.Write("tool: {0}", line);
+                        }
+                        if (line.StartsWith("ERROR "))
+                        {
+                            error = line.Substring(6);
+                        }
+                        else if (onLine != null)
+                        {
+                            onLine(line);
+                        }
                     }
-                    if (line.StartsWith("ERROR "))
+                    p.WaitForExit();
+                    lock (stderr)
                     {
-                        error = line.Substring(6);
+                        if (stderr.Length > 0)
+                        {
+                            Log.Write("tool stderr:\r\n{0}", stderr.ToString().TrimEnd());
+                        }
                     }
-                    else if (onLine != null)
+                    Log.Write("tool exit code {0}{1}", p.ExitCode, error != null ? ", error: " + error : "");
+                    if (p.ExitCode != 0 && error == null)
                     {
-                        onLine(line);
+                        error = "ao2_install: exit code " + p.ExitCode;
                     }
                 }
-                p.WaitForExit();
-                if (p.ExitCode != 0 && error == null)
-                {
-                    error = "ao2_install: exit code " + p.ExitCode;
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // The tool could not even start (antivirus, a missing runtime, a locked file).
+                Log.Error("running " + ToolName, ex);
+                throw;
             }
             return error;
         }
@@ -247,6 +306,7 @@ namespace AO2Launcher
             }, null);
             if (error != null)
             {
+                Log.Write("probe {0}: failed: {1}", path, error);
                 throw new InstallException(Path.GetFileName(path) + ": " + ErrorText(error));
             }
             var src = new InstallSource { Path = path };
@@ -261,6 +321,7 @@ namespace AO2Launcher
             {
                 long.TryParse(v, out src.Bytes);
             }
+            Log.Write("probe {0}: kind {1}, title {2:X8}, name '{3}', {4} bytes", path, src.Kind, src.Title, src.Name, src.Bytes);
             if (src.Kind == "unknown")
             {
                 throw new InstallException(L.F("{0}: no game on this disc (default.xex)", Path.GetFileName(path)));
@@ -291,11 +352,26 @@ namespace AO2Launcher
             }
         }
 
+        // For the log: what a file that failed its check really is.
+        static void LogHashMismatch(string file, string expected)
+        {
+            try
+            {
+                Log.Write("hash check failed: {0}: {1}, expected {2}", file,
+                    File.Exists(file) ? "sha1 " + Sha1(file) + ", " + new FileInfo(file).Length + " bytes" : "file is missing", expected);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("hashing " + file, ex);
+            }
+        }
+
         static void CheckSpace(string dir, long need)
         {
             try
             {
                 var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(dir)));
+                Log.Write("space on {0}: {1} free, {2} needed (+64 MB reserve)", drive.Name, drive.AvailableFreeSpace, need);
                 if (drive.AvailableFreeSpace < need + (64L << 20))
                 {
                     throw new InstallException(L.F("Not enough space on {0}: {1} needed, {2} free",
@@ -306,9 +382,10 @@ namespace AO2Launcher
             {
                 throw;
             }
-            catch
+            catch (Exception ex)
             {
                 // Network path etc.: the copy itself will tell.
+                Log.Write("space check skipped for {0}: {1}", dir, ex.Message);
             }
         }
 
@@ -321,8 +398,9 @@ namespace AO2Launcher
                     Directory.Delete(dir, true);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Write("could not delete {0}: {1}", dir, ex.Message);
             }
         }
 
@@ -406,10 +484,18 @@ namespace AO2Launcher
             long total = (game != null ? game.Bytes : 0) + (update != null ? update.Bytes : 0) + dlc.Sum(d => d.Bytes);
             long before = 0;
             Func<string, Action<long>> step = name => done => report(name, total > 0 ? Math.Min(1.0, (before + done) / (double)total) : 0);
+            Log.Write("install started: game folder {0}, assets {1}, temp {2}", gameDir, assets, temp);
+            Log.Write("  game: {0}", game == null ? "-" : game.Path + (game.Folder ? " (folder)" : "") + ", " + game.Bytes + " bytes");
+            Log.Write("  update: {0}", update == null ? "-" : update.Path + ", " + update.Bytes + " bytes");
+            foreach (InstallSource d in dlc)
+            {
+                Log.Write("  dlc: {0}, {1} bytes", d.Path, d.Bytes);
+            }
             try
             {
                 if (game != null)
                 {
+                    Log.Write("step: game");
                     CheckSpace(gameDir, game.Bytes);
                     DeleteDir(temp);
                     Directory.CreateDirectory(temp);
@@ -421,6 +507,7 @@ namespace AO2Launcher
                     }
                     if (!HashIs(xex, XexSha1))
                     {
+                        LogHashMismatch(xex, XexSha1);
                         throw new InstallException(L.T("This version of the game is not supported: the European release of Army of Two for Xbox 360 is needed (4541084C)"));
                     }
                     if (game.Folder)
@@ -431,26 +518,32 @@ namespace AO2Launcher
                     {
                         Extract(gameDir, game.Path, temp, " " + Game.Quote("--skip=" + SkipDir), step(L.T("Extracting the game")), cancelled);
                     }
+                    Log.Write("moving {0} into {1}", temp, assets);
                     MoveInto(temp, assets);
                     before += game.Bytes;
+                    Log.Write("step done: game");
                 }
 
                 if (update != null)
                 {
+                    Log.Write("step: update");
                     DeleteDir(temp);
                     Directory.CreateDirectory(temp);
                     Extract(gameDir, update.Path, temp, " --only=default.xexp", step("Title Update 2"), cancelled);
                     if (!HashIs(Path.Combine(temp, "default.xexp"), XexpSha1))
                     {
+                        LogHashMismatch(Path.Combine(temp, "default.xexp"), XexpSha1);
                         throw new InstallException(L.T("This is a different update: Title Update 2 of the European release is needed (TU_12K222C_…)"));
                     }
                     Directory.CreateDirectory(assets);
                     MoveInto(temp, assets);
                     before += update.Bytes;
+                    Log.Write("step done: update");
                 }
 
                 foreach (InstallSource d in dlc)
                 {
+                    Log.Write("step: dlc {0}", d.Path);
                     string dest = Path.Combine(DlcRoot(gameDir), Path.GetFileName(d.Path));
                     string part = dest + ".tmp";
                     Directory.CreateDirectory(DlcRoot(gameDir));
@@ -471,19 +564,27 @@ namespace AO2Launcher
 
                 if (!GameInstalled(gameDir))
                 {
+                    Log.Write("final check: game not installed (CookedXenon {0})",
+                        Directory.Exists(Path.Combine(assets, "AO2Game", "CookedXenon")) ? "present" : "missing");
+                    LogHashMismatch(Path.Combine(assets, "default.xex"), XexSha1);
                     throw new InstallException(L.T("The game files are not installed: choose a game image"));
                 }
                 if (!UpdateInstalled(gameDir))
                 {
+                    Log.Write("final check: Title Update 2 not installed");
+                    LogHashMismatch(Path.Combine(assets, "default.xexp"), XexpSha1);
                     throw new InstallException(L.T("Title Update 2 is not installed: choose the update file"));
                 }
+                Log.Write("install finished: OK");
             }
             catch (IOException ex)
             {
+                Log.Error("install", ex);
                 throw new InstallException(ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
+                Log.Error("install (access denied)", ex);
                 throw new InstallException(ex.Message);
             }
             finally
@@ -557,6 +658,7 @@ namespace AO2Launcher
                             }
                             catch (Exception ex)
                             {
+                                Log.Error("moving the old DLC " + from + " to " + to, ex);
                                 failed = Path.GetFileName(from) + ": " + ex.Message;
                             }
                         }
@@ -689,9 +791,18 @@ namespace AO2Launcher
         // (a junction to the files elsewhere) is unlinked, not emptied.
         public static void Uninstall(string gameDir)
         {
+            Log.Write("uninstall: {0}", AssetsDir(gameDir));
             foreach (string e in InstalledEntries(gameDir).ToList())
             {
-                DeleteEntry(e);
+                try
+                {
+                    DeleteEntry(e);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("uninstall: deleting " + e, ex);
+                    throw;
+                }
             }
             DeleteDir(AssetsDir(gameDir) + ".tmp");
         }

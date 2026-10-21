@@ -105,6 +105,12 @@ namespace AO2Launcher
                     }
                     catch (InstallException ex)
                     {
+                        Log.Write("cannot use {0}: {1}", path, ex.Message);
+                        instError = ex.Message;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("probing " + path, ex);
                         instError = ex.Message;
                     }
                 }
@@ -223,6 +229,7 @@ namespace AO2Launcher
             instStep = L.T("Preparing");
             instProgress = 0;
             string dir = GameDir;
+            Log.Write("install requested from the window; log: {0}", Log.FilePath);
             InstallSource game = srcGame, update = srcUpdate;
             var dlc = srcDlc.ToList();
             var th = new System.Threading.Thread(() =>
@@ -246,14 +253,17 @@ namespace AO2Launcher
                 }
                 catch (OperationCanceledException)
                 {
+                    Log.Write("install cancelled");
                     cancelled = true;
                 }
                 catch (InstallException ex)
                 {
+                    Log.Error("install failed: " + ex.Message, ex);
                     error = ex.Message;
                 }
                 catch (Exception ex)
                 {
+                    Log.Error("install crashed", ex);
                     error = ex.Message;
                 }
                 try
@@ -273,6 +283,7 @@ namespace AO2Launcher
         {
             installing = false;
             RefreshInstalled();
+            Log.Write("install ended: {0}; game {1}, update {2}", cancelled ? "cancelled" : error != null ? "ERROR " + error : "OK", gameOk, updateOk);
             if (cancelled)
             {
                 ShowToast(L.T("Installation cancelled"), true);

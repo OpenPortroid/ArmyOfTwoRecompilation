@@ -2973,6 +2973,10 @@ namespace AO2Launcher
             }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            // Whatever goes wrong without a handler of its own ends up in the log.
+            Application.ThreadException += (s, e) => Log.Error("unhandled exception in the window", e.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                Log.Error("unhandled exception (fatal: " + e.IsTerminating + ")", e.ExceptionObject as Exception);
             // Debug: --snapshot=<png> [--screen=main|settings] [--tab=N] [--sel=N] renders the window to a file without
             // showing it; --dump-args=<file> [--host=<ip>] writes the game command line; --probe=<file> runs the
             // host search and writes the found IP (or "none").

@@ -330,6 +330,7 @@ namespace AO2Launcher
             }
             catch (Exception ex)
             {
+                Log.Error("uninstall", ex);
                 error = ex.Message;
             }
             finally
