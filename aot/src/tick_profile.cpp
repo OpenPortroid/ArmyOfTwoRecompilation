@@ -35,11 +35,16 @@ namespace
     double ms = 0.0;
     uint32_t calls = 0;
     double average = 0.0; // over the ticks
+    double direct_ms = 0.0; // of ms, while called straight from UWorld::Tick
   };
 
-  constexpr int kSlots = 66;
+  constexpr int kSlots = 68; // the last two: ao2::tickprof::Add
   Slot g_slots[kSlots];
   thread_local bool t_on = false;
+  // Nesting of the timed calls, and UWorld::Tick's level in it (-1 = outside).
+  thread_local int t_depth = 0;
+  thread_local int t_world_depth = -1;
+  constexpr int kWorldTickSlot = 17; // sub_827BEF78
   uint64_t g_ticks = 0;
   uint64_t g_cycles_start = 0; // the game thread's CPU cycles at the tick's start
 
@@ -88,22 +93,55 @@ namespace
   struct Timer
   {
     int slot;
+    int depth;
     double start;
-    Timer(int s, const char *name, const char *callers) : slot(s), start(NowMs())
+    Timer(int s, const char *name, const char *callers) : slot(s), depth(t_depth++), start(NowMs())
     {
       g_slots[s].name = name;
       g_slots[s].callers = callers;
+      if (s == kWorldTickSlot)
+      {
+        t_world_depth = depth;
+      }
     }
     ~Timer()
     {
-      g_slots[slot].ms += NowMs() - start;
+      double ms = NowMs() - start;
+      g_slots[slot].ms += ms;
       g_slots[slot].calls++;
+      if (t_world_depth >= 0 && depth == t_world_depth + 1)
+      {
+        g_slots[slot].direct_ms += ms;
+      }
+      if (slot == kWorldTickSlot)
+      {
+        t_world_depth = -1;
+      }
+      t_depth--;
     }
   };
 } // namespace
 
 namespace ao2::tickprof
 {
+  bool On()
+  {
+    return t_on;
+  }
+
+  void Add(int slot, const char *name, const char *callers, double ms)
+  {
+    g_slots[slot].name = name;
+    g_slots[slot].callers = callers;
+    g_slots[slot].ms += ms;
+    g_slots[slot].calls++;
+    // kPhysicsKickGame is inside kPhysicsKick.
+    if (t_world_depth >= 0 && t_depth == t_world_depth + 1 && slot != kPhysicsKickGame)
+    {
+      g_slots[slot].direct_ms += ms;
+    }
+  }
+
   void Begin()
   {
     t_on = REXCVAR_GET(ao2_tick_profile_ms) > 0;
@@ -130,6 +168,15 @@ namespace ao2::tickprof
       GetLocalTime(&t);
       std::fprintf(Log(), "[%02u:%02u:%02u.%03u] tick %.2f ms, the game thread ran %.2f ms of it\n", t.wHour,
                    t.wMinute, t.wSecond, t.wMilliseconds, tick_ms, cpu_ms);
+      // What UWorld::Tick's timed direct callees add up to; the rest of UWorld::Tick is its own code
+      // and its indirect calls.
+      double world_callees = 0.0;
+      for (const Slot &s : g_slots)
+      {
+        world_callees += s.direct_ms;
+      }
+      std::fprintf(Log(), "  world tick: direct callees timed %.2f ms, the rest %.2f ms\n", world_callees,
+                   g_slots[kWorldTickSlot].ms - world_callees);
       int order[kSlots];
       for (int i = 0; i < kSlots; ++i)
       {
@@ -152,6 +199,7 @@ namespace ao2::tickprof
     {
       s.average += (s.ms - s.average) * weight;
       s.ms = 0.0;
+      s.direct_ms = 0.0;
       s.calls = 0;
     }
   }
