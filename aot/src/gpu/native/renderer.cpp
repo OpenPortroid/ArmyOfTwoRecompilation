@@ -86,6 +86,10 @@ REXCVAR_DEFINE_INT32(ao2_shadow_resolution, 0, "GPU",
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_alias_stencil_clear, true, "GPU",
                     "D3D's stencil clears through a 4x MSAA alias of the scene depth clear the stencil in place "
                     "instead of transferring the depth over and back");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_swap, true, "GPU",
+                    "A color resolve followed by a clear hands the render target's resource to the texture and "
+                    "gives the render target the texture's old one (no copy); the exponent bias is applied when "
+                    "the texture is sampled");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_skip_depth_restore, true, "GPU",
                     "A resolve's depth clear waits for the next draw; the game's restore of that depth from the "
                     "resolved texture then needs neither the clear nor itself");
@@ -268,6 +272,9 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       bool red_blue_swapped = false;
       bool from_depth = false;
       bool small_source = false; // resolved from a small render target (see SmallTarget)
+      // Applied when sampled: the resolve's exponent bias when the texture is
+      // the render target's resource itself (SwapResolve), otherwise 1.
+      float exp_scale = 1.0f;
       // Guest-sized (box-downscaled) copy for draws into small render targets
       // (see PrepareTextures), rebuilt when a resolve changed the texture.
       uint64_t generation = 0;
@@ -595,7 +602,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       std::unordered_map<uint64_t, FetchCacheEntry, FastHash> fetch_cache;
       // Guest display gamma ramp (DC_LUT 256-entry table), applied when presenting.
       uint32_t gamma_ramp[256] = {};
-      uint64_t resolves_copied = 0, resolves_drawn = 0, lowres_copies = 0;
+      uint64_t resolves_copied = 0, resolves_drawn = 0, resolves_swapped = 0, lowres_copies = 0;
       uint64_t transfers_skipped = 0; // claims of fully overwritten rectangles
       uint64_t transfers_cleared = 0; // transfers of uniform tiles done as clears
       uint64_t stencil_clears_redirected = 0; // ClearStencilOnOwner
@@ -4742,6 +4749,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
             uv_scale[1] = std::min(float((fetch.size_2d.height + 1) * texel4) /
                                        float(ScaleSize(resolved->height, texel4) * 4), 1.0f);
             signs |= texel4 << 16;
+            exp_scale *= resolved->exp_scale;
             sd.Format = use_snorm ? resolved->snorm : resolved->format;
             if (use_snorm)
             {
@@ -6607,6 +6615,80 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     // Draws `rect` of the render target into the destination with the
     // exponent bias / sample averaging / format conversion applied, `dest_row`
     // guest rows lower (a predicated tile, see the resolve).
+    // A color resolve with a clear: instead of copying the render target into
+    // the texture and clearing it, the texture takes the render target's
+    // resource and the render target the texture's old one (or a new one), which
+    // the clear then fills. The texture is the render target's size (the guest
+    // part is chosen by the UV scale) and gets the exponent bias at sampling,
+    // exact for a power of two. Only where nothing else is in that resource:
+    // `rect` from 0,0 and no EDRAM tile of the render target outside it.
+    bool SwapResolve(RenderTarget &src, HostTexture &tex, const D3D12_RECT &rect, float scale)
+    {
+      if (rect.left || rect.top || src.samples != 1 || src.depth)
+      {
+        return false;
+      }
+      static std::vector<uint32_t> inside;
+      TilesInside(src, rect, inside);
+      static std::bitset<2048> inside_mask;
+      inside_mask.reset();
+      for (uint32_t tile : inside)
+      {
+        inside_mask.set(tile);
+      }
+      bool outside = false;
+      ForEachTile(src, D3D12_RECT{0, 0, LONG(src.width), LONG(src.height)}, [&](uint32_t tile) {
+        outside = outside || (g.edram_owner[tile] == &src && !inside_mask[tile]);
+      });
+      if (outside)
+      {
+        return false;
+      }
+      D3D12_RESOURCE_DESC rd = src.resource->GetDesc();
+      ComPtr<ID3D12Resource> spare = std::move(tex.resource);
+      D3D12_RESOURCE_STATES spare_state = tex.state;
+      if (spare)
+      {
+        D3D12_RESOURCE_DESC sd = spare->GetDesc();
+        if (sd.Width != rd.Width || sd.Height != rd.Height || sd.Format != rd.Format || sd.Flags != rd.Flags ||
+            sd.SampleDesc.Count != rd.SampleDesc.Count)
+        {
+          DeferRelease(std::move(spare));
+        }
+      }
+      if (!spare)
+      {
+        D3D12_HEAP_PROPERTIES hp = {D3D12_HEAP_TYPE_DEFAULT};
+        spare_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        ++g.resources_created;
+        if (FAILED(g.device->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &rd, spare_state, nullptr,
+                                                     IID_PPV_ARGS(&spare))))
+        {
+          return false;
+        }
+      }
+      tex.resource = std::move(src.resource);
+      tex.state = src.state;
+      tex.width = src.width;
+      tex.height = src.height;
+      tex.scale4 = src.scale4;
+      tex.exp_scale = scale;
+      src.resource = std::move(spare);
+      src.state = spare_state;
+      D3D12_RENDER_TARGET_VIEW_DESC rv = {};
+      rv.Format = src.format;
+      rv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+      g.device->CreateRenderTargetView(src.resource.Get(), &rv, src.view);
+      if (src.view_srgb.ptr != src.view.ptr)
+      {
+        rv.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        g.device->CreateRenderTargetView(src.resource.Get(), &rv, src.view_srgb);
+      }
+      // The command list's targets are views, rebound on the next draw.
+      g.bound.valid = false;
+      return true;
+    }
+
     bool ResolveWithShader(RenderTarget &src, HostTexture &dest, const ResolveFormat &rf, const D3D12_RECT &rect,
                            float scale, xenos::CopySampleSelect sample_select, bool swap_red_blue = false,
                            uint32_t dest_row = 0)
@@ -9019,7 +9101,16 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       tex->red_blue_swapped = swap_red_blue;
       // Traced frame: the resolve's GPU time goes to gpu_draws.txt like a draw's.
       uint32_t stamp_begin = g_trace ? GpuStamp(kGpuResolve) : UINT32_MAX;
-      if (same_family && src->samples == 1 && scale == 1.0f && !swap_red_blue)
+      bool swap = REXCVAR_GET(ao2_native_gpu_resolve_swap) && copy.color_clear_enable && same_family &&
+                  !src_fixed16 && !rf.fixed16 && !swap_red_blue && !dest_row && !CurrentPostSettings().Any() &&
+                  rect.right <= LONG(src->width) && rect.bottom <= LONG(src->height);
+      tex->exp_scale = 1.0f;
+      if (swap && SwapResolve(*src, *tex, rect, scale))
+      {
+        Trace("    swapped with the render target (exp scale %g)\n", scale);
+        ++g.resolves_swapped;
+      }
+      else if (same_family && src->samples == 1 && scale == 1.0f && !swap_red_blue)
       {
         // Plain copy of the bits.
         Transition(src->resource.Get(), src->state, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -9751,7 +9842,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       g.pso_created = 0;
       NativeLog("native frame %llu: draws=%llu skipped=%llu pending=%llu pipelines=%zu rts=%zu resolved=%zu "
                 "front=%08X present=%08X vertex_upload=%.1fMB textures=%zu binds tex/resolved/null="
-                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) depth restores skipped %llu writebacks=%llu\n",
+                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw/swap=%llu/%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) depth restores skipped %llu writebacks=%llu\n",
                 (unsigned long long)g.frame_number, (unsigned long long)g.draws,
                 (unsigned long long)g.draws_skipped, (unsigned long long)g.draws_pending, g.pipelines.size(), g.render_targets.size(),
                 g.resolved.size(), frontbuffer, g.present_address, double(g.mirror_bytes) / 1048576.0,
@@ -9759,6 +9850,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                 (unsigned long long)g.null_binds, (unsigned long long)g.texture_uploads,
                 double(g.texture_upload_bytes) / 1048576.0, (unsigned long long)g.flushes,
                 (unsigned long long)g.resolves_copied, (unsigned long long)g.resolves_drawn,
+                (unsigned long long)g.resolves_swapped,
                 (unsigned long long)g.lowres_copies,
                 (unsigned long long)g.transfers, (unsigned long long)g.transfers_skipped,
                 (unsigned long long)g.transfers_cleared, (unsigned long long)g.stencil_clears_redirected,
@@ -9779,7 +9871,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g.mirror_bytes = 0;
     g.texture_binds = g.resolved_binds = g.null_binds = 0;
     g.texture_uploads = g.texture_upload_bytes = 0;
-    g.resolves_copied = g.resolves_drawn = g.lowres_copies = 0;
+    g.resolves_copied = g.resolves_drawn = g.resolves_swapped = g.lowres_copies = 0;
     g.transfers = 0;
     g.transfers_skipped = 0;
     g.transfers_cleared = 0;

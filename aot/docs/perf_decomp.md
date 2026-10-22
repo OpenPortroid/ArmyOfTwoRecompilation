@@ -105,4 +105,11 @@ Both only change how the native renderer does the same EDRAM work; game state is
   2.96 -> 2.91 / 2.91 ms.
 - River screenshots on/off (07_011, standing, WAIT=60 so the capture is not the loading screen): the same image
   apart from edges (the camera's idle sway between runs), the same count of black pixels.
+- `ao2_native_gpu_resolve_swap` (on), the first step of "resolve semantics" (see ao2decomp/hle-feasibility.md:
+  a full D3D/RHI-level renderer would not remove the engine's resolve + clear + restore patterns): a color
+  resolve followed by a clear hands the render target's resource to the texture (the exponent bias moves to
+  sampling) and the render target gets the texture's previous one. Fires on the scene color resolve (1/frame
+  on the river and in Iraq). River 2x2: resolve 0.855 / 0.850 -> 0.742 / 0.740 ms but draw 2.93 / 2.95 -> 3.04 /
+  3.03: the frame total only 4.256 / 4.275 -> 4.247 / 4.249 ms. The reads stay (the restore reads the scene
+  either way), only the copy's write goes: zero copy is worth much less here than the copies' times suggest.
 - `ao2_native_gpu_shader_override_dir`: hand-written HLSL by the dump's names, for experiments.
