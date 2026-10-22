@@ -210,6 +210,14 @@ namespace ao2::gpu
       out->error += "\n";
     }
     Job job{out, type, hash, translation->GetTranslatedBinaryString(), {}};
+    if (dump_ucode)
+    {
+      // Also when the DXBC comes from the disk cache and Compile never runs.
+      std::string base = fmt::format("{}/{:016X}_{:X}.{}", dump_dir, hash, modification, stage);
+      WriteFile(base + ".hlsl", job.hlsl.data(), job.hlsl.size());
+      std::string text = shader->ucode_disassembly();
+      WriteFile(base + ".txt", text.data(), text.size());
+    }
     if (!translated)
     {
       ++failed_count_;

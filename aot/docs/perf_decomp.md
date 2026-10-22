@@ -88,3 +88,8 @@ Both only change how the native renderer does the same EDRAM work; game state is
 - `ao2_native_gpu_skip_depth_restore` (on): the scene depth resolve clears depth, and the game redraws that depth
   from the resolved texture right away. The depth clear is left pending and skipped with the restore draw. River,
   2x2: 211.5 / 210.3 -> 213.3 / 211.8 FPS, draw 3.10 -> 3.05 ms; one restore skipped per frame.
+- Tried, not kept: the scene color has the same resolve (exp bias -2, clear) + restore (PS D5EE530D, x4 on RGB only)
+  pair. Skipping both gave +3.5 / +2.6 FPS on the river, but the scene color's alpha holds the scene depth (sky =
+  fp16 max), the resolve scales alpha too and the restore does not undo it: skipping leaves alpha 4x larger, and the
+  bloom downsample (PS 13A2D3FE -> tonemap 7A12CB96 multiplies by it) and depth of field read it. Doing it faithfully
+  needs an alpha pass about as costly as the restore. Patch in ao2decomp/attempts/color_restore.
