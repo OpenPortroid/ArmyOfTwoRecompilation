@@ -961,6 +961,24 @@ namespace
     return true;
   }
 
+  // The upgrades (UIScene_Upgrades: the weapon parts, lblbtnUpgrade0, 1...)
+  // keep the part shown and opened in their Kismet, which moves it one part
+  // per D-pad step (Upgrades_Mountpoint1, 2...): a focus put next to the
+  // target or on it directly is not seen there, the part shown is then
+  // another one. The focus only steps there, every part on the way. Only the
+  // list's buttons: another widget there still gets the focus at the end.
+  bool StepsOnly(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t upgrades = ao2::ue3::FindClass(base, "UIScene_Upgrades");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    if (!upgrades || !scene || !ao2::ue3::IsA(base, scene, upgrades) || IsMask(base, widget))
+    {
+      return false;
+    }
+    std::string name = ao2::ue3::ObjectName(base, widget);
+    return name.rfind("lblbtnUpgrade", 0) == 0 || name.rfind("lblbtnArmor", 0) == 0;
+  }
+
   bool FocusAtOnce(const uint8_t *base, uint32_t widget)
   {
     uint32_t scene = LoadU32(base, widget + kOwnerScene);
@@ -1007,8 +1025,14 @@ namespace
   {
     if (g_walk.target != target)
     {
-      g_walk = Walk{};
-      g_walk.target = target;
+      // A step under way is let go first: the next one pressed at once would
+      // hold the same button on, two steps the menu sees as one.
+      Walk w;
+      w.target = target;
+      w.button = g_walk.button;
+      w.phase = g_walk.phase;
+      w.since = g_walk.since;
+      g_walk = w;
     }
     g_walk.then = then ? then : g_walk.then;
   }
@@ -1062,7 +1086,7 @@ namespace
     }
     // The objectives keep their own pick and put the focus back on it: only
     // the D-pad's steps move it there, one at a time.
-    if (now != w.target && !w.steps && !w.jumped && !objectives)
+    if (now != w.target && !w.steps && !w.jumped && !objectives && !StepsOnly(base, w.target))
     {
       // Not every row on the way: the focus is put next to the target and one
       // step goes in, so a menu following the navigation sees it arrive.
@@ -1105,9 +1129,9 @@ namespace
         w = Walk{}; // set, it would go back: as far as the steps got
         return 0;
       }
-      if (IsMask(base, w.target))
+      if (IsMask(base, w.target) || StepsOnly(base, w.target))
       {
-        w = Walk{}; // a focus set directly would part the list from the character
+        w = Walk{}; // a focus set directly would part the list from the character / the part shown
         return 0;
       }
       Focus(ctx, base, w.target);
