@@ -83,6 +83,9 @@ REXCVAR_DEFINE_INT32(ao2_depth_of_field, 0, "GPU",
 REXCVAR_DEFINE_INT32(ao2_shadow_resolution, 0, "GPU",
                      "Shadow map resolution: 0 = as the render resolution, or 1024, 2048, 4096 (host pixels of the "
                      "game's shadow buffer)");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_alias_stencil_clear, true, "GPU",
+                    "D3D's stencil clears through a 4x MSAA alias of the scene depth clear the stencil in place "
+                    "instead of transferring the depth over and back");
 REXCVAR_DEFINE_INT32(ao2_post_debug, 0, "Debug",
                      "Post effects: 1 = show the ambient occlusion instead of the scene");
 REXCVAR_DECLARE(bool, ao2_native_gpu_vsync);
@@ -592,6 +595,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint64_t resolves_copied = 0, resolves_drawn = 0, lowres_copies = 0;
       uint64_t transfers_skipped = 0; // claims of fully overwritten rectangles
       uint64_t transfers_cleared = 0; // transfers of uniform tiles done as clears
+      uint64_t stencil_clears_redirected = 0; // ClearStencilOnOwner
       uint64_t resources_created = 0; // committed resources created (kernel calls) since the last stats line
 
       RenderTarget *edram_owner[2048] = {};
@@ -6127,6 +6131,48 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
       rt.claimed = rect;
     }
 
+    // D3D clears stencil by drawing a rect list into a 4x MSAA depth surface
+    // over the same EDRAM (stencil replaced, no color, no depth test). Claiming
+    // that surface brings the other surface's depth over and later back: two
+    // full-screen transfers for the scene's depth each frame. When whole tiles
+    // of one other depth surface with the same base, format and pitch in
+    // samples lie under `rect` of `alias`, its stencil is cleared there instead
+    // and it keeps the tiles. False when that is not the case.
+    bool ClearStencilOnOwner(RenderTarget &alias, const D3D12_RECT &rect, uint8_t stencil)
+    {
+      if (alias.is_64bpp)
+      {
+        return false;
+      }
+      static std::vector<uint32_t> inside;
+      TilesInside(alias, rect, inside);
+      RenderTarget *owner = nullptr;
+      size_t tiles = 0;
+      bool ok = true;
+      ForEachTile(alias, rect, [&](uint32_t tile) {
+        RenderTarget *o = g.edram_owner[tile];
+        ++tiles;
+        ok = ok && o && o != &alias && (!owner || o == owner);
+        owner = o;
+      });
+      if (!ok || !owner || tiles != inside.size() || !owner->depth || owner->is_64bpp ||
+          owner->edram_base != alias.edram_base || owner->edram_format != alias.edram_format ||
+          GetEdramLayout(*owner).pitch_tiles != GetEdramLayout(alias).pitch_tiles)
+      {
+        return false;
+      }
+      static std::vector<D3D12_RECT> rects;
+      TileRects(*owner, inside, D3D12_RECT{0, 0, LONG(owner->width), LONG(owner->height)}, rects);
+      Trace("    stencil %u cleared on depth base %u fmt %u pitch %u x%u instead (%zu tiles)\n", unsigned(stencil),
+            owner->edram_base, owner->edram_format, owner->edram_pitch, owner->samples, inside.size());
+      Transition(owner->resource.Get(), owner->state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+      GpuMark(kGpuClear);
+      ClearDsvRects(owner->view, D3D12_CLEAR_FLAG_STENCIL, 0.0f, stencil, rects);
+      owner->stencil_used = true;
+      SetUniform(*owner, 1, inside, stencil);
+      return true;
+    }
+
     // ------------------------------------------------------------ Resolve write back
 
     // Scaled destinations up to this size (guest texels) are written back
@@ -8353,6 +8399,15 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                                replaces(depth_control.stencilfunc, depth_control.stencilzpass) &&
                                (!depth_control.backface_enable ||
                                 replaces(depth_control.stencilfunc_bf, depth_control.stencilzpass_bf));
+      // A stencil clear through an aliasing surface (ClearStencilOnOwner). Not
+      // inside an occlusion query: a draw that returns early makes it unknown.
+      if (stencil_overwrite && clear_values.vertices_ok && !rtv_count && !depth_control.z_enable &&
+          !g.occlusion_active && REXCVAR_GET(ao2_native_gpu_alias_stencil_clear) &&
+          ClearStencilOnOwner(*ds, covered, uint8_t(sref.stencilref)))
+      {
+        ++g.stencil_clears_redirected;
+        return;
+      }
       if (depth_control.stencil_enable)
       {
         ds->stencil_used = true;
@@ -9590,7 +9645,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       g.pso_created = 0;
       NativeLog("native frame %llu: draws=%llu skipped=%llu pending=%llu pipelines=%zu rts=%zu resolved=%zu "
                 "front=%08X present=%08X vertex_upload=%.1fMB textures=%zu binds tex/resolved/null="
-                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu) writebacks=%llu\n",
+                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) writebacks=%llu\n",
                 (unsigned long long)g.frame_number, (unsigned long long)g.draws,
                 (unsigned long long)g.draws_skipped, (unsigned long long)g.draws_pending, g.pipelines.size(), g.render_targets.size(),
                 g.resolved.size(), frontbuffer, g.present_address, double(g.mirror_bytes) / 1048576.0,
@@ -9600,7 +9655,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                 (unsigned long long)g.resolves_copied, (unsigned long long)g.resolves_drawn,
                 (unsigned long long)g.lowres_copies,
                 (unsigned long long)g.transfers, (unsigned long long)g.transfers_skipped,
-                (unsigned long long)g.transfers_cleared,
+                (unsigned long long)g.transfers_cleared, (unsigned long long)g.stencil_clears_redirected,
                 (unsigned long long)g.writebacks);
       NativeLog("  occlusion queries: %llu (%llu visible, %llu unknown, %llu stale), mid-frame submits %llu (early %llu, %llu of them for an idle GPU) | "
                 "stale write-back texels %llu | resolve pages "
@@ -9622,6 +9677,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g.transfers = 0;
     g.transfers_skipped = 0;
     g.transfers_cleared = 0;
+    g.stencil_clears_redirected = 0;
     g.writebacks = 0;
   }
 
