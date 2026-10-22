@@ -86,6 +86,9 @@ REXCVAR_DEFINE_INT32(ao2_shadow_resolution, 0, "GPU",
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_alias_stencil_clear, true, "GPU",
                     "D3D's stencil clears through a 4x MSAA alias of the scene depth clear the stencil in place "
                     "instead of transferring the depth over and back");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_skip_depth_restore, true, "GPU",
+                    "A resolve's depth clear waits for the next draw; the game's restore of that depth from the "
+                    "resolved texture then needs neither the clear nor itself");
 REXCVAR_DEFINE_INT32(ao2_post_debug, 0, "Debug",
                      "Post effects: 1 = show the ambient occlusion instead of the scene");
 REXCVAR_DECLARE(bool, ao2_native_gpu_vsync);
@@ -596,6 +599,16 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint64_t transfers_skipped = 0; // claims of fully overwritten rectangles
       uint64_t transfers_cleared = 0; // transfers of uniform tiles done as clears
       uint64_t stencil_clears_redirected = 0; // ClearStencilOnOwner
+      // A resolve's depth clear not done yet (FlushPendingDepthClear): rt null when there is none.
+      struct PendingDepthClear
+      {
+        RenderTarget *rt = nullptr;
+        D3D12_RECT rect = {};
+        uint32_t dest = 0; // the resolve's destination
+        float z = 0.0f;
+        uint32_t raw = 0; // RB_DEPTH_CLEAR
+      } pending_depth;
+      uint64_t depth_restores_skipped = 0;
       uint64_t resources_created = 0; // committed resources created (kernel calls) since the last stats line
 
       RenderTarget *edram_owner[2048] = {};
@@ -2285,6 +2298,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         DeferRelease(std::move(entry.second->resource));
       }
       g.render_targets.clear();
+      g.pending_depth = {};
       std::fill(std::begin(g.edram_owner), std::end(g.edram_owner), nullptr);
       ++g.edram_generation;
       g.bound = {};
@@ -6173,6 +6187,37 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
       return true;
     }
 
+    // The scene resolve clears depth and stencil, and the game draws the
+    // depth back right away from the resolved texture (VS 36F9E781, PS
+    // B160839A writing oDepth over the whole viewport; its vertex shader
+    // makes the position, so the rect list's extent is not known): the depth
+    // ends where it was (and loses its low bits on the way through the 24-bit
+    // texture). The resolve clears
+    // the stencil at once but leaves the depth clear pending: the next draw
+    // that is that restore is skipped along with the clear; anything else
+    // first does the clear.
+    void FlushPendingDepthClear()
+    {
+      auto &p = g.pending_depth;
+      if (!p.rt)
+      {
+        return;
+      }
+      RenderTarget &rt = *p.rt;
+      Transition(rt.resource.Get(), rt.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+      GpuMark(kGpuClear);
+      D3D12_RECT host = ScaleRect(p.rect, rt.scale4);
+      if (RectFits(rt.resource.Get(), host, "pending depth clear"))
+      {
+        g.list->ClearDepthStencilView(rt.view, D3D12_CLEAR_FLAG_DEPTH, std::min(p.z, 1.0f), 0, 1, &host);
+        ForgetUniform(rt, 0, p.rect);
+        static std::vector<uint32_t> inside;
+        TilesInside(rt, p.rect, inside);
+        SetUniform(rt, 0, inside, p.raw & ~0xFFu);
+      }
+      p = {};
+    }
+
     // ------------------------------------------------------------ Resolve write back
 
     // Scaled destinations up to this size (guest texels) are written back
@@ -7857,6 +7902,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
           continue;
         }
         std::replace(std::begin(g.edram_owner), std::end(g.edram_owner), rt, static_cast<RenderTarget *>(nullptr));
+        if (g.pending_depth.rt == rt)
+        {
+          g.pending_depth = {};
+        }
         DeferRelease(std::move(rt->resource));
         it = g.render_targets.erase(it);
         any = true;
@@ -8371,6 +8420,39 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       GetClearDrawValues(r, vs, ps, d, vp, clear_values);
     }
     static std::vector<uint32_t> covered_tiles;
+    if (g.pending_depth.rt)
+    {
+      const D3D12_RECT &pr = g.pending_depth.rect;
+      auto fetch = r.Get<xenos::xe_gpu_texture_fetch_t>(XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0);
+      auto keeps = [](xenos::StencilOp a, xenos::StencilOp b, xenos::StencilOp c) {
+        return a == xenos::StencilOp::kKeep && b == xenos::StencilOp::kKeep && c == xenos::StencilOp::kKeep;
+      };
+      bool stencil_kept =
+          !depth_control.stencil_enable ||
+          (keeps(depth_control.stencilfail, depth_control.stencilzfail, depth_control.stencilzpass) &&
+           (!depth_control.backface_enable ||
+            keeps(depth_control.stencilfail_bf, depth_control.stencilzfail_bf, depth_control.stencilzpass_bf)));
+      bool restore = ds == g.pending_depth.rt && !rtv_count && ps && ps->shader->writes_depth() &&
+                     covered.left <= pr.left && covered.top <= pr.top && covered.right >= pr.right &&
+                     covered.bottom >= pr.bottom && vp.viewport.TopLeftX <= float(pr.left) &&
+                     vp.viewport.TopLeftY <= float(pr.top) &&
+                     vp.viewport.TopLeftX + vp.viewport.Width >= float(pr.right) &&
+                     vp.viewport.TopLeftY + vp.viewport.Height >= float(pr.bottom) && depth_control.z_enable &&
+                     depth_control.z_write_enable &&
+                     depth_control.zfunc == xenos::CompareFunction::kAlways && stencil_kept &&
+                     ((fetch.base_address & 0x1FFFF) << 12) == g.pending_depth.dest && !g.occlusion_active;
+      if (restore)
+      {
+        Trace("    depth restore from %08X skipped with its clear\n", g.pending_depth.dest);
+        g.pending_depth = {};
+        ++g.depth_restores_skipped;
+        return;
+      }
+    }
+    if (rtv_count)
+    {
+      FlushPendingDepthClear();
+    }
     for (uint32_t i = 0; i < 4; ++i)
     {
       if (RenderTarget *rt = color_rts[i])
@@ -8408,6 +8490,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         ++g.stencil_clears_redirected;
         return;
       }
+      FlushPendingDepthClear();
       if (depth_control.stencil_enable)
       {
         ds->stencil_used = true;
@@ -8691,6 +8774,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       return;
     }
+    FlushPendingDepthClear();
     const RegisterFile &r = pm4.regs();
     auto copy = r.Get<reg::RB_COPY_CONTROL>();
     auto surface = r.Get<reg::RB_SURFACE_INFO>();
@@ -9084,7 +9168,18 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         // The depth surface may be smaller than the color one (its EDRAM base
         // is further), leaving nothing - or an inverted rectangle - to clear.
         D3D12_RECT host_drect = ScaleRect(drect, depth->scale4);
-        if (RectFits(depth->resource.Get(), host_drect, "resolve depth clear"))
+        if (RectFits(depth->resource.Get(), host_drect, "resolve depth clear") &&
+            REXCVAR_GET(ao2_native_gpu_skip_depth_restore) && is_depth && !g.occlusion_active)
+        {
+          g.list->ClearDepthStencilView(depth->view, D3D12_CLEAR_FLAG_STENCIL, 0.0f, uint8_t(dv & 0xFF), 1,
+                                        &host_drect);
+          ForgetUniform(*depth, 1, drect);
+          static std::vector<uint32_t> inside;
+          TilesInside(*depth, drect, inside);
+          SetUniform(*depth, 1, inside, dv & 0xFFu);
+          g.pending_depth = {depth, drect, dest_base, z, dv};
+        }
+        else if (RectFits(depth->resource.Get(), host_drect, "resolve depth clear"))
         {
           g.list->ClearDepthStencilView(depth->view, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
                                         std::min(z, 1.0f), uint8_t(dv & 0xFF), 1, &host_drect);
@@ -9645,7 +9740,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       g.pso_created = 0;
       NativeLog("native frame %llu: draws=%llu skipped=%llu pending=%llu pipelines=%zu rts=%zu resolved=%zu "
                 "front=%08X present=%08X vertex_upload=%.1fMB textures=%zu binds tex/resolved/null="
-                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) writebacks=%llu\n",
+                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw=%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) depth restores skipped %llu writebacks=%llu\n",
                 (unsigned long long)g.frame_number, (unsigned long long)g.draws,
                 (unsigned long long)g.draws_skipped, (unsigned long long)g.draws_pending, g.pipelines.size(), g.render_targets.size(),
                 g.resolved.size(), frontbuffer, g.present_address, double(g.mirror_bytes) / 1048576.0,
@@ -9656,7 +9751,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                 (unsigned long long)g.lowres_copies,
                 (unsigned long long)g.transfers, (unsigned long long)g.transfers_skipped,
                 (unsigned long long)g.transfers_cleared, (unsigned long long)g.stencil_clears_redirected,
-                (unsigned long long)g.writebacks);
+                (unsigned long long)g.depth_restores_skipped, (unsigned long long)g.writebacks);
       NativeLog("  occlusion queries: %llu (%llu visible, %llu unknown, %llu stale), mid-frame submits %llu (early %llu, %llu of them for an idle GPU) | "
                 "stale write-back texels %llu | resolve pages "
                 "spared from block invalidation %llu, resolved textures dropped %llu\n",
@@ -9678,6 +9773,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g.transfers_skipped = 0;
     g.transfers_cleared = 0;
     g.stencil_clears_redirected = 0;
+    g.depth_restores_skipped = 0;
     g.writebacks = 0;
   }
 
