@@ -1238,12 +1238,12 @@ namespace AO2Launcher
               "Das aktuelle Profil mit allen Spielständen löschen. Das Hauptprofil kann nicht gelöscht werden.",
               "Eliminar el perfil actual con todas sus partidas. El perfil principal no se puede eliminar.",
               "Elimina il profilo attuale con tutti i salvataggi. Il profilo principale non si può eliminare.");
-            a("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles.",
-              "Профили, кроме основного, хранятся в Documents\\armyoftworecomp_profiles.",
-              "Les profils autres que le principal sont dans Documents\\armyoftworecomp_profiles.",
-              "Profile außer dem Hauptprofil liegen in Documents\\armyoftworecomp_profiles.",
-              "Los perfiles distintos del principal se guardan en Documents\\armyoftworecomp_profiles.",
-              "I profili diversi dal principale si trovano in Documents\\armyoftworecomp_profiles.");
+            a("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles, or in AppData\\Local\\armyoftworecomp_profiles if Documents cannot be written to.",
+              "Профили, кроме основного, хранятся в Documents\\armyoftworecomp_profiles, а если в Documents нельзя писать, то в AppData\\Local\\armyoftworecomp_profiles.",
+              "Les profils autres que le principal sont dans Documents\\armyoftworecomp_profiles, ou dans AppData\\Local\\armyoftworecomp_profiles si Documents n'est pas accessible en écriture.",
+              "Profile außer dem Hauptprofil liegen in Documents\\armyoftworecomp_profiles oder, wenn Documents nicht beschreibbar ist, in AppData\\Local\\armyoftworecomp_profiles.",
+              "Los perfiles distintos del principal se guardan en Documents\\armyoftworecomp_profiles, o en AppData\\Local\\armyoftworecomp_profiles si no se puede escribir en Documents.",
+              "I profili diversi dal principale si trovano in Documents\\armyoftworecomp_profiles, oppure in AppData\\Local\\armyoftworecomp_profiles se in Documents non si può scrivere.");
             a("Enter a name for the profile", "Введите имя профиля", "Entrez un nom pour le profil", "Gib einen Namen für das Profil ein",
               "Escribe un nombre para el perfil", "Inserisci un nome per il profilo");
             a("This name cannot be used for a profile", "Такое имя для профиля не подходит", "Ce nom ne peut pas servir pour un profil",

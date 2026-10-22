@@ -158,7 +158,7 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Info,
-                    Text = () => L.T("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles.")
+                    Text = () => L.T("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles, or in AppData\\Local\\armyoftworecomp_profiles if Documents cannot be written to.")
                 },
             };
         }
