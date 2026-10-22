@@ -113,6 +113,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/game_language.cpp
     src/keyboard_prompts.cpp
     src/physx_worker.cpp
+    src/heap_lock.cpp
     src/coop_ragdoll_pool.cpp
     src/ea_server.cpp
     src/coop_invite.cpp

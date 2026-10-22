@@ -53,6 +53,7 @@
 #include <rex/ppc.h>
 
 #include "decouple.h"
+#include "heap_lock.h"
 #include "log_files.h"
 
 REXCVAR_DEFINE_BOOL(ao2_interp_objects, true, "Gameplay",
@@ -668,17 +669,17 @@ extern "C" REX_FUNC(sub_8262FC38)
 // GMalloc, the thread-safe proxy (its vtable at 0x8206E6A0 holds Malloc
 // sub_8254A288, Realloc sub_8254A2F0, Free sub_8254A360; r4 = the block for
 // both of these). A watched block is marked before the call, while nothing
-// has reused it yet.
+// has reused it yet. The call itself goes through heap_lock.cpp.
 extern "C" REX_FUNC(__imp__sub_8254A360);
 extern "C" REX_FUNC(sub_8254A360)
 {
   NoteFreed(ctx.r4.u32);
-  __imp__sub_8254A360(ctx, base);
+  ao2::heap::Method(ctx, base, 12, true, __imp__sub_8254A360);
 }
 
 extern "C" REX_FUNC(__imp__sub_8254A2F0);
 extern "C" REX_FUNC(sub_8254A2F0)
 {
   NoteFreed(ctx.r4.u32);
-  __imp__sub_8254A2F0(ctx, base);
+  ao2::heap::Method(ctx, base, 8, false, __imp__sub_8254A2F0);
 }
