@@ -8,8 +8,9 @@
 // returns at once here, so the game thread kept a core busy for the last
 // milliseconds of every frame (half a core at 120 FPS, a whole one at 240).
 //
-// With ao2_fps_unlock the rate is ao2_fps_target (midasm hook), so the end of
-// the wait is known inside appSleep: both calls sleep on a high-resolution
+// With ao2_fps_unlock the frame time is known (midasm hook: 1 / ao2_fps_target,
+// or on the schedule with ao2_limiter_catch_up), so the end of the wait is
+// known inside appSleep: both calls sleep on a high-resolution
 // timer until shortly before it and leave the rest to the engine's loop,
 // which ends the frame at the exact time as before. How long before follows
 // the timer's lateness (precise_sleep.h): with the window in the background
@@ -34,7 +35,7 @@ REXCVAR_DEFINE_INT32(ao2_limiter_spin_us, 600, "Gameplay",
                      "(more when the timer wakes later than that)")
     .range(0, 5000);
 
-int32_t FpsTarget();
+double FrameLimiterSeconds(); // midasm_hooks.cpp
 
 namespace
 {
@@ -64,7 +65,7 @@ namespace ao2
     {
       return false;
     }
-    double remaining = LoadDouble(base, kLastFrameSeconds) + 1.0 / double(FpsTarget()) - LoadDouble(base, kNowSeconds);
+    double remaining = LoadDouble(base, kLastFrameSeconds) + FrameLimiterSeconds() - LoadDouble(base, kNowSeconds);
     double spin = double(REXCVAR_GET(ao2_limiter_spin_us)) * 1e-6;
     if (!(remaining > spin) || remaining > 0.1)
     {

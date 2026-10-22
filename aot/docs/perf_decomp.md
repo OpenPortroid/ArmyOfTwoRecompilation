@@ -123,3 +123,40 @@ Bit-exact native C++ in place of the recompiled code, checked against it call by
   River with the sampler, 2 runs each: function 3.39/3.54% of the game thread -> 0.86%; tick 6.71/6.64 -> 6.48/6.42 ms
   (-3%), fps 195/196 -> 199/199 (GPU-bound). The next candidates are flatter (UnrealScript VM sub_82447A40 1.4%,
   sub_82885870 1.2%, sub_82408DF0 0.9%): about 1% each, or less.
+
+## What limits the river at 1440p (2026-10-22, 2217668)
+
+`work/boat_fps.sh` (river route, `SCALE=` and `FPS=` set the resolution scale and ao2_fps_target), one run each:
+
+| run | FPS avg / min | tick | GPU ms/frame (draw / resolve / transfer) | GPU commands thread | UE3 rendering thread | game thread |
+|---|---|---|---|---|---|---|
+| scale 2, cap 240 | 220.6 / 186.7 | 4.91 | 4.20 (2.91 / 0.74 / 0.34) | 49% | 43% | 75% |
+| scale 1, cap 240 | 223.5 / 191.8 | 4.90 | 2.03 (1.55 / 0.19 / 0.13) | 47% | 42% | 78% |
+| scale 1, cap 1000 | 387.7 / 286.0 | 5.09 | 1.98 | 75% (1.9 ms/frame) | 65% (1.7) | 41% |
+| scale 2, cap 1000 | 243.7 / 195.7 | 4.99 | 3.89 (2.61 / 0.74 / 0.32) | 65% (2.7) | 46% (1.9) | 40% |
+
+- At 1440p the GPU is the limit, and it is pixels: scale 1 halves the GPU frame (draw, resolve and transfer all
+  scale), while the command thread (~2 ms a frame, PM4 + state + recording) and the rendering thread (~1.8 ms)
+  stay below it. Draw overhead and submission are not the limit at 1440p; they would be near 500 FPS.
+- With the cap at 240 the frame limiter is the limit as well: it waits 1/240 s from the previous frame, with no
+  catch-up, and the simulation step's frame takes the whole tick (~5 ms > 4.17). Hence
+  FPS <= 60 + (1000 - 60 x 5.0) / 4.17 ~ 228 whatever the GPU does (scale 1 at cap 240: 223.5).
+- The capped GPU frame is longer than the uncapped one (4.20 vs 3.89 ms): the GPU idles between frames.
+- With the cap, GPU gains do not show in FPS (the draw-only frames already wait for the limiter): measure GPU
+  changes with `FPS=1000`, and judge GPU ms/frame.
+
+## The frame limiter catches up (`ao2_limiter_catch_up`, on)
+
+With ao2_decouple the limiter keeps a schedule of 1 / ao2_fps_target: a frame waits until it is due, not 1 / target
+after the previous frame's end, so the frames after a simulation step's (the whole tick, ~5 ms) come sooner. More
+than a frame off the schedule restarts it; a wait is never shorter than a quarter frame. Only with decoupling: the
+step length is fixed there, so frame times do not reach the simulation (co-op unaffected). No added latency.
+
+| river, cap 240, 2 runs each | off | on |
+|---|---|---|
+| FPS avg | 221.3 / 221.3 | 230.5 / 230.8 |
+| FPS median / 10th percentile of seconds | 224 / 207, 223 / 206 | 235 / 214, 235 / 214 |
+| seconds at 235+ | 10% / 9% | 50% / 50% |
+| tick | 4.93 / 4.90 ms | 4.97 / 4.99 ms |
+| GPU ms/frame | 4.19 / 4.20 | 4.06 / 4.06 |
+| present interval deviation | 0.66 / 0.66 ms | 0.65 / 0.61 ms |
