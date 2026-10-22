@@ -655,14 +655,18 @@ float4 xe_tex_post(float4 v, uint4 info) {
     case AluVectorOpcode::kFloor:
       v = "floor(" + op(0) + ")";
       break;
+    // The result is operand 1 or 2: the condition's infinity doesn't reach it.
     case AluVectorOpcode::kCndEq:
       v = "((" + op(0) + " == 0.0) ? " + op(1) + " : " + op(2) + ")";
+      nonfinite = nf[1] | nf[2];
       break;
     case AluVectorOpcode::kCndGe:
       v = "((" + op(0) + " >= 0.0) ? " + op(1) + " : " + op(2) + ")";
+      nonfinite = nf[1] | nf[2];
       break;
     case AluVectorOpcode::kCndGt:
       v = "((" + op(0) + " > 0.0) ? " + op(1) + " : " + op(2) + ")";
+      nonfinite = nf[1] | nf[2];
       break;
     case AluVectorOpcode::kDp4:
     case AluVectorOpcode::kDp3:
@@ -1229,7 +1233,15 @@ float4 xe_tex_post(float4 v, uint4 info) {
         Line(fmt::format("xe_v.{} = 0.0;", kComp[i]));
       }
     }
-    StoreResult(instr.result, "xe_v");
+    // Normalized and integer formats can't hold infinity or NaN: only the
+    // 16- and 32-bit float ones make the multiplications after them xe_mul.
+    bool float_format = at.data_format == xenos::VertexFormat::k_16_16_FLOAT ||
+                        at.data_format == xenos::VertexFormat::k_16_16_16_16_FLOAT ||
+                        at.data_format == xenos::VertexFormat::k_32_FLOAT ||
+                        at.data_format == xenos::VertexFormat::k_32_32_FLOAT ||
+                        at.data_format == xenos::VertexFormat::k_32_32_32_FLOAT ||
+                        at.data_format == xenos::VertexFormat::k_32_32_32_32_FLOAT;
+    StoreResult(instr.result, "xe_v", float_format || !track_finite_ ? 0xF : 0);
     Close();
   }
 

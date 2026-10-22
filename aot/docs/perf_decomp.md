@@ -202,3 +202,44 @@ Ceiling of hand-written ground/water shaders (9C6E41D3 and 38DB42CF replaced by 
 GPU 3.651 -> 3.395 ms, but only draw -0.14 of it; resolve -0.12 is the flat picture compressing better. A rewrite
 can win at most ~0.14 ms there; the other heavy passes (restore D5EE530D, tonemap 7A12CB96, 3747E634) have 1-5
 fetches over a 2304x1440 fp16 target and are bandwidth bound.
+
+## Iraq's fight: why the frame rate drops (2026-10-22)
+
+`work/iraq_fight.sh` = tools/route_bench.sh (05_00, god mode, autopilot up the hill into the first fight; the game
+closes after it) with the sampler, thread load, tick and actor profiles in the fight; AO off, 1440p (1280x720 x2),
+cap 240, catch-up limiter on.
+
+Two different drops on the route:
+- The climb (to end ~5000-2000): 166-197 FPS with the tick at 4.5-5.5 ms and the GPU at 3.9-4.6 ms/frame: the
+  rendering side (UE3 rendering thread and GPU command thread, ~5.5-6 ms/frame each there, see CLAUDE.md), not the
+  simulation.
+- The fight: when the enemies engage (one run: 57 s of it) the engine tick goes to 9-14 ms (avg ~11) and the frame
+  rate to 83-160 FPS. Decoupled at 60 steps/s, FPS ~ 60 + (1000 - 60 x tick) / GPU frame: tick 11 ms -> ~150,
+  13 ms -> ~120. It is the simulation.
+
+Where the fight's tick goes (sampler on the game thread, 75 s of the fight; actor_profile per 5 s):
+- actor ticks 375 ms/s in the heavy windows (130 in a calm one): ~6 ms of every 60 Hz step. Iraqi grunts
+  (AO2Char_irq05_iraqi_grunt, ~11 of them) 159 ms/s, their AI controllers (AO2Bot_Grunt) 73 ms/s, the two
+  players 24-37 ms/s each: ~0.4 ms of a step per fighting enemy.
+- In the tick: TickActors 57%, of it the AO2 pawns' Tick (sub_822861A8, vtable 0x82021900 +656 -> AActor::Tick
+  sub_8279CEE0) 30% and the actors' script Tick events (sub_82881480 -> ProcessEvent sub_8243EC10) 21%; the
+  UnrealScript VM (sub_82447A40 / sub_82445C30) ~30% across both; animation, collision, particles below that.
+- Flat: no leaf above ~2% of the tick. Native rewrites of single functions give ~1% each.
+- Outside the tick the game thread waits for the render fence (19.5% of samples, the draw-only frames' GPU pace)
+  and the limiter (10.7%); the tick itself barely waits (1.9%).
+
+What would move it: the game logic was made for the console's 30 steps a second and runs 60 here, so a fight costs
+twice its console CPU time per second. Levers: a 30 Hz simulation with complete interpolation (particles,
+material time, CPU-skinned meshes are not interpolated yet; ao2_sim_hz=30 gave ~120 -> ~155 FPS in the heavy zone
+before), a faster codegen (CR emulation, byteswaps: the whole game thread), then native replacements.
+
+## Fewer xe_mul: vertex formats that can't be infinite, cnd (2026-10-22)
+
+Ceiling first (a temporary switch, wrong in the 0 * inf cases): plain multiplication instead of xe_mul in every
+shader gave draw -0.12 / -0.21 ms (2 runs); with xe_tex_post off too, -0.30 ms (3 runs, 2.676 -> 2.380). The
+finiteness analysis counted every vertex fetch as possibly infinite, so nearly every multiplication in the vertex
+shaders was xe_mul. Normalized and integer vertex formats (8888, 2_10_10_10, 16_16, 32-bit integers...) can't hold
+infinity or NaN: only the 16- and 32-bit float ones taint now. cnd's result is operand 1 or 2, so the condition's
+taint no longer reaches it. Vertex shaders: 6463 -> 4537 xe_mul calls over the 1467 dumped shaders (pixel shaders
+unchanged); all compile. Standing at the river start, uncapped, 3 alternating runs each: draw 2.626 / 2.638 / 2.644
+-> 2.612 / 2.588 / 2.596 ms, GPU 3.759 -> 3.722 ms avg, 253.9 -> 256.1 FPS.
