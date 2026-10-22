@@ -29,6 +29,7 @@ namespace ao2::gpu
     uint32_t tex_info[16][4];     // 256: x = per-component mode, y = exp scale (float bits)
     uint32_t vfetch[192];         // 512: 96 vertex fetch constants
     float tex_size[16][4];        // 1280: the bound host resource's width, height, depth (what GetDimensions gives)
+    float tex_rcp[16][4];         // 1536: 1 / the guest texture's width, height (2D fetch offsets, see FillSystemConstants)
   };
-  static_assert(sizeof(XeSystemConstants) == 1536);
+  static_assert(sizeof(XeSystemConstants) == 1792);
 } // namespace ao2::gpu

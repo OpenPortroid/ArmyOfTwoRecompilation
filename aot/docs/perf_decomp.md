@@ -100,4 +100,9 @@ Both only change how the native renderer does the same EDRAM work; game state is
   fetches count as finite; shaders with loops keep xe_mul everywhere) and multiplies the rest as IEEE - the same
   result. Water shader: 98 -> 44 xe_mul calls; all 1681 dumped shaders compile (xenos_hlsl_test). River, 2x2: GPU
   draw 3.06 / 3.07 -> 2.93 / 2.96 ms; screenshots: no new black/NaN pixels, static parts identical.
+- Texture fetch offsets: each 2D fetch worked out the guest texture size per pixel (scale arithmetic and two
+  divisions); FillSystemConstants now gives 1 / guest size per texture (xe_tex_rcp). River, 2 runs: draw 2.93 /
+  2.96 -> 2.91 / 2.91 ms.
+- River screenshots on/off (07_011, standing, WAIT=60 so the capture is not the loading screen): the same image
+  apart from edges (the camera's idle sway between runs), the same count of black pixels.
 - `ao2_native_gpu_shader_override_dir`: hand-written HLSL by the dump's names, for experiments.

@@ -5222,6 +5222,17 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       std::memcpy(c.tex_info, tex_info, sizeof(c.tex_info));
       std::memcpy(c.vfetch, &r.v[0x4800], sizeof(c.vfetch));
       std::memcpy(c.tex_size, tex_size, sizeof(c.tex_size));
+      // The guest size of each texture the way the shaders worked it out per
+      // pixel: host size x (guest / host size) / host texels per guest texel.
+      for (uint32_t i = 0; i < 16; ++i)
+      {
+        float ts[2];
+        std::memcpy(ts, &tex_info[i][2], 8);
+        float tscale = std::max(float((tex_info[i][0] >> 16) & 0xFFu) * 0.25f, 1.0f);
+        float w = tex_size[i][0] * (ts[0] / tscale), h = tex_size[i][1] * (ts[1] / tscale);
+        c.tex_rcp[i][0] = w > 0.0f ? 1.0f / w : 0.0f;
+        c.tex_rcp[i][1] = h > 0.0f ? 1.0f / h : 0.0f;
+      }
     }
 
     D3D12_GPU_VIRTUAL_ADDRESS UploadFloatConstants(const RegisterFile &r, bool pixel)

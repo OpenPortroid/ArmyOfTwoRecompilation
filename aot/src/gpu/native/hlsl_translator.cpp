@@ -55,6 +55,7 @@ cbuffer xe_system : register(b1) {
   uint4 xe_tex_info[16];
   uint4 xe_vfetch[48];
   float4 xe_tex_size[16];
+  float4 xe_tex_rcp[16];
 };
 ByteAddressBuffer xe_shared_memory : register(t0, space1);
 
@@ -1311,11 +1312,18 @@ float4 xe_tex_post(float4 v, uint4 info) {
       // The host size comes from the constants: GetDimensions is a texture
       // instruction of its own (TXQ), as costly as the fetch on some GPUs.
       Line(fmt::format("float2 xe_ts = asfloat(xe_tex_info[{}].zw);", binding));
-      Line(fmt::format("float xe_tw = xe_tex_size[{0}].x, xe_th = xe_tex_size[{0}].y;", binding));
-      Line("float2 xe_host_size = float2(xe_tw, xe_th);");
-      // Host texels per guest texel of a resolved texture, in quarters (0: not resolved).
-      Line(fmt::format("float xe_tscale = max(float((xe_tex_info[{}].x >> 16) & 0xFFu) * 0.25, 1.0);", binding));
-      Line("xe_tw *= xe_ts.x / xe_tscale; xe_th *= xe_ts.y / xe_tscale;");
+      Line(fmt::format("float2 xe_host_size = xe_tex_size[{}].xy;", binding));
+      // The guest size: what unnormalized coordinates and weights need; the
+      // offset of a normalized fetch takes its reciprocal from the constants
+      // (no per-pixel divisions).
+      bool guest_size = at.unnormalized_coordinates || instr.opcode == FetchOpcode::kGetTextureWeights;
+      if (guest_size)
+      {
+        Line(fmt::format("float xe_tw = xe_tex_size[{0}].x, xe_th = xe_tex_size[{0}].y;", binding));
+        // Host texels per guest texel of a resolved texture, in quarters (0: not resolved).
+        Line(fmt::format("float xe_tscale = max(float((xe_tex_info[{}].x >> 16) & 0xFFu) * 0.25, 1.0);", binding));
+        Line("xe_tw *= xe_ts.x / xe_tscale; xe_th *= xe_ts.y / xe_tscale;");
+      }
       Line(is_1d ? "float2 xe_uv = float2(xe_tc.x, 0.5);" : "float2 xe_uv = xe_tc.xy;");
       if (at.unnormalized_coordinates)
       {
@@ -1323,8 +1331,16 @@ float4 xe_tex_post(float4 v, uint4 info) {
       }
       if (instr.opcode != FetchOpcode::kGetTextureComputedLod)
       {
-        Line(fmt::format("xe_uv += float2({}, {}) / float2(xe_tw, xe_th);", F(at.offset_x + eps),
-                         F(is_1d ? 0.0f : at.offset_y + eps)));
+        if (guest_size)
+        {
+          Line(fmt::format("xe_uv += float2({}, {}) / float2(xe_tw, xe_th);", F(at.offset_x + eps),
+                           F(is_1d ? 0.0f : at.offset_y + eps)));
+        }
+        else
+        {
+          Line(fmt::format("xe_uv += float2({}, {}) * xe_tex_rcp[{}].xy;", F(at.offset_x + eps),
+                           F(is_1d ? 0.0f : at.offset_y + eps), binding));
+        }
       }
       if (is_pixel_shader() && !is_1d && instr.opcode == FetchOpcode::kTextureFetch &&
           modification().probe_binding == binding + 1)
