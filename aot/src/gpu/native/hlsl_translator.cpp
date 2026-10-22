@@ -90,6 +90,9 @@ uint2 xe_vfetch_constant(uint index) {
 }
 // Per-component texture post-processing: 2 = biased (x * 2 - 1), 3 = gamma.
 float4 xe_tex_post(float4 v, uint4 info) {
+  // Most fetches have neither (the same for every pixel of a draw): one
+  // test instead of two per component.
+  [branch] if ((info.x & 0xFFu) != 0u)
   [unroll] for (uint i = 0; i < 4; ++i) {
     uint mode = (info.x >> (i * 2u)) & 3u;
     if (mode == 2u) {

@@ -188,3 +188,17 @@ target over still makes the GPU turn it into a shader resource (a decompression 
 zero copy of #5 (no clear) would gain little more. Screenshots (standing, 2 each): the swap's differ from the copy's
 only at edges, like the runs with the swap among themselves (camera sway), no brightness shift (mean +0.1 / 255),
 the same count of black pixels.
+
+## Texture post-processing only when a fetch needs it (2026-10-22)
+
+`xe_tex_post` (biased / gamma components, per fetch) tested each component's mode twice even when none had one;
+one uniform test of the fetch's mode bits skips them (the same result). The river's ground/water shader 9C6E41D3 is
+961 DXBC instructions for 10 fetches, most of it this per-fetch code. Standing at the river start, uncapped, window
+1280x720 x2 (the desktop changed between this and the measurements above), 3 alternating runs each: GPU 3.796 /
+3.783 / 3.779 -> 3.767 / 3.770 / 3.771 ms (draw 2.661 -> 2.646 avg), 252.2 -> 253.1 FPS. All 1467 dumped shaders
+compile (xenos_hlsl_test --all --no-cache).
+
+Ceiling of hand-written ground/water shaders (9C6E41D3 and 38DB42CF replaced by a constant color, wrong picture):
+GPU 3.651 -> 3.395 ms, but only draw -0.14 of it; resolve -0.12 is the flat picture compressing better. A rewrite
+can win at most ~0.14 ms there; the other heavy passes (restore D5EE530D, tonemap 7A12CB96, 3747E634) have 1-5
+fetches over a 2304x1440 fp16 target and are bandwidth bound.
