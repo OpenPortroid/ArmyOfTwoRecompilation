@@ -160,3 +160,31 @@ step length is fixed there, so frame times do not reach the simulation (co-op un
 | tick | 4.93 / 4.90 ms | 4.97 / 4.99 ms |
 | GPU ms/frame | 4.19 / 4.20 | 4.06 / 4.06 |
 | present interval deviation | 0.66 / 0.66 ms | 0.65 / 0.61 ms |
+
+## The resolves of a river frame and what they cost (2026-10-22)
+
+`--ao2_resolve_trace=N` (d3d_trace.cpp) logs every D3D Resolve of N frames with the engine's call site (through
+RHICopyToResolveTarget sub_82AA4370 or directly) in the order of the native renderer's frame trace. River at 1440p
+(the window is 1152x720 here, x2): 24 resolves a frame.
+
+| # | site | what | GPU (capture) |
+|---|---|---|---|
+| 0 | sub_82AA2A90 (82AA2B70) | scene color, exp bias -2, clear -> 10B40000; restored right after (PS D5EE530D, 192 us) | 169 us |
+| 1 | sub_82AA2A90 (82AA2BB4) | scene depth + clear -> 111C4000 (the restore is skipped) | - |
+| 2-4 | 82625F10 | 448x448 depth (shadows) | small |
+| 5 | 8262E11C | scene color again, no clear (after translucency) -> 10B40000, read by the post chain | 166 us |
+| 6-22 | 826139E4 | post-process chain: 296x184 ... 24x16 and the 64..8 luminance reductions | ~80 us together |
+| 23 | 82AA71C4 | front buffer | 63 us |
+
+Ceiling of the two scene color copies (standing at the river start, uncapped, a debug switch that skipped the copy,
+wrong picture): base 3.746 / 3.755 ms GPU (255 FPS); without #5's copy 3.562 (-0.19); without #0's 3.487 (-0.26).
+
+`ao2_native_gpu_resolve_swap` never fired at this window size: the surface pitch is whole tiles (1152 -> 1200), so
+the right column of tiles was only partly inside the resolve and the swap refused. Tiles the rectangle touches now
+count as inside (the part beyond is outside the viewport, never drawn; resolved textures are sampled with the edge
+clamp of the guest size). Standing, uncapped, 2 runs each: off 3.739 / 3.746 ms GPU (255.6 / 254.8 FPS), on 3.679 /
+3.687 ms (259.7 / 258.7 FPS): resolve 0.81 -> 0.70, draw +0.05. Most of the copy's ceiling stays: handing the render
+target over still makes the GPU turn it into a shader resource (a decompression as costly as reading it), so a
+zero copy of #5 (no clear) would gain little more. Screenshots (standing, 2 each): the swap's differ from the copy's
+only at edges, like the runs with the swap among themselves (camera sway), no brightness shift (mean +0.1 / 255),
+the same count of black pixels.

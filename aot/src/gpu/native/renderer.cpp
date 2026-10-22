@@ -6628,14 +6628,14 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       {
         return false;
       }
-      static std::vector<uint32_t> inside;
-      TilesInside(src, rect, inside);
+      // Tiles the rectangle touches. One that it covers only in part lies on
+      // its right or bottom edge (it starts at 0, 0): the part beyond is
+      // outside the viewport (the surface pitch is a whole number of tiles,
+      // 1152 wide -> 1200), never drawn, and sampling stays inside the
+      // guest texture (the edge clamp of resolved textures).
       static std::bitset<2048> inside_mask;
       inside_mask.reset();
-      for (uint32_t tile : inside)
-      {
-        inside_mask.set(tile);
-      }
+      ForEachTile(src, rect, [&](uint32_t tile) { inside_mask.set(tile); });
       bool outside = false;
       ForEachTile(src, D3D12_RECT{0, 0, LONG(src.width), LONG(src.height)}, [&](uint32_t tile) {
         outside = outside || (g.edram_owner[tile] == &src && !inside_mask[tile]);

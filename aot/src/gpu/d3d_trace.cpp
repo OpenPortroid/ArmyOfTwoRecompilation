@@ -8,8 +8,17 @@
 // --ao2_d3d_trace=true            enable
 // --ao2_d3d_trace_every=600       dump one full frame every N swaps
 // Output: d3d_trace.txt in the working directory.
+//
+// --ao2_resolve_trace=N logs every D3D Resolve of N frames (one series every
+// ao2_d3d_trace_every swaps) to resolve_trace.log: the engine's call site
+// (the caller of RHICopyToResolveTarget sub_82AA4370 when it went through
+// it), flags, rectangles, clear values and the destination texture's header.
+// The native renderer's frame trace (capture.trigger) has the same resolves
+// in the same order, with their EDRAM source and readers.
 
+#include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <map>
 #include <mutex>
 #include <vector>
@@ -17,8 +26,12 @@
 #include <rex/cvar.h>
 #include <rex/ppc.h>
 
+#include "log_files.h"
+
 REXCVAR_DEFINE_BOOL(ao2_d3d_trace, false, "Debug", "Trace XDK D3D entry points to d3d_trace.txt");
 REXCVAR_DEFINE_INT32(ao2_d3d_trace_every, 600, "Debug", "D3D trace: dump one frame every N swaps");
+REXCVAR_DEFINE_INT32(ao2_resolve_trace, 0, "Debug",
+                     "Log every D3D Resolve of this many frames (every ao2_d3d_trace_every swaps) to resolve_trace.log");
 
 namespace
 {
@@ -80,6 +93,72 @@ namespace
 
 } // namespace
 
+namespace
+{
+  constexpr uint32_t kResolve = 0x82B25270;
+  constexpr uint32_t kCopyToResolveTarget = 0x82AA4370; // RHICopyToResolveTarget
+
+  thread_local uint32_t t_rhi_caller = 0; // inside RHICopyToResolveTarget: its return address
+  uint64_t g_resolve_swaps = 0;
+  uint32_t g_resolve_index = 0;
+
+  uint32_t Guest32(const uint8_t *base, uint32_t addr)
+  {
+    uint32_t v;
+    std::memcpy(&v, base + addr, 4);
+    return __builtin_bswap32(v);
+  }
+
+  void ResolveTrace(uint32_t addr, PPCContext &ctx, const uint8_t *base)
+  {
+    int frames = REXCVAR_GET(ao2_resolve_trace);
+    int every = std::max(REXCVAR_GET(ao2_d3d_trace_every), frames + 1);
+    std::lock_guard lock(g_mutex);
+    if (addr == kSwap)
+    {
+      g_resolve_swaps++;
+      g_resolve_index = 0;
+      return;
+    }
+    if (g_resolve_swaps % uint64_t(every) >= uint64_t(frames))
+    {
+      return;
+    }
+    static FILE *f = ao2::OpenLogFile("resolve_trace.log");
+    if (!f)
+    {
+      return;
+    }
+    auto rect = [&](uint32_t p, char *out) {
+      if (p)
+        std::snprintf(out, 48, "%d,%d-%d,%d", int(Guest32(base, p)), int(Guest32(base, p + 4)),
+                      int(Guest32(base, p + 8)), int(Guest32(base, p + 12)));
+      else
+        std::snprintf(out, 48, "-");
+    };
+    char src[48], dst[48];
+    rect(ctx.r5.u32, src);
+    if (ctx.r7.u32)
+      std::snprintf(dst, sizeof(dst), "%d,%d", int(Guest32(base, ctx.r7.u32)), int(Guest32(base, ctx.r7.u32 + 4)));
+    else
+      std::snprintf(dst, sizeof(dst), "-");
+    // The stack arguments (ClearStencil, pParameters): RHICopyToResolveTarget stores them at 92 / 100.
+    uint32_t stencil = Guest32(base, ctx.r1.u32 + 92), params = Guest32(base, ctx.r1.u32 + 100);
+    std::fprintf(f, "swap %llu #%u site %08X%s flags %08X src %s dest tex %08X at %s level %u slice %u clear color %08X z %g "
+                    "stencil %u params %08X | tex",
+                 static_cast<unsigned long long>(g_resolve_swaps), g_resolve_index++,
+                 t_rhi_caller ? t_rhi_caller : uint32_t(ctx.lr), t_rhi_caller ? " (RHI)" : "", ctx.r4.u32, src,
+                 ctx.r6.u32, dst, ctx.r8.u32, ctx.r9.u32, ctx.r10.u32 ? Guest32(base, ctx.r10.u32) : 0, ctx.f1.f64,
+                 stencil, params);
+    for (uint32_t i = 0; ctx.r6.u32 && i < 16; i++)
+    {
+      std::fprintf(f, " %08X", Guest32(base, ctx.r6.u32 + 4 * i));
+    }
+    std::fputc('\n', f);
+    std::fflush(f);
+  }
+} // namespace
+
 void D3DTraceEnter(uint32_t addr, PPCContext &ctx)
 {
   {
@@ -116,15 +195,30 @@ void D3DTraceEnter(uint32_t addr, PPCContext &ctx)
 
 // The wrappers run on every D3D call of the rendering thread: with tracing
 // off they are a flag test and a tail jump to the original body.
-#define D3D_TRACE_HOOK(addr)                                   \
-  extern "C" REX_FUNC(__imp__sub_##addr);                      \
-  extern "C" REX_FUNC(sub_##addr)                              \
-  {                                                            \
-    if (REXCVAR_GET(ao2_d3d_trace)) [[unlikely]]               \
-    {                                                          \
-      D3DTraceEnter(0x##addr, ctx);                            \
-    }                                                          \
-    [[clang::musttail]] return __imp__sub_##addr(ctx, base);   \
+#define D3D_TRACE_HOOK(addr)                                                                    \
+  extern "C" REX_FUNC(__imp__sub_##addr);                                                       \
+  extern "C" REX_FUNC(sub_##addr)                                                               \
+  {                                                                                             \
+    if (REXCVAR_GET(ao2_d3d_trace)) [[unlikely]]                                                \
+    {                                                                                           \
+      D3DTraceEnter(0x##addr, ctx);                                                             \
+    }                                                                                           \
+    if ((0x##addr == kResolve || 0x##addr == kSwap) && REXCVAR_GET(ao2_resolve_trace) > 0)      \
+      [[unlikely]]                                                                              \
+    {                                                                                           \
+      ResolveTrace(0x##addr, ctx, base);                                                        \
+    }                                                                                           \
+    [[clang::musttail]] return __imp__sub_##addr(ctx, base);                                    \
   }
+
+// RHICopyToResolveTarget: the engine's call site of the resolve inside it.
+extern "C" REX_FUNC(__imp__sub_82AA4370);
+extern "C" REX_FUNC(sub_82AA4370)
+{
+  uint32_t saved = t_rhi_caller;
+  t_rhi_caller = uint32_t(ctx.lr);
+  __imp__sub_82AA4370(ctx, base);
+  t_rhi_caller = saved;
+}
 
 #include "d3d_trace_list.inc"
