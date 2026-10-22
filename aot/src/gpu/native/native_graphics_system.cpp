@@ -41,6 +41,9 @@ REXCVAR_DEFINE_STRING(ao2_native_gpu, "on", "GPU",
     .allowed({"on", "off"});
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_dump_shaders, false, "GPU",
                     "Native renderer: dump microcode of every shader to shader_dump/");
+REXCVAR_DEFINE_STRING(ao2_native_gpu_shader_override_dir, "", "GPU",
+                      "Native renderer: directory of hand-written HLSL used instead of the translation "
+                      "(<hash>_<modification>.<vs|ps>.hlsl, as in shader_dump/)");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_async_pipelines, true, "GPU",
                     "Native renderer: create pipelines never seen before on a background thread (the draw "
                     "is skipped meanwhile) instead of stalling the frame");
@@ -135,6 +138,7 @@ namespace ao2::gpu
         kernel_state_ = kernel_state;
         memory_ = dispatcher->memory();
         shaders_.dump_ucode = REXCVAR_GET(ao2_native_gpu_dump_shaders);
+        shaders_.override_dir = REXCVAR_GET(ao2_native_gpu_shader_override_dir);
         pm4_.fake_occlusion_samples = uint32_t(REXCVAR_GET(ao2_native_gpu_occlusion_samples));
         write_ptr_event_ = rex::thread::Event::CreateAutoResetEvent(false);
 

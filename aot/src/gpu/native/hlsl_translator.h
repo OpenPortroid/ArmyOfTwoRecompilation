@@ -101,7 +101,11 @@ namespace ao2::gpu
                              rex::graphics::InstructionStorageAddressingMode mode) const;
     std::string Operand(const rex::graphics::InstructionOperand &op) const;
     std::string OperandComponent(const rex::graphics::InstructionOperand &op, uint32_t component) const;
-    void StoreResult(const rex::graphics::InstructionResult &result, const std::string &value);
+    // `nonfinite`: components of `value` that may be infinity or NaN (see
+    // nonfinite_).
+    void StoreResult(const rex::graphics::InstructionResult &result, const std::string &value,
+                     uint32_t nonfinite = 0xF);
+    uint32_t OperandNonfinite(const rex::graphics::InstructionOperand &op) const;
 
     void OpenExecConditional(rex::graphics::ParsedExecInstruction::Type type, uint32_t bool_index,
                              bool condition);
@@ -111,7 +115,8 @@ namespace ao2::gpu
     std::string BoolConstantTest(uint32_t index) const;
     std::string LoopConstant(uint32_t index) const;
 
-    void EmitVectorOp(const rex::graphics::ParsedAluInstruction &instr, bool &predicate_written);
+    void EmitVectorOp(const rex::graphics::ParsedAluInstruction &instr, bool &predicate_written,
+                      uint32_t &nonfinite);
     void EmitScalarOp(const rex::graphics::ParsedAluInstruction &instr, bool &predicate_written);
 
     std::string body_;
@@ -135,5 +140,20 @@ namespace ao2::gpu
     int32_t position_register_ = -1; // register with the fetched x/y; -1 none yet, -2 lost
     int position_state_ = 0;         // 0 not exported yet, 1 pass-through, -1 computed
     bool conditional_exec_ = false;
+
+    // Which register components may hold infinity or NaN, in program order
+    // (only ever set: a later finite write may be predicated). Only there is
+    // Shader Model 3's 0 * x = 0 different from IEEE multiplication, so only
+    // there multiplications need xe_mul - its select also keeps FXC from
+    // fusing mul + add. Sources: rcp, rsq, log, exp, sqrt, vertex fetch,
+    // relative addressing; constants, interpolators and texture fetches count
+    // as finite. Off (always xe_mul) with loops or backward jumps.
+    uint8_t nonfinite_[256] = {};
+    bool ps_nonfinite_ = false;
+    bool track_finite_ = false;
+    // The instruction being translated always runs (no predicate, no
+    // conditional exec, no label a jump may skip to yet): its writes replace
+    // what nonfinite_ / ps_nonfinite_ said instead of adding to it.
+    bool unconditional_ = false;
   };
 } // namespace ao2::gpu

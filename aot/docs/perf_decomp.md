@@ -93,3 +93,11 @@ Both only change how the native renderer does the same EDRAM work; game state is
   fp16 max), the resolve scales alpha too and the restore does not undo it: skipping leaves alpha 4x larger, and the
   bloom downsample (PS 13A2D3FE -> tonemap 7A12CB96 multiplies by it) and depth of field read it. Doing it faithfully
   needs an alpha pass about as costly as the restore. Patch in ao2decomp/attempts/color_restore.
+- `ao2_native_gpu_finite_mul` (on): the translator emitted Shader Model 3's 0 * x = 0 (`xe_mul`: abs, min, compare,
+  select, and no mul + add fusing) for every multiplication, a third of the river's ground/water shader 9C6E41D3
+  (201 -> 141 us with plain multiplication). It now tracks which register components may hold infinity or NaN
+  (sources: rcp, rsq, log, exp, sqrt, vertex fetch, relative addressing; constants, interpolators and texture
+  fetches count as finite; shaders with loops keep xe_mul everywhere) and multiplies the rest as IEEE - the same
+  result. Water shader: 98 -> 44 xe_mul calls; all 1681 dumped shaders compile (xenos_hlsl_test). River, 2x2: GPU
+  draw 3.06 / 3.07 -> 2.93 / 2.96 ms; screenshots: no new black/NaN pixels, static parts identical.
+- `ao2_native_gpu_shader_override_dir`: hand-written HLSL by the dump's names, for experiments.

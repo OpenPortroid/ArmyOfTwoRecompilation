@@ -12,6 +12,12 @@
 
 #include "hlsl_shared.h"
 
+#include <rex/cvar.h>
+
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_finite_mul, true, "GPU",
+                    "Shader translator: multiply as IEEE where no operand can be infinity or NaN (the same "
+                    "result as Shader Model 3's 0 * x = 0, without its select)");
+
 namespace ao2::gpu
 {
   using namespace rex::graphics;
@@ -126,6 +132,9 @@ float4 xe_tex_post(float4 v, uint4 info) {
     position_register_ = -1;
     position_state_ = 0;
     conditional_exec_ = false;
+    std::fill(std::begin(nonfinite_), std::end(nonfinite_), uint8_t(0));
+    ps_nonfinite_ = false;
+    track_finite_ = false;
   }
 
   void HlslShaderTranslator::Line(const std::string &s)
@@ -186,6 +195,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
     // instruction): the main loop depends on this shader's control flow, not
     // on the previous shader's.
     current_label_ = 0;
+    track_finite_ = !use_loop_ && REXCVAR_GET(ao2_native_gpu_finite_mul);
     if (use_loop_)
     {
       // Bounded so a mistranslated loop can't hang the GPU (TDR).
@@ -434,18 +444,76 @@ float4 xe_tex_post(float4 v, uint4 info) {
     return "(" + v + ")";
   }
 
+  uint32_t HlslShaderTranslator::OperandNonfinite(const InstructionOperand &op) const
+  {
+    if (!track_finite_)
+    {
+      return 0xF;
+    }
+    if (op.storage_source == InstructionStorageSource::kConstantFloat)
+    {
+      return 0;
+    }
+    if (op.storage_source != InstructionStorageSource::kRegister ||
+        op.storage_addressing_mode != InstructionStorageAddressingMode::kAbsolute || op.storage_index >= 256)
+    {
+      return 0xF;
+    }
+    uint32_t mask = 0;
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+      SwizzleSource s = op.GetComponent(i);
+      if (s != SwizzleSource::k0 && s != SwizzleSource::k1 && ((nonfinite_[op.storage_index] >> (uint32_t(s) & 3)) & 1))
+      {
+        mask |= 1u << i;
+      }
+    }
+    return mask;
+  }
+
   std::string HlslShaderTranslator::OperandComponent(const InstructionOperand &op,
                                                      uint32_t component) const
   {
     return Operand(op) + "." + kComp[component];
   }
 
-  void HlslShaderTranslator::StoreResult(const InstructionResult &result, const std::string &value)
+  void HlslShaderTranslator::StoreResult(const InstructionResult &result, const std::string &value,
+                                         uint32_t nonfinite)
   {
     uint32_t mask = result.GetUsedWriteMask();
     if (!mask)
     {
       return;
+    }
+    if (result.storage_target == InstructionStorageTarget::kRegister && unconditional_ &&
+        result.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute && result.storage_index < 256)
+    {
+      nonfinite_[result.storage_index] &= uint8_t(~mask);
+    }
+    if (result.storage_target == InstructionStorageTarget::kRegister && !result.is_clamped)
+    {
+      for (uint32_t i = 0; i < 4; ++i)
+      {
+        SwizzleSource s = result.components[i];
+        if (!(mask & (1u << i)) || s == SwizzleSource::k0 || s == SwizzleSource::k1 ||
+            !((nonfinite >> (uint32_t(s) & 3)) & 1))
+        {
+          continue;
+        }
+        if (result.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute &&
+            result.storage_index < 256)
+        {
+          nonfinite_[result.storage_index] |= uint8_t(1u << i);
+          continue;
+        }
+        else
+        {
+          for (uint8_t &r : nonfinite_)
+          {
+            r |= uint8_t(1u << i);
+          }
+        }
+      }
     }
     std::string target;
     switch (result.storage_target)
@@ -521,13 +589,24 @@ float4 xe_tex_post(float4 v, uint4 info) {
 
   // ---------------------------------------------------------------- ALU
 
-  void HlslShaderTranslator::EmitVectorOp(const ParsedAluInstruction &instr, bool &predicate_written)
+  void HlslShaderTranslator::EmitVectorOp(const ParsedAluInstruction &instr, bool &predicate_written,
+                                          uint32_t &nonfinite)
   {
     predicate_written = false;
     const auto &o = instr.vector_operands;
     auto op = [&](uint32_t i) { return Operand(o[i]); };
     auto same = [&](uint32_t a, uint32_t b) {
       return o[a].GetIdenticalComponents(o[b]) == 0b1111;
+    };
+    uint32_t nf[3] = {};
+    for (uint32_t i = 0; i < instr.vector_operand_count && i < 3; ++i)
+    {
+      nf[i] = OperandNonfinite(o[i]);
+    }
+    // Componentwise ops pass infinity/NaN on; dot products and reductions to all.
+    nonfinite = nf[0] | nf[1] | nf[2];
+    auto mul = [&](uint32_t a, uint32_t b) {
+      return same(a, b) || !(nf[a] | nf[b]) ? op(a) + " * " + op(b) : "xe_mul(" + op(a) + ", " + op(b) + ")";
     };
     std::string v;
     switch (instr.vector_opcode)
@@ -536,11 +615,10 @@ float4 xe_tex_post(float4 v, uint4 info) {
       v = op(0) + " + " + op(1);
       break;
     case AluVectorOpcode::kMul:
-      v = same(0, 1) ? op(0) + " * " + op(1) : "xe_mul(" + op(0) + ", " + op(1) + ")";
+      v = mul(0, 1);
       break;
     case AluVectorOpcode::kMad:
-      v = (same(0, 1) ? op(0) + " * " + op(1) : "xe_mul(" + op(0) + ", " + op(1) + ")") + " + " +
-          op(2);
+      v = mul(0, 1) + " + " + op(2);
       break;
     case AluVectorOpcode::kMax:
       v = same(0, 1) ? op(0) : "xe_max(" + op(0) + ", " + op(1) + ")";
@@ -549,15 +627,19 @@ float4 xe_tex_post(float4 v, uint4 info) {
       v = same(0, 1) ? op(0) : "xe_min(" + op(0) + ", " + op(1) + ")";
       break;
     case AluVectorOpcode::kSeq:
+      nonfinite = 0;
       v = "float4(" + op(0) + " == " + op(1) + ")";
       break;
     case AluVectorOpcode::kSgt:
+      nonfinite = 0;
       v = "float4(" + op(0) + " > " + op(1) + ")";
       break;
     case AluVectorOpcode::kSge:
+      nonfinite = 0;
       v = "float4(" + op(0) + " >= " + op(1) + ")";
       break;
     case AluVectorOpcode::kSne:
+      nonfinite = 0;
       v = "float4(" + op(0) + " != " + op(1) + ")";
       break;
     case AluVectorOpcode::kFrc:
@@ -589,7 +671,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
       std::string sum;
       for (uint32_t i = 0; i < n; ++i)
       {
-        std::string term = (o[0].GetIdenticalComponents(o[1]) & (1u << i))
+        std::string term = (o[0].GetIdenticalComponents(o[1]) & (1u << i)) || !(((nf[0] | nf[1]) >> i) & 1)
                                ? fmt::format("{0}.{1} * {2}.{1}", a, kComp[i], b)
                                : fmt::format("xe_mul1({0}.{1}, {2}.{1})", a, kComp[i], b);
         sum += (i ? " + " : "") + term;
@@ -599,6 +681,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
         sum += " + " + op(2) + ".x";
       }
       v = "(" + sum + ").xxxx";
+      nonfinite = ((nf[0] | nf[1]) & ((1u << n) - 1)) || (n == 2 && (nf[2] & 1)) ? 0xF : 0;
       break;
     }
     case AluVectorOpcode::kCube:
@@ -620,12 +703,14 @@ float4 xe_tex_post(float4 v, uint4 info) {
            "2.0 * xe_cube_dir.x, xe_cube_dir.x < 0.0 ? 1.0 : 0.0);");
       Close();
       v = "xe_cube";
+      nonfinite = nf[0] ? 0xF : 0;
       break;
     }
     case AluVectorOpcode::kMax4:
     {
       std::string a = op(0);
       v = fmt::format("max(max({0}.x, {0}.y), max({0}.z, {0}.w)).xxxx", a);
+      nonfinite = nf[0] ? 0xF : 0;
       break;
     }
     case AluVectorOpcode::kSetpEqPush:
@@ -643,6 +728,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
       Line(fmt::format("xe_p0 = (xe_push_a.w == 0.0) && (xe_push_b.w {} 0.0);", cmp));
       v = fmt::format("(((xe_push_a.x == 0.0) && (xe_push_b.x {} 0.0)) ? 0.0 : xe_push_a.x + 1.0).xxxx",
                       cmp);
+      nonfinite = (nf[0] & 1) ? 0xF : 0;
       break;
     }
     case AluVectorOpcode::kKillEq:
@@ -662,12 +748,14 @@ float4 xe_tex_post(float4 v, uint4 info) {
         Close();
       }
       v = "float(xe_kill).xxxx";
+      nonfinite = 0;
       break;
     }
     case AluVectorOpcode::kDst:
     {
       std::string a = op(0), b = op(1);
-      v = fmt::format("float4(1.0, xe_mul1({0}.y, {1}.y), {0}.z, {1}.w)", a, b);
+      v = ((nf[0] | nf[1]) & 2) ? fmt::format("float4(1.0, xe_mul1({0}.y, {1}.y), {0}.z, {1}.w)", a, b)
+                                : fmt::format("float4(1.0, {0}.y * {1}.y, {0}.z, {1}.w)", a, b);
       break;
     }
     case AluVectorOpcode::kMaxA:
@@ -682,6 +770,10 @@ float4 xe_tex_post(float4 v, uint4 info) {
       v = "float4(0.0, 0.0, 0.0, 0.0)";
       break;
     }
+    if (!track_finite_)
+    {
+      nonfinite = 0xF;
+    }
     Line("float4 xe_vec = " + v + ";");
   }
 
@@ -693,6 +785,16 @@ float4 xe_tex_post(float4 v, uint4 info) {
       return;
     }
     const auto &o = instr.scalar_operands;
+    // Whether a (operand 0's first component), b (its second), c1 (operand
+    // 1's first) and the previous result may be infinity or NaN.
+    uint32_t nf0 = instr.scalar_operand_count >= 1 ? OperandNonfinite(o[0]) : 0;
+    uint32_t nf1 = instr.scalar_operand_count >= 2 ? OperandNonfinite(o[1]) : 0;
+    bool nfa = nf0 & 1, nfb = nf0 & 2, nfc = nf1 & 1, nfp = ps_nonfinite_ || !track_finite_;
+    auto mul1 = [&](const std::string &x, bool nfx, const std::string &y, bool nfy) {
+      return nfx || nfy ? "xe_mul1(" + x + ", " + y + ")" : x + " * " + y;
+    };
+    // What this result may hold: by default whatever its operands may.
+    bool nfr = nfa || nfb;
     std::string a, b, c1;
     if (instr.scalar_operand_count >= 1)
     {
@@ -709,44 +811,50 @@ float4 xe_tex_post(float4 v, uint4 info) {
     switch (instr.scalar_opcode)
     {
     case AluScalarOpcode::kAdds: r = a + " + " + b; break;
-    case AluScalarOpcode::kAddsPrev: r = a + " + xe_ps"; break;
-    case AluScalarOpcode::kMuls: r = ab_same ? a + " * " + b : "xe_mul1(" + a + ", " + b + ")"; break;
-    case AluScalarOpcode::kMulsPrev: r = "xe_mul1(" + a + ", xe_ps)"; break;
+    case AluScalarOpcode::kAddsPrev: r = a + " + xe_ps"; nfr = nfa || nfp; break;
+    case AluScalarOpcode::kMuls: r = ab_same ? a + " * " + b : mul1(a, nfa, b, nfb); break;
+    case AluScalarOpcode::kMulsPrev: r = mul1(a, nfa, "xe_ps", nfp); nfr = nfa || nfp; break;
     case AluScalarOpcode::kMulsPrev2:
       r = fmt::format("((xe_ps != {0}) && (abs(xe_ps) <= {1}) && (abs({3}) <= {1}) && ({3} > 0.0)) "
                       "? xe_mul1({2}, xe_ps) : {0}",
                       F(-FLT_MAX), F(FLT_MAX), a, b);
+      nfr = nfa || nfp;
       break;
     case AluScalarOpcode::kMaxs: r = ab_same ? a : "xe_max1(" + a + ", " + b + ")"; break;
     case AluScalarOpcode::kMins: r = ab_same ? a : "xe_min1(" + a + ", " + b + ")"; break;
-    case AluScalarOpcode::kSeqs: r = "float(" + a + " == 0.0)"; break;
-    case AluScalarOpcode::kSgts: r = "float(" + a + " > 0.0)"; break;
-    case AluScalarOpcode::kSges: r = "float(" + a + " >= 0.0)"; break;
-    case AluScalarOpcode::kSnes: r = "float(" + a + " != 0.0)"; break;
-    case AluScalarOpcode::kFrcs: r = "frac(" + a + ")"; break;
-    case AluScalarOpcode::kTruncs: r = "trunc(" + a + ")"; break;
-    case AluScalarOpcode::kFloors: r = "floor(" + a + ")"; break;
-    case AluScalarOpcode::kExp: r = "exp2(" + a + ")"; break;
+    case AluScalarOpcode::kSeqs: r = "float(" + a + " == 0.0)"; nfr = false; break;
+    case AluScalarOpcode::kSgts: r = "float(" + a + " > 0.0)"; nfr = false; break;
+    case AluScalarOpcode::kSges: r = "float(" + a + " >= 0.0)"; nfr = false; break;
+    case AluScalarOpcode::kSnes: r = "float(" + a + " != 0.0)"; nfr = false; break;
+    case AluScalarOpcode::kFrcs: r = "frac(" + a + ")"; nfr = nfa; break;
+    case AluScalarOpcode::kTruncs: r = "trunc(" + a + ")"; nfr = nfa; break;
+    case AluScalarOpcode::kFloors: r = "floor(" + a + ")"; nfr = nfa; break;
+    case AluScalarOpcode::kExp: r = "exp2(" + a + ")"; nfr = true; break;
     case AluScalarOpcode::kLogc:
       r = fmt::format("max(log2({}), {})", a, F(-FLT_MAX));
+      nfr = nfa;
       break;
-    case AluScalarOpcode::kLog: r = "log2(" + a + ")"; break;
+    case AluScalarOpcode::kLog: r = "log2(" + a + ")"; nfr = true; break;
     case AluScalarOpcode::kRcpc:
       r = fmt::format("clamp(1.0 / {}, {}, {})", a, F(-FLT_MAX), F(FLT_MAX));
+      nfr = nfa;
       break;
     case AluScalarOpcode::kRsqc:
       r = fmt::format("clamp(rsqrt({}), {}, {})", a, F(-FLT_MAX), F(FLT_MAX));
+      nfr = true;
       break;
     case AluScalarOpcode::kRcpf:
       Line(fmt::format("float xe_rcp = 1.0 / {};", a));
       r = "(isinf(xe_rcp) ? asfloat(asuint(xe_rcp) & 0x80000000u) : xe_rcp)";
+      nfr = nfa;
       break;
     case AluScalarOpcode::kRsqf:
       Line(fmt::format("float xe_rcp = rsqrt({});", a));
       r = "(isinf(xe_rcp) ? asfloat(asuint(xe_rcp) & 0x80000000u) : xe_rcp)";
+      nfr = true;
       break;
-    case AluScalarOpcode::kRcp: r = "1.0 / " + a; break;
-    case AluScalarOpcode::kRsq: r = "rsqrt(" + a + ")"; break;
+    case AluScalarOpcode::kRcp: r = "1.0 / " + a; nfr = true; break;
+    case AluScalarOpcode::kRsq: r = "rsqrt(" + a + ")"; nfr = true; break;
     case AluScalarOpcode::kMaxAs:
       Line(fmt::format("xe_a0 = int(clamp(floor({} + 0.5), -256.0, 255.0));", a));
       r = ab_same ? a : "xe_max1(" + a + ", " + b + ")";
@@ -756,7 +864,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
       r = ab_same ? a : "xe_max1(" + a + ", " + b + ")";
       break;
     case AluScalarOpcode::kSubs: r = a + " - " + b; break;
-    case AluScalarOpcode::kSubsPrev: r = a + " - xe_ps"; break;
+    case AluScalarOpcode::kSubsPrev: r = a + " - xe_ps"; nfr = nfa || nfp; break;
     case AluScalarOpcode::kSetpEq:
     case AluScalarOpcode::kSetpNe:
     case AluScalarOpcode::kSetpGt:
@@ -769,6 +877,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
                                                                           : ">=";
       Line(fmt::format("xe_p0 = {} {} 0.0;", a, cmp));
       r = "(xe_p0 ? 0.0 : 1.0)";
+      nfr = false;
       break;
     }
     case AluScalarOpcode::kSetpInv:
@@ -776,22 +885,26 @@ float4 xe_tex_post(float4 v, uint4 info) {
       Line(fmt::format("float xe_inv_a = {};", a));
       Line("xe_p0 = xe_inv_a == 1.0;");
       r = "(xe_p0 ? 0.0 : (xe_inv_a == 0.0 ? 1.0 : xe_inv_a))";
+      nfr = nfa;
       break;
     case AluScalarOpcode::kSetpPop:
       predicate_written = true;
       Line(fmt::format("float xe_pop = {} - 1.0;", a));
       Line("xe_p0 = xe_pop <= 0.0;");
       r = "(xe_p0 ? 0.0 : xe_pop)";
+      nfr = nfa;
       break;
     case AluScalarOpcode::kSetpClr:
       predicate_written = true;
       Line("xe_p0 = false;");
       r = F(FLT_MAX);
+      nfr = false;
       break;
     case AluScalarOpcode::kSetpRstr:
       predicate_written = true;
       Line(fmt::format("xe_p0 = {} == 0.0;", a));
       r = "(xe_p0 ? 0.0 : " + a + ")";
+      nfr = nfa;
       break;
     case AluScalarOpcode::kKillsEq:
     case AluScalarOpcode::kKillsGt:
@@ -812,23 +925,26 @@ float4 xe_tex_post(float4 v, uint4 info) {
         Close();
       }
       r = "float(xe_skill)";
+      nfr = false;
       break;
     }
-    case AluScalarOpcode::kSqrt: r = "sqrt(" + a + ")"; break;
+    case AluScalarOpcode::kSqrt: r = "sqrt(" + a + ")"; nfr = true; break;
     case AluScalarOpcode::kMulsc0:
-    case AluScalarOpcode::kMulsc1: r = "xe_mul1(" + a + ", " + c1 + ")"; break;
+    case AluScalarOpcode::kMulsc1: r = mul1(a, nfa, c1, nfc); nfr = nfa || nfc; break;
     case AluScalarOpcode::kAddsc0:
-    case AluScalarOpcode::kAddsc1: r = a + " + " + c1; break;
+    case AluScalarOpcode::kAddsc1: r = a + " + " + c1; nfr = nfa || nfc; break;
     case AluScalarOpcode::kSubsc0:
-    case AluScalarOpcode::kSubsc1: r = a + " - " + c1; break;
-    case AluScalarOpcode::kSin: r = "sin(" + a + ")"; break;
-    case AluScalarOpcode::kCos: r = "cos(" + a + ")"; break;
+    case AluScalarOpcode::kSubsc1: r = a + " - " + c1; nfr = nfa || nfc; break;
+    case AluScalarOpcode::kSin: r = "sin(" + a + ")"; nfr = nfa; break;
+    case AluScalarOpcode::kCos: r = "cos(" + a + ")"; nfr = nfa; break;
     default:
       EmitTranslationError("unknown scalar ALU opcode");
       r = "0.0";
       break;
     }
     Line("xe_ps = " + r + ";");
+    // Sticky like the registers: xe_ps is kept across predicated instructions.
+    ps_nonfinite_ = (ps_nonfinite_ && !unconditional_) || nfr || !track_finite_;
   }
 
   void HlslShaderTranslator::ProcessAluInstruction(const ParsedAluInstruction &instr, uint8_t)
@@ -841,10 +957,13 @@ float4 xe_tex_post(float4 v, uint4 info) {
     SetInstructionPredication(instr.is_predicated, instr.predicate_condition);
     Open("");
     bool pw_vector = false, pw_scalar = false;
-    EmitVectorOp(instr, pw_vector);
+    unconditional_ = !instr.is_predicated && !conditional_exec_ && current_label_ == 0;
+    uint32_t vector_nonfinite = 0xF;
+    EmitVectorOp(instr, pw_vector, vector_nonfinite);
     EmitScalarOp(instr, pw_scalar);
-    StoreResult(instr.vector_and_constant_result, "xe_vec");
-    StoreResult(instr.scalar_result, "xe_ps.xxxx");
+    StoreResult(instr.vector_and_constant_result, "xe_vec", vector_nonfinite);
+    StoreResult(instr.scalar_result, "xe_ps.xxxx", ps_nonfinite_ ? 0xF : 0);
+    unconditional_ = false;
     Close();
     if (pw_vector || pw_scalar)
     {
@@ -1316,7 +1435,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
       }
       sample = fmt::format("{}.SampleLevel({}, {}, {})", tex, smp, coord, lod);
     }
-    StoreResult(instr.result, fmt::format("xe_tex_post({}, xe_tex_info[{}])", sample, binding));
+    StoreResult(instr.result, fmt::format("xe_tex_post({}, xe_tex_info[{}])", sample, binding), 0);
     Close();
   }
 

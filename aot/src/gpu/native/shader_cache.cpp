@@ -210,6 +210,14 @@ namespace ao2::gpu
       out->error += "\n";
     }
     Job job{out, type, hash, translation->GetTranslatedBinaryString(), {}};
+    if (!override_dir.empty() && translated)
+    {
+      std::vector<uint8_t> text;
+      if (ReadFile(fmt::format("{}/{:016X}_{:X}.{}.hlsl", override_dir, hash, modification, stage), text))
+      {
+        job.hlsl.assign(text.begin(), text.end());
+      }
+    }
     if (dump_ucode)
     {
       // Also when the DXBC comes from the disk cache and Compile never runs.

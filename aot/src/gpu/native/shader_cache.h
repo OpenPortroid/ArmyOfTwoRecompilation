@@ -72,6 +72,9 @@ namespace ao2::gpu
     // Write raw big-endian microcode (<hash>_<modification>.<vs|ps>.bin) of
     // every translated variant, for tools/xenos_hlsl_test.
     bool dump_ucode = false;
+    // Directory of hand-written HLSL used instead of the translation
+    // (<hash>_<modification>.<vs|ps>.hlsl, the dump's names; empty = none).
+    std::string override_dir;
 
   private:
     struct Job
