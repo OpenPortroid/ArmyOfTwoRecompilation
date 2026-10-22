@@ -76,3 +76,15 @@ both through the lockstep), `--ao2_coop_sync_trace=true`, heap lock on, both pla
 frames (~6.5 min) from Iraq's start (checksum 4AE1), `tools/sync_diff.py`: no difference in checksums, rand() state,
 players or pawns, no Connection Lost. Only frame 0 counts rand() calls differently (9 / 7) with the same rand() state
 (the level start). Not covered: a fight, two PCs.
+
+## GPU side (branch perf/render-thread, 2026-10-22)
+
+Both only change how the native renderer does the same EDRAM work; game state is untouched, so co-op is unaffected.
+
+- `ao2_native_gpu_alias_stencil_clear` (on): D3D clears the stencil by drawing a rect list into a 4x MSAA alias of
+  the scene depth. When every tile is owned by one depth target of the same base, format and pitch, the clear goes
+  straight to that target (ClearDepthStencilView STENCIL) instead of a transfer into the alias and back. River:
+  200 -> 209.5 FPS, transfer 0.58 -> 0.31 ms/frame.
+- `ao2_native_gpu_skip_depth_restore` (on): the scene depth resolve clears depth, and the game redraws that depth
+  from the resolved texture right away. The depth clear is left pending and skipped with the restore draw. River,
+  2x2: 211.5 / 210.3 -> 213.3 / 211.8 FPS, draw 3.10 -> 3.05 ms; one restore skipped per frame.
