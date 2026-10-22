@@ -113,3 +113,13 @@ Both only change how the native renderer does the same EDRAM work; game state is
   3.03: the frame total only 4.256 / 4.275 -> 4.247 / 4.249 ms. The reads stay (the restore reads the scene
   either way), only the copy's write goes: zero copy is worth much less here than the copies' times suggest.
 - `ao2_native_gpu_shader_override_dir`: hand-written HLSL by the dump's names, for experiments.
+
+## Native replacements of hot engine functions (2026-10-22)
+Bit-exact native C++ in place of the recompiled code, checked against it call by call
+(`ao2_native_*` = 2 runs both and logs mismatches).
+- sub_82813CD8 (convex hull vs axis projection, collision; src/native_sat.cpp, `ao2_native_sat`): verify run on the
+  river, 14.0 M calls, 0 mismatches (r3, overlap, normal). Same arithmetic order as the recompiled code (float(fma) in
+  double, fsel, the unrolled loop's per-lane summation order), so co-op lockstep is unaffected.
+  River with the sampler, 2 runs each: function 3.39/3.54% of the game thread -> 0.86%; tick 6.71/6.64 -> 6.48/6.42 ms
+  (-3%), fps 195/196 -> 199/199 (GPU-bound). The next candidates are flatter (UnrealScript VM sub_82447A40 1.4%,
+  sub_82885870 1.2%, sub_82408DF0 0.9%): about 1% each, or less.
