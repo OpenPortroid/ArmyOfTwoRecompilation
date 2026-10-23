@@ -94,6 +94,11 @@ REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_swap, true, "GPU",
                     "A color resolve followed by a clear hands the render target's resource to the texture and "
                     "gives the render target the texture's old one (no copy); the exponent bias is applied when "
                     "the texture is sampled");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_scene_r11g11b10, true, "GPU",
+                    "7e3 float render targets (the scene) as R11G11B10_FLOAT instead of R16G16B16A16_FLOAT: half "
+                    "the bandwidth of every draw, blend and resolve of the scene; 6/6/5 mantissa bits instead of "
+                    "the console's 7 and no alpha (the game doesn't read the scene's alpha). Applies from the next "
+                    "frame");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_lend, true, "GPU",
                     "A color resolve without a clear also hands the render target's resource to the texture; the "
                     "render target's contents are copied back from it only if it is used again while it still "
@@ -666,6 +671,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
 
       RenderTarget *edram_owner[2048] = {};
       uint64_t edram_generation = 0;
+      bool scene_r11g11b10 = true; // ao2_native_gpu_scene_r11g11b10 of the render targets made
       uint32_t next_rt_id = 1;
       ComPtr<ID3D12RootSignature> transfer_root;
       std::vector<uint8_t> transfer_vs, transfer_ps[8];
@@ -2346,13 +2352,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     // game redraws every frame) and made again at the new scale on first use.
     // Resolve destinations need nothing: one of another scale does not fit
     // (see the resolve) and is replaced; until then it is sampled at its own.
-    void ApplyRequestedScale()
+    void DropAllRenderTargets()
     {
-      uint32_t want = g_requested_scale4.exchange(0, std::memory_order_acq_rel);
-      if (!want || want == g.scale4)
-      {
-        return;
-      }
       for (auto &entry : g.render_targets)
       {
         DeferRelease(std::move(entry.second->resource));
@@ -2364,6 +2365,22 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       std::fill(std::begin(g.edram_owner), std::end(g.edram_owner), nullptr);
       ++g.edram_generation;
       g.bound = {};
+    }
+
+    void ApplyRequestedScale()
+    {
+      // The scene's format changes between frames: the render targets are made again.
+      if (g.scene_r11g11b10 != REXCVAR_GET(ao2_native_gpu_scene_r11g11b10))
+      {
+        g.scene_r11g11b10 = REXCVAR_GET(ao2_native_gpu_scene_r11g11b10);
+        DropAllRenderTargets();
+      }
+      uint32_t want = g_requested_scale4.exchange(0, std::memory_order_acq_rel);
+      if (!want || want == g.scale4)
+      {
+        return;
+      }
+      DropAllRenderTargets();
       g.scale4 = want;
       g.small_scale4 = (want + 3) & ~3u;
       NativeLog("resolution scale %.2f from frame %llu (render targets up to %u wide: %u)\n", double(want) * 0.25,
@@ -2813,6 +2830,12 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
 
     // ------------------------------------------------------------ Formats
 
+    // The host format of the 7e3 float render targets (the scene).
+    DXGI_FORMAT SceneFormat()
+    {
+      return g.scene_r11g11b10 ? DXGI_FORMAT_R11G11B10_FLOAT : DXGI_FORMAT_R16G16B16A16_FLOAT;
+    }
+
     DXGI_FORMAT ColorFormat(xenos::ColorRenderTargetFormat f)
     {
       switch (f)
@@ -2826,6 +2849,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         return DXGI_FORMAT_R10G10B10A2_UNORM;
       case xenos::ColorRenderTargetFormat::k_2_10_10_10_FLOAT:
       case xenos::ColorRenderTargetFormat::k_2_10_10_10_FLOAT_AS_16_16_16_16:
+        return SceneFormat();
       case xenos::ColorRenderTargetFormat::k_16_16_16_16_FLOAT:
         return DXGI_FORMAT_R16G16B16A16_FLOAT;
       case xenos::ColorRenderTargetFormat::k_16_16:
@@ -7809,7 +7833,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       }
       g_post.failed = false;
       // Each pass with the format it draws into (PostStage1, PostBeforeSample).
-      static const struct
+      const DXGI_FORMAT scene = SceneFormat();
+      const struct
       {
         PostPass pass;
         DXGI_FORMAT format;
@@ -7819,14 +7844,14 @@ float4 ps(float4 p : SV_Position) : SV_Target {
           {kPassLinearizeMs, DXGI_FORMAT_R32_FLOAT, 0},
           {kPassAo, DXGI_FORMAT_R16G16_FLOAT, 0},
           {kPassAoBlur, DXGI_FORMAT_R16G16_FLOAT, 0},
-          {kPassAoApply, DXGI_FORMAT_R16G16B16A16_FLOAT, 1},
-          {kPassMotionBlur, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassAoApply, scene, 1},
+          {kPassMotionBlur, scene, 0},
           {kPassDofFocus, DXGI_FORMAT_R32_FLOAT, 0},
-          {kPassDof, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
-          {kPassFxaa, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassDof, scene, 0},
+          {kPassFxaa, scene, 0},
           {kPassSmaaEdges, DXGI_FORMAT_R8G8_UNORM, 0},
           {kPassSmaaWeights, DXGI_FORMAT_R8G8B8A8_UNORM, 0},
-          {kPassSmaaBlend, DXGI_FORMAT_R16G16B16A16_FLOAT, 0},
+          {kPassSmaaBlend, scene, 0},
           {kPassDepthHalf, DXGI_FORMAT_R32_FLOAT, 0},
       };
       const PostSettings &s = CurrentPostSettings();
@@ -8084,7 +8109,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                            uint32_t dest_base)
     {
       const PostSettings &s = CurrentPostSettings();
-      if (!s.Any() || tex.format != DXGI_FORMAT_R16G16B16A16_FLOAT || rect.left || src.scale4 != g.scale4 ||
+      if (!s.Any() || tex.format != SceneFormat() || rect.left || src.scale4 != g.scale4 ||
           src.depth)
       {
         return;
@@ -8205,8 +8230,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       {
         return;
       }
-      if (!EnsurePostTexture(g_post.color[0], width, height, DXGI_FORMAT_R16G16B16A16_FLOAT) ||
-          !EnsurePostTexture(g_post.color[1], width, height, DXGI_FORMAT_R16G16B16A16_FLOAT))
+      if (!EnsurePostTexture(g_post.color[0], width, height, tex.format) ||
+          !EnsurePostTexture(g_post.color[1], width, height, tex.format))
       {
         return;
       }
@@ -9421,7 +9446,8 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     };
     bool pack_7e3 = false;
     if (bits_origin && bits_origin != src && src->samples == 1 && bits_origin->samples == 1 &&
-        bits_origin->format == DXGI_FORMAT_R16G16B16A16_FLOAT && !copy.color_clear_enable &&
+        (bits_origin->format == DXGI_FORMAT_R16G16B16A16_FLOAT || bits_origin->format == DXGI_FORMAT_R11G11B10_FLOAT) &&
+        !copy.color_clear_enable &&
         (copy.copy_command == xenos::CopyCommand::kRaw || copy.copy_command == xenos::CopyCommand::kConvert) &&
         is_format(src, xenos::ColorRenderTargetFormat::k_2_10_10_10,
                   xenos::ColorRenderTargetFormat::k_2_10_10_10_AS_10_10_10_10) &&
@@ -9442,6 +9468,12 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     if (copy.copy_command == xenos::CopyCommand::kRaw || copy.copy_command == xenos::CopyCommand::kConvert)
     {
       ResolveFormat rf = GetResolveFormat(uint32_t(dest_info.copy_dest_format), is_depth);
+      // The scene kept as R11G11B10 resolves to a float texture of the same format (same family:
+      // swapped, lent or copied).
+      if (!is_depth && src->format == DXGI_FORMAT_R11G11B10_FLOAT && rf.unorm == DXGI_FORMAT_R16G16B16A16_FLOAT)
+      {
+        rf.resource = rf.unorm = rf.rtv = DXGI_FORMAT_R11G11B10_FLOAT;
+      }
       // Predicated tiling (the game's own MSAA): each tile is drawn with the
       // window offset moved up by the tile's first row and resolved with the
       // destination base moved down to that row (tiled textures are stored in

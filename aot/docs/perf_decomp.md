@@ -328,3 +328,19 @@ post-processing is worth +4.5%; without early submits (`submit_draws 0`) the fra
 
 Full route, 2 runs: slowest seconds 189 189 192 194 195 / 193 194 195 196 198, minimum 189 / 193 (the same day
 before: 170-183 in 5 runs).
+
+## The scene as R11G11B10 (2026-10-23)
+
+The console draws the scene into 7e3 (2_10_10_10_FLOAT, 32 bits); we had it as R16G16B16A16_FLOAT, twice the
+bytes for every draw, blend (the smoke) and resolve of the scene. `ao2_native_gpu_scene_r11g11b10` (on) makes the
+7e3 render targets R11G11B10_FLOAT and their float resolves (fmt 32, the scene copy 109D0000) a texture of the same
+format, so swapping, lending and the hit effect's packing keep working. Lost: alpha and a mantissa bit (6/6/5
+against 7e3's 7). Nothing reads the scene's alpha: the blends never use the destination alpha, the tonemap
+(7A12CB96) fetches the copy as xyz1, the refraction (6BB12ED4) and the bloom (13A2D3FE -> 80EC273B) use its color,
+and the restore (D5EE530D) only writes it back. Post effects draw in the scene's format.
+
+Live fight A/B (the setting switched every 8 s without freezing, `FREEZE_LIVE=1`, `freeze_ab.py --live`), GPU
+3.47 -> 3.11 ms/frame (5 pairs: each -0.25..-0.4 ms but one); frozen frame 3.88 -> 3.61 ms. The presented frame
+(frozen, compare_captures.py): 99.3% of pixels within 1 level of 255, at most 6 levels in the bright sky and smoke;
+side by side no difference visible. D24_UNORM instead of D32_FLOAT for the float depth gained ~0.1 ms (not
+reliable) at the cost of depth precision - not kept.

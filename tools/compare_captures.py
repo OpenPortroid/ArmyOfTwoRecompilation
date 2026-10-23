@@ -12,7 +12,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from capture_to_png import FORMATS  # noqa: E402
+from capture_to_png import FORMATS, r11g11b10  # noqa: E402
 
 
 def load(root):
@@ -33,6 +33,8 @@ def load(root):
             v = rows[:, : w * 4].copy().view(np.uint32).reshape(h, w)
             img = np.stack([(v >> s) & 0x3FF for s in (0, 10, 20, 30)], axis=2).astype(np.float32)
             img /= np.array([1023.0, 1023.0, 1023.0, 3.0], np.float32)
+        elif kind == 'r11g11b10':
+            img = r11g11b10(rows[:, : w * 4].copy().view(np.uint32).reshape(h, w))
         else:
             bpp = np.dtype(dtype).itemsize * channels
             img = rows[:, : w * bpp].copy().view(dtype).reshape(h, w, channels).astype(np.float32)

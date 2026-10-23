@@ -19,6 +19,7 @@ FORMATS = {
     13: (np.int16, 4, "snorm"),    # R16G16B16A16_SNORM
     16: (np.float32, 2, "float"),  # R32G32_FLOAT
     24: (None, 4, "r10g10b10a2"),  # R10G10B10A2_UNORM
+    26: (None, 3, "r11g11b10"),    # R11G11B10_FLOAT
     28: (np.uint8, 4, "unorm"),    # R8G8B8A8_UNORM
     29: (np.uint8, 4, "unorm"),    # R8G8B8A8_UNORM_SRGB
     34: (np.float16, 2, "float"),  # R16G16_FLOAT
@@ -30,6 +31,17 @@ FORMATS = {
     61: (np.uint8, 1, "unorm"),    # R8_UNORM
     62: (np.uint8, 1, "stencil"),  # R8_UINT: stencil plane (0 black, others 0.3..1)
 }
+
+
+def r11g11b10(v):
+    """R11G11B10_FLOAT texels (uint32 array) as float32 RGB."""
+    out = []
+    for shift, mbits in ((0, 6), (11, 6), (22, 5)):
+        bits = (v >> shift) & ((1 << (mbits + 5)) - 1)
+        m = (bits & ((1 << mbits) - 1)).astype(np.float32) / (1 << mbits)
+        e = (bits >> mbits).astype(np.int32)
+        out.append(np.where(e == 0, m * 2.0**-14, (1 + m) * np.exp2((e - 15).astype(np.float32))))
+    return np.stack(out, axis=2).astype(np.float32)
 
 
 def to_rgb(img):
@@ -57,6 +69,8 @@ def main():
         if kind == "r10g10b10a2":
             v = rows[:, : w * 4].copy().view(np.uint32).reshape(h, w)
             img = np.stack([(v >> s) & 0x3FF for s in (0, 10, 20)], axis=2).astype(np.float32) / 1023.0
+        elif kind == "r11g11b10":
+            img = r11g11b10(rows[:, : w * 4].copy().view(np.uint32).reshape(h, w))
         else:
             bpp = np.dtype(dtype).itemsize * channels
             img = rows[:, : w * bpp].copy().view(dtype).reshape(h, w, channels).astype(np.float32)
