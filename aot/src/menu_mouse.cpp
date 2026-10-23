@@ -26,7 +26,8 @@
 // menu and its submenus (MainMenuScene, ExtrasScene...) are drawn into a
 // texture (UIScene.RenderTarget +360, main_menu_t_rtt, 608 x 400) put on the
 // stone slabs of the Shell level (pieces at different depths and angles, the
-// camera moving between menus), so their bounds are in that texture. The
+// camera moving between menus), so their bounds are in that texture (at the
+// height it was asked for when the screen's height cut it lower). The
 // renderer tells which texel of it is under the cursor (RendererMenuProbe:
 // the slabs are drawn again writing the texture's coordinates); the nearest
 // button within kSlabReach texels of it is pointed at, so its whole piece of
@@ -41,6 +42,9 @@
 // (SetFocus / KillFocus, vtable +328 / +336). Its own events (the copy's
 // Kismet opens Extras) never run: A on it is taken out of the pad state and
 // closes the window instead.
+//
+// Debugging: ui_dump.trigger in the working directory writes the scenes and
+// their widgets to ui_dump.txt.
 //
 // Online co-op: the pause menu is this machine's UI and its focus is not part
 // of the simulation (the checksum is the shared rand() and physics), and the
@@ -118,8 +122,9 @@ namespace
 
   // Where the Exit label goes, in a 1280 x 720 picture: on the piece of
   // paper under Extras, which the main menu's texture does not reach. The
-  // Shell camera keeps its horizontal field of view: at other aspect ratios
-  // the picture is that one scaled to the width, centred.
+  // Shell camera keeps its horizontal field of view narrower than 16:9 and
+  // its vertical one wider (Hor+, aspect_ratio.cpp): the picture is that one
+  // scaled to the width or to the height, centred.
   constexpr float kExitX0 = 103.0f, kExitY0 = 507.0f, kExitX1 = 253.0f, kExitY1 = 539.0f;
   // Its tilt (degrees, clockwise), as the slab text around it.
   constexpr float kExitTilt = 15.0f;
@@ -249,6 +254,9 @@ namespace
     Kind kind;
     bool slab;            // drawn on the slabs: its bounds are in the texture
     float vw, vh;         // its scene's viewport
+    // On the slabs: the height its bounds are laid out in, which a render
+    // target cut to the screen's height is lower than (aspect_ratio.cpp).
+    float lh;
     float x0, y0, x1, y1; // where it is hit
     // Its rotation (Rotation.TransformMatrix: row vectors, from its top left
     // corner), inverted: a point relative to x0, y0 back to the unturned widget.
@@ -380,6 +388,7 @@ namespace
         space.slab = true;
         space.vw = size_x > 0 ? float(LoadU32(base, target + size_x)) : 0.0f;
         space.vh = size_y > 0 ? float(LoadU32(base, target + size_y)) : 0.0f;
+        space.lh = float(ao2::aspect::LayoutHeight(uint32_t(space.vw), uint32_t(space.vh)));
       }
       Collect(base, scene, space, widgets);
       return widgets.empty() ? 0 : scene; // the top scene taking input, if it has anything to point at
@@ -475,8 +484,9 @@ namespace
   // A point of the 1280 x 720 Shell picture (above) in a scene's viewport.
   void FromSlabPicture(float x, float y, float vw, float vh, float &out_x, float &out_y)
   {
-    out_x = x * vw / 1280.0f;
-    out_y = vh * 0.5f + (y - 360.0f) * vw / 1280.0f;
+    float scale = vw * 720.0f > vh * 1280.0f ? vh / 720.0f : vw / 1280.0f;
+    out_x = vw * 0.5f + (x - 640.0f) * scale;
+    out_y = vh * 0.5f + (y - 360.0f) * scale;
   }
 
   // The cursor in a widget's space; false if it is not on it (on the slabs:
@@ -495,7 +505,7 @@ namespace
       return false;
     }
     x = u * w.vw;
-    y = v * w.vh;
+    y = v * w.lh;
     return true;
   }
 
@@ -804,6 +814,130 @@ namespace
     if (rex::ui::Window *window = g_window)
     {
       window->app_context().CallInUIThreadDeferred([window]() { window->RequestClose(); });
+    }
+  }
+
+  // --- The UI dump -----------------------------------------------------------
+
+  // ui_dump.trigger in the working directory: every scene on the stack and
+  // its widgets (Position values, scale types and aspect ratio mode,
+  // RenderBounds; the images' properties) go to ui_dump.txt.
+  void DumpProperties(FILE *f, const uint8_t *base, uint32_t object, int indent)
+  {
+    uint32_t cls = LoadU32(base, object + kClass);
+    for (const ao2::ue3::Property &p : ao2::ue3::Properties(base, cls))
+    {
+      if (p.offset < 0 || p.owner == "Object" || p.owner == "UIRoot" || p.owner == "UIScreenObject" ||
+          p.owner == "UIObject")
+      {
+        continue;
+      }
+      uint32_t at = object + uint32_t(p.offset);
+      std::fprintf(f, "%*s%s.%s +%d %s = ", indent, "", p.owner.c_str(), p.name.c_str(), p.offset, p.type.c_str());
+      if (p.type == "FloatProperty")
+      {
+        std::fprintf(f, "%g\n", LoadF32(base, at));
+      }
+      else if (p.type == "ByteProperty")
+      {
+        std::fprintf(f, "%u\n", base[at]);
+      }
+      else if (p.type == "ObjectProperty" || p.type == "ClassProperty" || p.type == "ComponentProperty")
+      {
+        uint32_t o = LoadU32(base, at);
+        std::fprintf(f, "%08X %s\n", o, o ? ao2::ue3::ObjectName(base, o).c_str() : "");
+      }
+      else if (p.type == "NameProperty")
+      {
+        std::fprintf(f, "%s\n", ao2::ue3::Name(base, LoadU32(base, at)).c_str());
+      }
+      else
+      {
+        // Ints, bools (the word), structs and arrays (their first words).
+        std::fprintf(f, "%08X %08X %08X %08X\n", LoadU32(base, at), LoadU32(base, at + 4), LoadU32(base, at + 8),
+                     LoadU32(base, at + 12));
+      }
+    }
+  }
+
+  void DumpWidgets(FILE *f, const uint8_t *base, uint32_t object, int depth)
+  {
+    for (uint32_t child : ChildrenOf(base, object).list)
+    {
+      if (child & 3)
+      {
+        continue;
+      }
+      uint32_t cls = LoadU32(base, child + kClass);
+      std::string cls_name = cls ? ao2::ue3::ObjectName(base, cls) : std::string();
+      int indent = depth * 2;
+      std::fprintf(f, "%*s%08X %s (%s)%s pos %g %g %g %g type %u %u %u %u aspect %u bounds %g %g %g %g\n", indent,
+                   "", child, ao2::ue3::ObjectName(base, child).c_str(), cls_name.c_str(),
+                   Hidden(base, child) ? " hidden" : "", LoadF32(base, child + kPosition),
+                   LoadF32(base, child + kPosition + 4), LoadF32(base, child + kPosition + 8),
+                   LoadF32(base, child + kPosition + 12), base[child + kPosition + 16], base[child + kPosition + 17],
+                   base[child + kPosition + 18], base[child + kPosition + 19], base[child + kPosition + 20],
+                   LoadF32(base, child + kRenderBounds), LoadF32(base, child + kRenderBounds + 4),
+                   LoadF32(base, child + kRenderBounds + 8), LoadF32(base, child + kRenderBounds + 12));
+      if (cls_name.find("Image") != std::string::npos)
+      {
+        DumpProperties(f, base, child, indent + 4);
+        static int32_t component = ao2::ue3::PropertyOffset(base, "UIImage", "ImageComponent");
+        static int32_t image_ref = ao2::ue3::PropertyOffset(base, "UIComp_DrawImage", "ImageRef");
+        uint32_t comp = component >= 0 ? LoadU32(base, child + component) : 0;
+        if (comp)
+        {
+          std::fprintf(f, "%*sImageComponent %08X:\n", indent + 4, "", comp);
+          DumpProperties(f, base, comp, indent + 6);
+          uint32_t ref = image_ref >= 0 ? LoadU32(base, comp + image_ref) : 0;
+          if (ref)
+          {
+            std::fprintf(f, "%*sImageRef %08X %s:\n", indent + 6, "", ref, ao2::ue3::ObjectName(base, ref).c_str());
+            DumpProperties(f, base, ref, indent + 8);
+          }
+        }
+      }
+      if (depth < 8)
+      {
+        DumpWidgets(f, base, child, depth + 1);
+      }
+    }
+  }
+
+  void DumpUi(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    FILE *f = std::fopen("ui_dump.txt", "w");
+    if (!f)
+    {
+      return;
+    }
+    std::fprintf(f, "guest %ux%u\n", ao2::aspect::GuestWidth(), ao2::aspect::GuestHeight());
+    for (uint32_t scene : scenes)
+    {
+      uint32_t cls = LoadU32(base, scene + kClass);
+      uint32_t target = LoadU32(base, scene + kRenderTarget);
+      std::fprintf(f, "\nscene %08X %s (%s) input %u viewport %g %g target %08X %s\n", scene,
+                   ao2::ue3::ObjectName(base, scene).c_str(), cls ? ao2::ue3::ObjectName(base, cls).c_str() : "",
+                   base[scene + kSceneInputMode], LoadF32(base, scene + kViewportSize),
+                   LoadF32(base, scene + kViewportSize + 4), target,
+                   target ? ao2::ue3::ObjectName(base, target).c_str() : "");
+      DumpWidgets(f, base, scene, 1);
+    }
+    std::fclose(f);
+  }
+
+  void PollUiDump(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    static uint32_t next_check = 0;
+    if (int32_t(GetTickCount() - next_check) < 0)
+    {
+      return;
+    }
+    next_check = GetTickCount() + 500;
+    if (GetFileAttributesA("ui_dump.trigger") != INVALID_FILE_ATTRIBUTES)
+    {
+      DeleteFileA("ui_dump.trigger");
+      DumpUi(base, scenes);
     }
   }
 
@@ -1200,6 +1334,14 @@ namespace ao2::menumouse
     };
 
     std::vector<uint32_t> scenes = Scenes(base);
+    for (uint32_t s : scenes)
+    {
+      ao2::aspect::FitUiScene(base, s);
+    }
+    if (keyboard)
+    {
+      PollUiDump(base, scenes);
+    }
     std::vector<Widget> widgets;
     uint32_t scene = REXCVAR_GET(ao2_menu_mouse) || REXCVAR_GET(ao2_menu_exit) ? ActiveMenu(base, scenes, widgets) : 0;
 

@@ -49,7 +49,11 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 #include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include <windows.h>
 
@@ -283,9 +287,18 @@ extern "C" REX_FUNC(sub_82A9F540)
 //   return 0x8257BFD0),
 // - and the loading icon in its corner, blitted (return 0x8257C26C): size
 //   r5 = r6 = movie height x 100 / 720 at x 0.9 W, y 0.92 x movie height.
+// - the loading screen's texts, wrapped into a rectangle by sub_82935718
+//   (canvas r4, text r5, int rect x0 y0 x1 y1 r6, font r7): the tip in
+//   0.2 W, 0.2 M .. 0.8 W, 0.8 M (0.9 M when the movie is blitted; return
+//   0x8257C120) and the second line at the point 0.2 W, 0.17 M (return
+//   0x8257C1CC), M the movie height. Its y had the wrapped offset added and
+//   was saturated to INT_MAX: the text was never on screen.
 namespace
 {
   constexpr uint32_t kMovieBlit = 0x8257C004, kMovieTile = 0x8257BFD0, kMovieIcon = 0x8257C26C;
+  constexpr uint32_t kMovieTip = 0x8257C120, kMovieTipLine = 0x8257C1CC;
+  // The last movie frame went through the canvas tile (else the blitter).
+  std::atomic<bool> g_movie_tiled{false};
 
   struct MovieFit
   {
@@ -316,6 +329,10 @@ extern "C" REX_FUNC(sub_826D62B8)
 {
   MovieFit fit;
   uint32_t lr = uint32_t(ctx.lr);
+  if (lr == kMovieBlit)
+  {
+    g_movie_tiled = false;
+  }
   if ((lr == kMovieBlit || lr == kMovieIcon) && FitMovie(fit))
   {
     if (lr == kMovieBlit && ctx.r5.u32 == g_width && ctx.r6.u32 == fit.height)
@@ -342,6 +359,10 @@ extern "C" REX_FUNC(__imp__sub_82709A40);
 extern "C" REX_FUNC(sub_82709A40)
 {
   MovieFit fit;
+  if (uint32_t(ctx.lr) == kMovieTile)
+  {
+    g_movie_tiled = true;
+  }
   if (uint32_t(ctx.lr) == kMovieTile && FitMovie(fit) && ctx.f3.f64 == double(g_width) &&
       ctx.f4.f64 == double(fit.height))
   {
@@ -353,14 +374,278 @@ extern "C" REX_FUNC(sub_82709A40)
   __imp__sub_82709A40(ctx, base);
 }
 
+// Wrapped text in a rectangle (canvas r4, text r5, int rect x0 y0 x1 y1 r6, font r7, r8): the loading screen's.
+extern "C" REX_FUNC(__imp__sub_82935718);
+extern "C" REX_FUNC(sub_82935718)
+{
+  MovieFit fit;
+  uint32_t lr = uint32_t(ctx.lr);
+  if ((lr == kMovieTip || lr == kMovieTipLine) && FitMovie(fit))
+  {
+    // Fractions of the movie: x from the game's own x, y as the game made it.
+    double h = double(g_height);
+    double y0 = lr == kMovieTip ? 0.2 : 0.17;
+    double y1 = lr == kMovieTip ? (g_movie_tiled ? 0.8 : 0.9) : 0.17;
+    uint32_t rect = ctx.r6.u32;
+    auto x = [&](uint32_t at) {
+      int32_t game = int32_t(LoadU32(base, rect + at));
+      StoreU32(base, rect + at, uint32_t(int32_t(fit.x + double(game) * fit.scale)));
+    };
+    x(0);
+    x(8);
+    StoreU32(base, rect + 4, uint32_t(int32_t(h * y0)));
+    StoreU32(base, rect + 12, uint32_t(int32_t(h * y1)));
+  }
+  __imp__sub_82935718(ctx, base);
+}
+
+// The UI's viewport (GameUISceneClient: RenderViewport->GetSizeX / GetSizeY
+// into r5, the size every UIScene lays out in, UIScene.CurrentViewportSize,
+// and the one UpdateCanvasToScreen sub_82963558 builds the UI's canvas
+// transform from). Its scenes were made for 720 lines: 4:3 safe region
+// panels as high as the viewport, and in them pictures, frames, the weapon
+// shop's labels sized and placed in pixels. At 1280x544 those pixels are
+// 1.32 times too big next to the rest (the waiting screen's background
+// moved down and right, the shop's labels out of place). Wider than 16:9
+// the UI gets a viewport 720 high of the screen's aspect (1694x720 for
+// 1280x544) instead: laid out as the console did, its canvas transform
+// maps it onto the frame, so it is drawn scaled down evenly, text included.
+extern "C" REX_FUNC(__imp__sub_82962EF0);
+extern "C" REX_FUNC(sub_82962EF0)
+{
+  uint32_t out = ctx.r5.u32;
+  __imp__sub_82962EF0(ctx, base);
+  uint32_t width = g_width, height = g_height;
+  if (ctx.r3.u32 == 0 || height >= kOriginalHeight)
+  {
+    return;
+  }
+  auto load = [&](uint32_t at) { return std::bit_cast<float>(LoadU32(base, out + at)); };
+  if (load(0) != float(width) || load(4) != float(height))
+  {
+    return;
+  }
+  float ui_width = float(std::lround(double(width) * kOriginalHeight / height));
+  StoreU32(base, out, std::bit_cast<uint32_t>(ui_width));
+  StoreU32(base, out + 4, std::bit_cast<uint32_t>(float(kOriginalHeight)));
+}
+
+// In that viewport a widget whose left and right faces are fractions of it
+// (UIScreenObject.Position, UIScreenValue_Bounds: Value[4] +60, ScaleType[4]
+// +76, EVALPOS_PercentageViewport = 4) was made for a 16:9 one: its width
+// grows with the viewport, its height does not (the weapon dealers'
+// portraits, ContactsScene's DealerPicture, 1.32 times too wide at 21:9).
+// Those faces are put into the viewport's 16:9 middle instead
+// (v -> 0.5 + (v - 0.5) x 16:9 / aspect), where the Shell's slabs and globe
+// are (Hor+): the dealer's panel, labels and pictures keep their places on
+// them. Widgets across the whole width stay as they are. Each widget once:
+// its faces as put are kept, other values there (another widget at that
+// address, a script's SetPosition) are put in again.
+namespace
+{
+  constexpr uint32_t kUiChildren = 96, kUiPosition = 60, kUiScaleType = 76;
+  constexpr uint32_t kUiRenderTarget = 360, kUiSceneFlags = 412, kUiViewportSize = 424;
+  constexpr uint32_t kUiUpdatePositions = 0xC0000000; // bUpdateDockingStack, bUpdateScenePositions
+  constexpr uint8_t kPercentageViewport = 4;
+
+  // Widget -> its left and right faces as last put (float bits). The pad poll's thread only.
+  std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> g_fitted;
+
+  bool FitWidgets(uint8_t *base, uint32_t object, float k, int depth)
+  {
+    bool changed = false;
+    uint32_t data = LoadU32(base, object + kUiChildren);
+    uint32_t count = LoadU32(base, object + kUiChildren + 4);
+    for (uint32_t i = 0; data && i < count && i < 256 && depth < 8; ++i)
+    {
+      uint32_t child = LoadU32(base, data + i * 4);
+      if (!child || (child & 3))
+      {
+        continue;
+      }
+      if (base[child + kUiScaleType] == kPercentageViewport && base[child + kUiScaleType + 2] == kPercentageViewport)
+      {
+        std::pair<uint32_t, uint32_t> faces{LoadU32(base, child + kUiPosition), LoadU32(base, child + kUiPosition + 8)};
+        auto it = g_fitted.find(child);
+        if (it == g_fitted.end() || it->second != faces)
+        {
+          float left = std::bit_cast<float>(faces.first), right = std::bit_cast<float>(faces.second);
+          if (left > 0.01f || right < 0.99f)
+          {
+            faces.first = std::bit_cast<uint32_t>(0.5f + (left - 0.5f) * k);
+            faces.second = std::bit_cast<uint32_t>(0.5f + (right - 0.5f) * k);
+            StoreU32(base, child + kUiPosition, faces.first);
+            StoreU32(base, child + kUiPosition + 8, faces.second);
+            changed = true;
+          }
+          g_fitted[child] = faces;
+        }
+      }
+      changed = FitWidgets(base, child, k, depth + 1) || changed;
+    }
+    return changed;
+  }
+} // namespace
+
+void ao2::aspect::FitUiScene(uint8_t *base, uint32_t scene)
+{
+  if (!scene || LoadU32(base, scene + kUiRenderTarget))
+  {
+    return; // drawn into a texture: laid out in its size
+  }
+  float vw = std::bit_cast<float>(LoadU32(base, scene + kUiViewportSize));
+  float vh = std::bit_cast<float>(LoadU32(base, scene + kUiViewportSize + 4));
+  if (!(vh > 0.0f) || vw / vh < 16.0f / 9.0f + 0.01f)
+  {
+    return;
+  }
+  if (FitWidgets(base, scene, (16.0f / 9.0f) / (vw / vh), 0))
+  {
+    StoreU32(base, scene + kUiSceneFlags, LoadU32(base, scene + kUiSceneFlags) | kUiUpdatePositions);
+  }
+}
+
+// Render target textures are limited to the screen when they are set up
+// (UTextureRenderTarget2D: SizeX +188 <= GScreenWidth, SizeY +192 <=
+// GScreenHeight, sub_82649900 and after loading sub_8264FDC8). The console's
+// limit was 720 lines; at 1280x544 a target asked for taller is made 544
+// high. That stays (scene captures are drawn within the screen-sized scene
+// buffers, which do not grow), but what is drawn into it was laid out for
+// the height asked for, and the texture is put on its mesh whole:
+// - the UI scenes drawn into one (RenderUI's ortho transform for the
+//   target, sub_826EF848 returning to 0x8298235C, from its size) were cut at
+//   544 lines: the weapon shop's list of weapons (450x600) lost the last one
+//   and the rest was stretched down on the paper;
+// - scene captures (FPerspectiveMatrix with the target's size) saw less
+//   above and below: the shop's gun and its price (RenderToTexture_weapons_cust,
+//   1024x720) too big and too high on the shop's screen, the price cut.
+// Both are given the height that was asked for, so the picture is the
+// console's, squeezed into the lines there are.
+namespace
+{
+  constexpr uint32_t kRtSizeY = 192;
+  constexpr uint32_t kRenderUiOrtho = 0x8298235C;
+
+  // Targets made lower than asked: width, the height they got, the height asked for.
+  struct CutTarget
+  {
+    uint32_t width, height, wanted;
+  };
+  std::mutex g_cut_mutex;
+  std::vector<CutTarget> g_cut;
+  std::atomic<bool> g_any_cut{false};
+
+  void NoteCutTarget(const uint8_t *base, uint32_t rt, uint32_t wanted)
+  {
+    uint32_t height = g_height;
+    if (height >= kOriginalHeight || LoadU32(base, rt + kRtSizeY) != height || wanted <= height)
+    {
+      return;
+    }
+    uint32_t width = LoadU32(base, rt + kRtSizeY - 4);
+    if (width == g_width)
+    {
+      return; // the screen's own size: not told apart from the screen's views
+    }
+    wanted = std::min(wanted, 2048u);
+    std::lock_guard lock(g_cut_mutex);
+    for (const CutTarget &c : g_cut)
+    {
+      if (c.width == width && c.height == height)
+      {
+        return;
+      }
+    }
+    g_cut.push_back({width, height, wanted});
+    g_any_cut = true;
+  }
+
+  // The height asked for by a target cut to width x height, 0 if none was.
+  uint32_t WantedHeight(uint32_t width, uint32_t height)
+  {
+    if (!g_any_cut || height != g_height)
+    {
+      return 0;
+    }
+    std::lock_guard lock(g_cut_mutex);
+    for (const CutTarget &c : g_cut)
+    {
+      if (c.width == width && c.height == height)
+      {
+        return c.wanted;
+      }
+    }
+    return 0;
+  }
+} // namespace
+
+uint32_t ao2::aspect::LayoutHeight(uint32_t width, uint32_t height)
+{
+  uint32_t wanted = WantedHeight(width, height);
+  return wanted ? wanted : height;
+}
+
+// UTextureRenderTarget2D: SizeX, SizeY aligned, clamped to 1..2048 and to the screen.
+extern "C" REX_FUNC(__imp__sub_82649900);
+extern "C" REX_FUNC(sub_82649900)
+{
+  uint32_t rt = ctx.r3.u32;
+  uint32_t wanted = LoadU32(base, rt + kRtSizeY);
+  __imp__sub_82649900(ctx, base);
+  NoteCutTarget(base, rt, wanted);
+}
+
+// The same limit after loading.
+extern "C" REX_FUNC(__imp__sub_8264FDC8);
+extern "C" REX_FUNC(sub_8264FDC8)
+{
+  uint32_t rt = ctx.r3.u32;
+  uint32_t wanted = LoadU32(base, rt + kRtSizeY);
+  __imp__sub_8264FDC8(ctx, base);
+  NoteCutTarget(base, rt, wanted);
+}
+
+// 2D ortho transform (matrix r3, width r4, height r5, ...): RenderUI's for a UI scene's target.
+extern "C" REX_FUNC(__imp__sub_826EF848);
+extern "C" REX_FUNC(sub_826EF848)
+{
+  if (uint32_t(ctx.lr) == kRenderUiOrtho)
+  {
+    if (uint32_t wanted = WantedHeight(ctx.r4.u32, ctx.r5.u32))
+    {
+      ctx.r5.u64 = wanted;
+    }
+  }
+  __imp__sub_826EF848(ctx, base);
+}
+
+// FPerspectiveMatrix(this, HalfFOV f1, Width f2, Height f3, MinZ f4, MaxZ f5):
+// scene captures' (UpdateTransform, from their target's size).
+extern "C" REX_FUNC(__imp__sub_828FF430);
+extern "C" REX_FUNC(sub_828FF430)
+{
+  if (ctx.f2.f64 > 0.0 && ctx.f3.f64 > 0.0)
+  {
+    if (uint32_t wanted = WantedHeight(uint32_t(std::lround(ctx.f2.f64)), uint32_t(std::lround(ctx.f3.f64))))
+    {
+      ctx.f3.f64 = double(wanted);
+    }
+  }
+  __imp__sub_828FF430(ctx, base);
+}
+
 // FPerspectiveMatrix(this, HalfFOV f1, Width f2, Height f3, MinZ f4): Hor+ for the screen's aspect.
+// Not for the canvases' base transforms (sub_826EAC10, returning to
+// 0x826EAC64: the UI's and render targets'), which map canvas pixels onto
+// the target one to one whatever the field of view: a wider one shrank the UI.
 extern "C" REX_FUNC(__imp__sub_823E01D0);
 extern "C" REX_FUNC(sub_823E01D0)
 {
   constexpr double k16by9 = 16.0 / 9.0;
+  constexpr uint32_t kCanvasTransform = 0x826EAC64;
   uint32_t width = g_width, height = g_height;
   double screen = double(width) / double(height);
-  if (screen > k16by9 + 0.01 && ctx.f3.f64 > 0.0)
+  if (screen > k16by9 + 0.01 && ctx.f3.f64 > 0.0 && uint32_t(ctx.lr) != kCanvasTransform)
   {
     double aspect = ctx.f2.f64 / ctx.f3.f64;
     if (std::abs(aspect / screen - 1.0) < 0.01)
