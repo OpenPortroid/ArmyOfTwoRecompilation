@@ -402,6 +402,13 @@ namespace AO2Launcher
             if (r == null)
             {
                 ShowToast(L.T("No version has the AVX1 build yet"), true);
+                if (Game.HasAvx2() && S.Bool("avx1"))
+                {
+                    // Nothing to switch to: the setting goes back, the main build keeps running.
+                    S["avx1"] = "0";
+                    S.Save();
+                    Invalidate();
+                }
                 return;
             }
             if (r.Version == Updates.Current && gameExe != null && Game.Avx1Ready(gameExe))
@@ -980,7 +987,10 @@ namespace AO2Launcher
         void StartUpdate()
         {
             bool avx1Only = Avx1Only;
-            bool avx1 = updTarget.Avx1Url != null && Game.Avx1Mode(S);
+            // The AVX1 build too: in AVX1 mode, and always when it is all the window offers.
+            bool avx1 = updTarget.Avx1Url != null && (avx1Only || Game.Avx1Mode(S));
+            // Next to the game the launcher starts (the launcher's own folder in a release layout).
+            string gameDir = gameExe != null ? Path.GetDirectoryName(gameExe) : Updates.Dir;
             if (!avx1Only && !Updates.CanSelfUpdate(updTarget))
             {
                 updatePrompt = false;
@@ -1020,18 +1030,33 @@ namespace AO2Launcher
                         System.Threading.Interlocked.Exchange(ref updDone, done);
                         System.Threading.Interlocked.Exchange(ref updTotal, total);
                     };
+                    bool packageDone = false;
                     if (!avx1Only)
                     {
                         string zip = Updates.Download(r, progress, () => cancelUpdate);
                         UiDo(() => updState = UpdState.Installing);
                         Updates.Install(zip, p => updProgress = p);
+                        packageDone = true;
                     }
                     if (avx1)
                     {
-                        UiDo(() => updState = UpdState.Downloading);
-                        string aot = Updates.DownloadAvx1(r, progress, () => cancelUpdate);
-                        UiDo(() => updState = UpdState.Installing);
-                        Updates.InstallAvx1(aot, r.Version);
+                        try
+                        {
+                            UiDo(() => updState = UpdState.Downloading);
+                            string aot = Updates.DownloadAvx1(r, progress, () => cancelUpdate);
+                            UiDo(() => updState = UpdState.Installing);
+                            Updates.InstallAvx1(aot, r.Version, gameDir);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (!packageDone)
+                            {
+                                throw;
+                            }
+                            // The new package is in place (cancelled or failed after it): the new launcher takes
+                            // over all the same and offers the AVX1 build again at start.
+                            Log.Write("AVX1 build not installed with the update: {0}", ex.Message);
+                        }
                     }
                 }
                 catch (OperationCanceledException)

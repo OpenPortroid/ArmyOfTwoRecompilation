@@ -472,12 +472,11 @@ namespace AO2Launcher
             CleanUp();
         }
 
-        // Unpacks avx1-version.aot (downloaded for release `version`) next to the game as Game.CompatExeName,
-        // with Game.CompatVersionName saying which version it is. The main build stays: the AVX1 setting picks
-        // between the two when the game starts.
-        public static void InstallAvx1(string aotFile, string version)
+        // Unpacks avx1-version.aot (downloaded for release `version`) into dir, the game's folder, as
+        // Game.CompatExeName with Game.CompatVersionName saying which version it is. The main build stays: the
+        // AVX1 setting picks between the two when the game starts.
+        public static void InstallAvx1(string aotFile, string version, string dir)
         {
-            string dir = Dir;
             string exe = Path.Combine(dir, Game.CompatExeName);
             string tmp = exe + ".tmp";
             using (System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(aotFile))
