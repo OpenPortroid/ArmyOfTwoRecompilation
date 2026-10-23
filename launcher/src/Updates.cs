@@ -25,6 +25,27 @@ namespace AO2Launcher
             public string Url;      // the .zip asset, else the release page
             public string Date;     // "2026-10-21" (when published); "" when unknown
             public string Body;     // the release description (markdown); "" when none
+            public string Avx1Url;  // the avx1-version.aot asset (the game for CPUs without AVX2), null when none
+        }
+
+        // The release asset with the game built for CPUs without AVX2 (x86-64-v2): a zip with armyoftworecomp.exe.
+        // Not a .zip by name: every launcher takes a release's first .zip for the package.
+        public const string Avx1Asset = "avx1-version.aot";
+
+        static string Avx1Of(string releaseJson)
+        {
+            Match m = Regex.Match(releaseJson, "\"browser_download_url\"\\s*:\\s*\"([^\"]+/" + Regex.Escape(Avx1Asset) + ")\"");
+            return m.Success ? m.Groups[1].Value : null;
+        }
+
+        // Debug: --releases-file=<json> takes this file (GitHub's answer for the release list) instead of asking
+        // GitHub; its download URLs may be file:///C:/... paths.
+        public static string ReleasesFile;
+
+        // The newest release with an avx1-version.aot, or null: the list is newest first.
+        public static Release NewestWithAvx1(System.Collections.Generic.List<Release> list)
+        {
+            return list == null ? null : list.Find(r => r.Avx1Url != null);
         }
 
         // Every release on GitHub, newest first, or null when it could not be reached. Blocks: call off the UI thread.
@@ -42,17 +63,24 @@ namespace AO2Launcher
             }
             try
             {
-                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
-                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases?per_page=50");
-                req.UserAgent = "ArmyOfTwoLauncher/" + Current;
-                req.Accept = "application/vnd.github+json";
-                req.Timeout = 8000;
-                req.ReadWriteTimeout = 8000;
                 string json;
-                using (var resp = (HttpWebResponse)req.GetResponse())
-                using (var rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                if (ReleasesFile != null)
                 {
-                    json = rd.ReadToEnd();
+                    json = File.ReadAllText(ReleasesFile, Encoding.UTF8);
+                }
+                else
+                {
+                    ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+                    var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases?per_page=50");
+                    req.UserAgent = "ArmyOfTwoLauncher/" + Current;
+                    req.Accept = "application/vnd.github+json";
+                    req.Timeout = 8000;
+                    req.ReadWriteTimeout = 8000;
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+                    using (var rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                    {
+                        json = rd.ReadToEnd();
+                    }
                 }
                 // A release's own fields (tag, date, assets, body) follow its "tag_name"; the next release's
                 // header fields come after this body, which no key of ours reads.
@@ -74,6 +102,7 @@ namespace AO2Launcher
                         Url = zip.Success ? zip.Groups[1].Value : "https://github.com/" + Repo + "/releases/tag/" + tag,
                         Date = date.Success ? date.Groups[1].Value : "",
                         Body = JsonString(p, "body") ?? "",
+                        Avx1Url = Avx1Of(p),
                     });
                 }
                 return list;
@@ -116,6 +145,7 @@ namespace AO2Launcher
                 {
                     Version = tag.Groups[1].Value.TrimStart('v', 'V'),
                     Url = zip.Success ? zip.Groups[1].Value : "https://github.com/" + Repo + "/releases/tag/" + tag.Groups[1].Value,
+                    Avx1Url = Avx1Of(json),
                 };
             }
             catch
@@ -141,6 +171,12 @@ namespace AO2Launcher
                 {
                     return null;
                 }
+            }
+            if (ReleasesFile != null)
+            {
+                var list = All();
+                Release r = list == null ? null : list.Find(x => x.Version == version);
+                return r == null ? "" : r.Body;
             }
             try
             {
@@ -288,14 +324,29 @@ namespace AO2Launcher
         // Downloads the release archive; progress(done, total bytes; total -1 when unknown). Returns the file.
         public static string Download(Release r, Action<long, long> progress, Func<bool> cancel)
         {
+            return DownloadFile(r.Url, "update.zip", progress, cancel);
+        }
+
+        // Downloads the release's avx1-version.aot; progress as in Download. Returns the file.
+        public static string DownloadAvx1(Release r, Action<long, long> progress, Func<bool> cancel)
+        {
+            return DownloadFile(r.Avx1Url, Avx1Asset, progress, cancel);
+        }
+
+        static string DownloadFile(string url, string name, Action<long, long> progress, Func<bool> cancel)
+        {
             Directory.CreateDirectory(TempDir);
-            string file = Path.Combine(TempDir, "update.zip");
+            string file = Path.Combine(TempDir, name);
             ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
-            var req = (HttpWebRequest)WebRequest.Create(r.Url);
-            req.UserAgent = "ArmyOfTwoLauncher/" + Current;
+            WebRequest req = WebRequest.Create(url); // file:// too (--releases-file)
             req.Timeout = 15000;
-            req.ReadWriteTimeout = 30000;
-            using (var resp = (HttpWebResponse)req.GetResponse())
+            var http = req as HttpWebRequest;
+            if (http != null)
+            {
+                http.UserAgent = "ArmyOfTwoLauncher/" + Current;
+                http.ReadWriteTimeout = 30000;
+            }
+            using (WebResponse resp = req.GetResponse())
             using (Stream src = resp.GetResponseStream())
             using (var dst = new FileStream(file, FileMode.Create, FileAccess.Write))
             {
@@ -419,8 +470,49 @@ namespace AO2Launcher
             // The archive and the unpacked copy are not needed any more (the running launcher's .old stays
             // until the next start).
             CleanUp();
-            // The release brings both game builds again.
-            Game.InstallCpuBuild(dir);
+        }
+
+        // Unpacks avx1-version.aot (downloaded for release `version`) next to the game as Game.CompatExeName,
+        // with Game.CompatVersionName saying which version it is. The main build stays: the AVX1 setting picks
+        // between the two when the game starts.
+        public static void InstallAvx1(string aotFile, string version)
+        {
+            string dir = Dir;
+            string exe = Path.Combine(dir, Game.CompatExeName);
+            string tmp = exe + ".tmp";
+            using (System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(aotFile))
+            {
+                System.IO.Compression.ZipArchiveEntry entry = null;
+                foreach (var e in zip.Entries)
+                {
+                    if (string.Equals(e.Name, Game.ExeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        entry = e;
+                    }
+                }
+                if (entry == null)
+                {
+                    throw new IOException(Avx1Asset + " holds no " + Game.ExeName);
+                }
+                using (Stream s = entry.Open())
+                using (var f = new FileStream(tmp, FileMode.Create, FileAccess.Write))
+                {
+                    s.CopyTo(f);
+                }
+            }
+            if (File.Exists(exe))
+            {
+                File.Delete(exe);
+            }
+            File.Move(tmp, exe);
+            File.WriteAllText(Path.Combine(dir, Game.CompatVersionName), version);
+            try
+            {
+                File.Delete(aotFile);
+            }
+            catch
+            {
+            }
         }
     }
 }

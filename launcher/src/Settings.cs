@@ -59,6 +59,9 @@ namespace AO2Launcher
             { "desktop_shortcut", "1" },
             { "game_path", "" },
             { "tab", "0" },
+            // The game built for CPUs without AVX2 (avx1-version.aot), on CPUs that have it too; always on
+            // without AVX2 (Game.Avx1Mode).
+            { "avx1", "0" },
         };
 
         // Key and gamepad bindings: kb_<name> / pad_<name> (Bindings.cs).

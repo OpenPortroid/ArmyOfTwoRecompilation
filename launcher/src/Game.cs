@@ -18,7 +18,8 @@ namespace AO2Launcher
     static class Game
     {
         public const string ExeName = "armyoftworecomp.exe";
-        // The same game built for x86-64-v2: ExeName needs AVX2 (x86-64-v3).
+        // The same game built for x86-64-v2 (ExeName needs AVX2, x86-64-v3): the release's avx1-version.aot,
+        // unpacked next to ExeName by Updates.InstallAvx1.
         public const string CompatExeName = "armyoftworecomp_compat.exe";
         public const string LobbyServerName = "ao2_lobby_server.exe";
         const string FirewallRule = "Army of Two (recomp)";
@@ -132,49 +133,36 @@ namespace AO2Launcher
             return v3 == true;
         }
 
-        // The release ships both builds; leave in the package folder dir only
-        // the one this CPU runs best, as ExeName: the compat build replaces the
-        // main one without AVX2, else it is deleted. Returns what was done, or
-        // null (nothing to do, or the game is running and its exe is locked -
-        // then RunExe still picks the compat build).
-        public static string InstallCpuBuild(string dir)
+        // Which release CompatExeName next to it was unpacked from (Updates.InstallAvx1).
+        public const string CompatVersionName = "armyoftworecomp_compat.version";
+
+        // The AVX1 build is the one to run: the CPU has no AVX2, or the player chose it ("avx1": co-op with a
+        // partner whose CPU has none - both must run the same build).
+        public static bool Avx1Mode(Settings s)
         {
-            string main = Path.Combine(dir, ExeName);
-            string compat = Path.Combine(dir, CompatExeName);
-            if (!File.Exists(main) || !File.Exists(compat) || IsRunning())
-            {
-                return null;
-            }
+            return !HasAvx2() || s.Bool("avx1");
+        }
+
+        // The AVX1 build of this package's version is next to the game at exe.
+        public static bool Avx1Ready(string exe)
+        {
             try
             {
-                if (HasAvx2())
-                {
-                    File.Delete(compat);
-                    return "AVX2: removed " + CompatExeName;
-                }
-                string tmp = main + ".new";
-                File.Copy(compat, tmp, true);
-                File.Replace(tmp, main, null);
-                File.Delete(compat);
-                return "no AVX2: " + CompatExeName + " installed as " + ExeName;
+                string dir = Path.GetDirectoryName(exe);
+                string version = Path.Combine(dir, CompatVersionName);
+                return File.Exists(Path.Combine(dir, CompatExeName)) && File.Exists(version) &&
+                    File.ReadAllText(version).Trim() == Updates.Current;
             }
-            catch (Exception ex)
+            catch
             {
-                return "CPU build not installed: " + ex.Message;
+                return false;
             }
         }
 
-        // The program to run for the game found at exe: the compat build next
-        // to it when the CPU lacks AVX2 (the main one would stop at its first
-        // AVX2 instruction).
-        public static string RunExe(string exe)
+        // The program to run for the game found at exe: in AVX1 mode the compat build next to it.
+        public static string RunExe(string exe, Settings s)
         {
-            if (HasAvx2())
-            {
-                return exe;
-            }
-            string compat = Path.Combine(Path.GetDirectoryName(exe), CompatExeName);
-            return File.Exists(compat) ? compat : exe;
+            return Avx1Mode(s) ? Path.Combine(Path.GetDirectoryName(exe), CompatExeName) : exe;
         }
 
         static string Flag(string name, bool on)
@@ -360,7 +348,7 @@ namespace AO2Launcher
 
         public static void Start(string exe, Settings s, string hostIp)
         {
-            var psi = new ProcessStartInfo(RunExe(exe), CommandLine(s, hostIp))
+            var psi = new ProcessStartInfo(RunExe(exe, s), CommandLine(s, hostIp))
             {
                 WorkingDirectory = Path.GetDirectoryName(exe),
                 UseShellExecute = false,

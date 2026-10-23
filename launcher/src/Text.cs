@@ -198,6 +198,56 @@ namespace AO2Launcher
               "INSTALAR UNA VERSIÓN ANTERIOR", "INSTALLA UNA VERSIONE PRECEDENTE");
             a("Go back to {0}? You have {1}.", "Вернуться на {0}? Сейчас у вас {1}.", "Revenir à la {0} ? Vous avez la {1}.",
               "Zu {0} zurückkehren? Sie haben {1}.", "¿Volver a la {0}? Tienes la {1}.", "Tornare alla {0}? Hai la {1}.");
+
+            // --- The AVX1 build (the game for processors without AVX2) ---
+            a("AVX1 version", "Версия AVX1", "Version AVX1", "AVX1-Version", "Versión AVX1", "Versione AVX1");
+            a("The game built for processors without AVX2 (downloaded from the release, about 25 MB), a little slower. " +
+              "Always on when the processor has no AVX2. Turn it on to play co-op with someone whose processor " +
+              "has none: both players need the same version and the same build.",
+              "Игра, собранная для процессоров без AVX2 (скачивается из релиза, около 25 МБ), немного медленнее. " +
+              "Всегда включена, если у процессора нет AVX2. Включите, чтобы играть в кооп с тем, у кого такой процессор: " +
+              "у обоих игроков должны быть одна версия и одна сборка.",
+              "Le jeu compilé pour les processeurs sans AVX2 (téléchargé depuis la version, environ 25 Mo), un peu plus lent. " +
+              "Toujours activé si le processeur n'a pas l'AVX2. Activez-le pour jouer en coop avec quelqu'un dont le processeur " +
+              "ne l'a pas : les deux joueurs doivent avoir la même version et la même compilation.",
+              "Das Spiel für Prozessoren ohne AVX2 (wird aus dem Release geladen, etwa 25 MB), etwas langsamer. " +
+              "Immer an, wenn der Prozessor kein AVX2 hat. Einschalten, um im Koop mit jemandem zu spielen, dessen Prozessor " +
+              "es nicht hat: beide Spieler brauchen dieselbe Version und denselben Build.",
+              "El juego compilado para procesadores sin AVX2 (se descarga de la versión, unos 25 MB), algo más lento. " +
+              "Siempre activado si el procesador no tiene AVX2. Actívalo para jugar en cooperativo con alguien cuyo procesador " +
+              "no lo tiene: ambos jugadores necesitan la misma versión y la misma compilación.",
+              "Il gioco compilato per processori senza AVX2 (scaricato dalla versione, circa 25 MB), un po' più lento. " +
+              "Sempre attivo se il processore non ha AVX2. Attivalo per giocare in cooperativa con chi ha un processore " +
+              "senza: entrambi i giocatori devono avere la stessa versione e la stessa build.");
+            a("AVX1 BUILD", "СБОРКА AVX1", "VERSION AVX1", "AVX1-BUILD", "VERSIÓN AVX1", "BUILD AVX1");
+            a("Download the build with AVX1 support for {0}?", "Скачать сборку с поддержкой AVX1 для {0}?", "Télécharger la version compatible AVX1 de la {0} ?",
+              "Den Build mit AVX1-Unterstützung für {0} herunterladen?", "¿Descargar la versión compatible con AVX1 de la {0}?", "Scaricare la build con supporto AVX1 della {0}?");
+            a("For processors without AVX2 and co-op with such a player. About 25 MB.",
+              "Для процессоров без AVX2 и для коопа с таким игроком. Около 25 МБ.",
+              "Pour les processeurs sans AVX2 et la coop avec un tel joueur. Environ 25 Mo.",
+              "Für Prozessoren ohne AVX2 und Koop mit so einem Spieler. Etwa 25 MB.",
+              "Para procesadores sin AVX2 y el cooperativo con un jugador así. Unos 25 MB.",
+              "Per processori senza AVX2 e la cooperativa con un giocatore così. Circa 25 MB.");
+            a("YOUR PROCESSOR DOES NOT SUPPORT AVX2 INSTRUCTIONS", "ВАШ ПРОЦЕССОР НЕ ПОДДЕРЖИВАЕТ ИНСТРУКЦИИ AVX2",
+              "VOTRE PROCESSEUR NE PREND PAS EN CHARGE L'AVX2", "IHR PROZESSOR UNTERSTÜTZT KEIN AVX2",
+              "TU PROCESADOR NO ADMITE AVX2", "IL TUO PROCESSORE NON SUPPORTA AVX2");
+            a("On such a processor the game runs only in its AVX1 build. About 25 MB.",
+              "На таком процессоре игра работает только в сборке AVX1. Около 25 МБ.",
+              "Sur ce processeur, le jeu ne fonctionne que dans sa version AVX1. Environ 25 Mo.",
+              "Auf so einem Prozessor läuft das Spiel nur im AVX1-Build. Etwa 25 MB.",
+              "En un procesador así el juego solo funciona con su versión AVX1. Unos 25 MB.",
+              "Su un processore così il gioco funziona solo con la build AVX1. Circa 25 MB.");
+            a("{0} is the newest version with the AVX1 build.", "{0} — последняя версия, у которой есть сборка AVX1.",
+              "La {0} est la dernière version avec la version AVX1.", "{0} ist die neueste Version mit AVX1-Build.",
+              "La {0} es la última versión con la versión AVX1.", "La {0} è l'ultima versione con la build AVX1.");
+            a("No version has the AVX1 build yet", "Пока ни у одной версии нет сборки AVX1",
+              "Aucune version n'a encore de version AVX1", "Noch keine Version hat einen AVX1-Build",
+              "Ninguna versión tiene aún la versión AVX1", "Nessuna versione ha ancora la build AVX1");
+            a("The AVX1 build of this version is installed", "Сборка AVX1 этой версии уже установлена",
+              "La version AVX1 de cette version est installée", "Der AVX1-Build dieser Version ist installiert",
+              "La versión AVX1 de esta versión está instalada", "La build AVX1 di questa versione è installata");
+            a("The AVX1 build is installed", "Сборка AVX1 установлена", "La version AVX1 est installée",
+              "Der AVX1-Build ist installiert", "La versión AVX1 está instalada", "La build AVX1 è installata");
             a("This release has no notes", "У этой версии нет описания", "Cette version n'a pas de notes", "Diese Version hat keine Hinweise",
               "Esta versión no tiene notas", "Questa versione non ha note");
             a("Update cancelled","Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
