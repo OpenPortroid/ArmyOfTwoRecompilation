@@ -48,6 +48,7 @@
 #include <rex/runtime.h>
 #include <rex/system/xmemory.h>
 
+#include "command_recorder.h"
 #include "fast_hash.h"
 #include "hlsl_shared.h"
 #include "native_graphics_system.h"
@@ -94,6 +95,10 @@ REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_swap, true, "GPU",
                     "A color resolve followed by a clear hands the render target's resource to the texture and "
                     "gives the render target the texture's old one (no copy); the exponent bias is applied when "
                     "the texture is sampled");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_deferred_list, true, "GPU",
+                    "The GPU command thread records D3D12 commands into a stream that a thread of their own "
+                    "makes on the command list (runtime and driver work off the command thread). Applies "
+                    "from the next frame");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_scene_r11g11b10, true, "GPU",
                     "7e3 float render targets (the scene) as R11G11B10_FLOAT instead of R16G16B16A16_FLOAT: half "
                     "the bandwidth of every draw, blend and resolve of the scene; 6/6/5 mantissa bits instead of "
@@ -434,8 +439,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       ComPtr<ID3D12InfoQueue> info_queue;
       uint64_t debug_messages_logged = 0;
       ComPtr<ID3D12CommandQueue> queue;
-      ComPtr<ID3D12GraphicsCommandList> list;
-      ComPtr<ID3D12GraphicsCommandList1> list1;
+      CommandRecorder list; // the command list (command_recorder.h)
+      uint64_t present_position = 0; // the last present's place in the list's stream
       ComPtr<ID3D12Fence> fence;
       HANDLE fence_event = nullptr;
       uint64_t fence_value = 0;
@@ -980,6 +985,16 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       HRESULT result_ = S_OK;
     };
     Presenter g_presenter;
+
+    void SubmitPresent(uint64_t swapchain, uint64_t flags)
+    {
+      g_presenter.Submit(reinterpret_cast<IDXGISwapChain3 *>(swapchain), UINT(flags));
+    }
+
+    void LogListError(const char *what, HRESULT hr)
+    {
+      NativeLog("%s failed (0x%08X)\n", what, unsigned(hr));
+    }
 
     // Recent command list operations, dumped when Close() reports an
     // invalid call (which would otherwise remove the device on execution).
@@ -1716,7 +1731,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     void WaitIdle()
     {
       ++g.fence_value;
-      g.queue->Signal(g.fence.Get(), g.fence_value);
+      g.list->Signal(g.fence.Get(), g.fence_value);
       WaitForFence(g.fence_value);
     }
 
@@ -2146,8 +2161,11 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         D3D12_RANGE all = {0, SIZE_T(kReadbackSize)};
         f.readback->Map(0, &all, reinterpret_cast<void **>(&f.readback_mapped));
       }
-      g.device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g.frames[0].allocator.Get(),
-                                  nullptr, IID_PPV_ARGS(&g.list));
+      if (FAILED(g.list.Init(g.device.Get(), g.queue.Get(), g.frames[0].allocator.Get())))
+      {
+        NativeLog("command list creation failed\n");
+        return false;
+      }
       {
         // GPU time per category (stats line).
         D3D12_QUERY_HEAP_DESC qd = {D3D12_QUERY_HEAP_TYPE_TIMESTAMP, kTimestampsPerFrame * kFrameCount, 0};
@@ -2193,11 +2211,6 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         }
       }
       g.list->Close();
-      if (FAILED(g.list.As(&g.list1)))
-      {
-        NativeLog("ID3D12GraphicsCommandList1 unavailable\n");
-        return false;
-      }
 
       auto heap = [](D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count, bool visible,
                      ComPtr<ID3D12DescriptorHeap> &out) {
@@ -2219,6 +2232,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       g.view_size = g.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
       g.sampler_size = g.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
       g.rtv_size = g.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+      g.list.set_rtv_size(g.rtv_size);
       g.dsv_size = g.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
       // Null SRVs for unbound textures of each dimension.
@@ -2556,10 +2570,9 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       GpuMark(kGpuIdle);
       if (CloseList())
       {
-        ID3D12CommandList *lists[] = {g.list.Get()};
-        g.queue->ExecuteCommandLists(1, lists);
+        g.list->ExecuteOnQueue();
       }
-      g.queue->Signal(g.fence.Get(), ++g.fence_value);
+      g.list->Signal(g.fence.Get(), ++g.fence_value);
       // The allocator keeps the submitted commands; the list continues on it.
       HRESULT hr = g.list->Reset(CurrentFrame().allocator.Get(), nullptr);
       if (FAILED(hr))
@@ -2727,12 +2740,12 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       }
       ApplyWritebacks(f);
       CollectGarbage();
-      HRESULT allocator_hr = f.allocator->Reset();
+      g.list->ResetAllocator(f.allocator.Get());
       HRESULT list_hr = g.list->Reset(f.allocator.Get(), nullptr);
-      if (FAILED(allocator_hr) || FAILED(list_hr))
+      if (FAILED(list_hr))
       {
-        NativeLog("command list reset failed: allocator 0x%08X list 0x%08X (frame %llu)\n", unsigned(allocator_hr),
-                  unsigned(list_hr), (unsigned long long)g.frame_number);
+        NativeLog("command list reset failed: 0x%08X (frame %llu)\n", unsigned(list_hr),
+                  (unsigned long long)g.frame_number);
       }
       // The first 1 KB is the display gamma ramp of the present blit (never fails to fit).
       f.upload_offset = sizeof(g.gamma_ramp);
@@ -3068,7 +3081,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         D3D12_DEPTH_STENCIL_VIEW_DESC dv = {};
         dv.Format = rt->format;
         dv.ViewDimension = rt->samples > 1 ? D3D12_DSV_DIMENSION_TEXTURE2DMS : D3D12_DSV_DIMENSION_TEXTURE2D;
-        g.device->CreateDepthStencilView(rt->resource.Get(), &dv, rt->view);
+        g.list->CreateDsv(rt->resource.Get(), &dv, rt->view);
       }
       else
       {
@@ -3077,14 +3090,14 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         rv.ViewDimension = rt->samples > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D;
         rt->view = g.rtv_heap->GetCPUDescriptorHandleForHeapStart();
         rt->view.ptr += uint64_t(g.rtvs_used++ % 1024) * g.rtv_size;
-        g.device->CreateRenderTargetView(rt->resource.Get(), &rv, rt->view);
+        g.list->CreateRtv(rt->resource.Get(), &rv, rt->view);
         rt->view_srgb = rt->view;
         if (rt->format == DXGI_FORMAT_R8G8B8A8_UNORM)
         {
           rv.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
           rt->view_srgb = g.rtv_heap->GetCPUDescriptorHandleForHeapStart();
           rt->view_srgb.ptr += uint64_t(g.rtvs_used++ % 1024) * g.rtv_size;
-          g.device->CreateRenderTargetView(rt->resource.Get(), &rv, rt->view_srgb);
+          g.list->CreateRtv(rt->resource.Get(), &rv, rt->view_srgb);
         }
       }
       NativeLog("render target base=%u fmt=%u depth=%d %ux%u x%u (host %ux%u)\n", base, format, int(depth),
@@ -4252,8 +4265,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       {
         if (CloseList())
         {
-          ID3D12CommandList *lists[] = {g.list.Get()};
-          g.queue->ExecuteCommandLists(1, lists);
+          g.list->ExecuteOnQueue();
         }
         g.list_open = false;
       }
@@ -5160,14 +5172,15 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         uint32_t i = uint32_t(__builtin_ctz(used));
         D3D12_CPU_DESCRIPTOR_HANDLE dst = g.view_heap->GetCPUDescriptorHandleForHeapStart();
         dst.ptr += uint64_t(base + i) * g.view_size;
+        // Written in order with the commands (command_recorder.h).
         if (!shared_null && table.resources[i])
         {
-          g.device->CreateShaderResourceView(table.resources[i], &table.views[i], dst);
+          g.list->CreateSrv(table.resources[i], &table.views[i], dst);
         }
         else
         {
-          g.device->CopyDescriptorsSimple(1, dst, shared_null ? g.null_srv_2d : table.nulls[i],
-                                          D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+          g.list->CopyDescriptor(dst, shared_null ? g.null_srv_2d : table.nulls[i],
+                                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         }
       }
       D3D12_GPU_DESCRIPTOR_HANDLE gpu = g.view_heap->GetGPUDescriptorHandleForHeapStart();
@@ -7088,11 +7101,11 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       D3D12_RENDER_TARGET_VIEW_DESC rv = {};
       rv.Format = src.format;
       rv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-      g.device->CreateRenderTargetView(src.resource.Get(), &rv, src.view);
+      g.list->CreateRtv(src.resource.Get(), &rv, src.view);
       if (src.view_srgb.ptr != src.view.ptr)
       {
         rv.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-        g.device->CreateRenderTargetView(src.resource.Get(), &rv, src.view_srgb);
+        g.list->CreateRtv(src.resource.Get(), &rv, src.view_srgb);
       }
       // The command list's targets are views, rebound on the next draw.
       g.bound.valid = false;
@@ -7133,7 +7146,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       D3D12_RENDER_TARGET_VIEW_DESC rd = {};
       rd.Format = rf.rtv;
       rd.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-      g.device->CreateRenderTargetView(dest.resource.Get(), &rd, rtv);
+      g.list->CreateRtv(dest.resource.Get(), &rd, rtv);
 
       static const uint32_t kSampleMasks[] = {1, 2, 4, 8, 3, 12, 15, 15};
       int32_t offset_y = ScaleEdge(LONG(dest_row), dest.scale4);
@@ -7220,7 +7233,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       D3D12_RENDER_TARGET_VIEW_DESC rd = {};
       rd.Format = t.format;
       rd.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-      g.device->CreateRenderTargetView(t.lowres.Get(), &rd, rtv);
+      g.list->CreateRtv(t.lowres.Get(), &rd, rtv);
       uint32_t constants[6] = {0, 0, t.scale4, 0, 0, 0};
 
       Transition(t.resource.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -7994,7 +8007,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       D3D12_RENDER_TARGET_VIEW_DESC rd = {};
       rd.Format = format;
       rd.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-      g.device->CreateRenderTargetView(target, &rd, rtv);
+      g.list->CreateRtv(target, &rd, rtv);
       Transition(target, target_state, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
       auto *list = g.list.Get();
@@ -8544,7 +8557,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       D3D12_RENDER_TARGET_VIEW_DESC rv = {};
       rv.Format = kProbeFormat;
       rv.ViewDimension = p.samples > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D;
-      g.device->CreateRenderTargetView(p.target.Get(), &rv, rtv);
+      g.list->CreateRtv(p.target.Get(), &rv, rtv);
       if (p.drawn_frame != g.frame_number)
       {
         const float zero[4] = {};
@@ -10211,6 +10224,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     // The previous frame's present (present thread) must be issued before the
     // back buffer index is read or the swap chain resized.
     auto present_wait_start = std::chrono::steady_clock::now();
+    g.list.WaitReplayed(g.present_position);
     HRESULT present_hr = g_presenter.Wait();
     double present_wait_ms =
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - present_wait_start).count();
@@ -10289,8 +10303,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     ReadProbe();
     if (CloseList())
     {
-      ID3D12CommandList *lists[] = {g.list.Get()};
-      g.queue->ExecuteCommandLists(1, lists);
+      g.list->ExecuteOnQueue();
     }
     g.list_open = false;
     g.draws_since_submit = 0;
@@ -10298,7 +10311,9 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     if (present)
     {
       auto present_start = std::chrono::steady_clock::now();
-      g_presenter.Submit(g.swapchain.Get(), g.tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+      // After the frame's submit, from the list's thread.
+      g.list->Call(&SubmitPresent, uint64_t(g.swapchain.Get()), g.tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+      g.present_position = g.list.Position();
       if (ao2::spikes::Enabled())
       {
         ao2::spikes::Mark(ao2::spikes::kGpuSubmitted, present_wait_ms);
@@ -10327,7 +10342,13 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       return;
     }
     CurrentFrame().fence_value = ++g.fence_value;
-    g.queue->Signal(g.fence.Get(), g.fence_value);
+    g.list->Signal(g.fence.Get(), g.fence_value);
+    if (g.list.deferred() != REXCVAR_GET(ao2_native_gpu_deferred_list))
+    {
+      g.list.SetDeferred(REXCVAR_GET(ao2_native_gpu_deferred_list), LogListError);
+      NativeLog("command list %s from frame %llu\n", g.list.deferred() ? "recorded on its own thread" : "direct",
+                (unsigned long long)g.frame_number + 1);
+    }
     g.frame_index = (g.frame_index + 1) % kFrameCount;
     ++g.frame_number;
     g_running.store(true, std::memory_order_relaxed);

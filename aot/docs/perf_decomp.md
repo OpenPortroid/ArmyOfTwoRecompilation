@@ -344,3 +344,23 @@ Live fight A/B (the setting switched every 8 s without freezing, `FREEZE_LIVE=1`
 (frozen, compare_captures.py): 99.3% of pixels within 1 level of 255, at most 6 levels in the bright sky and smoke;
 side by side no difference visible. D24_UNORM instead of D32_FLOAT for the float depth gained ~0.1 ms (not
 reliable) at the cost of depth precision - not kept.
+
+## The command list recorded on its own thread (2026-10-23)
+
+Profile of the GPU command thread in Iraq's fight (sampler, 20 s at the 240 cap): a third waiting for the previous
+present, 35% our emulation (state, EDRAM, textures, guest memory), 30% inside the D3D12 runtime and the driver
+(state changes, barriers, draws, copies, submits, descriptors) - about 45% of its busy time.
+
+`ao2_native_gpu_deferred_list` (on, command_recorder.h): the command thread records every command list call into a
+stream of small structs, and the thread "Native GPU record" makes them on the real list. In the same order go what
+must stay ordered with the list: ExecuteCommandLists and fence signals on the queue, command allocator resets, the
+render target / depth views (read when a command is recorded, and rewritten in place when a resolve swaps or lends a
+render target's resource), the frame's shader-visible texture descriptors, and the present (the presenter is handed
+the frame after its submit; the next swap waits until the replay got past it). A signal sends the stream on at
+once, so waiting for a fence also waits for the replay; nothing else changed (resources were already released
+through DeferRelease, upload memory and per-frame descriptors are reused after the frame's fence).
+
+Frozen fight frame, no frame cap: at 1440p (GPU-bound, 4.16 ms/frame) 218.7 -> 221.0 FPS, the command thread
+77% -> 57% of a core plus the record thread 25%; at 720p (CPU-bound) 265.2 -> 301.3 FPS (+13.6%), the command
+thread 91% -> 66% plus 40%, and the game's rendering thread (88%) is the limit now. Pictures with all post effects
+on: identical (0.000-0.002% of pixels, the noise floor).

@@ -48,7 +48,7 @@ def load(loads, key):
 
 
 sel = rows[-last:] if last else rows
-print('time      fps   fmax  tick  tmax  do   | gpu  draw  tr   idle | game render gpucmd present')
+print('time      fps   fmax  tick  tmax  do   | gpu  draw  tr   idle | game render gpucmd present record')
 for r in sel:
     if r['fps'] >= below: continue
     g = near(gpu, r['t']); th = near(threads, r['t'])
@@ -56,7 +56,7 @@ for r in sel:
     ts = ''
     if th:
         l = th[1]
-        ts = '%4.0f %6.0f %6.0f %6.0f' % (load(l, 'Main XThread'), load(l, '(F8000088)'), load(l, 'GPU commands'),
-                                         load(l, 'GPU present'))
+        ts = '%4.0f %6.0f %6.0f %6.0f %6.0f' % (load(l, 'Main XThread'), load(l, '(F8000088)'), load(l, 'GPU commands'),
+                                               load(l, 'GPU present'), load(l, 'GPU record'))
     print('%s %5.1f %5.1f %4.2f %5.2f %4.2f | %s | %s' % (r['stamp'], r['fps'], r['fmax'], r['tick'], r['tmax'],
                                                          r['do'], gs, ts))
