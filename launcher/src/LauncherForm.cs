@@ -3291,6 +3291,8 @@ namespace AO2Launcher
             }
             // --pretend-no-avx2: act as on a CPU without AVX2 (the compat game build).
             Game.PretendNoAvx2 = args.Contains("--pretend-no-avx2");
+            // --pretend-old-windows: Windows reports no AVX2 support at all (before 10 2004): CPUID via ao2_install.
+            Game.PretendOldWindows = args.Contains("--pretend-old-windows");
             // --cpu-build=<log>: install the game build for this CPU in the launcher's folder, log what was done.
             string cpuBuild = opt("cpu-build");
             if (cpuBuild != null)

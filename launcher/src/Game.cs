@@ -81,11 +81,15 @@ namespace AO2Launcher
         [DllImport("kernel32.dll")]
         static extern bool IsProcessorFeaturePresent(int feature);
 
+        const int PF_SSE4_2_INSTRUCTIONS_AVAILABLE = 38;
         const int PF_AVX2_INSTRUCTIONS_AVAILABLE = 40;
 
         // AVX2 usable (CPU and OS). Every such CPU also has the rest of
         // x86-64-v3 (BMI2, MOVBE, FMA...) the main build is compiled for.
         public static bool PretendNoAvx2;
+        // Debug: act as a Windows older than 10 2004 (IsProcessorFeaturePresent knows no AVX2).
+        public static bool PretendOldWindows;
+        static bool? avx2;
 
         public static bool HasAvx2()
         {
@@ -93,14 +97,39 @@ namespace AO2Launcher
             {
                 return false;
             }
+            if (avx2 == null)
+            {
+                avx2 = DetectAvx2();
+            }
+            return avx2.Value;
+        }
+
+        static bool DetectAvx2()
+        {
             try
             {
-                return IsProcessorFeaturePresent(PF_AVX2_INSTRUCTIONS_AVAILABLE);
+                if (!PretendOldWindows)
+                {
+                    if (IsProcessorFeaturePresent(PF_AVX2_INSTRUCTIONS_AVAILABLE))
+                    {
+                        return true;
+                    }
+                    // PF_SSSE3..PF_AVX512F came with Windows 10 2004: an older Windows answers no to all of
+                    // them. SSE4.2 is on every CPU the game runs on, so a yes to it means the AVX2 answer is real.
+                    if (IsProcessorFeaturePresent(PF_SSE4_2_INSTRUCTIONS_AVAILABLE))
+                    {
+                        Log.Write("cpu: no AVX2 (Windows)");
+                        return false;
+                    }
+                }
             }
             catch
             {
-                return false;
             }
+            // Windows can't tell: CPUID through ao2_install. Unknown: the compat build, which runs everywhere.
+            bool? v3 = Installer.CpuRunsMainBuild(AppDomain.CurrentDomain.BaseDirectory);
+            Log.Write("cpu: Windows does not report AVX2, ao2_install cpu: {0}", v3 == null ? "unknown" : v3.Value ? "x86-64-v3" : "no x86-64-v3");
+            return v3 == true;
         }
 
         // The release ships both builds; leave in the package folder dir only
