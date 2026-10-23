@@ -12,7 +12,10 @@
 //   Checkpoint?LoadSaveGame?CheckpointToLoad=<name>?... goes to the travel
 //   event sub_8238C8E8; "travel <url>" sends any URL that way.
 //   "set <cvar> <value>" changes a port setting (e.g. the renderer's post
-//   effects, which apply from the next frame).
+//   effects, which apply from the next frame). Any other line, or the rest
+//   of "exec <command>", is an engine console command (e.g. "MOVIETEST
+//   LVL0_Temp_Intro" plays that movie). In online co-op only "exec" runs one,
+//   on this machine only: it may desync the game.
 // - Queue(): the same lines from the app (the F1 debug menu).
 // - --ao2_start_checkpoint=<name>: the same at startup - the startup movies
 //   are skipped, then the checkpoint loads from the "Press Start" screen.
@@ -199,7 +202,7 @@ namespace
       Logf("%s: %s\n", line.c_str(), ok ? "set" : "not set");
       return ok;
     }
-    const std::string &command = line;
+    const std::string command = line.rfind("exec ", 0) == 0 ? line.substr(5) : line;
     uint32_t top = (ctx.r1.u32 - 1024) & ~15u;
     uint32_t player = LocalPlayer(ctx, base, top);
     if (!player)
@@ -274,6 +277,11 @@ namespace ao2::console
         else if (line.rfind("set ", 0) == 0)
         {
           Exec(ctx, base, line);
+        }
+        else if (line.rfind("exec ", 0) == 0)
+        {
+          Logf("co-op: \"%s\" on this machine only (may desync)\n", line.c_str());
+          Exec(ctx, base, line.substr(5));
         }
         else
         {
