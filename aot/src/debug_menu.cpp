@@ -19,6 +19,7 @@
 //   then its level), loaded with the console's "checkpoint <name> <difficulty>"
 //   (console_cmd.cpp). The loaded checkpoint becomes the profile's current
 //   one when the game saves it.
+// - F7 (ao2_achievements_key): the achievements menu (achievements.h).
 //
 // Online co-op is a lockstep simulation (coop.h): there both go through the
 // lockstep input to both machines (coop_cmd.cpp) - god mode for this
@@ -29,10 +30,12 @@
 // listener (it would capture the mouse on clicks): the overlay takes no input.
 #include "debug_menu.h"
 
+#include "achievements.h"
 #include "console_cmd.h"
 #include "coop.h"
 #include "coop_cmd.h"
 #include "coop_invite.h"
+#include "dlc_folder.h"
 #include "gpu/native/overlay.h"
 #include "perf_overlay.h"
 #include "ui_text.h"
@@ -66,6 +69,7 @@
 REXCVAR_DECLARE(bool, ao2_god_mode);
 REXCVAR_DECLARE(int32_t, ao2_start_difficulty);
 REXCVAR_DECLARE(std::string, ao2_players_key);
+REXCVAR_DECLARE(std::string, ao2_achievements_key);
 REXCVAR_DECLARE(std::string, ao2_invite_accept_key);
 
 REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
@@ -174,8 +178,8 @@ namespace
   }
 
   // The disc's checkpoints (AO2Game/Checkpoints) and those of the extracted
-  // downloadable content packages (<user data>/<xuid>/<title>/00000002/<package>).
-  std::vector<Mission> ScanCheckpoints(const std::filesystem::path &dir, const std::filesystem::path &user_data)
+  // downloadable content packages (<content_dir>/<package>).
+  std::vector<Mission> ScanCheckpoints(const std::filesystem::path &dir, const std::filesystem::path &content_dir)
   {
     std::map<std::string, Mission> missions;
     auto add = [&](const std::filesystem::path &file) {
@@ -201,24 +205,16 @@ namespace
         add(entry.path());
       }
     }
-    if (!user_data.empty())
+    if (!content_dir.empty())
     {
-      for (const auto &xuid : std::filesystem::directory_iterator(user_data, ec))
+      for (const auto &package : std::filesystem::directory_iterator(content_dir, ec))
       {
         std::error_code ec2;
-        for (const auto &title : std::filesystem::directory_iterator(xuid.path(), ec2))
+        for (const auto &entry : std::filesystem::directory_iterator(package.path(), ec2))
         {
-          std::error_code ec3;
-          for (const auto &package : std::filesystem::directory_iterator(title.path() / "00000002", ec3))
+          if (entry.is_regular_file(ec2) && IsCheckpointFile(entry))
           {
-            std::error_code ec4;
-            for (const auto &entry : std::filesystem::directory_iterator(package.path(), ec4))
-            {
-              if (entry.is_regular_file(ec4) && IsCheckpointFile(entry))
-              {
-                add(entry.path());
-              }
-            }
+            add(entry.path());
           }
         }
       }
@@ -251,14 +247,17 @@ namespace
   std::unique_ptr<rex::ui::ImmediateDrawer> g_perf_immediate;
   std::unique_ptr<rex::ui::ImGuiDrawer> g_perf_drawer;
   std::unique_ptr<rex::ui::ImGuiDialog> g_perf_dialog;
-  std::filesystem::path g_checkpoint_dir, g_user_data;
+  std::filesystem::path g_checkpoint_dir, g_content_dir;
   DebugMenu *g_menu = nullptr; // UI thread
   std::atomic<bool> g_open{false};
   // Open port windows (OpenWindow; modal like the menu) and the notice.
   std::atomic<int> g_modal{0};
   std::mutex g_notice_mutex;
   std::function<bool()> g_notice; // under g_notice_mutex
-  std::atomic<bool> g_notice_on{false};
+  std::function<bool()> g_toast;  // under g_notice_mutex (SetToast)
+  uint64_t g_notice_gen = 0, g_toast_gen = 0; // under g_notice_mutex: each set
+  std::atomic<bool> g_notice_on{false}; // either of them
+  rex::ui::ImmediateDrawer *g_sdk_immediate = nullptr;
 
   // The game gets no input: the menu or a port window is open.
   bool Blocking()
@@ -273,7 +272,7 @@ namespace
   public:
     explicit DebugMenu(rex::ui::ImGuiDrawer *drawer) : ImGuiDialog(drawer)
     {
-      missions_ = ScanCheckpoints(g_checkpoint_dir, g_user_data);
+      missions_ = ScanCheckpoints(g_checkpoint_dir, g_content_dir);
       difficulty_ = std::clamp(REXCVAR_GET(ao2_start_difficulty), 0, 2);
     }
 
@@ -441,19 +440,34 @@ namespace
     g_frames_wanted = g_own_drawer != nullptr;
   }
 
-  // UI thread: draws the notice (SetNotice); clears it once it is over.
+  // UI thread: draws the notice (SetNotice) and the toast (SetToast);
+  // clears each once it is over.
   void DrawNotice()
   {
-    std::function<bool()> draw;
+    std::function<bool()> notice, toast;
+    uint64_t notice_gen, toast_gen;
     {
       std::lock_guard lock(g_notice_mutex);
-      draw = g_notice;
+      notice = g_notice;
+      toast = g_toast;
+      notice_gen = g_notice_gen;
+      toast_gen = g_toast_gen;
     }
-    if (draw && !draw())
+    bool notice_over = notice && !notice();
+    bool toast_over = toast && !toast();
+    if (notice_over || toast_over)
     {
       std::lock_guard lock(g_notice_mutex);
-      g_notice = nullptr;
-      g_notice_on = false;
+      // Unless set again meanwhile.
+      if (notice_over && g_notice_gen == notice_gen)
+      {
+        g_notice = nullptr;
+      }
+      if (toast_over && g_toast_gen == toast_gen)
+      {
+        g_toast = nullptr;
+      }
+      g_notice_on = g_notice || g_toast;
     }
   }
 
@@ -620,6 +634,14 @@ namespace
           ao2::perf::CycleMode();
         }
       }
+      else if (IsKey(e, REXCVAR_GET(ao2_achievements_key)))
+      {
+        e.set_handled(true);
+        if (!e.prev_state())
+        {
+          ao2::ach::ToggleMenu();
+        }
+      }
       else if (IsKey(e, REXCVAR_GET(ao2_players_key)))
       {
         e.set_handled(true);
@@ -663,16 +685,17 @@ namespace
 
 namespace ao2::menu
 {
-  void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::input::InputSystem *input,
-              const std::filesystem::path &game_data_root, const std::filesystem::path &user_data_root)
+  void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::ui::ImmediateDrawer *sdk_immediate,
+              rex::input::InputSystem *input, const std::filesystem::path &game_data_root)
   {
     if (!window || g_window)
     {
       return;
     }
     g_window = window;
+    g_sdk_immediate = sdk_drawer ? sdk_immediate : nullptr;
     g_checkpoint_dir = game_data_root / "AO2Game" / "Checkpoints";
-    g_user_data = user_data_root;
+    g_content_dir = ao2::dlc::Dir();
     g_drawer = sdk_drawer;
     if (!g_drawer)
     {
@@ -774,13 +797,38 @@ namespace ao2::menu
     });
   }
 
+  void ShowNoticeDialog();
+
   void SetNotice(std::function<bool()> draw)
   {
     {
       std::lock_guard lock(g_notice_mutex);
       g_notice = std::move(draw);
-      g_notice_on = g_notice != nullptr;
+      ++g_notice_gen;
+      g_notice_on = g_notice || g_toast;
     }
+    ShowNoticeDialog();
+  }
+
+  void SetToast(std::function<bool()> draw)
+  {
+    {
+      std::lock_guard lock(g_notice_mutex);
+      g_toast = std::move(draw);
+      ++g_toast_gen;
+      g_notice_on = g_notice || g_toast;
+    }
+    ShowNoticeDialog();
+  }
+
+  rex::ui::ImmediateDrawer *NoticeImmediateDrawer()
+  {
+    return g_perf_drawer ? g_perf_immediate.get() : g_sdk_immediate;
+  }
+
+  // Xenos presenter: the dialog that draws the notices on the SDK's drawer.
+  void ShowNoticeDialog()
+  {
     if (!g_window || g_perf_drawer)
     {
       return; // native renderer: the next frame request draws it

@@ -271,6 +271,88 @@ extern "C" REX_FUNC(sub_82A9F540)
   ctx.f1.f64 = double(float(width) / float(height));
 }
 
+// Full-screen movies (sub_8257BE38, the Bink player's draw): at a viewport
+// that is not 16:9 the movie keeps the viewport's width and gets the height
+// W x 720 / 1280, centred: y = (H - that) / 2, unsigned. Narrower than 16:9
+// that letterboxes; wider the movie is taller than the screen, the
+// subtraction wraps and y is ~2^31: a black screen. Its draws are moved to
+// the movie fitted by height instead, centred left to right:
+// - the movie through the Bink blitter sub_826D62B8 (x f1, y f2, width r5,
+//   height r6; return 0x8257C004),
+// - or through a canvas tile sub_82709A40 (x f1, y f2, width f3, height f4;
+//   return 0x8257BFD0),
+// - and the loading icon in its corner, blitted (return 0x8257C26C): size
+//   r5 = r6 = movie height x 100 / 720 at x 0.9 W, y 0.92 x movie height.
+namespace
+{
+  constexpr uint32_t kMovieBlit = 0x8257C004, kMovieTile = 0x8257BFD0, kMovieIcon = 0x8257C26C;
+
+  struct MovieFit
+  {
+    double scale; // the game's movie size -> the fitted one
+    double x;     // the fitted movie's left edge
+    uint32_t height; // the game's movie height (W x 720 / 1280)
+  };
+
+  // False unless the screen is wider than 16:9 (the movie's height wraps).
+  bool FitMovie(MovieFit &fit)
+  {
+    uint32_t width = g_width, height = g_height;
+    uint32_t movie = width * kOriginalHeight / kOriginalWidth;
+    if (movie <= height)
+    {
+      return false;
+    }
+    fit.height = movie;
+    fit.scale = double(height) / double(movie);
+    fit.x = (double(width) - double(width) * fit.scale) * 0.5;
+    return true;
+  }
+} // namespace
+
+// Bink texture blit (device r3, textures r4, x f1, y f2, x scale f3, y scale f4, width r5, height r6, alpha f5).
+extern "C" REX_FUNC(__imp__sub_826D62B8);
+extern "C" REX_FUNC(sub_826D62B8)
+{
+  MovieFit fit;
+  uint32_t lr = uint32_t(ctx.lr);
+  if ((lr == kMovieBlit || lr == kMovieIcon) && FitMovie(fit))
+  {
+    if (lr == kMovieBlit && ctx.r5.u32 == g_width && ctx.r6.u32 == fit.height)
+    {
+      ctx.f1.f64 = fit.x;
+      ctx.f2.f64 = 0.0;
+      ctx.r5.u64 = uint32_t(std::lround(double(g_width) * fit.scale));
+      ctx.r6.u64 = g_height;
+    }
+    else if (lr == kMovieIcon && ctx.r5.u32 == ctx.r6.u32 && ctx.r6.u32 == fit.height * 100 / kOriginalHeight)
+    {
+      // y had the wrapped offset added in single precision: placed again.
+      uint32_t size = ctx.r6.u32;
+      ctx.f1.f64 = double(float(fit.x + ctx.f1.f64 * fit.scale));
+      ctx.f2.f64 = double(float((double(fit.height) * 0.92 - double(size >> 1)) * fit.scale));
+      ctx.r5.u64 = ctx.r6.u64 = uint32_t(std::lround(double(size) * fit.scale));
+    }
+  }
+  __imp__sub_826D62B8(ctx, base);
+}
+
+// Canvas tile (canvas r3, x f1, y f2, width f3, height f4, u v f5-f8, ...): the movie when it is drawn that way.
+extern "C" REX_FUNC(__imp__sub_82709A40);
+extern "C" REX_FUNC(sub_82709A40)
+{
+  MovieFit fit;
+  if (uint32_t(ctx.lr) == kMovieTile && FitMovie(fit) && ctx.f3.f64 == double(g_width) &&
+      ctx.f4.f64 == double(fit.height))
+  {
+    ctx.f1.f64 = double(float(fit.x));
+    ctx.f2.f64 = 0.0;
+    ctx.f3.f64 = double(float(double(g_width) * fit.scale));
+    ctx.f4.f64 = double(g_height);
+  }
+  __imp__sub_82709A40(ctx, base);
+}
+
 // FPerspectiveMatrix(this, HalfFOV f1, Width f2, Height f3, MinZ f4): Hor+ for the screen's aspect.
 extern "C" REX_FUNC(__imp__sub_823E01D0);
 extern "C" REX_FUNC(sub_823E01D0)

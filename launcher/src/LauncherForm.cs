@@ -21,6 +21,7 @@ namespace AO2Launcher
         Button,
         Info,
         Bind, // a key binding (or with Pad, a gamepad button's)
+        Achievement, // one of the game's achievements (Achievements.cs): nothing to change
     }
 
     sealed class Row
@@ -33,6 +34,7 @@ namespace AO2Launcher
         public string[] Values;
         public string[] Names;
         public Func<int, string> Name; // instead of Names (text that is not a fixed string)
+        public Func<int, string> DropName; // in the open list, instead of Name
         // Slider
         public double Min, Max, Step;
         public Func<double, string> Format;
@@ -45,10 +47,19 @@ namespace AO2Launcher
         public Action Click;
         // Info
         public Func<string> Text;
+        // Info: a progress bar under the text, 0..1, with a counter at the right (null: none)
+        public Func<float> Frac;
+        public Func<string> Count;
         // Bind: a gamepad button (Values: the physical controls) instead of keys
         public bool Pad;
         // Choice: Enter or a click opens the list of all the choices
         public bool Drop;
+        // Choice: a question before this value is set (null: none)
+        public Func<string, Confirm> ConfirmOn;
+        // Choice: after the value changed
+        public Action Changed;
+        // Achievement
+        public Achievements.Entry Ach;
 
         public Func<bool> Visible = () => true;
         public Func<bool> Enabled = () => true;
@@ -97,6 +108,7 @@ namespace AO2Launcher
         const float ColX = 280, ColW = 640, RowsTop = 132, DescTop = 500;
         const float RowH = 34;
         const float ValueW = 186;
+        const float InfoCountW = 110, InfoBarH = 14; // an Info row's counter and bar (Row.Count, Row.Frac)
 
         // Light text on the cover's deep navy (Skin.cs); the accent is its paper grey.
         static readonly Color Amber = Color.FromArgb(224, 220, 212);
@@ -117,7 +129,8 @@ namespace AO2Launcher
         Font fTitle, fTitleSub, fBack, fSection, fLcd, fTiny;
         bool padConnected;
 
-        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED" };
+        string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED", "PROFILES", "ACHIEVEMENTS" };
+        const int ProfilesTab = 7;
         List<Row>[] tabs;
         UiScreen screen = UiScreen.Main;
         int mainSel; // 0 = play, 1 = settings
@@ -137,6 +150,7 @@ namespace AO2Launcher
         DateTime toastUntil;
         string gameExe;
         Updates.Release latest; // the latest release on GitHub; null until known (or offline)
+        Updates.Release updTarget; // the release the update window installs: the latest, or one picked in the release list
         bool updatePrompt;      // the "update available" window is open
         int promptSel;          // in it: 0 = download, 1 = later
 
@@ -169,6 +183,21 @@ namespace AO2Launcher
             // The launcher always opens on the main screen; without the game files its button reads
             // INSTALL and leads to the installation.
             InitInstall();
+            RefreshProfiles();
+            // Back from the game: its saves may have changed, and its Graphics and Controls pages may
+            // have changed settings in our file.
+            Activated += (s, e) =>
+            {
+                S.Reload();
+                RefreshProfiles();
+                // The rows were made again (the achievements): without a layout they have no place yet
+                // and stay unseen until the wheel lays them out.
+                if (ClientSize.Width > 0 && WindowState != FormWindowState.Minimized)
+                {
+                    LayoutRows(false);
+                }
+                Invalidate();
+            };
 
             pad.Pressed += OnPad;
             pad.RawPressed += OnPadRaw;
@@ -195,6 +224,9 @@ namespace AO2Launcher
             };
             timer.Start();
             LayoutRows();
+            // Built before the window shows, so it never opens blank.
+            if (bgMainSrc != null) bgMain = MainBackdrop(bgMainSrc);
+            if (bgDimSrc != null) bgDim = DimBackdrop(bgDimSrc);
             // After an update the previous launcher may still be exiting: retry for a few seconds.
             Updates.CleanUp();
             if (Updates.LeftOver)
@@ -210,7 +242,60 @@ namespace AO2Launcher
                 clean.IsBackground = true;
                 clean.Start();
             }
+            MoveOldDlc();
             CheckForUpdate();
+            CheckNotes();
+        }
+
+        // Earlier versions kept the DLC in Documents: it moves into the game folder (dlc\) off the UI
+        // thread, usually at the first start after the update. A game started meanwhile waits for it
+        // (dlc_folder.cpp).
+        void MoveOldDlc()
+        {
+            // A running game has the packages open: they move at the next start (the game's or the launcher's).
+            if (gameExe == null || !Installer.OldDlcLeft() || Game.IsRunning())
+            {
+                return;
+            }
+            string dir = Path.GetDirectoryName(gameExe);
+            ShowToast(L.T("Moving the DLC to the game folder..."), false);
+            var th = new System.Threading.Thread(() =>
+            {
+                string text;
+                bool bad = false;
+                try
+                {
+                    int n = Installer.MoveOldDlc(dir);
+                    text = n > 0 ? L.F("DLC moved to the game folder: {0}", Installer.DlcRoot(dir)) : null;
+                }
+                catch (Exception ex)
+                {
+                    text = L.F("Could not move the DLC to the game folder: {0}", ex.Message);
+                    bad = true;
+                }
+                try
+                {
+                    BeginInvoke(new Action(() =>
+                    {
+                        if (text != null)
+                        {
+                            ShowToast(text, bad);
+                        }
+                        else
+                        {
+                            toast = null;
+                        }
+                        RefreshInstalled();
+                        Invalidate();
+                    }));
+                }
+                catch (InvalidOperationException)
+                {
+                    // The form was closed meanwhile.
+                }
+            });
+            th.IsBackground = true;
+            th.Start();
         }
 
         // Asks GitHub for the latest release off the UI thread; a newer one opens the update window.
@@ -246,6 +331,7 @@ namespace AO2Launcher
             latest = r;
             if (UpdateAvailable)
             {
+                updTarget = r;
                 updatePrompt = true;
                 promptSel = 0;
             }
@@ -272,6 +358,532 @@ namespace AO2Launcher
         volatile bool cancelUpdate;
         bool restarting;
 
+        // ------------------------------------------------------------------
+        // "What's new": the notes of the release this package is, shown once after an update (the version is
+        // kept in seen_version), and again by a click on the version under PLAY.
+        bool notesOpen;
+        string notesText;      // the release description (markdown); null until loaded
+        int notesScroll;       // in lines
+        int notesLines;        // wrapped lines in the last frame
+        int notesFit;          // lines that fit
+        bool notesLoading;
+
+        sealed class NoteRow
+        {
+            public int Kind;      // -1 empty line, 0 text, 1 heading, 2 bullet
+            public string Text;
+            public bool Cont;     // a wrapped continuation (no bullet dot)
+        }
+
+        bool NotesShown
+        {
+            get { return notesOpen && notesText != null && screen == UiScreen.Main && !installing && !PromptShown; }
+        }
+
+        // After an update (the version differs from the one last seen): fetches the notes off the UI thread.
+        // A fresh install, offline or a release without a description just marks the version as seen / waits.
+        void CheckNotes()
+        {
+            if (S["seen_version"] == Updates.Version)
+            {
+                return;
+            }
+            if (S["seen_version"] == "" && !Installed)
+            {
+                MarkSeen();
+                return;
+            }
+            LoadNotes(true);
+        }
+
+        void MarkSeen()
+        {
+            S["seen_version"] = Updates.Version;
+            S.Save();
+        }
+
+        void LoadNotes(bool auto)
+        {
+            if (notesLoading)
+            {
+                return;
+            }
+            if (notesText != null)
+            {
+                OpenNotes();
+                return;
+            }
+            notesLoading = true;
+            var th = new System.Threading.Thread(() =>
+            {
+                string notes = Updates.NotesFor(Updates.Current);
+                UiDo(() =>
+                {
+                    notesLoading = false;
+                    if (notes == null)
+                    {
+                        if (!auto)
+                        {
+                            ShowToast(L.T("Could not load the release notes"), true);
+                        }
+                        return; // offline: asked again on the next start
+                    }
+                    notes = notes.Trim();
+                    if (notes.Length == 0)
+                    {
+                        if (auto)
+                        {
+                            MarkSeen();
+                        }
+                        else
+                        {
+                            ShowToast(L.T("This release has no notes"), true);
+                        }
+                        return;
+                    }
+                    notesText = notes;
+                    OpenNotes();
+                });
+            });
+            th.IsBackground = true;
+            th.Start();
+        }
+
+        void OpenNotes()
+        {
+            notesOpen = true;
+            notesScroll = 0;
+            if (S["seen_version"] != Updates.Version)
+            {
+                MarkSeen();
+            }
+            Invalidate();
+        }
+
+        void CloseNotes()
+        {
+            notesOpen = false;
+            Invalidate();
+        }
+
+        void ScrollNotes(int lines)
+        {
+            notesScroll = Math.Max(0, Math.Min(Math.Max(0, notesLines - notesFit), notesScroll + lines));
+            Invalidate();
+        }
+
+        // Keys of the notes window; false for a key it does not use.
+        bool NotesKey(Keys key)
+        {
+            switch (key)
+            {
+                case Keys.Enter:
+                case Keys.Space:
+                case Keys.Escape:
+                    CloseNotes();
+                    return true;
+                case Keys.Up: ScrollNotes(-2); return true;
+                case Keys.Down: ScrollNotes(2); return true;
+                case Keys.PageUp: ScrollNotes(-notesFit + 1); return true;
+                case Keys.PageDown: ScrollNotes(notesFit - 1); return true;
+                case Keys.Home: ScrollNotes(-100000); return true;
+                case Keys.End: ScrollNotes(100000); return true;
+            }
+            return true; // modal
+        }
+
+        // The markdown of a release description as plain lines: kind 1 heading, 2 bullet, 0 text.
+        static List<KeyValuePair<int, string>> NoteLines(string md)
+        {
+            var list = new List<KeyValuePair<int, string>>();
+            foreach (string raw in md.Replace("\r", "").Split('\n'))
+            {
+                string t = raw.TrimEnd();
+                int kind = 0;
+                if (t.TrimStart().StartsWith("#"))
+                {
+                    kind = 1;
+                    t = t.TrimStart().TrimStart('#').Trim();
+                }
+                else if (t.TrimStart().StartsWith("- ") || t.TrimStart().StartsWith("* "))
+                {
+                    kind = 2;
+                    t = t.TrimStart().Substring(2);
+                }
+                t = System.Text.RegularExpressions.Regex.Replace(t, @"\[([^\]]*)\]\([^)]*\)", "$1");
+                t = t.Replace("**", "").Replace("__", "").Replace("`", "");
+                list.Add(new KeyValuePair<int, string>(kind, t.Trim()));
+            }
+            return list;
+        }
+
+        void DrawNotes(Graphics g)
+        {
+            DrawNotesBox(g, L.T("WHAT'S NEW") + "  ·  v" + Updates.Version, notesText, null);
+        }
+
+        // The notes window; with a release from the list it has BACK and DOWNLOAD instead of CLOSE.
+        void DrawNotesBox(Graphics g, string title, string text, Updates.Release pick)
+        {
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            var box = new RectangleF((W - 640) / 2, 70, 640, 520);
+            Panel(g, box);
+            Caps(g, title, fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+            Line(g, Hairline, box.X + 30, box.Y + 58.5f, box.Right - 30, box.Y + 58.5f);
+
+            var body = new RectangleF(box.X + 36, box.Y + 74, box.Width - 72, box.Height - 74 - 84);
+            float lh = fLabel.GetHeight(g) + 4;
+            notesFit = Math.Max(1, (int)(body.Height / lh));
+            var wrapped = new List<NoteRow>();
+            foreach (var l in NoteLines(text))
+            {
+                if (l.Value.Length == 0)
+                {
+                    if (wrapped.Count > 0 && wrapped[wrapped.Count - 1].Kind >= 0)
+                    {
+                        wrapped.Add(new NoteRow { Kind = -1 }); // one gap, none at the start
+                    }
+                    continue;
+                }
+                float indent = l.Key == 2 ? 18 : 0;
+                Font f = l.Key == 1 ? fLabel : fSmall;
+                string line = "";
+                bool cont = false;
+                foreach (string word in l.Value.Split(' '))
+                {
+                    string next = line.Length == 0 ? word : line + " " + word;
+                    if (line.Length > 0 && g.MeasureString(next, f).Width > body.Width - indent)
+                    {
+                        wrapped.Add(new NoteRow { Kind = l.Key, Text = line, Cont = cont });
+                        cont = true;
+                        line = word;
+                    }
+                    else
+                    {
+                        line = next;
+                    }
+                }
+                wrapped.Add(new NoteRow { Kind = l.Key, Text = line, Cont = cont });
+            }
+            notesLines = wrapped.Count;
+            notesScroll = Math.Max(0, Math.Min(Math.Max(0, notesLines - notesFit), notesScroll));
+
+            var oldClip = g.Clip;
+            g.SetClip(body);
+            for (int i = 0; i < wrapped.Count; i++)
+            {
+                int row = i - notesScroll;
+                NoteRow nr = wrapped[i];
+                if (row < 0 || row >= notesFit || nr.Kind < 0)
+                {
+                    continue;
+                }
+                float y = body.Y + row * lh;
+                if (nr.Kind == 2)
+                {
+                    if (!nr.Cont)
+                    {
+                        Fill(g, Paper, new RectangleF(body.X + 3, y + lh / 2 - 3, 4, 4));
+                    }
+                    DrawText(g, nr.Text, fSmall, TextLight, new RectangleF(body.X + 18, y, body.Width - 18, lh + 2), new StringFormat());
+                }
+                else
+                {
+                    DrawText(g, nr.Text, nr.Kind == 1 ? fLabel : fSmall, nr.Kind == 1 ? PaperHi : TextLight,
+                        new RectangleF(body.X, y, body.Width, lh + 2), new StringFormat());
+                }
+            }
+            g.Clip = oldClip;
+            if (notesLines > notesFit)
+            {
+                float th = Math.Max(24, body.Height * notesFit / notesLines);
+                float ty = body.Y + (body.Height - th) * notesScroll / Math.Max(1, notesLines - notesFit);
+                DrawGrabBar(g, new RectangleF(box.Right - 22, body.Y, 3, body.Height), ty, th, 20, 90,
+                    f =>
+                    {
+                        notesScroll = Math.Max(0, Math.Min(notesLines - notesFit, (int)Math.Round(f * (notesLines - notesFit))));
+                    });
+            }
+
+            if (pick == null)
+            {
+                var close = new RectangleF(box.X + (box.Width - 180) / 2, box.Bottom - 64, 180, 42);
+                FlatButton(g, close, L.T("CLOSE"), fBtn, true, true, false);
+                AddHot(close, "notes_close", CloseNotes);
+                return;
+            }
+            bool installed = pick.Version == Updates.Current;
+            float bw = 180, gap = 20;
+            float bx = installed ? box.X + (box.Width - bw) / 2 : box.X + (box.Width - 2 * bw - gap) / 2;
+            var back = new RectangleF(bx, box.Bottom - 64, bw, 42);
+            bool onBtn = IsHover("rel_back") || IsHover("rel_dl");
+            FlatButton(g, back, L.T("BACK"), fBtn, installed, IsHover("rel_back") || (!onBtn && (installed || relBtn == 0)), false);
+            AddHot(back, "rel_back", RelBack);
+            if (!installed)
+            {
+                var dl = new RectangleF(back.Right + gap, back.Y, bw, 42);
+                FlatButton(g, dl, L.T("DOWNLOAD"), fBtn, true, IsHover("rel_dl") || (!onBtn && relBtn == 1), false);
+                AddHot(dl, "rel_dl", () => RelDownload(pick));
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Releases: the version, bottom right, opens the list of every release on GitHub. A row opens that
+        // release's notes with DOWNLOAD, which installs it through the update window (an older one too: back).
+        bool relOpen, relLoading;
+        List<Updates.Release> rels;  // newest first; null until loaded
+        int relPick = -1;            // the release whose notes are open; -1: the list
+        int relSel, relTop;          // the list: the highlighted row, the first visible one
+        int relBtn = 1;              // the notes: 0 = BACK, 1 = DOWNLOAD
+        const float RelRowH = 46;
+        const int RelFit = 7;        // rows that fit the list
+
+        bool RelShown
+        {
+            get { return relOpen && rels != null && screen == UiScreen.Main && !installing && !PromptShown && !NotesShown; }
+        }
+
+        void OpenReleases()
+        {
+            if (relLoading)
+            {
+                return;
+            }
+            relLoading = true;
+            var th = new System.Threading.Thread(() =>
+            {
+                List<Updates.Release> list = Updates.All();
+                UiDo(() =>
+                {
+                    relLoading = false;
+                    if (list == null || list.Count == 0)
+                    {
+                        ShowToast(L.T("Could not load the release list"), true);
+                        return;
+                    }
+                    rels = list;
+                    relPick = -1;
+                    relSel = Math.Max(0, rels.FindIndex(r => r.Version == Updates.Current));
+                    relTop = Math.Max(0, Math.Min(rels.Count - RelFit, relSel - RelFit / 2));
+                    relOpen = true;
+                    Invalidate();
+                });
+            });
+            th.IsBackground = true;
+            th.Start();
+        }
+
+        void CloseReleases()
+        {
+            relOpen = false;
+            relPick = -1;
+            Invalidate();
+        }
+
+        void RelPick(int i)
+        {
+            relSel = i;
+            relPick = i;
+            notesScroll = 0;
+            relBtn = rels[i].Version == Updates.Current ? 0 : 1;
+            Invalidate();
+        }
+
+        void RelBack()
+        {
+            relPick = -1;
+            Invalidate();
+        }
+
+        void RelDownload(Updates.Release r)
+        {
+            updTarget = r;
+            updState = UpdState.Ask;
+            updatePrompt = true;
+            promptSel = 0;
+            Invalidate();
+        }
+
+        void RelMove(int d)
+        {
+            relSel = Math.Max(0, Math.Min(rels.Count - 1, relSel + d));
+            RelScroll(0);
+        }
+
+        // Scrolls the list by rows, keeping the highlighted row in view.
+        void RelScroll(int d)
+        {
+            relTop = Math.Max(0, Math.Min(Math.Max(0, rels.Count - RelFit), relTop + d));
+            relSel = Math.Max(relTop, Math.Min(relTop + RelFit - 1, relSel));
+            Invalidate();
+        }
+
+        // Activates the notes window's highlighted button.
+        void RelButton()
+        {
+            if (relBtn == 0 || rels[relPick].Version == Updates.Current)
+            {
+                RelBack();
+            }
+            else
+            {
+                RelDownload(rels[relPick]);
+            }
+        }
+
+        bool RelKey(Keys key)
+        {
+            if (relPick < 0)
+            {
+                switch (key)
+                {
+                    case Keys.Up: RelMove(-1); break;
+                    case Keys.Down: RelMove(1); break;
+                    case Keys.PageUp: RelMove(-RelFit); break;
+                    case Keys.PageDown: RelMove(RelFit); break;
+                    case Keys.Home: RelMove(-100000); break;
+                    case Keys.End: RelMove(100000); break;
+                    case Keys.Enter:
+                    case Keys.Space:
+                    case Keys.Right:
+                        RelPick(relSel);
+                        break;
+                    case Keys.Escape: CloseReleases(); break;
+                }
+                return true; // modal
+            }
+            switch (key)
+            {
+                case Keys.Left:
+                case Keys.Right:
+                case Keys.Tab:
+                case Keys.Shift | Keys.Tab:
+                    if (rels[relPick].Version != Updates.Current)
+                    {
+                        relBtn = 1 - relBtn;
+                        Invalidate();
+                    }
+                    break;
+                case Keys.Enter:
+                case Keys.Space:
+                    RelButton();
+                    break;
+                case Keys.Escape: RelBack(); break;
+                case Keys.Up: ScrollNotes(-2); break;
+                case Keys.Down: ScrollNotes(2); break;
+                case Keys.PageUp: ScrollNotes(-notesFit + 1); break;
+                case Keys.PageDown: ScrollNotes(notesFit - 1); break;
+                case Keys.Home: ScrollNotes(-100000); break;
+                case Keys.End: ScrollNotes(100000); break;
+            }
+            return true;
+        }
+
+        void RelPad(int b)
+        {
+            if (relPick < 0)
+            {
+                switch (b)
+                {
+                    case Gamepad.DpadUp: RelMove(-1); break;
+                    case Gamepad.DpadDown: RelMove(1); break;
+                    case Gamepad.A:
+                    case Gamepad.DpadRight:
+                        RelPick(relSel);
+                        break;
+                    case Gamepad.B:
+                    case Gamepad.Start:
+                        CloseReleases();
+                        break;
+                }
+                return;
+            }
+            switch (b)
+            {
+                case Gamepad.DpadLeft:
+                case Gamepad.DpadRight:
+                    if (rels[relPick].Version != Updates.Current)
+                    {
+                        relBtn = 1 - relBtn;
+                        Invalidate();
+                    }
+                    break;
+                case Gamepad.DpadUp: ScrollNotes(-2); break;
+                case Gamepad.DpadDown: ScrollNotes(2); break;
+                case Gamepad.A:
+                case Gamepad.Start:
+                    RelButton();
+                    break;
+                case Gamepad.B:
+                    RelBack();
+                    break;
+            }
+        }
+
+        void DrawReleases(Graphics g)
+        {
+            if (relPick >= 0)
+            {
+                Updates.Release pick = rels[relPick];
+                string text = pick.Body.Trim().Length == 0 ? L.T("This release has no notes") : pick.Body;
+                DrawNotesBox(g, L.T("PATCH NOTES") + "  ·  v" + pick.Version, text, pick);
+                return;
+            }
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            var box = new RectangleF((W - 640) / 2, 70, 640, 520);
+            Panel(g, box);
+            Caps(g, L.T("VERSIONS"), fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+            Line(g, Hairline, box.X + 30, box.Y + 58.5f, box.Right - 30, box.Y + 58.5f);
+
+            var body = new RectangleF(box.X + 36, box.Y + 74, box.Width - 72, RelFit * RelRowH);
+            relTop = Math.Max(0, Math.Min(Math.Max(0, rels.Count - RelFit), relTop));
+            for (int k = 0; k < RelFit && relTop + k < rels.Count; k++)
+            {
+                int i = relTop + k;
+                Updates.Release r = rels[i];
+                var row = new RectangleF(body.X, body.Y + k * RelRowH, body.Width - 14, RelRowH - 4);
+                bool hv = IsHover("rel" + i);
+                if (hv || (i == relSel && !focusHidden))
+                {
+                    Fill(g, Color.FromArgb(hv ? 26 : 16, 255, 255, 255), row);
+                }
+                DrawText(g, "v" + r.Version, fLabel, PaperHi, new RectangleF(row.X + 16, row.Y, 90, row.Height),
+                    new StringFormat { LineAlignment = StringAlignment.Center });
+                var tags = new List<string>();
+                if (i == 0)
+                {
+                    tags.Add(L.T("latest"));
+                }
+                if (r.Version == Updates.Current)
+                {
+                    tags.Add(L.T("installed"));
+                }
+                DrawText(g, string.Join("  ·  ", tags), fTiny, Paper, new RectangleF(row.X + 110, row.Y, 250, row.Height),
+                    new StringFormat { LineAlignment = StringAlignment.Center });
+                DrawText(g, r.Date, fSmall, TextDim, new RectangleF(row.Right - 150, row.Y, 110, row.Height),
+                    new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center });
+                float cx = row.Right - 22, cy = row.Y + row.Height / 2;
+                Color arrow = hv ? PaperHi : TextDim;
+                Line(g, arrow, cx, cy - 6, cx + 6, cy, 1.6f);
+                Line(g, arrow, cx + 6, cy, cx, cy + 6, 1.6f);
+                AddHot(row, "rel" + i, () => RelPick(i));
+            }
+            if (rels.Count > RelFit)
+            {
+                float th = Math.Max(24, body.Height * RelFit / rels.Count);
+                float ty = body.Y + (body.Height - th) * relTop / Math.Max(1, rels.Count - RelFit);
+                DrawGrabBar(g, new RectangleF(box.Right - 22, body.Y, 3, body.Height), ty, th, 20, 90,
+                    f =>
+                    {
+                        relTop = Math.Max(0, Math.Min(rels.Count - RelFit, (int)Math.Round(f * (rels.Count - RelFit))));
+                    });
+            }
+
+            var close = new RectangleF(box.X + (box.Width - 180) / 2, box.Bottom - 64, 180, 42);
+            FlatButton(g, close, L.T("CLOSE"), fBtn, true, true, false);
+            AddHot(close, "rel_close", CloseReleases);
+        }
+
         bool UpdateBusy
         {
             get { return updatePrompt && (updState == UpdState.Downloading || updState == UpdState.Installing); }
@@ -281,12 +893,12 @@ namespace AO2Launcher
         // game) or an archive in the release, the browser opens the download instead.
         void StartUpdate()
         {
-            if (!Updates.CanSelfUpdate(latest))
+            if (!Updates.CanSelfUpdate(updTarget))
             {
                 updatePrompt = false;
                 try
                 {
-                    System.Diagnostics.Process.Start(latest.Url);
+                    System.Diagnostics.Process.Start(updTarget.Url);
                 }
                 catch (Exception ex)
                 {
@@ -308,7 +920,7 @@ namespace AO2Launcher
             updProgress = 0;
             updError = null;
             cancelUpdate = false;
-            Updates.Release r = latest;
+            Updates.Release r = updTarget;
             var th = new System.Threading.Thread(() =>
             {
                 string error = null;
@@ -379,7 +991,7 @@ namespace AO2Launcher
             }
             catch (Exception ex)
             {
-                ShowToast(L.F("Updated to {0}. Start the launcher again: {1}", "v" + latest.Version, ex.Message), true);
+                ShowToast(L.F("Updated to {0}. Start the launcher again: {1}", "v" + updTarget.Version, ex.Message), true);
                 updatePrompt = false;
                 return;
             }
@@ -417,6 +1029,26 @@ namespace AO2Launcher
             }
         }
 
+        // Debug (--snapshot with --notes-file): the "what's new" window.
+        public void SnapshotNotes()
+        {
+            notesText = Updates.NotesFor(Updates.Current) ?? "";
+            notesOpen = true;
+            updatePrompt = false;
+        }
+
+        // Debug (--snapshot with --versions): the release list, or the notes of one of its rows.
+        public void SnapshotReleases(int pick)
+        {
+            rels = Updates.All();
+            updatePrompt = false;
+            relOpen = rels != null;
+            if (relOpen && pick >= 0 && pick < rels.Count)
+            {
+                RelPick(pick);
+            }
+        }
+
         // Debug (--snapshot with --latest): the update window in a given state.
         public void SnapshotUpdate(UpdState st, double p)
         {
@@ -433,7 +1065,7 @@ namespace AO2Launcher
 
         public bool SnapshotDrop; // --drop: the current row's list open
 
-        public void Snapshot(string path, int t, int s, UiScreen scr)
+        public void Snapshot(string path, int t, int s, UiScreen scr, string ask = null)
         {
             IntPtr h = Handle;
             snapshotting = true;
@@ -443,6 +1075,10 @@ namespace AO2Launcher
             instSel = s;
             RefreshPads();
             LayoutRows();
+            if (ask != null)
+            {
+                SnapshotAsk(ask);
+            }
             if (SnapshotDrop && SelectedRow() != null && SelectedRow().Drop)
             {
                 OpenDrop(SelectedRow());
@@ -496,6 +1132,89 @@ namespace AO2Launcher
                 cp.Style |= 0x20000;      // WS_MINIMIZEBOX: minimize/restore from the taskbar
                 return cp;
             }
+        }
+
+        // The window is borderless and drawn by hand: its edges resize it (dragged here, not by the
+        // system), keeping the canvas proportions.
+        const int EdgeL = 1, EdgeR = 2, EdgeT = 4, EdgeB = 8, EdgeGrip = 6;
+        int rsEdge;
+        Point rsMouse;
+        Rectangle rsBounds;
+
+        int EdgeAt(Point p)
+        {
+            int e = 0;
+            if (p.X < EdgeGrip) e |= EdgeL;
+            else if (p.X >= ClientSize.Width - EdgeGrip) e |= EdgeR;
+            if (p.Y < EdgeGrip) e |= EdgeT;
+            else if (p.Y >= ClientSize.Height - EdgeGrip) e |= EdgeB;
+            return e;
+        }
+
+        static Cursor EdgeCursor(int e)
+        {
+            if (e == (EdgeL | EdgeT) || e == (EdgeR | EdgeB)) return Cursors.SizeNWSE;
+            if (e == (EdgeR | EdgeT) || e == (EdgeL | EdgeB)) return Cursors.SizeNESW;
+            return (e & (EdgeL | EdgeR)) != 0 ? Cursors.SizeWE : Cursors.SizeNS;
+        }
+
+        void BeginResize(int edge)
+        {
+            // Dragging repaints only a stretched picture of the current frame.
+            try
+            {
+                frozen = new Bitmap(ClientSize.Width, ClientSize.Height, PixelFormat.Format32bppPArgb);
+                using (Graphics fg = Graphics.FromImage(frozen))
+                {
+                    OnPaint(new PaintEventArgs(fg, new Rectangle(Point.Empty, ClientSize)));
+                }
+            }
+            catch
+            {
+                frozen = null;
+            }
+            rsEdge = edge;
+            rsMouse = Cursor.Position;
+            rsBounds = Bounds;
+            sizing = true;
+            Capture = true;
+        }
+
+        void DoResize()
+        {
+            int dx = Cursor.Position.X - rsMouse.X, dy = Cursor.Position.Y - rsMouse.Y;
+            int w;
+            if ((rsEdge & EdgeL) != 0) w = rsBounds.Width - dx;
+            else if ((rsEdge & EdgeR) != 0) w = rsBounds.Width + dx;
+            else
+            {
+                int h0 = (rsEdge & EdgeT) != 0 ? rsBounds.Height - dy : rsBounds.Height + dy;
+                w = (int)Math.Round(h0 * W / H);
+            }
+            Rectangle wa = Screen.FromRectangle(rsBounds).WorkingArea;
+            w = Math.Max((int)(W * 0.5f), Math.Min(w, Math.Min(wa.Width, (int)(wa.Height * W / H))));
+            int h = (int)Math.Round(w * H / W);
+            int x = (rsEdge & EdgeL) != 0 ? rsBounds.Right - w : rsBounds.X;
+            int y = (rsEdge & EdgeT) != 0 ? rsBounds.Bottom - h : rsBounds.Y;
+            if (x != Left || y != Top || w != Width || h != Height)
+            {
+                Bounds = new Rectangle(x, y, w, h);
+                Update(); // paint now: the stretched picture is cheap
+            }
+        }
+
+        void EndResize()
+        {
+            rsEdge = 0;
+            Capture = false;
+            sizing = false;
+            if (frozen != null)
+            {
+                frozen.Dispose();
+                frozen = null;
+            }
+            RebuildScaled();
+            DropBackdrops();
         }
 
         protected override void OnShown(EventArgs e)
@@ -694,6 +1413,35 @@ namespace AO2Launcher
                     "and the input lag grows a little."),
                 Toggle("Anisotropic filtering", "aniso", "Sharper textures at an angle (16×). Costs almost no performance.",
                     "OFF", "16×"),
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Anti-aliasing", Key = "aa",
+                    Values = new[] { "off", "fxaa", "smaa" }, Names = new[] { "OFF", "FXAA", "SMAA" },
+                    Desc = "Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. " +
+                           "On top of the render resolution."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Ambient occlusion", Key = "ao",
+                    Values = new[] { "off", "ssao", "hbao", "gtao" }, Names = new[] { "OFF", "SSAO", "HBAO", "GTAO" },
+                    Desc = "Soft contact shadows in corners and where objects meet. SSAO is the lightest, HBAO is more defined, " +
+                           "GTAO is the most accurate and the heaviest."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Motion blur", Key = "motion_blur",
+                    Values = new[] { "0", "1", "2" }, Names = new[] { "OFF", "LOW", "HIGH" },
+                    Desc = "Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp."
+                },
+                Toggle("Depth of field", "dof",
+                    "What lies far behind the point you aim at goes out of focus; the focus follows the crosshair."),
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Shadow resolution", Key = "shadow_res",
+                    Values = new[] { "0", "1024", "2048", "4096" }, Names = new[] { "AUTO", "1024", "2048", "4096" },
+                    Desc = "Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
+                           "4096 needs about 150 MB more video memory."
+                },
             };
 
             // Controls
@@ -715,6 +1463,12 @@ namespace AO2Launcher
                     Desc = "Multiplier while aiming (right button, scopes). Turning already accounts for zoom; 1.0 feels the same as unaimed."
                 },
                 Toggle("Invert Y axis", "invert_y", "Mouse up looks down (on top of the inversion setting in the game itself)."),
+                Toggle("Aim assist", "aim_assist",
+                    "While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
+                    "In co-op each player keeps their own setting."),
+                Toggle("Toggle aim", "toggle_aim",
+                    "One press of aim (right mouse button, LT) starts aiming, the next press ends it, instead of holding the button. " +
+                    "On foot, on turrets and at a vehicle's gun; not at the wheel."),
                 new Row
                 {
                     Kind = RowKind.Slider, Label = "Mouse in vehicles and turrets", Key = "stick_sens", Min = 0.25, Max = 3, Step = 0.05,
@@ -773,12 +1527,22 @@ namespace AO2Launcher
             // Extras
             var extras = new List<Row>
             {
-                Toggle("Skip cutscenes", "skip_cutscenes",
-                    "Enter or Space skips movies and in-engine cutscenes. Skipping is off in network games."),
-                Toggle("Skip unskippable ones", "skip_unskippable",
-                    "Also allow skipping the cutscenes the original game does not let you skip.",
-                    "NO", "YES"),
                 Toggle("God mode (cheat)", "god_mode", "The player takes no damage. Has no effect in online co-op."),
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Unlock All (cheat)", Key = "unlock_all",
+                    Values = new[] { "0", "1" }, Names = new[] { "OFF", "ON" },
+                    ConfirmOn = v => v != "1" ? null : new Confirm
+                    {
+                        Title = "UNLOCK ALL",
+                        Text = L.T("The game will unlock the Professional difficulty and " +
+                                   "give 9,999,999 money in the current profile. This is saved in the profile and stays after " +
+                                   "the cheat is turned off. Turn it on?"),
+                        Ok = "TURN ON",
+                    },
+                    Desc = "Unlocks every difficulty and gives 9,999,999 money " +
+                           "(kept at the maximum while on). Saved in the current profile. Has no effect in online co-op."
+                },
                 Toggle("Close the launcher", "close_on_launch", "Close this window once the game has started.", "NO", "YES"),
                 new Row
                 {
@@ -807,7 +1571,7 @@ namespace AO2Launcher
                     Kind = RowKind.Button, Label = "Saves", ButtonText = () => "OPEN",
                     Click = () =>
                     {
-                        string dir = Game.SavesFolder();
+                        string dir = Profiles.Root(S["profile"]);
                         if (Directory.Exists(dir))
                         {
                             Game.OpenFolder(dir);
@@ -817,13 +1581,19 @@ namespace AO2Launcher
                             ShowToast(L.F("No saves yet: {0}", dir), true);
                         }
                     },
-                    Desc = "Saves and profile folder: Documents\\armyoftworecomp_tu2 (or armyoftworecomp)."
+                    Desc = "The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2)."
                 },
                 new Row
                 {
                     Kind = RowKind.Button, Label = "Game files and DLC", ButtonText = () => "INSTALL",
                     Click = () => SetScreen(UiScreen.Install),
                     Desc = "Install the game from your own disc image, Title Update 2, or add downloadable content (DLC)."
+                },
+                new Row
+                {
+                    Kind = RowKind.Button, Label = "Uninstall the game", ButtonText = () => "UNINSTALL",
+                    Click = Uninstall, Enabled = () => anyInstalled,
+                    Desc = "Delete the installed game files (the assets folder). Saves are kept unless you choose otherwise."
                 },
                 new Row
                 {
@@ -860,7 +1630,7 @@ namespace AO2Launcher
                 },
             };
 
-            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras };
+            tabs = new[] { graphics, controls, KeyboardRows(), PadRows(), SplitRows(), online, extras, ProfileRows(), AchievementRows() };
 
             foreach (Row r in AllRows().Where(r => r.Kind == RowKind.Text))
             {
@@ -909,6 +1679,7 @@ namespace AO2Launcher
         void LanguageChanged()
         {
             L.Set(S["language"]);
+            RefreshAchievements();
             foreach (Row r in AllRows().Where(r => r.Box != null))
             {
                 SetCueBanner(r);
@@ -971,8 +1742,8 @@ namespace AO2Launcher
                     Row r = rows[i];
                     if (r.Kind == RowKind.Info)
                     {
-                        SizeF sz = g.MeasureString(r.Text(), fSmall, (int)(ColW - 36));
-                        r.H = sz.Height + 16;
+                        SizeF sz = g.MeasureString(r.Text(), fSmall, (int)(ColW - 36 - (r.Count != null ? InfoCountW : 0)));
+                        r.H = sz.Height + 16 + (r.Frac != null ? InfoBarH : 0);
                     }
                     else
                     {
@@ -1017,7 +1788,8 @@ namespace AO2Launcher
             var visible = new HashSet<Row>(rows.Where(RowShown));
             foreach (Row r in AllRows().Where(r => r.Box != null))
             {
-                bool show = screen == UiScreen.Settings && visible.Contains(r);
+                // Real controls are drawn over everything: hidden under a question or an open list.
+                bool show = screen == UiScreen.Settings && visible.Contains(r) && confirm == null && dropRow == null;
                 if (!r.Box.Focused && r.Box.Text != S[r.Key])
                 {
                     // Two pages show the player's name.
@@ -1121,10 +1893,9 @@ namespace AO2Launcher
                     }
                     int i = Array.IndexOf(r.Values, S[r.Key]);
                     i = i < 0 ? 0 : (i + (dir == 0 ? 1 : dir) + r.Values.Length) % r.Values.Length;
-                    S[r.Key] = r.Values[i];
-                    if (r.Key == "language")
+                    if (!SetChoice(r, r.Values[i]))
                     {
-                        LanguageChanged();
+                        return;
                     }
                     break;
                 }
@@ -1358,6 +2129,30 @@ namespace AO2Launcher
         void OnPad(int b)
         {
             UsePad(true);
+            if (confirm != null)
+            {
+                ConfirmPad(b);
+                return;
+            }
+            if (NotesShown)
+            {
+                switch (b)
+                {
+                    case Gamepad.DpadUp: ScrollNotes(-2); break;
+                    case Gamepad.DpadDown: ScrollNotes(2); break;
+                    case Gamepad.A:
+                    case Gamepad.B:
+                    case Gamepad.Start:
+                        CloseNotes();
+                        break;
+                }
+                return;
+            }
+            if (RelShown)
+            {
+                RelPad(b);
+                return;
+            }
             if (PromptShown)
             {
                 switch (b)
@@ -1440,6 +2235,18 @@ namespace AO2Launcher
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             UsePad(false);
+            if (confirm != null)
+            {
+                return ConfirmKey(keyData);
+            }
+            if (NotesShown)
+            {
+                return NotesKey(keyData);
+            }
+            if (RelShown)
+            {
+                return RelKey(keyData);
+            }
             if (PromptShown)
             {
                 switch (keyData)
@@ -1593,7 +2400,22 @@ namespace AO2Launcher
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            if (rsEdge != 0)
+            {
+                DoResize();
+                return;
+            }
+            if (dragging == null && EdgeAt(e.Location) != 0)
+            {
+                Cursor = EdgeCursor(EdgeAt(e.Location));
+                return;
+            }
             PointF p = Logical(e.Location);
+            if (sbDragging)
+            {
+                SbMove(p);
+                return;
+            }
             if (dragging != null)
             {
                 dragging.Drag(p.X);
@@ -1602,7 +2424,7 @@ namespace AO2Launcher
             Hot h = HitTest(p);
             string old = hover == null ? null : hover.Id;
             hover = h;
-            Cursor = h != null && (h.Click != null || h.Drag != null) ? Cursors.Hand : Cursors.Default;
+            Cursor = SbHit(p) || (h != null && (h.Click != null || h.Drag != null)) ? Cursors.Hand : Cursors.Default;
             // Windows also sends mouse moves without a move (after a repaint, a window shown): only a
             // real move hands the highlight to the mouse, so keyboard focus is not lost to them.
             bool moved = e.Location != lastMouse;
@@ -1668,6 +2490,11 @@ namespace AO2Launcher
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left && EdgeAt(e.Location) != 0)
+            {
+                BeginResize(EdgeAt(e.Location));
+                return;
+            }
             UsePad(false);
             if (screen == UiScreen.Settings && CaptureMouse(e.Button))
             {
@@ -1678,6 +2505,11 @@ namespace AO2Launcher
                 return;
             }
             PointF p = Logical(e.Location);
+            if (SbDown(p))
+            {
+                ActiveControl = null;
+                return;
+            }
             Hot h = HitTest(p);
             SelectFromHot(h);
             if (h != null && h.Row >= 0)
@@ -1712,6 +2544,16 @@ namespace AO2Launcher
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
+            if (rsEdge != 0)
+            {
+                EndResize();
+                return;
+            }
+            if (sbDragging)
+            {
+                sbDragging = false;
+                Invalidate();
+            }
             if (pressed != null)
             {
                 pressed = null;
@@ -1752,6 +2594,54 @@ namespace AO2Launcher
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            if (WindowState == FormWindowState.Minimized)
+            {
+                wasMinimized = true;
+                // Minimizing shrinks the window to nothing: keep the scale and the backdrops, or
+                // restoring would show an unpainted square until they are rebuilt.
+                return;
+            }
+            if (wasMinimized)
+            {
+                // Restored: paint the whole frame at once, before the window is shown again.
+                wasMinimized = false;
+                Invalidate();
+                Update();
+            }
+            if (ClientSize.Width > 0 && tabs != null)
+            {
+                scale = ClientSize.Width / W;
+                LayoutRows(false);
+                if (!sizing)
+                {
+                    RebuildScaled();
+                }
+            }
+            if (sizing)
+            {
+                // Dragging: the old backdrops are just stretched (see OnPaint); real ones come at the end.
+                Invalidate();
+                return;
+            }
+            DropBackdrops();
+        }
+
+        bool wasMinimized;
+        bool sizing;
+        Bitmap frozen; // the frame as it was when dragging began
+
+        void RebuildScaled()
+        {
+            foreach (Row r in AllRows().Where(r => r.Box != null))
+            {
+                Font old = r.Box.Font;
+                r.Box.Font = new Font(famReg, 15f * scale, FontStyle.Regular, GraphicsUnit.Pixel);
+                old.Dispose();
+            }
+        }
+
+        void DropBackdrops()
+        {
             if (bgMain != null)
             {
                 bgMain.Dispose();
@@ -1837,9 +2727,22 @@ namespace AO2Launcher
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
+            if (WindowState == FormWindowState.Minimized || ClientSize.Width < 100)
+            {
+                return;
+            }
+            if (sizing && frozen != null)
+            {
+                g.CompositingMode = CompositingMode.SourceCopy;
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.DrawImage(frozen, new Rectangle(0, 0, ClientSize.Width, ClientSize.Height), 0, 0, frozen.Width, frozen.Height, GraphicsUnit.Pixel);
+                return;
+            }
             hots.Clear();
+            sbSet = null;
 
-            if (ClientSize.Width > 0)
+            if (ClientSize.Width > 0 && !sizing)
             {
                 if (bgMain == null && bgMainSrc != null)
                 {
@@ -1854,7 +2757,15 @@ namespace AO2Launcher
             g.CompositingMode = CompositingMode.SourceCopy;
             if (bg != null)
             {
-                g.DrawImageUnscaled(bg, 0, 0);
+                if (bg.Width == ClientSize.Width && bg.Height == ClientSize.Height)
+                {
+                    g.DrawImageUnscaled(bg, 0, 0);
+                }
+                else
+                {
+                    g.InterpolationMode = InterpolationMode.Low;
+                    g.DrawImage(bg, 0, 0, ClientSize.Width, ClientSize.Height);
+                }
             }
             g.CompositingMode = CompositingMode.SourceOver;
 
@@ -1869,7 +2780,18 @@ namespace AO2Launcher
                 if (PromptShown)
                 {
                     hots.Clear();
+                    sbSet = null;
                     DrawPrompt(g);
+                }
+                else if (NotesShown)
+                {
+                    hots.Clear();
+                    DrawNotes(g);
+                }
+                else if (RelShown)
+                {
+                    hots.Clear();
+                    DrawReleases(g);
                 }
                 DrawTitleBar(g, "Launcher", false, false);
             }
@@ -1882,6 +2804,11 @@ namespace AO2Launcher
             {
                 DrawSettings(g);
                 DrawTitleBar(g, "Settings", true, true);
+            }
+            if (confirm != null)
+            {
+                hots.Clear();
+                DrawConfirm(g);
             }
             DrawToast(g);
             DrawFrame(g);
@@ -1921,25 +2848,6 @@ namespace AO2Launcher
             AddHot(exit, "exit", Close, 2);
             AddHot(play, "play", Play, 0);
 
-            // The version under PLAY: up to date, or the newer release (click: the update window).
-            var ver = new RectangleF((W - 520) / 2, 593, 520, 18);
-            string current = "v" + Updates.Current;
-            if (UpdateAvailable)
-            {
-                bool hv = IsHover("version");
-                DrawText(g, L.F("{0} · update available: {1}", current, "v" + latest.Version), fTiny, hv ? PaperHi : Paper, ver, CenterFmt());
-                AddHot(ver, "version", () =>
-                {
-                    updatePrompt = true;
-                    promptSel = 0;
-                    Invalidate();
-                });
-            }
-            else
-            {
-                DrawText(g, latest != null ? L.F("{0} · up to date", current) : current, fTiny, Color.FromArgb(110, 122, 140), ver, CenterFmt());
-            }
-
             var status = new RectangleF((W - 520) / 2, 616, 520, 22);
             if (gameExe == null)
             {
@@ -1952,6 +2860,29 @@ namespace AO2Launcher
                 DrawText(g, Summary(), fLcd, Color.FromArgb(130, 142, 160), status, CenterFmt());
             }
             Dot(g, 28, 627, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
+            DrawProfileChip(g);
+
+            // The version, bottom right (and the newer release, when there is one): click for every release
+            // with its patch notes.
+            string pn = L.T("VERSION") + "  v" + Updates.Current;
+            if (UpdateAvailable)
+            {
+                pn = L.F("{0} · update available: {1}", pn, "v" + latest.Version);
+            }
+            float tw = CapsWidth(g, pn, fBack, 1.6f);
+            float pw = tw + 28 + 16; // the text, its padding and the arrow
+            var pr = new RectangleF(W - 24 - pw, 614, pw, 26);
+            bool phv = IsHover("version");
+            if (phv)
+            {
+                Fill(g, Color.FromArgb(14, 255, 255, 255), pr);
+            }
+            Color vc = phv ? PaperHi : UpdateAvailable ? Paper : Color.FromArgb(130, 142, 160);
+            Caps(g, pn, fBack, vc, new RectangleF(pr.X, pr.Y, pw - 16, pr.Height), 1.6f);
+            float ax = pr.Right - 17, ay = pr.Y + pr.Height / 2;
+            Line(g, vc, ax, ay - 4, ax + 4, ay, 1.4f);
+            Line(g, vc, ax + 4, ay, ax, ay + 4, 1.4f);
+            AddHot(pr, "version", OpenReleases);
         }
 
         // The update window: over the art, the rest of the main screen dimmed and not clickable.
@@ -1963,7 +2894,8 @@ namespace AO2Launcher
             var text = new StringFormat { Alignment = StringAlignment.Center };
             var line1 = new RectangleF(box.X + 30, box.Y + 62, box.Width - 60, 42);
             var line2 = new RectangleF(box.X + 30, box.Y + 98, box.Width - 60, 36);
-            string ver = "v" + latest.Version;
+            string ver = "v" + updTarget.Version;
+            bool older = !Updates.Newer(updTarget.Version, Updates.Current) && updTarget.Version != Updates.Current;
 
             if (updState == UpdState.Downloading || updState == UpdState.Installing)
             {
@@ -1998,7 +2930,7 @@ namespace AO2Launcher
             }
 
             bool failed = updState == UpdState.Failed;
-            Caps(g, L.T(failed ? "UPDATE FAILED" : "UPDATE AVAILABLE"), fTitle, failed ? Crimson : PaperHi,
+            Caps(g, L.T(failed ? "UPDATE FAILED" : older ? "INSTALL AN OLDER VERSION" : "UPDATE AVAILABLE"), fTitle, failed ? Crimson : PaperHi,
                 new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
             if (failed)
             {
@@ -2007,7 +2939,8 @@ namespace AO2Launcher
             }
             else
             {
-                DrawText(g, L.F("Version {0} is out, you have {1}. Update now?", ver, "v" + Updates.Current), fLabel, TextLight, line1, text);
+                DrawText(g, older ? L.F("Go back to {0}? You have {1}.", ver, "v" + Updates.Current)
+                    : L.F("Version {0} is out, you have {1}. Update now?", ver, "v" + Updates.Current), fLabel, TextLight, line1, text);
                 DrawText(g, L.T("The launcher downloads and installs it by itself. Your game files, settings and saves are kept."),
                     fSmall, TextDim, line2, text);
             }
@@ -2015,10 +2948,19 @@ namespace AO2Launcher
             var go = new RectangleF(box.X + box.Width / 2 - 10 - 180, box.Bottom - 66, 180, 42);
             var later = new RectangleF(box.X + box.Width / 2 + 10, box.Bottom - 66, 180, 42);
             bool onButton = IsHover("upd_go") || IsHover("upd_later");
-            FlatButton(g, go, L.T(failed ? "RETRY" : "UPDATE"), fBtn, true, IsHover("upd_go") || (!onButton && promptSel == 0), false);
+            FlatButton(g, go, L.T(failed ? "RETRY" : older ? "DOWNLOAD" : "UPDATE"), fBtn, true, IsHover("upd_go") || (!onButton && promptSel == 0), false);
             FlatButton(g, later, L.T("LATER"), fBtn, false, IsHover("upd_later") || (!onButton && promptSel == 1), false);
             AddHot(go, "upd_go", StartUpdate);
             AddHot(later, "upd_later", ClosePrompt);
+        }
+
+        // Each tab's slot: its name in the current language plus one gap, the same for all, spread over the
+        // whole bar, so the space between the names is equal.
+        float[] TabSlots(Graphics g)
+        {
+            float[] widths = tabNames.Select(n => CapsWidth(g, L.T(n), fTab, 1.8f)).ToArray();
+            float gap = Math.Max(12, (W - 40 - widths.Sum()) / widths.Length);
+            return widths.Select(w => w + gap).ToArray();
         }
 
         void DrawSettings(Graphics g)
@@ -2026,12 +2968,13 @@ namespace AO2Launcher
             // Tabs: text, the current one underlined.
             Fill(g, Color.FromArgb(230, InkDeep), new RectangleF(0, 40, W, 44));
             Line(g, Hairline, 0, 83.5f, W, 83.5f);
+            float[] slots = TabSlots(g);
             float x = 20;
             for (int i = 0; i < tabNames.Length; i++)
             {
                 string name = L.T(tabNames[i]);
                 float tw = CapsWidth(g, name, fTab, 1.8f);
-                var r = new RectangleF(x, 40, tw + 36, 44);
+                var r = new RectangleF(x, 40, slots[i], 44);
                 bool on = i == tab;
                 bool hv = IsHover("tab" + i);
                 if (hv && !on)
@@ -2041,7 +2984,7 @@ namespace AO2Launcher
                 Caps(g, name, fTab, on ? PaperHi : hv ? Color.FromArgb(214, 218, 226) : Color.FromArgb(130, 142, 160), r, 1.8f);
                 if (on)
                 {
-                    Fill(g, Paper, new RectangleF(r.X + 14, r.Bottom - 3, r.Width - 28, 2));
+                    Fill(g, Paper, new RectangleF(r.X + (r.Width - tw) / 2 - 4, r.Bottom - 3, tw + 8, 2));
                 }
                 int t = i;
                 AddHot(r, "tab" + i, () => SetTab(t));
@@ -2076,7 +3019,23 @@ namespace AO2Launcher
             var rr = new RectangleF(ColX, r.Y, ColW, r.H);
             if (r.Kind == RowKind.Info)
             {
-                DrawText(g, r.Text(), fSmall, TextDim, new RectangleF(ColX + 16, r.Y + 8, ColW - 32, r.H - 8), StringFormat.GenericDefault);
+                float countW = r.Count != null ? InfoCountW : 0;
+                DrawText(g, r.Text(), fSmall, TextDim, new RectangleF(ColX + 16, r.Y + 8, ColW - 32 - countW, r.H - 8), StringFormat.GenericDefault);
+                if (r.Count != null)
+                {
+                    var cfmt = new StringFormat { Alignment = StringAlignment.Far, FormatFlags = StringFormatFlags.NoWrap };
+                    DrawText(g, r.Count(), fSmall, TextLight, new RectangleF(ColX + ColW - 16 - countW, r.Y + 8, countW, r.H - 8), cfmt);
+                }
+                if (r.Frac != null)
+                {
+                    float f = Math.Max(0, Math.Min(1, r.Frac()));
+                    var bar = new RectangleF(ColX + 16, r.Y + r.H - InfoBarH + 2, ColW - 32, 6);
+                    Fill(g, Color.FromArgb(40, 255, 255, 255), bar);
+                    if (f > 0)
+                    {
+                        Fill(g, f >= 1 ? Good : Paper, new RectangleF(bar.X, bar.Y, bar.Width * f, bar.Height));
+                    }
+                }
                 return;
             }
             bool enabled = r.Enabled();
@@ -2085,6 +3044,11 @@ namespace AO2Launcher
             if (selected)
             {
                 SelectionBar(g, rr);
+            }
+            if (r.Kind == RowKind.Achievement)
+            {
+                DrawAchievementRow(g, r, rr, selected, "row" + tab + "_" + index, index);
+                return;
             }
             Color labelColor = !enabled ? TextOff : selected ? PaperHi : TextLight;
             var lfmt = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
@@ -2311,6 +3275,10 @@ namespace AO2Launcher
             }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            // Whatever goes wrong without a handler of its own ends up in the log.
+            Application.ThreadException += (s, e) => Log.Error("unhandled exception in the window", e.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                Log.Error("unhandled exception (fatal: " + e.IsTerminating + ")", e.ExceptionObject as Exception);
             // Debug: --snapshot=<png> [--screen=main|settings] [--tab=N] [--sel=N] renders the window to a file without
             // showing it; --dump-args=<file> [--host=<ip>] writes the game command line; --probe=<file> runs the
             // host search and writes the found IP (or "none").
@@ -2397,7 +3365,7 @@ namespace AO2Launcher
                 return;
             }
             // --install=<log> --src=<path>[;<path>...]: install from these sources without the window
-            // (DLC goes to the real user data folder).
+            // (DLC goes to the game folder's dlc\).
             string install = opt("install");
             if (install != null)
             {
@@ -2433,6 +3401,7 @@ namespace AO2Launcher
                 return;
             }
             Updates.Override = opt("latest"); // --latest=<tag>: the latest release, without asking GitHub
+            Updates.NotesFile = opt("notes-file"); // --notes-file=<md>: the release notes from a file (with --snapshot: shown)
             var form = new LauncherForm();
             if (opt("bench") != null)
             {
@@ -2459,8 +3428,18 @@ namespace AO2Launcher
                     form.SnapshotUpdate(parts[0] == "installing" ? LauncherForm.UpdState.Installing
                         : parts[0] == "failed" ? LauncherForm.UpdState.Failed : LauncherForm.UpdState.Downloading, p);
                 }
+                if (opt("versions") != null)
+                {
+                    // --versions=list|<row> (with --latest, --notes-file): the release list, or that row's notes.
+                    int row;
+                    form.SnapshotReleases(int.TryParse(opt("versions"), out row) ? row : -1);
+                }
+                else if (Updates.NotesFile != null)
+                {
+                    form.SnapshotNotes();
+                }
                 UiScreen scr = opt("screen") == "settings" ? UiScreen.Settings : opt("screen") == "install" ? UiScreen.Install : UiScreen.Main;
-                form.Snapshot(snap, t, sl, scr);
+                form.Snapshot(snap, t, sl, scr, opt("ask"));
                 return;
             }
             Application.Run(form);

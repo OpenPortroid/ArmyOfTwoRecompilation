@@ -465,6 +465,7 @@ namespace
         }
         p.cut = std::sqrt(move) > kMaxMove || turn > kMaxTurn;
       }
+      ao2::mouse::NoteView(base, controller, p.step, p.cur.rotation[0], p.cur.rotation[1]);
     }
     if (p.cut || !p.prev.has_location)
     {

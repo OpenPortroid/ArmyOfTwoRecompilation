@@ -23,6 +23,7 @@
 
 #include "coop.h"
 #include "decouple.h"
+#include "frame_spikes.h"
 
 void CoopDebugSyncTick(uint32_t self, uint8_t *base, double tick_ms);
 double CoopDebugNowMs();
@@ -53,7 +54,12 @@ extern "C" REX_FUNC(sub_82A30DE8)
   uint32_t self = ctx.r3.u32;
   uint32_t delta_addr = ctx.r4.u32;
   double sim_dt = 0.0;
-  if (ao2::decouple::BeginFrame(ctx, base, &sim_dt))
+  bool render_only = ao2::decouple::BeginFrame(ctx, base, &sim_dt);
+  if (ao2::spikes::Enabled())
+  {
+    ao2::spikes::Mark(ao2::spikes::kGameFrame, render_only ? 0.0 : 1.0);
+  }
+  if (render_only)
   {
     return;
   }

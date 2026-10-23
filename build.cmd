@@ -8,7 +8,11 @@ rem   build.cmd pdb              release with debug symbols, then rexruntime fro
 rem   build.cmd compat           armyoftworecomp_compat.exe for CPUs without AVX2 (x86-64-v2, out\build\compat)
 rem   build.cmd exp              experimental: guest memory without volatile (out\build\novol)
 rem   build.cmd pgo-gen          instrumented build for profile-guided optimization (out\build\pgo-gen)
+rem   build.cmd pgo-merge        pgo\*.profraw -> pgo\ao2.profdata (every build uses it when it is there)
 rem   build.cmd pgo-use          release optimized with pgo\ao2.profdata (out\build\pgo-use)
+rem PGO: build pgo-gen, run out\build\pgo-gen\armyoftworecomp.exe with LLVM_PROFILE_FILE=<repo>\pgo\ao2-%%p.profraw
+rem and the game folder as the working directory, play (levels, fights), create pgo.dump in the game folder
+rem (the profile is written), pgo-merge, then build from scratch (delete out\build\win-amd64-release\CMakeFiles).
 setlocal
 set "ROOT=%~dp0"
 set "ROOTF=%ROOT:\=/%"
@@ -30,6 +34,7 @@ if /i "%MODE%"=="compat" goto compat
 if /i "%MODE%"=="exp" goto exp
 if /i "%MODE%"=="pgo-gen" goto pgo_gen
 if /i "%MODE%"=="pgo-use" goto pgo_use
+if /i "%MODE%"=="pgo-merge" goto pgo_merge
 
 rem --- preset ---
 cd /d "%ROOT%aot" || exit /b 1
@@ -70,6 +75,11 @@ exit /b %errorlevel%
 :pgo_gen
 call :custom pgo-gen "-DCMAKE_CXX_FLAGS=-fprofile-instr-generate -DAO2_PGO_GENERATE" "-DCMAKE_EXE_LINKER_FLAGS=-fprofile-instr-generate"
 exit /b %errorlevel%
+
+:pgo_merge
+llvm-profdata merge -o "%ROOT%pgo\ao2.profdata" "%ROOT%pgo\*.profraw" || exit /b 1
+echo merged into pgo\ao2.profdata
+exit /b 0
 
 :pgo_use
 call :custom pgo-use "-DCMAKE_CXX_FLAGS=-fprofile-instr-use=%ROOTF%pgo/ao2.profdata -Wno-profile-instr-unprofiled -Wno-profile-instr-out-of-date -Wno-backend-plugin" "-DCMAKE_EXE_LINKER_FLAGS=-Wl,/debug"

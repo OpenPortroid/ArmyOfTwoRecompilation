@@ -11,6 +11,7 @@
 //   and resets right after a WAIT_REG_MEM on the handler's acknowledgement.
 // - Vblank (60 Hz) interrupts come from a second thread.
 #include "native_graphics_system.h"
+#include "../../frame_spikes.h"
 
 #include <atomic>
 #include <chrono>
@@ -87,6 +88,11 @@ REXCVAR_DEFINE_BOOL(ao2_native_gpu_frame_pacing, true, "GPU",
                     "Native renderer: with ao2_fps_unlock a frame that is ready early is held until the frame time "
                     "of ao2_fps_target has passed since the last one (even frame times when frames take turns "
                     "being long and short, as with ao2_decouple)");
+REXCVAR_DEFINE_INT32(ao2_native_gpu_pacing_margin_us, 4000, "GPU",
+                     "Native renderer: ao2_native_gpu_frame_pacing holds frames up to this many microseconds longer "
+                     "after a late one, so that the next frames that come as late still make their slot (0 = only "
+                     "from the last present)")
+    .range(0, 10000);
 
 namespace ao2::gpu
 {
@@ -134,6 +140,11 @@ namespace ao2::gpu
 
         pm4_.on_draw = [this](const DrawPacket &d) {
           ++frame_draws_;
+          if (first_draw_pending_ && ao2::spikes::Enabled())
+          {
+            ao2::spikes::Mark(ao2::spikes::kGpuFirstDraw);
+          }
+          first_draw_pending_ = false;
           ScopedTime t(draw_ns_);
           RendererDraw(pm4_, d, shaders_);
         };
@@ -154,6 +165,7 @@ namespace ao2::gpu
             RendererSwap(frontbuffer, width, height);
           }
           ++swaps_;
+          first_draw_pending_ = true;
           EndFrameStats();
         };
         pm4_.on_interrupt = [this](uint32_t cpu_mask) {
@@ -298,6 +310,18 @@ namespace ao2::gpu
           {
             // Spin briefly (new commands usually follow quickly), then sleep on the event.
             ScopedTime idle(idle_ns_);
+            struct SpikeMark
+            {
+              std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+              ~SpikeMark()
+              {
+                double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+                if (ms > 0.2 && ao2::spikes::Enabled())
+                {
+                  ao2::spikes::Mark(ao2::spikes::kGpuIdle, ms);
+                }
+              }
+            } spike_mark;
             for (uint32_t spins = 0; running_; ++spins)
             {
               if (spins > 500)
@@ -447,6 +471,7 @@ namespace ao2::gpu
       rex::system::object_ref<rex::system::XHostThread> vblank_thread_;
 
       uint64_t frame_ = 0, frame_draws_ = 0, frame_resolves_ = 0;
+      bool first_draw_pending_ = true; // command thread: no draw since the last swap
       uint32_t presented_gamma_version_ = UINT32_MAX;
     };
   } // namespace

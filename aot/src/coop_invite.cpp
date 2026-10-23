@@ -400,7 +400,11 @@ namespace
     SentState state = SentState::kSending;
     int tries = 0;
     Clock::time_point next_send;
+    Clock::time_point since = Clock::now(); // sent, or answered
   };
+
+  // An invite nobody joined through this long may be sent again.
+  constexpr auto kReinviteAfter = std::chrono::seconds(15);
 
   struct ReceivedInvite
   {
@@ -683,6 +687,7 @@ namespace
           else
           {
             s.state = Get(f, "accepted") == "1" ? SentState::kAccepted : SentState::kDeclined;
+            s.since = now;
             result = s.state;
             who = s.name;
           }
@@ -1352,6 +1357,11 @@ namespace
         auto si = std::find_if(sent.begin(), sent.end(), [&](const SentInvite &x) { return x.to == p.address; });
         SentState state = si != sent.end() ? si->state : SentState::kFailed;
         bool have = si != sent.end();
+        // Not joined 15 s after the invite (no reply, or accepted without
+        // the game coming in): it can be sent again.
+        bool stale = have && Clock::now() - si->since > kReinviteAfter &&
+                     (state == SentState::kSending || state == SentState::kDelivered ||
+                      (state == SentState::kAccepted && game.players < 2));
         float bw = 150.0f * s, bh = 34.0f * s;
         ImVec2 bp(mx.x - 12.0f * s - bw, mn.y + (rh - bh) * 0.5f);
         float mid = mn.y + rh * 0.5f;
@@ -1359,12 +1369,12 @@ namespace
           ImVec2 ts = ui::CapsSize(FontKind::kLabel, text);
           ui::Caps(dl, FontKind::kLabel, ImVec2(right - ts.x, mid - ts.y * 0.5f), ui::Fade(col, ra), text);
         };
-        if (have && (state == SentState::kSending || state == SentState::kDelivered))
+        if (have && !stale && (state == SentState::kSending || state == SentState::kDelivered))
         {
           ui::Spinner(dl, ImVec2(mx.x - 28.0f * s, mid), 8.0f * s, 2.5f * s, ui::Fade(ui::kAccent, ra));
           right_text(state == SentState::kSending ? Tr("SENDING") : Tr("AWAITING REPLY"), ui::kText, mx.x - 46.0f * s);
         }
-        else if (have && state == SentState::kAccepted)
+        else if (have && !stale && state == SentState::kAccepted)
         {
           ui::Check(dl, ImVec2(mx.x - 28.0f * s, mid), 16.0f * s, 2.5f * s, ui::Fade(ui::kGreen, ra));
           right_text(Tr("ACCEPTED"), ui::kGreen, mx.x - 46.0f * s);
@@ -1373,7 +1383,9 @@ namespace
         {
           if (have)
           {
-            right_text(state == SentState::kDeclined ? Tr("DECLINED") : Tr("NOT DELIVERED"),
+            right_text(state == SentState::kDeclined ? Tr("DECLINED")
+                       : state == SentState::kAccepted ? Tr("NOT JOINED")
+                                                       : Tr("NOT DELIVERED"),
                        state == SentState::kDeclined ? ui::kRed : ui::kMuted, bp.x - 14.0f * s);
           }
           if (ui::Button(("invite" + key).c_str(), bp, ImVec2(bw, bh), have ? Tr("AGAIN") : Tr("INVITE"),

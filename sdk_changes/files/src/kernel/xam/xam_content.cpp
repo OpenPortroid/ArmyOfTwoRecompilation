@@ -154,9 +154,9 @@ u32 xeXamContentCreate(u32 user_index, mapped_string root_name, mapped_void cont
 
   // The root name is copied: with an overlapped the call completes later, on
   // the dispatch thread, when the guest may have reused its buffer.
-  auto run = [content_manager, xuid, root_name = std::string(root_name.value()), flags, content_data,
-              disposition_ptr,
-              license_mask_ptr](uint32_t& extended_error, uint32_t& length) -> X_RESULT {
+  auto body = [content_manager, xuid, root_name = std::string(root_name.value()), flags, content_data,
+               disposition_ptr,
+               license_mask_ptr](uint32_t& extended_error, uint32_t& length) -> X_RESULT {
     X_RESULT result = X_ERROR_INVALID_PARAMETER;
     kDispositionState disposition = kDispositionState::Unknown;
     switch (flags & 0xF) {
@@ -235,6 +235,28 @@ u32 xeXamContentCreate(u32 user_index, mapped_string root_name, mapped_void cont
     extended_error = X_HRESULT_FROM_WIN32(result);
     length = static_cast<uint32_t>(disposition);
     return result;
+  };
+  // The SDK's path code takes the guest's names for UTF-8 and throws on other
+  // bytes (utfcpp "Invalid UTF-8"). Out of the dispatch thread that is fatal,
+  // so fail the call instead - the game handles content it cannot open - and
+  // log the names' bytes.
+  auto run = [body, root_name = std::string(root_name.value()), content_data, flags](
+                 uint32_t& extended_error, uint32_t& length) -> X_RESULT {
+    try {
+      return body(extended_error, length);
+    } catch (const std::exception& e) {
+      auto hex = [](const std::string& s) {
+        std::string out;
+        for (unsigned char c : s) out += fmt::format("{:02X} ", c);
+        return out;
+      };
+      REXKRNL_ERROR("XamContentCreate failed: '{}' (flags {:X}, type {:X}, root [{}], file name [{}])",
+                    e.what(), uint32_t(flags), uint32_t(XContentType(content_data.content_type)),
+                    hex(root_name), hex(content_data.file_name()));
+      extended_error = X_HRESULT_FROM_WIN32(X_ERROR_FUNCTION_FAILED);
+      length = 0;
+      return X_ERROR_FUNCTION_FAILED;
+    }
   };
 
   if (!overlapped_ptr) {

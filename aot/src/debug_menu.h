@@ -14,18 +14,20 @@ namespace rex::input
 namespace rex::ui
 {
   class ImGuiDrawer;
+  class ImmediateDrawer;
   class Window;
 } // namespace rex::ui
 
 namespace ao2::menu
 {
   // UI thread, once the runtime is set up. `sdk_drawer` is the SDK's ImGui
-  // drawer when the Xenos presenter draws the overlays; null with the native
-  // renderer, where the menu brings its own drawer (gpu/native/overlay.h).
-  // Checkpoints: the disc's under `game_data_root`, the DLC's under
-  // `user_data_root`.
-  void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::input::InputSystem *input,
-              const std::filesystem::path &game_data_root, const std::filesystem::path &user_data_root);
+  // drawer when the Xenos presenter draws the overlays (`sdk_immediate` its
+  // immediate drawer); null with the native renderer, where the menu brings
+  // its own drawer (gpu/native/overlay.h).
+  // Checkpoints: the disc's under `game_data_root`, the DLC's in
+  // ao2::dlc::Dir().
+  void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::ui::ImmediateDrawer *sdk_immediate,
+              rex::input::InputSystem *input, const std::filesystem::path &game_data_root);
 
   // Any thread: the menu is open (the game gets no input).
   bool IsOpen();
@@ -49,4 +51,10 @@ namespace ao2::menu
   // the UI thread inside an ImGui frame and returns false when the notice
   // is over; null clears it.
   void SetNotice(std::function<bool()> draw);
+  // Any thread: the same in a slot of its own, drawn after the notice (the
+  // achievement toast, achievements.cpp), so neither replaces the other.
+  void SetToast(std::function<bool()> draw);
+  // UI thread: the immediate drawer of the notices' ImGui drawer, for their
+  // textures (null before Attach).
+  rex::ui::ImmediateDrawer *NoticeImmediateDrawer();
 } // namespace ao2::menu

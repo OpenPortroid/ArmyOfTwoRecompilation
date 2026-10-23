@@ -3,7 +3,7 @@
 Usage: python sampler.py <pid> list  (thread ids and names)
        (a thread is chosen by a substring of its name, or by its id)
        python sampler.py <pid> <thread name substring> [seconds=10] [hz=1000] [--top N] [--tree DEPTH]
-              [--lines]  (self time by innermost inlined function and source line)
+              [--lines]  (self time by innermost inlined function and source line) [--dump FILE] (every stack)
 
 Suspends the thread ~hz times per second, walks its stack (dbghelp
 StackWalk64 with the modules' unwind info), and prints:
@@ -195,6 +195,11 @@ def main():
             names[a] = fn if fn and fn != "??" else f"{os.path.basename(mod)}+{off:#x}"
 
     n = len(stacks)
+    if "--dump" in opts:
+        # Every sample's stack (leaf first, " <- " between frames), one per line, for offline analysis.
+        with open(opts[opts.index("--dump") + 1], "w") as f:
+            for s in stacks:
+                f.write(" <- ".join(names[a] for a in s) + "\n")
     self_c = collections.Counter(names[s[0]] for s in stacks)
     incl = collections.Counter()
     for s in stacks:
@@ -254,6 +259,20 @@ def main():
         print("--- source lines (self) ---")
         for p, c in by_line.most_common(top):
             print(f"{100.0 * c / n:6.2f}%  {p}")
+    if "--callers" in opts:
+        # Call paths into a function (--callers NAME [depth=4]): the frames above its first frame.
+        target = opts[opts.index("--callers") + 1]
+        i = opts.index("--callers") + 2
+        depth = int(opts[i]) if i < len(opts) and opts[i].isdigit() else 4
+        paths = collections.Counter()
+        for st in stacks:
+            fr = [names[a] for a in st]
+            k = next((j for j, f in enumerate(fr) if f == target), None)
+            if k is not None:
+                paths[" <- ".join(fr[k:k + 1 + depth])] += 1
+        print(f"--- callers of {target} ---")
+        for p_, c in paths.most_common(top):
+            print(f"{100.0 * c / n:6.2f}%  {p_}")
     if "--stacks" in opts:
         # Most common call paths (leaf first), cut at the first frame of our own code.
         depth = int(opts[opts.index("--stacks") + 1])

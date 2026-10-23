@@ -13,7 +13,7 @@ set "FW=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319"
 if not exist bin mkdir bin
 
 "%CSC%" -nologo -noconfig -nostdlib -target:winexe -platform:anycpu -optimize+ -utf8output ^
-  -out:bin\ArmyOfTwoLauncher.exe -win32icon:res\app.ico ^
+  -out:bin\ArmyOfTwoLauncher.exe -win32icon:res\app.ico -win32manifest:res\app.manifest ^
   -r:"%FW%\mscorlib.dll" -r:"%FW%\System.dll" -r:"%FW%\System.Core.dll" ^
   -r:"%FW%\System.Drawing.dll" -r:"%FW%\System.Windows.Forms.dll" ^
   -r:"%FW%\System.IO.Compression.dll" -r:"%FW%\System.IO.Compression.FileSystem.dll" ^

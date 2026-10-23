@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "fast_hash.h"
+
 #include <rex/graphics/pipeline/shader/shader.h>
 
 #include "hlsl_translator.h"
@@ -84,8 +86,8 @@ namespace ao2::gpu
     void Compile(Job &job);
     void WorkerMain();
 
-    std::unordered_map<uint64_t, std::unique_ptr<rex::graphics::Shader>> shaders_;
-    std::unordered_map<uint64_t, std::unique_ptr<CompiledShader>> compiled_;
+    std::unordered_map<uint64_t, std::unique_ptr<rex::graphics::Shader>, FastHash> shaders_;
+    std::unordered_map<uint64_t, std::unique_ptr<CompiledShader>, FastHash> compiled_;
     HlslShaderTranslator translator_;
     std::atomic<uint32_t> compiled_count_{0}, failed_count_{0}, disk_hits_{0}, pending_count_{0};
 

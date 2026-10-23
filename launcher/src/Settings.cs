@@ -22,16 +22,26 @@ namespace AO2Launcher
             { "fps", "240" },
             { "fps_overlay", "0" },
             { "aniso", "0" },
+            { "aa", "off" },
+            { "ao", "off" },
+            { "motion_blur", "0" },
+            { "dof", "0" },
+            { "shadow_res", "0" },
             { "vsync", "0" },
             { "language", "auto" },
+            { "seen_version", "" }, // the version whose release notes were shown
             { "mouse_aim", "1" },
             { "mouse_sens", "2" },
             { "mouse_zoom", "1" },
             { "invert_y", "0" },
+            { "aim_assist", "0" },
             { "stick_sens", "1" },
-            { "skip_cutscenes", "1" },
-            { "skip_unskippable", "1" },
+            { "toggle_aim", "0" },
             { "god_mode", "0" },
+            { "ach_notices", "1" },
+            { "unlock_all", "0" },
+            { "profile", "" },
+            { "new_profile", "" },
             { "host_ip", "" },
             { "gamertag", "" },
             { "split_screen", "0" },
@@ -78,6 +88,11 @@ namespace AO2Launcher
                 FilePath = Path.Combine(appdata, "ArmyOfTwoLauncher.ini");
             }
             Load();
+            // Depth of field had a HIGH level (2); now it is just on.
+            if (this["dof"] == "2")
+            {
+                this["dof"] = "1";
+            }
         }
 
         static bool CanWrite(string dir)
@@ -95,14 +110,21 @@ namespace AO2Launcher
             }
         }
 
-        void Load()
+        // The file as this launcher last read or wrote it. The game writes the file too (its in-game
+        // Graphics and Controls pages): a key whose value here is still the stored one takes the
+        // file's (Reload, Save), one the launcher changed meanwhile keeps the launcher's.
+        readonly Dictionary<string, string> stored = new Dictionary<string, string>(Defaults);
+
+        // The known keys of the file, null without one (or unreadable).
+        Dictionary<string, string> ReadFile()
         {
             try
             {
                 if (!File.Exists(FilePath))
                 {
-                    return;
+                    return null;
                 }
+                var file = new Dictionary<string, string>();
                 foreach (string raw in File.ReadAllLines(FilePath, Encoding.UTF8))
                 {
                     string line = raw.Trim();
@@ -118,13 +140,47 @@ namespace AO2Launcher
                     string key = line.Substring(0, eq).Trim();
                     if (Defaults.ContainsKey(key))
                     {
-                        values[key] = line.Substring(eq + 1).Trim();
+                        file[key] = line.Substring(eq + 1).Trim();
                     }
                 }
+                return file;
             }
             catch
             {
                 // A broken file just means defaults.
+                return null;
+            }
+        }
+
+        void Load()
+        {
+            Reload();
+            // The game's MSAA is no longer offered.
+            string aa;
+            if (values.TryGetValue("aa", out aa) && aa == "msaa")
+            {
+                values["aa"] = "off";
+            }
+        }
+
+        // Takes in what the game wrote to the file since (see `stored`).
+        public void Reload()
+        {
+            Dictionary<string, string> file = ReadFile();
+            if (file == null)
+            {
+                return;
+            }
+            foreach (var kv in file)
+            {
+                string mine, was;
+                values.TryGetValue(kv.Key, out mine);
+                stored.TryGetValue(kv.Key, out was);
+                if (mine == was)
+                {
+                    values[kv.Key] = kv.Value;
+                }
+                stored[kv.Key] = kv.Value;
             }
         }
 
@@ -132,6 +188,7 @@ namespace AO2Launcher
         {
             try
             {
+                Reload();
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
                 var sb = new StringBuilder();
                 sb.AppendLine("# Army of Two launcher settings (the launcher rewrites this file)");
@@ -139,7 +196,41 @@ namespace AO2Launcher
                 {
                     sb.Append(kv.Key).Append(" = ").AppendLine(kv.Value);
                 }
-                File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
+                // Written whole to a file of its own, then put in place: a crash or a read by the game
+                // in the middle never sees half a file.
+                string text = sb.ToString(), part = FilePath + ".tmp";
+                try
+                {
+                    File.WriteAllText(part, text, new UTF8Encoding(false));
+                    if (File.Exists(FilePath))
+                    {
+                        File.Replace(part, FilePath, null);
+                    }
+                    else
+                    {
+                        File.Move(part, FilePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!(ex is IOException) && !(ex is UnauthorizedAccessException))
+                    {
+                        throw;
+                    }
+                    // No replace here (the file held open, a file system without it): written in place.
+                    File.WriteAllText(FilePath, text, new UTF8Encoding(false));
+                    try
+                    {
+                        File.Delete(part);
+                    }
+                    catch
+                    {
+                    }
+                }
+                foreach (var kv in values)
+                {
+                    stored[kv.Key] = kv.Value;
+                }
             }
             catch
             {
@@ -187,15 +278,18 @@ namespace AO2Launcher
             return v;
         }
 
+        // Everything but the game's path and the chosen profile.
         public void Reset()
         {
-            string game = this["game_path"];
+            string game = this["game_path"], profile = this["profile"], seen = this["seen_version"];
             values.Clear();
             foreach (var kv in Defaults)
             {
                 values[kv.Key] = kv.Value;
             }
             values["game_path"] = game;
+            values["profile"] = profile;
+            values["seen_version"] = seen;
         }
     }
 }

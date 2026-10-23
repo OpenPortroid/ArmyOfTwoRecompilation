@@ -168,3 +168,80 @@ Untested: movies (sub_8257BE38 computes their quad from 1280x720).
   ones twice. In the warehouse of 05_04 the game read 0.189 where 1x gives 0.123 (the four host texels: 0.189,
   0.194, 0.053, 0.064 - their average is 0.125): the exposure followed the sky. Now 0.123 / 0.125 / 0.125 at
   1x / 1.5x / 2x. `tools` check: read the first float (big endian) at physical 1FBFB000..1FBFF000.
+
+## Post effects, shadow resolution (2026-10-18)
+Effects the console did not have, on the game's HDR scene (`post_effects.h` shaders, renderer.cpp "Post effects").
+The gameplay frame (2026-10-10 trace, 21:9): opaque scene into EDRAM 544 (k_2_10_10_10_FLOAT) with depth 0
+(D24FS8, reversed: viewport z scale -1 offset 1, cleared to 0) -> resolve 111D0000 (k_16_16_16_16_FLOAT, exp bias -2)
+with a color clear, depth resolve 12C78000 with a depth clear -> depth restore (PS B160839A) and scene restore (draw
+sampling 111D0000 into 544) -> shadow depth (below) and its projection, translucency -> the same resolve to 111D0000
+-> bloom / luminance chain (small targets at 1088) -> tonemap (into 544 as k_8_8_8_8, sampling 111D0000 + the
+322x138 blur + a 256x1 LUT) -> HUD -> frontbuffer.
+- Camera: the base pass vertex shaders get UE3's ViewProjectionMatrix in c0-c3 (row vectors, translation in c3; the
+  w column is the unit view direction) and CameraPosition in c4. The matrix most full-screen depth-writing draws use
+  is the scene's (`NoteSceneCamera`). Positions are rebuilt camera-relative (the inverse's row 2 is the camera:
+  P = w * (x * R0' + y * R1' + R3').xyz, w = view depth).
+- Stage 1, the frame's first resolve of the whole float scene: the scene depth (still in its render target) is kept
+  as view depth (R32F, host size); AO (SSAO = scalable ambient obscurance, HBAO, GTAO) at half the host resolution,
+  a depth-aware blur, and a multiply into the resolved texture - the restore draws it back, translucency stays
+  untouched.
+- Stage 2, before the scene's last resolve is sampled into another surface (draws into the scene's own surface - the
+  restore - do not count): camera motion blur (previous frame's view projection, scaled to a 1/60 s or 1/120 s
+  exposure at any frame rate, nothing nearer than 250-450 units: the player's character), depth of field (far field
+  only, autofocus on the screen centre, eased), FXAA (after FXAA 3.11 quality) or a morphological AA in the manner of
+  SMAA 1x (luma edges with local contrast adaptation, runs followed up to 32 pixels, the silhouette rebuilt from the
+  crossing edges at their ends - the area texture's L/Z/U shapes computed analytically). So bloom and tonemap work on
+  the result and the HUD is untouched. Cvars: `ao2_ambient_occlusion` off/ssao/hbao/gtao, `ao2_anti_aliasing`
+  off/fxaa/smaa, `ao2_motion_blur` 0-2, `ao2_depth_of_field` 0/1 (all live; anti-aliasing is also on the in-game
+  Graphics page, its eighth and last row).
+- MSAA is the game's own 2x, always off now: the xenia "Black Shading Fix" (game_patches.h) writes 4 into the
+  predicated tiling mode index 0x831876D4 (5 modes, tile counts at 0x83187714: 4xAA 3 tiles, 2xAA 2 tiles, ...,
+  4 = no AA). With MSAA on the opaque scene is drawn in two predicated tiles (rows 0-512 and
+  512-720 at 16:9, the second with window offset 0,-512) and each tile is resolved with the destination base moved
+  to its first row (109D0000 + 512 rows = 10ED0000; tiled textures are stored in 32-row stripes). The renderer took
+  that for a texture of its own, so the lower part of the scene texture the game samples kept stale contents: the
+  "dark artifacts" / black shading. Such a resolve now writes those rows of the texture the first tile was
+  resolved to in the same frame (same format, pitch and height; `predicated tile` lines in a traced frame).
+  Stage 1 of a tiled frame waits for the depth resolve that completes the scene depth texture (the depth render
+  target only holds the last tile) and linearizes that texture instead.
+- Cost at 2560x1440 (gpu ms/frame, category `post`): SSAO 0.75, GTAO 1.06, HBAO 1.42, FXAA 1.38, SMAA 1.9, motion
+  blur high 1.4, depth of field ~2.7 at a stronger level since removed (24 taps; the remaining one takes 12) (each
+  with the copy in and out of the scene texture).
+- Debugging: `set <cvar> <value>` lines in console.txt change the cvars live (console_cmd.cpp);
+  `ao2_post_debug=1` shows the occlusion instead of the scene; a traced frame captures `post_ao` (x = visibility,
+  y = view depth), `post_depth`, and the scene before / after stage 2 (`post_in`, `post_out`).
+- Shadow resolution (`ao2_shadow_resolution` 0 / 1024 / 2048 / 4096): UE3's shadow buffer is depth surface 1088
+  (D24S8, pitch 800), each light's shadow drawn in a part of it (viewport 5,5 422x422 = resolution + SHADOW_BORDER 5)
+  and resolved as depth into a 768x768 R32F texture (10EB4000). A depth surface resolved square into a square texture
+  is taken for it (`NoteShadowResolve`); its render targets get a scale of their own so the buffer is at least that
+  many host texels across (4096: 5.5x, 4224 texels), only as tall as it is resolved. Depth-only draws into it take that
+  scale; a draw with color targets on it un-learns it. The projection samples the resolve at guest coordinates: the
+  same PCF footprint over finer depth texels.
+
+## Frame rate at 1440p (2026-10-20)
+Measured on a Ryzen 7 7840H + RTX 4060 Laptop, scale 2 (2304x1440 in a 2560x1600 window), SSAO, 240 FPS target,
+decoupled at 60 steps/s; Iraq 05_00 walked by the autopilot from the start up the hill into the first fight
+(two runs each): 148 -> 182 FPS on average, 155 -> 188 in the fight; GPU 5.9 -> 4.7 ms per frame.
+- Alpha test: every translated pixel shader ended in the alpha test's `discard` (switched by a system constant), and a
+  discard anywhere keeps the GPU from writing depth before the shader runs: the opaque passes lost early depth
+  rejection (the terrain shader alone 0.5 ms). It is a shader modification now (`HlslModification::alpha_test`, set
+  when RB_COLORCONTROL enables it with another function than always): `draw` 3.8 -> 3.2 ms.
+- Present: the display gamma ramp was a constant buffer indexed per pixel; constant reads that differ within a wave
+  are serialized (0.42 ms for the 2560x1600 blit). A structured buffer (root SRV) instead: 0.06 ms.
+- SSAO taps read a half resolution copy of the view depth (`ps_depth_half`, the pixel the occlusion is computed for)
+  instead of scattered reads of the full one: `post` 0.78 -> 0.60 ms.
+- Texture fetches take the host size from `xe_tex_size` (system constants) instead of GetDimensions (no measurable
+  change on this GPU; GetDimensions is a texture instruction of its own on some).
+- GPU thread (5.6 -> 5.1 ms per frame, ~12 us per draw): per-draw phase timers read the TSC (13
+  QueryPerformanceCounter calls per draw were ~5%), the maps keyed by addresses and hashes use `FastHash` (MSVC's
+  std::hash is byte-wise FNV-1a), `TilesInside` takes tile rectangles from rows and columns, `Mem()` is cached.
+- Profile-guided optimization (`pgo/ao2.profdata`, build.cmd): game thread tick and rendering thread 6-11% less CPU
+  time per frame.
+- Russian fonts are looked for by time (1 s, then 10 s) instead of every 60 frames (a walk over every object).
+- What is left: in fights the world tick takes 6-12 ms per step on the game thread, and the game's own render fence
+  allows one frame in flight, so the rendering thread and the GPU idle through the rest of a long tick. Two frames in
+  flight (the fence wait's count) crashed the rendering thread while a level loaded (NULL+1 in sub_8262BD90):
+  UE3 relies on one frame of lag. `ao2_sim_hz=30` halves the ticks (heavy part of 05_00: ~120 -> ~155 FPS) but
+  particles and material time are not interpolated yet.
+- Tools: `tools/sampler.py <pid> "Native GPU commands" 15 1000 --lines`, the tick profile
+  (`--ao2_tick_profile_ms`), `gpu ms/frame` lines and traced frames (`gpu_draws.txt`).

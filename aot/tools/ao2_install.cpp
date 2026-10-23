@@ -14,8 +14,10 @@
 // Output is UTF-8, one item per line; errors are "ERROR <text>", exit code 1.
 
 #define _CRT_SECURE_NO_WARNINGS
+#include <cerrno>
 #include <chrono>
 #include <cstdio>
+#include <cwchar>
 #include <cstring>
 #include <filesystem>
 #include <memory>
@@ -41,6 +43,50 @@ namespace
   {
     auto s = p.u8string();
     return std::string(s.begin(), s.end());
+  }
+
+  // \\?\ form: lifts the 260 character limit (a package's own folders on top of a long game path).
+  fs::path Long(const fs::path &p)
+  {
+    std::error_code ec;
+    fs::path abs = fs::absolute(p, ec).lexically_normal();
+    abs.make_preferred();
+    const std::wstring &s = abs.native();
+    if (ec || s.rfind(L"\\\\?\\", 0) == 0)
+    {
+      return abs;
+    }
+    if (s.rfind(L"\\\\", 0) == 0)
+    {
+      return fs::path(L"\\\\?\\UNC\\" + s.substr(2));
+    }
+    return fs::path(L"\\\\?\\" + s);
+  }
+
+  // Package file names may hold what Windows does not allow in a name; they are made harmless.
+  fs::path Safe(const fs::path &rel)
+  {
+    fs::path r;
+    for (const auto &part : rel)
+    {
+      std::wstring s = part.native();
+      for (wchar_t &c : s)
+      {
+        if (c < 32 || wcschr(L"<>:\"|?*", c))
+        {
+          c = L'_';
+        }
+      }
+      while (!s.empty() && (s.back() == L' ' || s.back() == L'.'))
+      {
+        s.pop_back();
+      }
+      if (!s.empty())
+      {
+        r /= s;
+      }
+    }
+    return r;
   }
 
   int Fail(const std::string &text)
@@ -224,14 +270,18 @@ namespace
     }
 
     std::error_code ec;
-    fs::create_directories(dest, ec);
+    fs::create_directories(Long(dest), ec);
+    if (ec)
+    {
+      return Fail("cannot create " + Utf8(dest) + ": " + ec.message());
+    }
     if (only.empty())
     {
       for (auto &d : dirs)
       {
         if (!skipped(d))
         {
-          fs::create_directories(dest / d, ec);
+          fs::create_directories(Long(dest / Safe(d)), ec);
         }
       }
     }
@@ -244,18 +294,19 @@ namespace
     for (auto &f : files)
     {
       // --only puts the one file straight into the destination folder.
-      fs::path out = dest / (only.empty() ? f.rel : f.rel.filename());
-      fs::create_directories(out.parent_path(), ec);
+      fs::path out = dest / (only.empty() ? Safe(f.rel) : f.rel.filename());
+      fs::create_directories(Long(out.parent_path()), ec);
       rex::filesystem::File *file = nullptr;
       if (f.entry->Open(rex::filesystem::FileAccess::kFileReadData, &file) != 0 || !file)
       {
         return Fail("cannot read " + Utf8(f.rel));
       }
-      FILE *o = _wfopen(out.c_str(), L"wb");
+      FILE *o = _wfopen(Long(out).c_str(), L"wb");
       if (!o)
       {
+        const int err = errno;
         file->Destroy();
-        return Fail("cannot write " + Utf8(out));
+        return Fail("cannot write " + Utf8(out) + ": " + std::strerror(err));
       }
       const uint64_t size = f.entry->size();
       uint64_t pos = 0;

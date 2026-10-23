@@ -28,9 +28,6 @@ REXCVAR_DEFINE_INT32(ao2_present_interval, -1, "Gameplay",
                      "VdSwap presentation interval override when ao2_fps_unlock is enabled: -1 = from the mode, "
                      "0 = immediate, 1 = every vblank, 2 = every other vblank");
 
-REXCVAR_DEFINE_BOOL(ao2_disable_msaa, false, "Gameplay",
-                    "Black Shading Fix: disables MSAA");
-
 REXCVAR_DEFINE_BOOL(ao2_anisotropic_16x, false, "Gameplay",
                     "16x Anisotropic Filtering");
 

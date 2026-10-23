@@ -16,11 +16,13 @@
 // it wakes milliseconds late, and a fixed 0.6 ms made every frame late.
 #include <windows.h>
 
+#include <chrono>
 #include <cstring>
 
 #include <rex/cvar.h>
 #include <rex/ppc.h>
 
+#include "frame_spikes.h"
 #include "precise_sleep.h"
 
 REXCVAR_DECLARE(bool, ao2_fps_unlock);
@@ -69,7 +71,13 @@ namespace ao2
       // The loop's turn (a yield), or not the wait this is meant for.
       return ctx.lr == kAfterLongSleep && remaining <= spin;
     }
+    auto start = std::chrono::steady_clock::now();
     t_sleeper.Sleep(remaining, spin);
+    if (ao2::spikes::Enabled())
+    {
+      ao2::spikes::Mark(ao2::spikes::kLimiterSleep,
+                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count());
+    }
     return true;
   }
 } // namespace ao2

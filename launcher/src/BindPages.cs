@@ -138,7 +138,7 @@ namespace AO2Launcher
 
         void RefreshInputRows()
         {
-            foreach (Row r in AllRows().Where(r => r.Drop))
+            foreach (Row r in AllRows().Where(r => r.Drop && r != profileRow))
             {
                 r.Values = InputValues(S[r.Key]);
             }
@@ -420,6 +420,23 @@ namespace AO2Launcher
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
+            if (NotesShown)
+            {
+                ScrollNotes(e.Delta > 0 ? -3 : 3);
+                return;
+            }
+            if (RelShown)
+            {
+                if (relPick >= 0)
+                {
+                    ScrollNotes(e.Delta > 0 ? -3 : 3);
+                }
+                else
+                {
+                    RelScroll(e.Delta > 0 ? -2 : 2);
+                }
+                return;
+            }
             if (screen != UiScreen.Settings || maxScroll <= 0 || capturing != null)
             {
                 return;
@@ -439,10 +456,66 @@ namespace AO2Launcher
                 return;
             }
             float x = ColX + ColW + 12, top = RowsTop, h = RowsView;
-            Fill(g, Color.FromArgb(30, 255, 255, 255), new RectangleF(x, top, 3, h));
             float th = Math.Max(24, h * h / (h + maxScroll));
             float ty = top + (h - th) * scroll / maxScroll;
-            Fill(g, Color.FromArgb(150, Paper), new RectangleF(x, ty, 3, th));
+            DrawGrabBar(g, new RectangleF(x, top, 3, h), ty, th, 30, 150, f =>
+            {
+                float old = scroll;
+                scroll = Math.Max(0, Math.Min(maxScroll, (float)Math.Round(f * maxScroll / RowH) * RowH));
+                if (scroll != old)
+                {
+                    LayoutRows(false);
+                }
+            });
+        }
+
+        // The scroll bar that can be taken with the mouse: the one drawn last (Settings or the update notes).
+        RectangleF sbTrack;
+        float sbThumbY, sbThumbH, sbGrab;
+        Action<float> sbSet; // 0..1 along the track -> scroll position; null: no bar shown
+        bool sbDragging;
+
+        // Draws a track and its thumb and makes them grabbable; `set` gets the wanted position 0..1.
+        void DrawGrabBar(Graphics g, RectangleF track, float thumbY, float thumbH, int trackAlpha, int thumbAlpha, Action<float> set)
+        {
+            bool live = sbDragging || SbHit(Logical(PointToClient(Cursor.Position)));
+            Fill(g, Color.FromArgb(trackAlpha, 255, 255, 255), track);
+            Fill(g, live ? PaperHi : Color.FromArgb(thumbAlpha, Paper), new RectangleF(track.X, thumbY, track.Width, thumbH));
+            sbTrack = track;
+            sbThumbY = thumbY;
+            sbThumbH = thumbH;
+            sbSet = set;
+        }
+
+        // A wide strip around the thin bar, so it is easy to hit.
+        bool SbHit(PointF p)
+        {
+            return sbSet != null && dropRow == null && confirm == null &&
+                   new RectangleF(sbTrack.X - 10, sbTrack.Y, sbTrack.Width + 20, sbTrack.Height).Contains(p);
+        }
+
+        bool SbDown(PointF p)
+        {
+            if (!SbHit(p))
+            {
+                return false;
+            }
+            // On the thumb: keep the point that was grabbed; on the track: the thumb centres there.
+            sbGrab = p.Y >= sbThumbY && p.Y <= sbThumbY + sbThumbH ? p.Y - sbThumbY : sbThumbH / 2;
+            sbDragging = true;
+            SbMove(p);
+            return true;
+        }
+
+        void SbMove(PointF p)
+        {
+            float range = sbTrack.Height - sbThumbH;
+            if (range <= 0 || sbSet == null)
+            {
+                return;
+            }
+            sbSet(Math.Max(0, Math.Min(1, (p.Y - sbGrab - sbTrack.Y) / range)));
+            Invalidate();
         }
 
         // ------------------------------------------------------------------
@@ -451,14 +524,19 @@ namespace AO2Launcher
         Row dropRow;   // the row whose list is open, or null
         int dropSel;   // the lit item
 
-        const float DropItemH = 30, DropW = 360;
+        const float DropItemH = 30;
+
+        float DropW
+        {
+            get { return dropRow != null && dropRow.DropName != null ? 520 : 360; }
+        }
 
         void OpenDrop(Row r)
         {
             RefreshInputRows();
             dropRow = r;
             dropSel = Math.Max(0, Array.IndexOf(r.Values, S[r.Key]));
-            Invalidate();
+            LayoutRows(false);
         }
 
         void CloseDrop()
@@ -466,7 +544,7 @@ namespace AO2Launcher
             if (dropRow != null)
             {
                 dropRow = null;
-                Invalidate();
+                LayoutRows(false);
             }
         }
 
@@ -474,9 +552,8 @@ namespace AO2Launcher
         {
             Row r = dropRow;
             dropRow = null;
-            if (r != null && i >= 0 && i < r.Values.Length)
+            if (r != null && i >= 0 && i < r.Values.Length && SetChoice(r, r.Values[i]))
             {
-                S[r.Key] = r.Values[i];
                 S.Save();
             }
             LayoutRows();
@@ -523,7 +600,8 @@ namespace AO2Launcher
                 {
                     DrawText(g, "✓", fLabel, c, new RectangleF(ir.X + 10, ir.Y, 20, ir.Height), fmt);
                 }
-                DrawText(g, dropRow.ChoiceName(i), fLabel, c, new RectangleF(ir.X + 32, ir.Y, ir.Width - 40, ir.Height), fmt);
+                string text = dropRow.DropName != null ? dropRow.DropName(i) : dropRow.ChoiceName(i);
+                DrawText(g, text, fLabel, c, new RectangleF(ir.X + 32, ir.Y, ir.Width - 40, ir.Height), fmt);
                 int pick = i;
                 AddHot(ir, "drop" + i, () => PickDrop(pick));
             }

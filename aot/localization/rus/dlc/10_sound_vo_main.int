@@ -1,0 +1,267 @@
+;; Army of Two DLC (Miami Alternate Ending): 10_sound_vo_main, Russian
+[SE_L10_001_MURRAY_001 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Хорошая посадка." , Time=0)
+
+[SE_L10_002_SALEM_001 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: С чего ты взял?" , Time=0)
+
+[SE_L10_003_MURRAY_002 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Ну... я не слышал, чтобы кто-то из вас матерился." , Time=0)
+
+[SE_L10_004_RIOS_001 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Дамочка нас знает." , Time=0)
+
+[SE_L10_005_MURRAY_003 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Пробирайтесь в центральный технический зал" , Time=0)
+Subtitles[1]=(Text="и патроны зря не тратьте." , Time=2)
+
+[SE_L10_006_RIOS_002 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Два охранника. Снимем их снайперкой." , Time=0)
+
+[SE_L10_007_SALEM_002 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, а давай снимем этих ребят снайперкой?" , Time=0)
+
+[SE_L10_013_MURRAY_004 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, на первом этаже есть щитовая." , Time=0)
+Subtitles[1]=(Text="Отключите то, что держит служебный лифт запертым." , Time=2)
+
+[SE_L10_014_SALEM_006 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Понял. А дальше что?" , Time=0)
+
+[SE_L10_015_MURRAY_005 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Поднимайтесь на следующий этаж." , Time=0)
+Subtitles[1]=(Text="Там стена, которой нужна разрушительная операция." , Time=1)
+
+[SE_L10_016_RIOS_005 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Здоровый ублюдок торчит в дверях. Придется его валить." , Time=0)
+
+[SE_L10_017_MURRAY_006 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Вы уже нашли щитовую?" , Time=0)
+
+[SE_L10_018_MURRAY_007 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, вырубайте питание и открывайте лифт!" , Time=0)
+
+[SE_L10_019_RIOS_006 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Нашел." , Time=0)
+
+[SE_L10_020_SALEM_007 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Должно быть, это оно." , Time=0)
+
+[SE_L10_021_SALEM_008 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Элис, мы идем к лифту." , Time=0)
+
+[SE_L10_022_RIOS_007 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Тупик. Это и есть твой быстрый путь внутрь?" , Time=0)
+
+[SE_L10_023_MURRAY_008 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Кто-то видит тупик, а кто-то - повод для фейерверка." , Time=0)
+
+[SE_L10_025_MURRAY_010 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Разведывательный и тактический штабы" , Time=0)
+Subtitles[1]=(Text="прямо за этой стеной." , Time=2)
+
+[SE_L10_026_SALEM_009 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Не люблю такое говорить, но этот бетонный ублюдок должен исчезнуть." , Time=0)
+
+[SE_L10_028_RIOS_008 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Поехали! Всем в укрытие!" , Time=0)
+
+[SE_L10_029_RIOS_009 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Элис, мы по ту сторону." , Time=0)
+
+[SE_L10_031_MURRAY_012 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Уверен, что этот взрыв не остался незамеченным." , Time=0)
+Subtitles[1]=(Text="Скоро у вас будут гости." , Time=3)
+
+[SE_L10_032_RIOS_010 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Из плохих. Понял тебя. Мы разберемся" , Time=0)
+Subtitles[1]=(Text="и сообщим, когда попадем в тактический штаб." , Time=3)
+
+[SE_L10_033_MURRAY_013 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Не промахнетесь." , Time=0)
+Subtitles[1]=(Text="Он рядом с разведывательным штабом. Конец связи." , Time=1)
+
+[SE_L10_034_SALEM_011 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Это наш билет в тактический штаб." , Time=0)
+
+[SE_L10_035_DALTON_001 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Будь я проклят. Странная парочка снова в деле..." , Time=0)
+
+[SE_L10_036_DALTON_002 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Но одного вы так и не освоили - признавать поражение." , Time=0)
+
+[SE_L10_037_DALTON_003 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Так что напомню." , Time=0)
+Subtitles[1]=(Text="Сдавайтесь и умрите с той малостью достоинства, что у вас осталась." , Time=2)
+
+[SE_L10_038_DALTON_004 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: А теперь прошу прощения, мне надо захватить компанию." , Time=0)
+Subtitles[1]=(Text="Мои ребята проводят вас к последнему выходу." , Time=4)
+
+[33_afg_banter_rios SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Да что с тобой, чувак? Стреляешь как девчонка." , Time=0)
+
+[34_afg_banter_salem SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Я? Я завалил этих типов вдвое больше, чем ты." , Time=0)
+
+[35_afg_banter_rios SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Ты хотел сказать, вдвое больше патронов потратил." , Time=0)
+
+[SE_L10_039_RIOS_011 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Элис, мы внутри, и Далтон тоже. Нам надо быстро до него добраться." , Time=0)
+
+[SE_L10_040_MURRAY_014 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Тогда найдите пульт, который управляет" , Time=0)
+Subtitles[1]=(Text="первой биометрической проверкой." , Time=2)
+
+[SE_L10_041_RIOS_012 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Нам нужен путь туда!" , Time=0)
+
+[SE_L10_042_SALEM_012 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Блядь, открой эти двери!" , Time=0)
+
+[SE_L10_043_RIOS_013 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Распознавание отпечатков - это то, что нужно?" , Time=0)
+
+[SE_L10_044_SALEM_013 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот! Распознавание отпечатков!" , Time=0)
+
+[SE_L10_045_MURRAY_015 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Вводи. Дальше я сам." , Time=0)
+
+[SE_L10_046_MURRAY_016 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Следующий на первом этаже. Скорее." , Time=0)
+
+[SE_L10_047_SALEM_014 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Сколько еще народу мы можем взбесить в этой дыре?" , Time=0)
+
+[SE_L10_048_RIOS_014 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Сейлем! Сюда! Прикрой мне спину там!" , Time=0)
+
+[SE_L10_049_SALEM_015 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Я один туда не пойду. Тайс, прикрой меня!" , Time=0)
+
+[SE_L10_050_RIOS_015 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Распознавание голоса. Мюррей?" , Time=0)
+
+[SE_L10_051_SALEM_016 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Мюррей, нашли распознавание голоса." , Time=0)
+
+[SE_L10_052_MURRAY_017 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Как и в прошлый раз. Подключайте меня." , Time=0)
+
+[SE_L10_053_MURRAY_018 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Последний должен быть где-то здесь." , Time=0)
+
+[SE_L10_054_RIOS_016 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Так, это управляет распознаванием сетчатки." , Time=0)
+
+[SE_L10_055_SALEM_017 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Распознавание сетчатки... что бы это ни было." , Time=0)
+
+[SE_L10_056_MURRAY_019 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Это оно. Все то же самое." , Time=0)
+
+[SE_L10_057_MURRAY_020 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Хранилище ваше, парни. Привезите мне сувенир." , Time=0)
+
+[SE_L10_058_RIOS_017 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: В эту дверь прошел Далтон." , Time=0)
+
+[SE_L10_059_SALEM_018 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Идти по следам Далтона. Ненавижу, как это звучит." , Time=0)
+
+[SE_L10_060_SALEM_019 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Мюррей, надеюсь, ты хакер не хуже, чем s3kShUn8." , Time=0)
+
+[SE_L10_061_MURRAY_021 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Я целыми днями пялюсь в компьютеры." , Time=0)
+Subtitles[1]=(Text="Могу хотя бы в них разбираться." , Time=2)
+
+[SE_L10_063_COMP_VO_002 SoundNodeWave]
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Допуск первого уровня." , Time=0)
+
+[SE_L10_064_SALEM_020 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Что у них там может быть," , Time=0)
+Subtitles[1]=(Text="ради чего стоит пройти через всё это дерьмо?" , Time=1)
+
+[SE_L10_065_MURRAY_022 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Дерьмо, которое должно исчезнуть" , Time=0)
+Subtitles[1]=(Text=" - компромат, доказательства заговора, краденые артефакты." , Time=2)
+
+[SE_L10_067_COMP_VO_004 SoundNodeWave]
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Допуск второго уровня." , Time=0)
+
+[SE_L10_068_RIOS_018 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Прошу, не стесняйся..." , Time=0)
+
+[SE_L10_070_SALEM_022 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Ладно... ладно..." , Time=0)
+
+[SE_L10_072_COMP_VO_006 SoundNodeWave]
+Subtitles[0]=(Text="АВТОМАТИЧЕСКИЙ ГОЛОС: Допуск третьего уровня." , Time=0)
+
+[SE_L10_075_RIOS_020 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Класс, Элис! Сообщим, когда дело будет сделано." , Time=0)
+
+[SE_L10_076_MURRAY_023 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Задайте ему жару. Конец связи." , Time=0)
+
+[SE_L10_077_RIOS_021 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Здесь слишком тихо." , Time=0)
+
+[SE_L10_078_SALEM_024 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Доволен теперь?" , Time=0)
+
+[SE_L10_079_SALEM_025 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Выход только один. Спина к спине!" , Time=0)
+
+[SE_L10_080_DALTON_005 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Паразиты. Если найду это слово в Википедии," , Time=0)
+Subtitles[1]=(Text="там наверняка будут ваши поганые рожи." , Time=4)
+
+[SE_L10_081_DALTON_006 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Что ж, вы пришли вовремя." , Time=0)
+Subtitles[1]=(Text="Я одет для игры и экипирован для бойни." , Time=2)
+
+[SE_L10_082_DALTON_007 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Господа... начнем?" , Time=0)
+
+[SE_L10_086_SALEM_027 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Это должно быть больно." , Time=0)
+
+[SE_L10_087_RIOS_024 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Скажи, что это стерло ухмылку с его рожи." , Time=0)
+
+[SE_L10_088_SALEM_028 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Мостик сейчас рухнет. Может, получится его сбросить." , Time=0)
+
+[SE_L10_091_SALEM_029 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот блядь!" , Time=0)
+
+[SE_L10_092_SALEM_030 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Как, черт возьми, у него это вышло?" , Time=0)
+
+[SE_L10_093_RIOS_027 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Ну хоть теперь можно драться с ним лицом к лицу." , Time=0)
+
+[SE_L10_096_DALTON_010 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: (смех)" , Time=0)
+
+[SE_L10_097_DALTON_011 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Хватит притворяться, начинайте драться." , Time=0)
+
+[SE_L10_098_DALTON_012 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Буду снисходителен и назову это тактикой." , Time=0)
+
+[SE_L10_099_DALTON_013 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Опять мнишь себя нормальным?" , Time=0)
+
+[SE_L10_100_DALTON_014 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Жалко. Жаль, что я не знаю жалости." , Time=0)
+
+[SE_L10_101_DALTON_015 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Это просто трата патронов." , Time=0)
+
+[SE_L10_102_DALTON_016 SoundNodeWave]
+Subtitles[0]=(Text="ДАЛТОН: Сдохните, и покончим с этим." , Time=0)

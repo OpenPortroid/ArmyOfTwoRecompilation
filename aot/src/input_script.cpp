@@ -3,7 +3,8 @@
 // The game polls the pad through the XDK's XInputGetState (sub_82B07AF0,
 // r3 = user, r4 = XINPUT_STATE*). Buttons from a script are merged into its
 // result, so tests can drive the menus without the window having focus. The
-// mouse's right-stick fallback (mouse_aim.cpp) is merged here too.
+// mouse's right-stick fallback (mouse_aim.cpp) is merged here too, and the
+// left trigger becomes a switch with ao2_toggle_aim (toggle aim).
 //
 // Script: space-separated steps, from --ao2_input_script=... at startup or
 // from the file input.script in the working directory (read and deleted when
@@ -31,12 +32,17 @@
 
 #include "autopilot.h"
 #include "cutscene_skip.h"
+#include "graphics_menu.h"
 #include "menu_mouse.h"
 #include "mouse_aim.h"
 
 REXCVAR_DEFINE_BOOL(ao2_vehicle_wasd, true, "Input",
                     "Driving a vehicle: the left stick forward / back (W / S) also presses the right / left "
                     "trigger - the game's gas and brake");
+REXCVAR_DEFINE_BOOL(ao2_toggle_aim, false, "Input",
+                    "Aim (LT, the right mouse button) toggles: one press starts aiming, the next ends it, instead "
+                    "of holding the button. On foot, on turrets and at a vehicle's gun; at the wheel, in the menus "
+                    "and cutscenes the trigger is left as it is");
 REXCVAR_DEFINE_STRING(ao2_input_script, "", "Debug",
                       "Scripted pad input (also from input.script): a b x y start back up down left right lb rb ls "
                       "rs lt rt [+|-] waitNNN mxN myN skip lxN lyN rxN ryN");
@@ -76,6 +82,68 @@ namespace
   uint32_t g_last_inputs = 0;
   uint32_t g_packet = 0x10000;
   clock::time_point g_next_file_check;
+
+  // Toggle aim, per pad: the trigger held at the last poll, aiming latched,
+  // the pawn it is latched on (the character, a turret, a vehicle seat), and
+  // fire (the right trigger) held with a grenade while aiming.
+  struct ToggleAim
+  {
+    bool down = false;
+    bool on = false;
+    uint32_t pawn = 0;
+    bool throwing = false;
+  };
+  ToggleAim g_toggle_aim[4];
+
+  // The left trigger of a pad state `p` (XINPUT_STATE) as a switch: each press
+  // flips aiming (the zoom on a turret), the trigger reads fully pulled while
+  // it is on. At the wheel, in the menus and cutscenes the trigger is left
+  // alone; there and on another pawn (on foot -> a turret) aiming starts over
+  // unlatched, and a trigger held across that change counts as a press only
+  // once released and pressed again. Before the scripted and autopilot input
+  // is merged, so those still hold it as they please.
+  void ApplyToggleAim(PPCContext &ctx, uint8_t *base, uint32_t user, uint8_t *p)
+  {
+    constexpr uint8_t kPressed = 30; // XINPUT_GAMEPAD_TRIGGER_THRESHOLD
+    ToggleAim &t = g_toggle_aim[user];
+    bool down = p[6] >= kPressed;
+    bool press = down && !t.down;
+    t.down = down;
+    uint32_t pawn = ao2::mouse::AimTogglePawn(ctx, base, user);
+    if (pawn != t.pawn)
+    {
+      t.on = false;
+      t.throwing = false;
+      t.pawn = pawn;
+    }
+    if (!pawn)
+    {
+      ao2::mouse::NoteToggleAim(user, p[6], false);
+      return;
+    }
+    if (press)
+    {
+      t.on = !t.on;
+    }
+    // A grenade thrown (fire pressed and let go while aiming with it) ends
+    // the aiming.
+    bool fire = p[7] >= kPressed;
+    if (t.on && fire && !t.throwing && ao2::mouse::HoldsGrenade(base, pawn))
+    {
+      t.throwing = true;
+    }
+    else if (t.throwing && !fire)
+    {
+      t.throwing = false;
+      t.on = false;
+    }
+    if (!t.on)
+    {
+      t.throwing = false;
+    }
+    ao2::mouse::NoteToggleAim(user, p[6], t.on);
+    p[6] = t.on ? 0xFF : 0;
+  }
 
   uint32_t InputMask(const std::string &name)
   {
@@ -324,6 +392,15 @@ extern "C" REX_FUNC(sub_82B07AF0)
   if (state && (user == 0 || keyboard))
   {
     ao2::menumouse::OnPadPoll(ctx, base, state, keyboard);
+  }
+  // The Controls page waiting for a key takes every player's input.
+  if (state && ao2::gfxmenu::OnPadPoll(ctx, base, user, state))
+  {
+    return;
+  }
+  if (state && user < 4 && ctx.r3.u32 == 0 && REXCVAR_GET(ao2_toggle_aim))
+  {
+    ApplyToggleAim(ctx, base, user, base + state);
   }
   if ((user != 0 && !keyboard) || !state)
   {

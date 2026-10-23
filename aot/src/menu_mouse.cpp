@@ -4,11 +4,17 @@
 // pad: the mouse there was the right stick or nothing. While a menu takes
 // input the SDK driver lets the cursor go (SetMouseLookActive(false): shown,
 // not captured; rex_input_set_mouse_look) and here:
-//  - moving the cursor over a button, option or slider focuses it
-//    (UIScreenObject::SetFocus, vtable +328, as execSetFocus 0x82727C18 calls
-//    it with the player index from sub_82973AF0);
+//  - moving the cursor over a button, option or slider walks the focus to it
+//    with the D-pad, as the pad would (some menus' scripts follow the
+//    navigation, not the focus: the weapon upgrades' preview). Not every
+//    item on the way: the focus is put on the item next to it and one step
+//    goes in (on the Options screen and its pages it is set at once); where a step
+//    does not move it, it is set (UIScreenObject::SetFocus, vtable +328, as
+//    execSetFocus 0x82727C18 calls it with the player index from sub_82973AF0);
 //  - the left button presses A on it (on an option button or a slider: left
-//    of its middle D-pad left, else D-pad right), the right button B (back).
+//    of its middle D-pad left, else D-pad right). The right button keeps its
+//    binding (LT: the weapon shop's stats);
+//  - Enter and Esc are A and B, accept and back (Esc is otherwise Start).
 // The presses go into the pad state of the player with the keyboard
 // (XInputGetState hook, input_script.cpp), so the game takes them as its own
 // input. Mouse buttons do not reach the triggers they are bound to there.
@@ -36,15 +42,19 @@
 // Kismet opens Extras) never run: A on it is taken out of the pad state and
 // closes the window instead.
 //
-// Not in online co-op while the lockstep runs: the focus would change on
-// this machine only.
+// Online co-op: the pause menu is this machine's UI and its focus is not part
+// of the simulation (the checksum is the shared rand() and physics), and the
+// presses go through the pad input like the keys' (Enter / Esc already did),
+// so the mouse works there too.
 #include "menu_mouse.h"
 
 #include "aspect_ratio.h"
 #include "coop.h"
+#include "debug_menu.h"
 #include "gpu/native/renderer.h"
 #include "graphics_menu.h"
 #include "log_files.h"
+#include "mouse_aim.h"
 #include "ue3_reflect.h"
 
 #include <windows.h>
@@ -85,6 +95,8 @@ namespace
   constexpr uint32_t kFaceTop = 1;
   constexpr uint32_t kFaceBottom = 3;
   constexpr uint32_t kOwnerScene = 368;    // UIObject.OwnerScene
+  // UIObject.NavigationTargets: the widgets D-pad left, up, right, down go to.
+  constexpr uint32_t kNavigationTargets = 404;
   constexpr uint32_t kRenderBounds = 496;  // UIObject.RenderBounds[4]
   constexpr uint32_t kRenderTarget = 360;  // UIScene.RenderTarget
   constexpr uint32_t kSceneFlags = 412;    // UIScene bitfield
@@ -118,6 +130,8 @@ namespace
   constexpr float kSlabReachAlong = 8.0f; // times further sideways
 
   constexpr uint16_t kDpadLeft = 0x0004, kDpadRight = 0x0008;
+  constexpr uint16_t kDpadUp = 0x0001, kDpadDown = 0x0002;
+  constexpr uint16_t kButtonStart = 0x0010;
   constexpr uint16_t kButtonA = 0x1000, kButtonB = 0x2000;
 
   FILE *Log()
@@ -280,6 +294,10 @@ namespace
       // The main menu's Exit is hit at its label (below).
       if (Focusable(base, child, kind) && !(scene.slab && ao2::ue3::ObjectName(base, child) == "Exit"))
       {
+        if (kind == Kind::kValue && ao2::gfxmenu::IsOpenButton(base, child))
+        {
+          kind = Kind::kButton; // "Graphics and controls": a click is A
+        }
         Widget w = scene;
         w.object = child;
         w.kind = kind;
@@ -369,6 +387,25 @@ namespace
     return 0;
   }
 
+  // A menu takes the keys (Enter, Esc): a scene taking input is on the
+  // stack - in the game it is empty - other than the title screen's, where
+  // Esc stays Start (Press START, the attract movie). Confirmations and the
+  // objectives have nothing to point at but take B as back.
+  bool KeysMenu(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    bool any = false;
+    for (uint32_t scene : scenes)
+    {
+      std::string name = ao2::ue3::ObjectName(base, scene);
+      if (name.rfind("StartMenuUIScene", 0) == 0 || name.rfind("AttractLauncher", 0) == 0)
+      {
+        return false;
+      }
+      any = any || base[scene + kSceneInputMode] != 0;
+    }
+    return any;
+  }
+
   bool Focused(const uint8_t *base, uint32_t widget)
   {
     static uint32_t focused_class = 0;
@@ -405,10 +442,16 @@ namespace
     float u, v, aspect;
   };
 
+  bool GameInFront()
+  {
+    HWND hwnd = static_cast<HWND>(ao2::aspect::Window());
+    return hwnd && GetForegroundWindow() == hwnd;
+  }
+
   bool CursorOnPicture(Cursor &c)
   {
     HWND hwnd = static_cast<HWND>(ao2::aspect::Window());
-    if (!hwnd || GetForegroundWindow() != hwnd)
+    if (!GameInFront())
     {
       return false;
     }
@@ -766,10 +809,359 @@ namespace
 
   // --- The clicks -----------------------------------------------------------
 
-  bool g_left = false, g_right = false;     // the mouse buttons as last seen
+  bool g_left = false;                      // the left mouse button as last seen
   uint16_t g_inject = 0;                    // pad buttons held for the menu
   int g_inject_polls = 0;                   // for this many more polls
   uint32_t g_hover = 0;                     // the widget under the cursor
+  float g_last_u = -1.0f, g_last_v = -1.0f; // the cursor as last seen
+  uint32_t g_moved = 0;                     // when it last moved (GetTickCount)
+  // Pointing counts this long after a move: the slabs' answer comes a few
+  // frames later. A cursor resting where a menu opens leaves its first item.
+  constexpr uint32_t kMoveWindow = 300;
+  bool g_enter = false, g_esc = false;      // the keys as last seen...
+  bool g_enter_menu = false, g_esc_menu = false; // ...and whether a menu was up when they were pressed
+
+  // The focus goes to a pointed widget the way the pad takes it, one D-pad
+  // step at a time: some menus' scripts follow the navigation, not the
+  // focus (the weapon upgrades show the part navigated to). If a step does
+  // not move the focus, the widget simply gets it (SetFocus).
+  struct Walk
+  {
+    uint32_t target = 0;
+    uint16_t then = 0;   // pressed once there (a click), 0 = none
+    uint16_t button = 0; // the D-pad direction pressed
+    int phase = 0;       // 1: the button held, -1: let go, 0: the next step
+    uint32_t since = 0;  // when the phase began (GetTickCount)
+    uint32_t from = 0;   // the focus when it was pressed
+    int steps = 0, stuck = 0;
+    bool jumped = false; // the focus was put next to the target
+  } g_walk;
+  // A step is held and let go about as long as a finger does: a menu's own
+  // script may read the pad apart from the UI's navigation and miss a
+  // press of a frame or two (the objectives).
+  constexpr uint32_t kWalkPressMs = 50, kWalkReleaseMs = 50;
+  // The objectives move their pick with the left stick, the D-pad steps
+  // there do not reach it: the step is the stick pushed up or down.
+  bool g_walk_stick = false;
+  constexpr int kWalkSteps = 16;
+
+  const Widget *Find(const std::vector<Widget> &widgets, uint32_t object)
+  {
+    for (const Widget &w : widgets)
+    {
+      if (w.object == object)
+      {
+        return &w;
+      }
+    }
+    return nullptr;
+  }
+
+  uint32_t FocusedWidget(const uint8_t *base, const std::vector<Widget> &widgets)
+  {
+    for (const Widget &w : widgets)
+    {
+      if (Focused(base, w.object))
+      {
+        return w.object;
+      }
+    }
+    return 0;
+  }
+
+  // The Options screen and its Graphics and Controls pages: nothing follows
+  // the navigation there, so a pointed row gets the focus at once instead of
+  // the focus passing every row on the way.
+  // The objectives (the pause menu's, the briefing's): left and right turn
+  // their pages, so the focus only steps up and down there. They keep their
+  // own pick (its description shown) and move it only with the D-pad's
+  // steps: a focus set directly goes back to it.
+  bool Objectives(const uint8_t *base, uint32_t widget)
+  {
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return scene && ao2::ue3::ObjectName(base, scene).find("Objective") != std::string::npos;
+  }
+
+  // The masks (UIScene_Masks) keep their pick in CurrentButtonIndex and step
+  // it with the D-pad, the focus following it: a focus set directly is left
+  // behind by the next step. There the pick is put next to the target, not
+  // the focus (it would show that mask first): the step goes from the
+  // focused mask straight to the target.
+  // Each step also steps the shell armor pawn's own pick by one
+  // (ScrollMaskUpgrades: the hero's MaskCollection.Index, wrapping), the mask
+  // put on the character and bought. It is put next to the target too, or
+  // the list and the character part: the mask shown and bought is not the
+  // one picked in the list.
+  bool IsMask(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t masks = ao2::ue3::FindClass(base, "UIScene_Masks");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return masks && scene && ao2::ue3::IsA(base, scene, masks) &&
+           ao2::ue3::ObjectName(base, widget).rfind("lblbtnArmor", 0) == 0;
+  }
+
+  // The hero's AO2MaskCollection the shell armor pawn steps, 0 if not found:
+  // the pawn of the scene's player, else the only one there is.
+  uint32_t MaskCollection(const uint8_t *base, uint32_t scene)
+  {
+    static uint32_t armor = ao2::ue3::FindClass(base, "AO2ShellArmorPawn");
+    static int32_t owner = ao2::ue3::PropertyOffset(base, "UIScene", "PlayerOwner");
+    static int32_t pawn = ao2::ue3::PropertyOffset(base, "Controller", "Pawn");
+    static int32_t hero = ao2::ue3::PropertyOffset(base, "AO2ShellArmorPawn", "PlayerPawn");
+    static int32_t collection = ao2::ue3::PropertyOffset(base, "AO2Character", "MaskCollection");
+    if (!armor || owner < 0 || pawn < 0 || hero < 0 || collection < 0)
+    {
+      return 0;
+    }
+    uint32_t found = 0;
+    uint32_t player = LoadU32(base, scene + owner);
+    uint32_t controller = player ? LoadU32(base, player + 64) : 0; // LocalPlayer +64 = its PlayerController
+    uint32_t p = controller ? LoadU32(base, controller + pawn) : 0;
+    if (p && ao2::ue3::IsA(base, p, armor))
+    {
+      found = p;
+    }
+    else
+    {
+      uint32_t objects = LoadU32(base, kObjects), count = LoadU32(base, kObjects + 4);
+      for (uint32_t i = 0; objects && i < count; ++i)
+      {
+        uint32_t o = LoadU32(base, objects + i * 4);
+        if (o && ao2::ue3::IsA(base, o, armor) && ao2::ue3::ObjectName(base, o).rfind("Default__", 0) != 0)
+        {
+          if (found)
+          {
+            return 0; // one per player: whose is not known
+          }
+          found = o;
+        }
+      }
+    }
+    uint32_t h = found ? LoadU32(base, found + hero) : 0;
+    return h ? LoadU32(base, h + collection) : 0;
+  }
+
+  // Puts both picks on mask `widget`; false if the pawn's is not found (the
+  // walk then steps through every mask on the way, as the D-pad does).
+  bool SetMaskIndex(uint8_t *base, uint32_t widget)
+  {
+    static int32_t index = ao2::ue3::PropertyOffset(base, "UIScene_Masks", "CurrentButtonIndex");
+    static int32_t pick = ao2::ue3::PropertyOffset(base, "AO2MaskCollection", "Index");
+    std::string name = ao2::ue3::ObjectName(base, widget);
+    size_t digits = name.find_last_not_of("0123456789") + 1;
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    uint32_t collection = index >= 0 && pick >= 0 && digits < name.size() ? MaskCollection(base, scene) : 0;
+    if (!collection)
+    {
+      return false;
+    }
+    uint32_t i = uint32_t(std::stoi(name.substr(digits))); // the buttons are lblbtnArmor0, 1...
+    StoreU32(base, scene + index, i);
+    StoreU32(base, collection + pick, i);
+    return true;
+  }
+
+  // The upgrades (UIScene_Upgrades: the weapon parts, lblbtnUpgrade0, 1...)
+  // keep the part shown and opened in their Kismet, which moves it one part
+  // per D-pad step (Upgrades_Mountpoint1, 2...): a focus put next to the
+  // target or on it directly is not seen there, the part shown is then
+  // another one. The focus only steps there, every part on the way. Only the
+  // list's buttons: another widget there still gets the focus at the end.
+  bool StepsOnly(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t upgrades = ao2::ue3::FindClass(base, "UIScene_Upgrades");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    if (!upgrades || !scene || !ao2::ue3::IsA(base, scene, upgrades) || IsMask(base, widget))
+    {
+      return false;
+    }
+    std::string name = ao2::ue3::ObjectName(base, widget);
+    return name.rfind("lblbtnUpgrade", 0) == 0 || name.rfind("lblbtnArmor", 0) == 0;
+  }
+
+  bool FocusAtOnce(const uint8_t *base, uint32_t widget)
+  {
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return scene && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene", 0) == 0;
+  }
+
+  // The widget one D-pad step from `target` (up or down first: from an option
+  // a side step changes its value), the one nearest to the focus `now`; 0
+  // if none is pointed at.
+  uint32_t NeighbourOf(const uint8_t *base, const std::vector<Widget> &widgets, const Widget &target, uint32_t now)
+  {
+    const Widget *focus = now ? Find(widgets, now) : nullptr;
+    uint32_t best = 0;
+    float best_d = 1e30f;
+    for (int face : {1, 3, 0, 2})
+    {
+      uint32_t next = LoadU32(base, target.object + kNavigationTargets + face * 4);
+      const Widget *n = next && next != target.object ? Find(widgets, next) : nullptr;
+      bool side = face == 0 || face == 2;
+      if (!n || n->slab != target.slab || (side && (n->kind == Kind::kValue || Objectives(base, target.object))))
+      {
+        continue;
+      }
+      if (next == now)
+      {
+        return 0; // one step already
+      }
+      float d = focus ? std::fabs(n->x0 + n->x1 - focus->x0 - focus->x1) + std::fabs(n->y0 + n->y1 - focus->y0 - focus->y1)
+                      : 0.0f;
+      if (d < best_d)
+      {
+        best_d = d;
+        best = next;
+      }
+      if (face == 3 && best)
+      {
+        break; // above or below found: no side step
+      }
+    }
+    return best;
+  }
+
+  void WalkTo(uint32_t target, uint16_t then)
+  {
+    if (g_walk.target != target)
+    {
+      // A step under way is let go first: the next one pressed at once would
+      // hold the same button on, two steps the menu sees as one.
+      Walk w;
+      w.target = target;
+      w.button = g_walk.button;
+      w.phase = g_walk.phase;
+      w.since = g_walk.since;
+      g_walk = w;
+    }
+    g_walk.then = then ? then : g_walk.then;
+  }
+
+  // The pad buttons of this poll's step.
+  uint16_t WalkStep(PPCContext &ctx, uint8_t *base, const std::vector<Widget> &widgets)
+  {
+    Walk &w = g_walk;
+    const Widget *target = w.target ? Find(widgets, w.target) : nullptr;
+    if (!target)
+    {
+      w = Walk{};
+      return 0;
+    }
+    uint32_t tick = GetTickCount();
+    if (w.phase > 0)
+    {
+      if (tick - w.since < kWalkPressMs)
+      {
+        return w.button;
+      }
+      w.phase = -1;
+      w.since = tick;
+    }
+    if (w.phase < 0)
+    {
+      if (tick - w.since < kWalkReleaseMs)
+      {
+        return 0;
+      }
+      w.phase = 0;
+    }
+    bool objectives = Objectives(base, w.target);
+    uint32_t now = FocusedWidget(base, widgets);
+    if (w.steps)
+    {
+      w.stuck = now == w.from ? w.stuck + 1 : 0;
+    }
+    auto arrived = [&]() {
+      if (w.then)
+      {
+        g_inject = w.then;
+        g_inject_polls = 2;
+      }
+      w = Walk{};
+    };
+    if (now != w.target && FocusAtOnce(base, w.target))
+    {
+      Focus(ctx, base, w.target);
+      now = w.target;
+    }
+    // The objectives keep their own pick and put the focus back on it: only
+    // the D-pad's steps move it there, one at a time.
+    if (now != w.target && !w.steps && !w.jumped && !objectives && !StepsOnly(base, w.target))
+    {
+      // Not every row on the way: the focus is put next to the target and one
+      // step goes in, so a menu following the navigation sees it arrive.
+      w.jumped = true;
+      if (uint32_t next = NeighbourOf(base, widgets, *target, now))
+      {
+        if (!IsMask(base, next))
+        {
+          Focus(ctx, base, next);
+          now = next;
+        }
+        else if (SetMaskIndex(base, next))
+        {
+          now = next;
+        }
+      }
+    }
+    if (now == w.target)
+    {
+      arrived();
+      return 0;
+    }
+    if (objectives && !now && !w.steps)
+    {
+      // Nothing picked yet (the menu just opened): the first step picks.
+      w.button = kDpadDown;
+      w.phase = 1;
+      w.since = tick;
+      g_walk_stick = true;
+      ++w.steps;
+      return w.button;
+    }
+    const Widget *from = now ? Find(widgets, now) : nullptr;
+    if (!from || from->slab != target->slab || w.stuck >= 2 || w.steps >= kWalkSteps)
+    {
+      if (objectives)
+      {
+        Logf("objectives: stopped at %s, target %s\n", now ? ao2::ue3::ObjectName(base, now).c_str() : "nothing",
+             ao2::ue3::ObjectName(base, w.target).c_str());
+        w = Walk{}; // set, it would go back: as far as the steps got
+        return 0;
+      }
+      if (IsMask(base, w.target) || StepsOnly(base, w.target))
+      {
+        w = Walk{}; // a focus set directly would part the list from the character / the part shown
+        return 0;
+      }
+      Focus(ctx, base, w.target);
+      arrived();
+      return 0;
+    }
+    float dx = (target->x0 + target->x1 - from->x0 - from->x1) * 0.5f;
+    float dy = (target->y0 + target->y1 - from->y0 - from->y1) * 0.5f;
+    // Left / right change an option's value: from one, only up and down.
+    // In the objectives they turn the page.
+    if (std::fabs(dy) >= std::fabs(dx) * 0.5f || from->kind == Kind::kValue || objectives)
+    {
+      w.button = dy < 0.0f ? kDpadUp : kDpadDown; // the same place (Exit under Extras): down
+    }
+    else
+    {
+      w.button = dx < 0.0f ? kDpadLeft : kDpadRight;
+    }
+    w.from = now;
+    w.phase = 1;
+    w.since = tick;
+    g_walk_stick = objectives;
+    if (objectives)
+    {
+      Logf("objectives: %s from %s to %s\n", w.button == kDpadUp ? "up" : "down",
+           ao2::ue3::ObjectName(base, now).c_str(), ao2::ue3::ObjectName(base, w.target).c_str());
+    }
+    ++w.steps;
+    return w.button;
+  }
 } // namespace
 
 namespace ao2::menumouse
@@ -778,6 +1170,22 @@ namespace ao2::menumouse
 
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard)
   {
+    if (ao2::menu::IsOpen() || ao2::gfxmenu::Capturing())
+    {
+      // The players window (invites) or the debug menu is up, or the
+      // Controls page waits for a key: the mouse and Enter / Esc
+      // are theirs, nothing reaches the game's menus.
+      ao2::gpu::RendererSetMenuProbe(0, 0, 0, 0);
+      g_inject_polls = 0;
+      g_hover = 0;
+      g_walk = Walk{};
+      g_last_u = g_last_v = -1.0f;
+      g_left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+      g_enter = GetAsyncKeyState(VK_RETURN) & 0x8000;
+      g_esc = GetAsyncKeyState(VK_ESCAPE) & 0x8000;
+      g_enter_menu = g_esc_menu = false;
+      return;
+    }
     uint8_t *p = base + state;
     uint16_t buttons = uint16_t((p[4] << 8) | p[5]);
     auto store_buttons = [&]() {
@@ -837,6 +1245,35 @@ namespace ao2::menumouse
         }
       }
     }
+    if (keyboard)
+    {
+      // Enter and Esc in the menus are accept and back (A and B), whatever
+      // they are bound to (Esc is Start, the pause menu). Decided when one
+      // is pressed: the Esc that opened the pause menu stays Start until let go.
+      bool front = GameInFront();
+      bool enter = front && (GetAsyncKeyState(VK_RETURN) & 0x8000);
+      bool esc = front && (GetAsyncKeyState(VK_ESCAPE) & 0x8000);
+      if ((enter && !g_enter) || (esc && !g_esc))
+      {
+        bool menu = KeysMenu(base, scenes);
+        g_enter_menu = enter && !g_enter ? menu : g_enter_menu;
+        g_esc_menu = esc && !g_esc ? menu : g_esc_menu;
+      }
+      g_enter = enter;
+      g_esc = esc;
+      if ((enter && g_enter_menu) || (esc && g_esc_menu))
+      {
+        if (enter && g_enter_menu)
+        {
+          buttons |= kButtonA;
+        }
+        if (esc && g_esc_menu)
+        {
+          buttons = uint16_t((buttons & ~kButtonStart) | kButtonB);
+        }
+        store_buttons();
+      }
+    }
     if (exit && (buttons & kButtonA) && Focused(base, exit))
     {
       // Its own Kismet (Extras') must not see the press.
@@ -849,18 +1286,24 @@ namespace ao2::menumouse
       return;
     }
 
-    bool menu = scene && REXCVAR_GET(ao2_menu_mouse) && !ao2::coop::OnlineLockstep(base);
-    SetMenuMode(menu);
+    bool menu = scene && REXCVAR_GET(ao2_menu_mouse);
+    // Between two menus (the camera moving along the slabs, the press of
+    // Start on the title screen) one scene is closed before the next opens:
+    // only scenes taking no input are left (UIScene_0, the help text). The
+    // cursor stays the menus' until the stack is empty. Only in the front end:
+    // in the game the HUD's scenes stay on the stack, and after the pause menu
+    // the cursor would never go back to the camera.
+    SetMenuMode(menu || (g_menu && !scenes.empty() && ao2::mouse::InFrontEnd() && REXCVAR_GET(ao2_menu_mouse)));
     bool left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
-    bool right = GetAsyncKeyState(VK_RBUTTON) & 0x8000;
-    bool left_pressed = left && !g_left, right_pressed = right && !g_right;
+    bool left_pressed = left && !g_left;
     g_left = left;
-    g_right = right;
     if (!menu)
     {
       ao2::gpu::RendererSetMenuProbe(0, 0, 0, 0);
       g_inject_polls = 0;
       g_hover = 0;
+      g_walk = Walk{};
+      g_last_u = g_last_v = -1.0f;
       return;
     }
     Cursor cursor;
@@ -869,8 +1312,8 @@ namespace ao2::menumouse
     on_picture = on_picture || test;
     if (test)
     {
-      // The buttons are the real mouse's, maybe clicking another window.
-      left_pressed = right_pressed = left = right = false;
+      // The button is the real mouse's, maybe clicking another window.
+      left_pressed = left = false;
     }
     // The slabs: the renderer finds the menu's texture under the cursor.
     const Widget *slab = nullptr;
@@ -887,6 +1330,19 @@ namespace ao2::menumouse
                                    uint32_t(std::max(cursor.v, 0.0f) * float(ao2::aspect::GuestHeight())));
     if (on_picture)
     {
+      if (g_last_u < 0.0f)
+      {
+        // Menu mode just began: where the cursor is is no move.
+        g_last_u = cursor.u;
+        g_last_v = cursor.v;
+      }
+      if (std::fabs(cursor.u - g_last_u) + std::fabs(cursor.v - g_last_v) > 0.002f)
+      {
+        g_moved = GetTickCount();
+        g_last_u = cursor.u;
+        g_last_v = cursor.v;
+      }
+      bool moving = g_moved && GetTickCount() - g_moved < kMoveWindow;
       float x, y;
       const Widget *hit = Hit(widgets, cursor, x, y);
       if (test)
@@ -900,45 +1356,64 @@ namespace ao2::menumouse
                hit ? ao2::ue3::ObjectName(base, hit->object).c_str() : "nothing", x, y);
         }
       }
-      // Focused when the cursor comes onto it (the slabs' answer comes a few
-      // frames after the move) or clicks it; not while it rests there and
-      // the keys move the focus elsewhere.
-      bool entered = hit && hit->object != g_hover;
-      g_hover = hit ? hit->object : 0;
-      if (hit && (entered || left_pressed) && !Focused(base, hit->object))
+      // Walked to when the cursor comes onto it (the slabs' answer comes a
+      // few frames after the move) or clicks it; not while it rests there
+      // and the keys move the focus elsewhere.
+      bool entered = hit && hit->object != g_hover && moving;
+      if (moving || !hit)
       {
-        Focus(ctx, base, hit->object);
+        g_hover = hit ? hit->object : 0;
       }
-      if (hit && left_pressed)
+      if (hit && left_pressed && exit && hit->object == exit)
       {
-        if (exit && hit->object == exit)
+        Quit();
+      }
+      else if (hit && left_pressed)
+      {
+        uint16_t press = hit->kind == Kind::kButton ? kButtonA
+                                                    : (x < (hit->x0 + hit->x1) * 0.5f ? kDpadLeft : kDpadRight);
+        if (Focused(base, hit->object) && g_walk.target == 0)
         {
-          Quit();
+          g_inject = press;
+          g_inject_polls = 2;
         }
         else
         {
-          g_inject = hit->kind == Kind::kButton ? kButtonA
-                                                : (x < (hit->x0 + hit->x1) * 0.5f ? kDpadLeft : kDpadRight);
-          g_inject_polls = 2;
+          WalkTo(hit->object, press);
+        }
+      }
+      else if (hit && entered && !Focused(base, hit->object))
+      {
+        // The objectives' page arrows are left alone.
+        if (!Objectives(base, hit->object) || hit->kind == Kind::kButton)
+        {
+          WalkTo(hit->object, 0);
         }
       }
     }
-    if (right_pressed && on_picture)
+    uint16_t walk = g_inject_polls > 0 ? 0 : WalkStep(ctx, base, widgets);
+    // The left button is bound to a trigger (fire): not here. The right one
+    // keeps its own (the weapon shop's stats).
+    if (left)
     {
-      g_inject = kButtonB;
-      g_inject_polls = 2;
-    }
-    // The mouse buttons are bound to the triggers (fire, aim): not here.
-    if (left || right)
-    {
-      p[6] = 0;
       p[7] = 0;
     }
-    if (g_inject_polls > 0)
+    if (g_inject_polls > 0 || walk)
     {
-      --g_inject_polls;
-      buttons |= g_inject;
+      if (g_inject_polls > 0)
+      {
+        --g_inject_polls;
+        buttons |= g_inject;
+      }
+      bool stick = walk && g_walk_stick;
+      buttons |= stick ? 0 : walk;
       store_buttons();
+      if (stick)
+      {
+        // XINPUT_GAMEPAD.sThumbLY, big-endian.
+        p[10] = walk == kDpadUp ? 0x7F : 0x80;
+        p[11] = walk == kDpadUp ? 0xFF : 0x00;
+      }
     }
   }
 } // namespace ao2::menumouse

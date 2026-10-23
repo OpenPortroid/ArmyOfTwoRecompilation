@@ -41,6 +41,20 @@ namespace AO2Launcher
             return row[lang];
         }
 
+        // `en` and every translation of it (to lay out text the same in every language).
+        public static IEnumerable<string> All(string en)
+        {
+            yield return en;
+            string[] row;
+            if (en != null && Table.TryGetValue(en, out row))
+            {
+                foreach (string s in row)
+                {
+                    yield return s;
+                }
+            }
+        }
+
         public static string F(string en, params object[] args)
         {
             return string.Format(T(en), args);
@@ -53,6 +67,50 @@ namespace AO2Launcher
             var t = new Dictionary<string, string[]>();
             Action<string, string, string, string, string, string> a = (en, ru, fr, de, es, it) =>
                 t[en] = new[] { ru, fr, de, es, it };
+
+            // --- Achievements tab ---
+            a("ACHIEVEMENTS", "ДОСТИЖЕНИЯ", "SUCCÈS", "ERFOLGE", "LOGROS", "OBIETTIVI");
+            a("Story", "Сюжет", "Histoire", "Story", "Historia", "Storia");
+            a("Campaign", "Кампания", "Campagne", "Kampagne", "Campaña", "Campagna");
+            a("Gear and co-op", "Снаряжение и кооп", "Équipement et coop", "Ausrüstung und Koop", "Equipo y coop", "Equipaggiamento e coop");
+            a("Weapons", "Оружие", "Armes", "Waffen", "Armas", "Armi");
+            a("Combat", "Бой", "Combat", "Kampf", "Combate", "Combattimento");
+            a("Versus", "Противостояние", "Versus", "Versus", "Versus", "Versus");
+            a("SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge");
+            a("Profile {0}: {1} of {2} unlocked, {3} of {4} G", "Профиль {0}: получено {1} из {2}, {3} из {4} G",
+              "Profil {0} : {1} sur {2} débloqués, {3} sur {4} G", "Profil {0}: {1} von {2} freigeschaltet, {3} von {4} G",
+              "Perfil {0}: {1} de {2} desbloqueados, {3} de {4} G", "Profilo {0}: {1} di {2} sbloccati, {3} di {4} G");
+            a("Unlock notices", "Уведомления о достижениях", "Notifications de succès", "Erfolgsbenachrichtigungen", "Avisos de logros", "Notifiche degli obiettivi");
+            a("Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently.",
+              "Показывать в игре уведомление со звуком при получении достижения. Если выключено, достижения все равно открываются, но молча.",
+              "Afficher une notification sonore dans le jeu quand un succès est débloqué. Désactivé : les succès se débloquent quand même, en silence.",
+              "Im Spiel eine Meldung mit Ton zeigen, wenn ein Erfolg freigeschaltet wird. Aus: Erfolge werden trotzdem freigeschaltet, nur still.",
+              "Mostrar un aviso con sonido en el juego al desbloquear un logro. Desactivado: los logros se desbloquean igual, en silencio.",
+              "Mostra nel gioco una notifica con suono quando si sblocca un obiettivo. Disattivato: gli obiettivi si sbloccano comunque, in silenzio.");
+            a("Reset achievements", "Сбросить достижения", "Réinitialiser les succès", "Erfolge zurücksetzen", "Restablecer logros", "Azzera obiettivi");
+            a("Lock every achievement of the current profile again. Saves and progress in the game are not changed.",
+              "Снова закрыть все достижения текущего профиля. Сохранения и прогресс в игре не меняются.",
+              "Verrouiller à nouveau tous les succès du profil actuel. Les sauvegardes et la progression ne changent pas.",
+              "Alle Erfolge des aktuellen Profils wieder sperren. Spielstände und Fortschritt bleiben unverändert.",
+              "Volver a bloquear todos los logros del perfil actual. Las partidas guardadas y el progreso no cambian.",
+              "Blocca di nuovo tutti gli obiettivi del profilo attuale. Salvataggi e progressi non cambiano.");
+            a("RESET ACHIEVEMENTS", "СБРОС ДОСТИЖЕНИЙ", "RÉINITIALISER LES SUCCÈS", "ERFOLGE ZURÜCKSETZEN", "RESTABLECER LOGROS", "AZZERA OBIETTIVI");
+            a("Every achievement of profile {0} will be locked again. This cannot be undone.",
+              "Все достижения профиля {0} снова станут закрытыми. Это нельзя отменить.",
+              "Tous les succès du profil {0} seront de nouveau verrouillés. Action irréversible.",
+              "Alle Erfolge des Profils {0} werden wieder gesperrt. Das lässt sich nicht rückgängig machen.",
+              "Todos los logros del perfil {0} volverán a bloquearse. No se puede deshacer.",
+              "Tutti gli obiettivi del profilo {0} saranno di nuovo bloccati. Non si può annullare.");
+            a("Achievements reset", "Достижения сброшены", "Succès réinitialisés", "Erfolge zurückgesetzt", "Logros restablecidos", "Obiettivi azzerati");
+            a("Could not reset the achievements", "Не удалось сбросить достижения", "Impossible de réinitialiser les succès",
+              "Erfolge konnten nicht zurückgesetzt werden", "No se pudieron restablecer los logros", "Impossibile azzerare gli obiettivi");
+            a("Earned {0}", "Получено {0}", "Obtenu le {0}", "Erhalten am {0}", "Conseguido el {0}", "Ottenuto il {0}");
+            a("The list of achievements comes from the game's files: start the game once to see it here.",
+              "Список достижений берется из файлов игры: запустите игру один раз, чтобы он появился здесь.",
+              "La liste des succès vient des fichiers du jeu : lancez le jeu une fois pour la voir ici.",
+              "Die Liste der Erfolge stammt aus den Spieldateien: Starte das Spiel einmal, um sie hier zu sehen.",
+              "La lista de logros sale de los archivos del juego: inicia el juego una vez para verla aquí.",
+              "L'elenco degli obiettivi viene dai file del gioco: avvia il gioco una volta per vederlo qui.");
 
             // --- Title bar, main screen ---
             a("Launcher", "Лаунчер", "Lanceur", "Launcher", "Lanzador", "Launcher");
@@ -94,7 +152,10 @@ namespace AO2Launcher
               "El lanzador la descarga e instala solo. Se conservan los archivos del juego, los ajustes y las partidas.",
               "Il launcher la scarica e la installa da solo. File del gioco, impostazioni e salvataggi restano.");
             a("UPDATE", "ОБНОВИТЬ", "METTRE À JOUR", "AKTUALISIEREN", "ACTUALIZAR", "AGGIORNA");
-            a("LATER", "ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
+            a("WHAT'S NEW", "ЧТО НОВОГО", "NOUVEAUTÉS", "NEUERUNGEN", "NOVEDADES", "NOVITÀ");
+            a("PATCH NOTES", "СПИСОК ИЗМЕНЕНИЙ", "NOTES DE VERSION", "VERSIONSHINWEISE", "NOTAS DE VERSIÓN", "NOTE DI RILASCIO");
+            a("CLOSE","ЗАКРЫТЬ", "FERMER", "SCHLIESSEN", "CERRAR", "CHIUDI");
+            a("LATER","ПОЗЖЕ", "PLUS TARD", "SPÄTER", "MÁS TARDE", "PIÙ TARDI");
             a("RETRY", "ПОВТОРИТЬ", "RÉESSAYER", "WIEDERHOLEN", "REINTENTAR", "RIPROVA");
             a("UPDATING TO {0}", "ОБНОВЛЕНИЕ ДО {0}", "MISE À JOUR VERS {0}", "UPDATE AUF {0}", "ACTUALIZANDO A {0}", "AGGIORNAMENTO A {0}");
             a("Downloading: {0:0.0} of {1:0.0} MB", "Загрузка: {0:0.0} из {1:0.0} МБ", "Téléchargement : {0:0.0} sur {1:0.0} Mo",
@@ -121,7 +182,25 @@ namespace AO2Launcher
               "Riprova, oppure scarica l'archivio da GitHub ed estrailo sopra questa cartella.");
             a("Close the game first.", "Сначала закройте игру.", "Fermez d'abord le jeu.", "Schließen Sie zuerst das Spiel.",
               "Cierra primero el juego.", "Chiudi prima il gioco.");
-            a("Update cancelled", "Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
+            a("Could not load the release notes", "Не удалось загрузить список изменений", "Impossible de charger les notes de version",
+              "Die Versionshinweise konnten nicht geladen werden", "No se pudieron cargar las notas de la versión",
+              "Impossibile caricare le note di rilascio");
+            a("Could not load the release list", "Не удалось загрузить список версий", "Impossible de charger la liste des versions",
+              "Die Versionsliste konnte nicht geladen werden", "No se pudo cargar la lista de versiones",
+              "Impossibile caricare l'elenco delle versioni");
+            a("VERSION", "ВЕРСИЯ", "VERSION", "VERSION", "VERSIÓN", "VERSIONE");
+            a("VERSIONS", "ВЕРСИИ", "VERSIONS", "VERSIONEN", "VERSIONES", "VERSIONI");
+            a("latest", "последняя", "dernière", "neueste", "última", "ultima");
+            a("installed", "установлена", "installée", "installiert", "instalada", "installata");
+            a("BACK", "НАЗАД", "RETOUR", "ZURÜCK", "ATRÁS", "INDIETRO");
+            a("DOWNLOAD", "ЗАГРУЗИТЬ", "TÉLÉCHARGER", "HERUNTERLADEN", "DESCARGAR", "SCARICA");
+            a("INSTALL AN OLDER VERSION", "УСТАНОВКА ПРОШЛОЙ ВЕРСИИ", "INSTALLER UNE ANCIENNE VERSION", "ÄLTERE VERSION INSTALLIEREN",
+              "INSTALAR UNA VERSIÓN ANTERIOR", "INSTALLA UNA VERSIONE PRECEDENTE");
+            a("Go back to {0}? You have {1}.", "Вернуться на {0}? Сейчас у вас {1}.", "Revenir à la {0} ? Vous avez la {1}.",
+              "Zu {0} zurückkehren? Sie haben {1}.", "¿Volver a la {0}? Tienes la {1}.", "Tornare alla {0}? Hai la {1}.");
+            a("This release has no notes", "У этой версии нет описания", "Cette version n'a pas de notes", "Diese Version hat keine Hinweise",
+              "Esta versión no tiene notas", "Questa versione non ha note");
+            a("Update cancelled","Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
               "Aggiornamento annullato");
             a("Updated to {0}. Start the launcher again: {1}", "Обновлено до {0}. Запустите лаунчер заново: {1}",
               "Mis à jour vers {0}. Relancez le lanceur : {1}", "Auf {0} aktualisiert. Starten Sie den Launcher neu: {1}",
@@ -275,6 +354,68 @@ namespace AO2Launcher
               "del monitor e la latenza dell'input cresce un po'.");
             a("Anisotropic filtering", "Анизотропная фильтрация", "Filtrage anisotrope", "Anisotrope Filterung",
               "Filtrado anisotrópico", "Filtro anisotropico");
+            a("Anti-aliasing", "Сглаживание", "Anticrénelage", "Kantenglättung", "Antialiasing", "Antialiasing");
+            a("Smooths jagged edges. FXAA is the fastest and slightly soft; SMAA is sharper. " +
+              "On top of the render resolution.",
+              "Сглаживает «лесенки» на краях. FXAA самое быстрое и чуть размывает; SMAA чётче. " +
+              "Работает поверх разрешения рендера.",
+              "Lisse les bords crénelés. FXAA est le plus rapide et un peu flou ; SMAA est plus net. " +
+              "S'ajoute à la résolution de rendu.",
+              "Glättet gezackte Kanten. FXAA ist am schnellsten und leicht weich; SMAA ist schärfer. " +
+              "Zusätzlich zur Renderauflösung.",
+              "Suaviza los bordes dentados. FXAA es el más rápido y algo suave; SMAA es más nítido. " +
+              "Se suma a la resolución de renderizado.",
+              "Ammorbidisce i bordi seghettati. FXAA è il più veloce e un po' morbido; SMAA è più nitido. " +
+              "Si aggiunge alla risoluzione di rendering.");
+            a("Ambient occlusion", "Затенение окружения (AO)", "Occlusion ambiante", "Umgebungsverdeckung",
+              "Oclusión ambiental", "Occlusione ambientale");
+            a("Soft contact shadows in corners and where objects meet. SSAO is the lightest, HBAO is more defined, " +
+              "GTAO is the most accurate and the heaviest.",
+              "Мягкие контактные тени в углах и там, где предметы соприкасаются. SSAO самое лёгкое, HBAO выразительнее, " +
+              "GTAO самое точное и самое тяжёлое.",
+              "Ombres de contact douces dans les coins et là où les objets se touchent. SSAO est le plus léger, HBAO " +
+              "plus marqué, GTAO le plus précis et le plus lourd.",
+              "Weiche Kontaktschatten in Ecken und wo Objekte sich berühren. SSAO ist am leichtesten, HBAO deutlicher, " +
+              "GTAO am genauesten und am aufwendigsten.",
+              "Sombras de contacto suaves en las esquinas y donde se tocan los objetos. SSAO es el más ligero, HBAO " +
+              "más marcado, GTAO el más preciso y el más pesado.",
+              "Ombre di contatto morbide negli angoli e dove gli oggetti si toccano. SSAO è il più leggero, HBAO più " +
+              "marcato, GTAO il più preciso e il più pesante.");
+            a("Motion blur", "Размытие в движении", "Flou de mouvement", "Bewegungsunschärfe", "Desenfoque de movimiento",
+              "Sfocatura di movimento");
+            a("Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp.",
+              "Размытие от движения камеры, одинаковое при любой частоте кадров. Ваш персонаж рядом с камерой остаётся чётким.",
+              "Flou dû au mouvement de la caméra, identique à toute fréquence d'images. Votre personnage près de la " +
+              "caméra reste net.",
+              "Unschärfe durch Kamerabewegung, gleich bei jeder Bildrate. Ihre Figur nahe der Kamera bleibt scharf.",
+              "Desenfoque por el movimiento de la cámara, igual a cualquier tasa de fotogramas. Tu personaje cerca " +
+              "de la cámara sigue nítido.",
+              "Sfocatura dal movimento della telecamera, uguale a qualsiasi frequenza. Il tuo personaggio vicino alla " +
+              "telecamera resta nitido.");
+            a("Depth of field", "Глубина резкости", "Profondeur de champ", "Tiefenschärfe", "Profundidad de campo",
+              "Profondità di campo");
+            a("What lies far behind the point you aim at goes out of focus; the focus follows the crosshair.",
+              "То, что далеко позади точки прицеливания, уходит из фокуса; фокус следует за прицелом.",
+              "Ce qui est loin derrière le point visé devient flou ; la mise au point suit le réticule.",
+              "Was weit hinter dem Zielpunkt liegt, wird unscharf; der Fokus folgt dem Fadenkreuz.",
+              "Lo que queda muy por detrás del punto al que apuntas se desenfoca; el enfoque sigue a la mira.",
+              "Ciò che sta molto dietro il punto mirato va fuori fuoco; la messa a fuoco segue il mirino.");
+            a("Shadow resolution", "Разрешение теней", "Résolution des ombres", "Schattenauflösung",
+              "Resolución de sombras", "Risoluzione delle ombre");
+            a("Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
+              "4096 needs about 150 MB more video memory.",
+              "Чёткость краёв теней. Авто следует за разрешением рендера (на консоли было 768). " +
+              "4096 требует примерно на 150 МБ больше видеопамяти.",
+              "Netteté des bords des ombres. Auto suit la résolution de rendu (la console avait 768). " +
+              "4096 demande environ 150 Mo de mémoire vidéo en plus.",
+              "Schärfe der Schattenkanten. Auto folgt der Renderauflösung (die Konsole hatte 768). " +
+              "4096 braucht etwa 150 MB mehr Videospeicher.",
+              "Nitidez de los bordes de las sombras. Auto sigue la resolución de renderizado (la consola tenía 768). " +
+              "4096 necesita unos 150 MB más de memoria de vídeo.",
+              "Nitidezza dei bordi delle ombre. Auto segue la risoluzione di rendering (la console aveva 768). " +
+              "4096 richiede circa 150 MB di memoria video in più.");
+            a("LOW", "НИЗКО", "FAIBLE", "NIEDRIG", "BAJO", "BASSO");
+            a("HIGH", "ВЫСОКО", "ÉLEVÉ", "HOCH", "ALTO", "ALTO");
             a("Sharper textures at an angle (16×). Costs almost no performance.",
               "Чёткие текстуры под углом (16×). Почти не влияет на производительность.",
               "Textures plus nettes en biais (16×). Ne coûte presque rien en performances.",
@@ -326,6 +467,33 @@ namespace AO2Launcher
               "Maus nach oben blickt nach unten (zusätzlich zur Invertierung im Spiel selbst).",
               "Ratón hacia arriba mira hacia abajo (además del ajuste de inversión del propio juego).",
               "Mouse in alto guarda in basso (in aggiunta all'inversione impostata nel gioco).");
+            a("Aim assist", "Помощь в прицеливании", "Aide à la visée", "Zielhilfe", "Asistencia de apuntado", "Assistenza alla mira");
+            a("While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
+              "In co-op each player keeps their own setting.",
+              "При прицеливании камера сразу наводится на ближайшую цель, а выстрелы притягиваются к целям рядом с прицелом. " +
+              "В кооперативе у каждого игрока своя настройка.",
+              "En visant, la caméra se place sur la cible la plus proche et les tirs sont attirés vers les cibles près du réticule. " +
+              "En coopération, chaque joueur garde son propre réglage.",
+              "Beim Zielen springt die Kamera auf das nächste Ziel und Schüsse werden zu Zielen nahe dem Fadenkreuz gezogen. " +
+              "Im Koop behält jeder Spieler seine eigene Einstellung.",
+              "Al apuntar, la cámara empieza sobre el objetivo más cercano y los disparos se desvían hacia objetivos cerca de la mira. " +
+              "En cooperativo cada jugador mantiene su propio ajuste.",
+              "Mirando, la telecamera parte dal bersaglio più vicino e i colpi vengono attratti dai bersagli vicini al mirino. " +
+              "In cooperativa ogni giocatore mantiene la propria impostazione.");
+            a("Toggle aim", "Прицеливание переключением", "Visée par bascule", "Zielen umschalten",
+              "Apuntar alternando", "Mira a commutazione");
+            a("One press of aim (right mouse button, LT) starts aiming, the next press ends it, instead of holding " +
+              "the button. On foot, on turrets and at a vehicle's gun; not at the wheel.",
+              "Одно нажатие прицела (правая кнопка мыши, LT) включает прицеливание, следующее выключает — держать " +
+              "кнопку не нужно. Пешком, на турелях и у оружия техники; не за рулём.",
+              "Un appui sur viser (bouton droit, LT) commence la visée, l'appui suivant l'arrête, au lieu de " +
+              "maintenir le bouton. À pied, sur les tourelles et aux armes des véhicules ; pas au volant.",
+              "Ein Druck auf Zielen (rechte Maustaste, LT) startet das Zielen, der nächste beendet es, statt die " +
+              "Taste zu halten. Zu Fuß, an Geschütztürmen und an Fahrzeugwaffen; nicht am Steuer.",
+              "Una pulsación de apuntar (botón derecho, LT) empieza a apuntar y la siguiente lo termina, en vez de " +
+              "mantener el botón. A pie, en torretas y en armas de vehículos; no al volante.",
+              "Una pressione di mira (tasto destro, LT) inizia a mirare, la successiva smette, invece di tenere " +
+              "premuto il tasto. A piedi, sulle torrette e alle armi dei veicoli; non alla guida.");
             a("Mouse in vehicles and turrets", "Мышь в технике и турелях", "Souris dans véhicules et tourelles",
               "Maus in Fahrzeugen und Geschützen", "Ratón en vehículos y torretas", "Mouse su veicoli e torrette");
             a("Where the camera cannot be turned directly (turrets, vehicles, menus) the mouse acts as the right stick; " +
@@ -688,22 +856,6 @@ namespace AO2Launcher
               "gioco del primo. Poi entrambi, nel gioco: Modalità campagna → Partita co-op pubblica.");
 
             // --- Advanced ---
-            a("Skip cutscenes", "Пропуск роликов", "Passer les cinématiques", "Zwischensequenzen überspringen",
-              "Saltar cinemáticas", "Salta filmati");
-            a("Enter or Space skips movies and in-engine cutscenes. Skipping is off in network games.",
-              "Enter или Пробел пропускают видеоролики и катсцены на движке. В сетевой игре пропуск выключен.",
-              "Entrée ou Espace passe les vidéos et les cinématiques du moteur. Désactivé en partie en réseau.",
-              "Enter oder Leertaste überspringt Videos und Zwischensequenzen. In Netzwerkspielen aus.",
-              "Intro o Espacio salta los vídeos y las cinemáticas del motor. Desactivado en partidas en red.",
-              "Invio o Spazio salta i filmati e le scene del motore. Disattivato nelle partite in rete.");
-            a("Skip unskippable ones", "Пропускать непропускаемые", "Même non passables", "Auch nicht überspringbare",
-              "Saltar las no saltables", "Anche quelli non saltabili");
-            a("Also allow skipping the cutscenes the original game does not let you skip.",
-              "Разрешить пропуск и тех роликов, которые оригинальная игра пропускать не даёт.",
-              "Permet aussi de passer les cinématiques que le jeu original ne laisse pas passer.",
-              "Auch Zwischensequenzen überspringen, die das Originalspiel nicht überspringen lässt.",
-              "Permite saltar también las cinemáticas que el juego original no deja saltar.",
-              "Permette di saltare anche i filmati che il gioco originale non lascia saltare.");
             a("God mode (cheat)", "Бессмертие (чит)", "Mode dieu (triche)", "Gottmodus (Cheat)", "Modo dios (truco)",
               "Modalità dio (trucco)");
             a("The player takes no damage. Has no effect in online co-op.",
@@ -738,12 +890,12 @@ namespace AO2Launcher
             a("Saves", "Сохранения", "Sauvegardes", "Spielstände", "Partidas guardadas", "Salvataggi");
             a("No saves yet: {0}", "Сохранений пока нет: {0}", "Pas encore de sauvegardes : {0}", "Noch keine Spielstände: {0}",
               "Aún no hay partidas guardadas: {0}", "Ancora nessun salvataggio: {0}");
-            a("Saves and profile folder: Documents\\armyoftworecomp_tu2 (or armyoftworecomp).",
-              "Папка сохранений и профиля: Documents\\armyoftworecomp_tu2 (или armyoftworecomp).",
-              "Dossier des sauvegardes et du profil : Documents\\armyoftworecomp_tu2 (ou armyoftworecomp).",
-              "Ordner für Spielstände und Profil: Documents\\armyoftworecomp_tu2 (oder armyoftworecomp).",
-              "Carpeta de partidas y perfil: Documents\\armyoftworecomp_tu2 (o armyoftworecomp).",
-              "Cartella dei salvataggi e del profilo: Documents\\armyoftworecomp_tu2 (o armyoftworecomp).");
+            a("The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2).",
+              "Папка сохранений текущего профиля (основного: Documents\\armyoftworecomp_tu2).",
+              "Le dossier des sauvegardes du profil actuel (celui du profil principal : Documents\\armyoftworecomp_tu2).",
+              "Der Ordner mit den Spielständen des aktuellen Profils (beim Hauptprofil: Documents\\armyoftworecomp_tu2).",
+              "La carpeta de partidas del perfil actual (la del perfil principal: Documents\\armyoftworecomp_tu2).",
+              "La cartella dei salvataggi del profilo attuale (quella del profilo principale: Documents\\armyoftworecomp_tu2).");
             a("Game files and DLC", "Файлы игры и DLC", "Fichiers du jeu et DLC", "Spieldateien und DLC",
               "Archivos del juego y DLC", "File del gioco e DLC");
             a("Install the game from your own disc image, Title Update 2, or add downloadable content (DLC).",
@@ -981,6 +1133,152 @@ namespace AO2Launcher
               "Title Update 2 ist nicht installiert: wähle die Update-Datei",
               "El Title Update 2 no está instalado: elige el archivo de la actualización",
               "Il Title Update 2 non è installato: scegli il file dell'aggiornamento");
+            a("choose the game first", "сначала выберите игру", "choisissez d'abord le jeu", "zuerst das Spiel wählen",
+              "elige primero el juego", "scegli prima il gioco");
+            a("choose Title Update 2 first", "сначала выберите Title Update 2", "choisissez d'abord le Title Update 2",
+              "zuerst Title Update 2 wählen", "elige primero el Title Update 2", "scegli prima il Title Update 2");
+            a("Choose the game first, then Title Update 2", "Сначала выберите игру, затем Title Update 2",
+              "Choisissez d'abord le jeu, puis le Title Update 2", "Wähle zuerst das Spiel, dann Title Update 2",
+              "Elige primero el juego y luego el Title Update 2", "Scegli prima il gioco, poi il Title Update 2");
+            a("Choose Title Update 2 first, then the DLC", "Сначала выберите Title Update 2, затем DLC",
+              "Choisissez d'abord le Title Update 2, puis les DLC", "Wähle zuerst Title Update 2, dann die DLC",
+              "Elige primero el Title Update 2 y luego los DLC", "Scegli prima il Title Update 2, poi i DLC");
+
+            // --- Uninstall, confirmations ---
+            a("OK", "OK", "OK", "OK", "Aceptar", "OK");
+            a("DELETE", "УДАЛИТЬ", "SUPPRIMER", "LÖSCHEN", "ELIMINAR", "ELIMINA");
+            a("Uninstall the game", "Удалить игру", "Désinstaller le jeu", "Spiel deinstallieren", "Desinstalar el juego", "Disinstalla il gioco");
+            a("UNINSTALL", "УДАЛИТЬ", "DÉSINSTALLER", "DEINSTALLIEREN", "DESINSTALAR", "DISINSTALLA");
+            a("UNINSTALL THE GAME", "УДАЛЕНИЕ ИГРЫ", "DÉSINSTALLER LE JEU", "SPIEL DEINSTALLIEREN", "DESINSTALAR EL JUEGO", "DISINSTALLA IL GIOCO");
+            a("Delete the installed game files (the assets folder). Saves are kept unless you choose otherwise.",
+              "Удалить установленные файлы игры (папку assets). Сохранения остаются, если не выбрать иное.",
+              "Supprimer les fichiers du jeu installés (le dossier assets). Les sauvegardes sont conservées, sauf choix contraire.",
+              "Die installierten Spieldateien löschen (den Ordner assets). Spielstände bleiben, außer du wählst es anders.",
+              "Eliminar los archivos del juego instalados (la carpeta assets). Las partidas se conservan salvo que elijas lo contrario.",
+              "Elimina i file del gioco installati (la cartella assets). I salvataggi restano, salvo diversa scelta.");
+            a("The game files will be deleted from {0} ({1}). To play again, install the game from your copy. Downloadable content stays in the dlc folder.",
+              "Файлы игры будут удалены из {0} ({1}). Чтобы снова играть, установите игру из своей копии. Дополнения (DLC) остаются в папке dlc.",
+              "Les fichiers du jeu seront supprimés de {0} ({1}). Pour rejouer, installez le jeu depuis votre copie. Les DLC restent dans le dossier dlc.",
+              "Die Spieldateien werden aus {0} gelöscht ({1}). Um wieder zu spielen, installiere das Spiel aus deiner Kopie. Die DLC bleiben im Ordner dlc.",
+              "Los archivos del juego se eliminarán de {0} ({1}). Para volver a jugar, instala el juego desde tu copia. Los DLC se quedan en la carpeta dlc.",
+              "I file del gioco saranno eliminati da {0} ({1}). Per giocare di nuovo, installa il gioco dalla tua copia. I DLC restano nella cartella dlc.");
+            a("Moving the DLC to the game folder...", "Перенос DLC в папку игры...", "Déplacement des DLC dans le dossier du jeu...",
+              "Die DLC werden in den Spielordner verschoben...", "Moviendo los DLC a la carpeta del juego...",
+              "Spostamento dei DLC nella cartella del gioco...");
+            a("DLC moved to the game folder: {0}", "DLC перенесены в папку игры: {0}", "DLC déplacés dans le dossier du jeu : {0}",
+              "DLC in den Spielordner verschoben: {0}", "DLC movidos a la carpeta del juego: {0}", "DLC spostati nella cartella del gioco: {0}");
+            a("Could not move the DLC to the game folder: {0}", "Не удалось перенести DLC в папку игры: {0}",
+              "Impossible de déplacer les DLC dans le dossier du jeu : {0}", "Die DLC konnten nicht in den Spielordner verschoben werden: {0}",
+              "No se pudieron mover los DLC a la carpeta del juego: {0}", "Impossibile spostare i DLC nella cartella del gioco: {0}");
+            a("Also delete the saves of every profile", "Также удалить сохранения всех профилей", "Supprimer aussi les sauvegardes de tous les profils",
+              "Auch die Spielstände aller Profile löschen", "Eliminar también las partidas de todos los perfiles", "Elimina anche i salvataggi di tutti i profili");
+            a("Could not delete everything: {0}", "Удалить всё не удалось: {0}", "Impossible de tout supprimer : {0}",
+              "Nicht alles konnte gelöscht werden: {0}", "No se pudo eliminar todo: {0}", "Impossibile eliminare tutto: {0}");
+            a("The game and the saves are deleted", "Игра и сохранения удалены", "Le jeu et les sauvegardes sont supprimés",
+              "Spiel und Spielstände sind gelöscht", "El juego y las partidas se han eliminado", "Gioco e salvataggi eliminati");
+            a("The game is uninstalled, the saves are kept", "Игра удалена, сохранения остались", "Le jeu est désinstallé, les sauvegardes sont conservées",
+              "Das Spiel ist deinstalliert, die Spielstände bleiben", "El juego se ha desinstalado, las partidas se conservan", "Gioco disinstallato, i salvataggi restano");
+
+            // --- Unlock All ---
+            a("Unlock All (cheat)", "Открыть всё (чит)", "Tout débloquer (triche)", "Alles freischalten (Cheat)", "Desbloquear todo (truco)", "Sblocca tutto (trucco)");
+            a("UNLOCK ALL", "ОТКРЫТЬ ВСЁ", "TOUT DÉBLOQUER", "ALLES FREISCHALTEN", "DESBLOQUEAR TODO", "SBLOCCA TUTTO");
+            a("TURN ON", "ВКЛЮЧИТЬ", "ACTIVER", "EINSCHALTEN", "ACTIVAR", "ATTIVA");
+            a("The game will unlock the Professional difficulty and give 9,999,999 money in the current profile. " +
+              "This is saved in the profile and stays after the cheat is turned off. Turn it on?",
+              "Игра откроет сложность «Профессионал» и даст 9 999 999 денег в текущем профиле. " +
+              "Это сохранится в профиле и останется после выключения чита. Включить?",
+              "Le jeu débloquera la difficulté Professionnel et donnera 9 999 999 d'argent dans le profil actuel. " +
+              "C'est enregistré dans le profil et reste après la désactivation de la triche. Activer ?",
+              "Das Spiel schaltet den Schwierigkeitsgrad Profi frei und gibt 9.999.999 Geld im aktuellen Profil. " +
+              "Das wird im Profil gespeichert und bleibt nach dem Ausschalten des Cheats. Einschalten?",
+              "El juego desbloqueará la dificultad Profesional y dará 9.999.999 de dinero en el perfil actual. " +
+              "Se guarda en el perfil y se mantiene al desactivar el truco. ¿Activarlo?",
+              "Il gioco sbloccherà la difficoltà Professionista e darà 9.999.999 di denaro nel profilo attuale. " +
+              "Viene salvato nel profilo e resta dopo aver disattivato il trucco. Attivarlo?");
+            a("Unlocks every difficulty and gives 9,999,999 money (kept at the maximum while on). " +
+              "Saved in the current profile. Has no effect in online co-op.",
+              "Открывает все сложности и даёт 9 999 999 денег (пока включено, деньги держатся на максимуме). " +
+              "Сохраняется в текущем профиле. В сетевом кооперативе не действует.",
+              "Débloque toutes les difficultés et donne 9 999 999 d'argent (maintenu au maximum tant que c'est activé). " +
+              "Enregistré dans le profil actuel. Sans effet en coop en ligne.",
+              "Schaltet alle Schwierigkeitsgrade frei und gibt 9.999.999 Geld (bleibt beim Maximum, solange an). " +
+              "Wird im aktuellen Profil gespeichert. Im Online-Koop ohne Wirkung.",
+              "Desbloquea todas las dificultades y da 9.999.999 de dinero (se mantiene al máximo mientras está activado). " +
+              "Se guarda en el perfil actual. Sin efecto en el cooperativo en línea.",
+              "Sblocca tutte le difficoltà e dà 9.999.999 di denaro (resta al massimo finché è attivo). " +
+              "Salvato nel profilo attuale. Nessun effetto nella co-op online.");
+
+            // --- Profiles ---
+            a("PROFILES", "ПРОФИЛИ", "PROFILS", "PROFILE", "PERFILES", "PROFILI");
+            a("PROFILE", "ПРОФИЛЬ", "PROFIL", "PROFIL", "PERFIL", "PROFILO");
+            a("Profile", "Профиль", "Profil", "Profil", "Perfil", "Profilo");
+            a("Main", "Основной", "Principal", "Hauptprofil", "Principal", "Principale");
+            a("Profile {0}", "Профиль {0}", "Profil {0}", "Profil {0}", "Perfil {0}", "Profilo {0}");
+            a("Profile {0}: {1}", "Профиль {0}: {1}", "Profil {0} : {1}", "Profil {0}: {1}", "Perfil {0}: {1}", "Profilo {0}: {1}");
+            a("no saves yet", "сохранений пока нет", "pas encore de sauvegarde", "noch keine Spielstände", "aún no hay partidas", "nessun salvataggio");
+            a("none yet", "пока нет", "pas encore", "noch keine", "aún no", "ancora nessuno");
+            a("Last checkpoint: {0}", "Последний чекпоинт: {0}", "Dernier point de contrôle : {0}", "Letzter Checkpoint: {0}",
+              "Último punto de control: {0}", "Ultimo checkpoint: {0}");
+            a("Money: {0}", "Деньги: {0}", "Argent : {0}", "Geld: {0}", "Dinero: {0}", "Denaro: {0}");
+            a("The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; the downloadable content is shared.",
+              "Профиль, с которым запускается игра. У каждого профиля свои сохранения, настройки игры, деньги и открытое; дополнения (DLC) общие.",
+              "Le profil avec lequel le jeu démarre. Chaque profil a ses sauvegardes, ses réglages du jeu, son argent et ses déblocages ; les DLC sont communs.",
+              "Das Profil, mit dem das Spiel startet. Jedes Profil hat eigene Spielstände, Spieleinstellungen, Geld und Freischaltungen; die DLC sind gemeinsam.",
+              "El perfil con el que se inicia el juego. Cada perfil tiene sus partidas, ajustes del juego, dinero y desbloqueos; los DLC son compartidos.",
+              "Il profilo con cui parte il gioco. Ogni profilo ha i suoi salvataggi, impostazioni di gioco, denaro e sblocchi; i DLC sono condivisi.");
+            a("New profile name", "Имя нового профиля", "Nom du nouveau profil", "Name des neuen Profils", "Nombre del nuevo perfil", "Nome del nuovo profilo");
+            a("The name of a new profile. Empty: the suggested one.", "Имя нового профиля. Пусто — предложенное.",
+              "Le nom d'un nouveau profil. Vide : celui proposé.", "Der Name eines neuen Profils. Leer: der vorgeschlagene.",
+              "El nombre de un nuevo perfil. Vacío: el propuesto.", "Il nome di un nuovo profilo. Vuoto: quello proposto.");
+            a("Create profile", "Создать профиль", "Créer un profil", "Profil erstellen", "Crear perfil", "Crea profilo");
+            a("Create an empty profile with the name above and switch to it. The game starts it from the beginning.",
+              "Создать пустой профиль с этим именем и переключиться на него. Игра начнётся с начала.",
+              "Créer un profil vide avec le nom ci-dessus et passer dessus. Le jeu le commence depuis le début.",
+              "Ein leeres Profil mit dem Namen oben erstellen und dorthin wechseln. Das Spiel beginnt es von vorn.",
+              "Crear un perfil vacío con el nombre de arriba y cambiar a él. El juego lo empieza desde el principio.",
+              "Crea un profilo vuoto con il nome sopra e passa a quello. Il gioco lo inizia dal principio.");
+            a("Delete profile", "Удалить профиль", "Supprimer le profil", "Profil löschen", "Eliminar perfil", "Elimina profilo");
+            a("Delete the current profile with all its saves. The main profile cannot be deleted.",
+              "Удалить текущий профиль со всеми сохранениями. Основной профиль удалить нельзя.",
+              "Supprimer le profil actuel avec toutes ses sauvegardes. Le profil principal ne peut pas être supprimé.",
+              "Das aktuelle Profil mit allen Spielständen löschen. Das Hauptprofil kann nicht gelöscht werden.",
+              "Eliminar el perfil actual con todas sus partidas. El perfil principal no se puede eliminar.",
+              "Elimina il profilo attuale con tutti i salvataggi. Il profilo principale non si può eliminare.");
+            a("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles, or in AppData\\Local\\armyoftworecomp_profiles if Documents cannot be written to.",
+              "Профили, кроме основного, хранятся в Documents\\armyoftworecomp_profiles, а если в Documents нельзя писать, то в AppData\\Local\\armyoftworecomp_profiles.",
+              "Les profils autres que le principal sont dans Documents\\armyoftworecomp_profiles, ou dans AppData\\Local\\armyoftworecomp_profiles si Documents n'est pas accessible en écriture.",
+              "Profile außer dem Hauptprofil liegen in Documents\\armyoftworecomp_profiles oder, wenn Documents nicht beschreibbar ist, in AppData\\Local\\armyoftworecomp_profiles.",
+              "Los perfiles distintos del principal se guardan en Documents\\armyoftworecomp_profiles, o en AppData\\Local\\armyoftworecomp_profiles si no se puede escribir en Documents.",
+              "I profili diversi dal principale si trovano in Documents\\armyoftworecomp_profiles, oppure in AppData\\Local\\armyoftworecomp_profiles se in Documents non si può scrivere.");
+            a("Enter a name for the profile", "Введите имя профиля", "Entrez un nom pour le profil", "Gib einen Namen für das Profil ein",
+              "Escribe un nombre para el perfil", "Inserisci un nome per il profilo");
+            a("This name cannot be used for a profile", "Такое имя для профиля не подходит", "Ce nom ne peut pas servir pour un profil",
+              "Dieser Name ist für ein Profil nicht möglich", "Ese nombre no sirve para un perfil", "Questo nome non può essere usato per un profilo");
+            a("A profile named {0} already exists", "Профиль {0} уже есть", "Un profil nommé {0} existe déjà", "Ein Profil namens {0} gibt es schon",
+              "Ya existe un perfil llamado {0}", "Esiste già un profilo chiamato {0}");
+            a("Could not create the profile: {0}", "Не удалось создать профиль: {0}", "Impossible de créer le profil : {0}",
+              "Profil konnte nicht erstellt werden: {0}", "No se pudo crear el perfil: {0}", "Impossibile creare il profilo: {0}");
+            a("Profile {0} created", "Профиль {0} создан", "Profil {0} créé", "Profil {0} erstellt", "Perfil {0} creado", "Profilo {0} creato");
+            a("DELETE PROFILE", "УДАЛЕНИЕ ПРОФИЛЯ", "SUPPRIMER LE PROFIL", "PROFIL LÖSCHEN", "ELIMINAR PERFIL", "ELIMINA PROFILO");
+            a("Profile {0} and all its saves will be deleted for good ({1}).", "Профиль {0} и все его сохранения будут удалены навсегда ({1}).",
+              "Le profil {0} et toutes ses sauvegardes seront supprimés définitivement ({1}).",
+              "Das Profil {0} und alle seine Spielstände werden endgültig gelöscht ({1}).",
+              "El perfil {0} y todas sus partidas se eliminarán para siempre ({1}).",
+              "Il profilo {0} e tutti i suoi salvataggi saranno eliminati per sempre ({1}).");
+            a("Could not delete the profile: {0}", "Не удалось удалить профиль: {0}", "Impossible de supprimer le profil : {0}",
+              "Profil konnte nicht gelöscht werden: {0}", "No se pudo eliminar el perfil: {0}", "Impossibile eliminare il profilo: {0}");
+            a("Profile {0} deleted", "Профиль {0} удалён", "Profil {0} supprimé", "Profil {0} gelöscht", "Perfil {0} eliminado", "Profilo {0} eliminato");
+
+            // Missions (the last checkpoint of a profile)
+            a("Somalia", "Сомали", "Somalie", "Somalia", "Somalia", "Somalia");
+            a("Afghanistan", "Афганистан", "Afghanistan", "Afghanistan", "Afganistán", "Afghanistan");
+            a("Iraq", "Ирак", "Irak", "Irak", "Irak", "Iraq");
+            a("Aircraft carrier", "Авианосец", "Porte-avions", "Flugzeugträger", "Portaaviones", "Portaerei");
+            a("China", "Китай", "Chine", "China", "China", "Cina");
+            a("Miami", "Майами", "Miami", "Miami", "Miami", "Miami");
+            a("Kiev", "Киев", "Kiev", "Kiew", "Kiev", "Kiev");
+            a("Miami (alternate ending)", "Майами (альтернативная концовка)", "Miami (fin alternative)", "Miami (alternatives Ende)",
+              "Miami (final alternativo)", "Miami (finale alternativo)");
             return t;
         }
     }

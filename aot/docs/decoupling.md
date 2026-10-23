@@ -151,7 +151,11 @@ that the simulation has not applied yet (`mouse_aim.cpp` PredictedTurn):
   ones that never made it; entries age out after 1.5 s);
 - (1 - alpha) of the turn applied on the drawn step.
 
-The pitch is kept within the game's look limits (+6498 / -7500). The
+The pitch is kept within the game's look limits, read from the character:
+aiming (`AO2Pawn.bIsInPrecisionMode`) `Precision_Aiming_Min/MaxPitch` (-77 / 77
+degrees = -14017 / 14017 rotation units), otherwise its `CameraSettings`
+`Suppression_Minimum/MaximumPitch` (-50 / 35.7 = -9102 / 6498); a narrower
+limit (cover: 45 degrees) is learnt from the steps the game cuts short. The
 third-person camera orbits the character, so its location is turned around
 the pawn by the same rotation (`ao2_predict_camera_orbit`; Controller.Pawn
 and Actor.Location found by name at runtime, `src/ue3_reflect.cpp` - +84

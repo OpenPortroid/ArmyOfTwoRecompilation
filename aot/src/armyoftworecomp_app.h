@@ -13,10 +13,13 @@
 #include <rex/rex_app.h>
 #include <rex/runtime.h>
 #include <rex/system/gpu_plugin.h>
+#include <rex/ui/overlay/achievement_notification.h>
 
+#include "achievements.h"
 #include "aspect_ratio.h"
 #include "debug_menu.h"
 #include "debug_tools.h"
+#include "dlc_folder.h"
 #include "coop_invite.h"
 #include "ea_server.h"
 #include "game_cvars.h"
@@ -84,9 +87,16 @@ public:
     // The port's own menus speak the game's language.
     ao2::text::Init();
 
+    // The downloadable content: in the game's folder (moved there from the
+    // user data folder of earlier versions).
+    ao2::dlc::Setup(user_data_root());
+
     // The game's text (Russian, keyboard keys in place of the controller
     // buttons): mounted before the game reads its localization.
     ao2::lang::Install(runtime(), game_data_root(), user_data_root());
+    // The achievements in that language (the runtime read them in English),
+    // and for the launcher.
+    ao2::ach::Setup(runtime()->cache_root());
 
     // Online co-op: where the game finds EA's (emulated) servers, and the
     // built-in server when this player hosts.
@@ -102,9 +112,8 @@ public:
       ao2::skip::Attach(window());
       ao2::gfxmenu::Attach(window());
       ao2::menumouse::Attach(window());
-      ao2::menu::Attach(window(), imgui_drawer(),
-                        static_cast<rex::input::InputSystem *>(runtime()->input_system()), game_data_root(),
-                        user_data_root());
+      ao2::menu::Attach(window(), imgui_drawer(), immediate_drawer(),
+                        static_cast<rex::input::InputSystem *>(runtime()->input_system()), game_data_root());
       if (!window()->IsFullscreen())
       {
         // The default window (1280x720 logical at the display's DPI) can be
@@ -133,6 +142,13 @@ public:
     ao2::menu::ConfigureFonts(atlas);
   }
 
+  // The unlock notice is the port's (achievements.cpp): the SDK's toast is
+  // drawn by no one with the native renderer.
+  std::unique_ptr<rex::ui::AchievementNotificationDialog> CreateAchievementNotificationDialog() override
+  {
+    return nullptr;
+  }
+
   void OnShutdown() override
   {
 #ifdef REXGLUE_ENABLE_PERF_COUNTERS
@@ -149,10 +165,9 @@ public:
       paths.game_data_root = utils::RepoRoot() / "assets";
     }
 
-    // TU2 keeps its own saves, profile and downloadable content next to the
-    // disc version's (Documents\armyoftworecomp): the DLC needs the TU2
-    // executable, and the disc version enumerates the same content folder.
-    // --user_data_root / --cache_root still win.
+    // TU2 keeps its own saves and profile next to the disc version's
+    // (Documents\armyoftworecomp); the downloadable content is in the game's
+    // folder (dlc_folder.cpp). --user_data_root / --cache_root still win.
     if (REXCVAR_GET(user_data_root).empty())
     {
       paths.user_data_root = paths.user_data_root.parent_path() / "armyoftworecomp_tu2";

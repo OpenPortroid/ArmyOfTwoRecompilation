@@ -20,6 +20,7 @@
 // while the detailed view is shown (PDH collection takes milliseconds).
 #include "perf_overlay.h"
 
+#include "frame_spikes.h"
 #include "ui_text.h"
 #include "ui_theme.h"
 
@@ -40,6 +41,8 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <condition_variable>
+#include <cstdio>
 #include <cwctype>
 #include <map>
 #include <mutex>
@@ -85,6 +88,7 @@ namespace ao2::perf
       std::mutex frames_mutex;
       std::array<int64_t, kFrames> presents{}; // steady clock, ns
       uint64_t present_count = 0;
+      std::condition_variable presented;
 
       std::mutex system_mutex;
       SystemStats system;
@@ -105,6 +109,15 @@ namespace ao2::perf
     {
       static State *state = new State;
       return *state;
+    }
+
+    // Until the next present (at most 50 ms: none while loading).
+    void WaitForPresent()
+    {
+      State &s = S();
+      std::unique_lock lock(s.frames_mutex);
+      uint64_t count = s.present_count;
+      s.presented.wait_for(lock, std::chrono::milliseconds(50), [&] { return s.present_count != count; });
     }
 
     int64_t NowNs()
@@ -163,8 +176,54 @@ namespace ao2::perf
       return values;
     }
 
+    // NVIDIA's management library (nvml.dll, with the driver), loaded at run time.
+    class Nvml
+    {
+    public:
+      // The device on PCI bus/device/function; false without NVML.
+      bool Open(uint32_t bus, uint32_t device, uint32_t function)
+      {
+        HMODULE dll = LoadLibraryExW(L"nvml.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (!dll)
+        {
+          return false;
+        }
+        auto init = reinterpret_cast<int (*)()>(GetProcAddress(dll, "nvmlInit_v2"));
+        auto by_bus = reinterpret_cast<int (*)(const char *, void **)>(
+            GetProcAddress(dll, "nvmlDeviceGetHandleByPciBusId_v2"));
+        temperature_ = reinterpret_cast<int (*)(void *, int, unsigned *)>(
+            GetProcAddress(dll, "nvmlDeviceGetTemperature"));
+        char bus_id[32];
+        std::snprintf(bus_id, sizeof(bus_id), "00000000:%02X:%02X.%X", bus, device, function);
+        if (!init || !by_bus || !temperature_ || init() != 0 || by_bus(bus_id, &device_) != 0)
+        {
+          device_ = nullptr;
+          return false;
+        }
+        return true;
+      }
+
+      // The core temperature in degrees, or 0.
+      unsigned Temperature() const
+      {
+        unsigned t = 0;
+        return device_ && temperature_(device_, 0 /* NVML_TEMPERATURE_GPU */, &t) == 0 ? t : 0;
+      }
+
+    private:
+      void *device_ = nullptr;
+      int (*temperature_)(void *, int, unsigned *) = nullptr;
+    };
+
     // The renderer's adapter: load and dedicated memory (PDH), temperature
-    // (D3DKMT), the game's video memory and the total (DXGI).
+    // (NVML, else D3DKMT), the game's video memory and the total (DXGI).
+    //
+    // The temperature takes 4-8 ms in the driver on an RTX 2060, through
+    // NVML as through D3DKMT's adapter performance data, and a present
+    // issued meanwhile waits as long: with the detailed overlay a long frame
+    // now and then, in step with the samples (frame_spikes.log). It is asked
+    // only every kTemperatureSamples samples, right after a present, so that
+    // it is over before the next one at up to ~120 FPS.
     class GpuSampler
     {
     public:
@@ -174,6 +233,15 @@ namespace ao2::perf
         {
           return;
         }
+        auto t0 = std::chrono::steady_clock::now();
+        auto mark = [&](ao2::spikes::Event event) {
+          auto t1 = std::chrono::steady_clock::now();
+          if (ao2::spikes::Enabled())
+          {
+            ao2::spikes::Mark(event, std::chrono::duration<double, std::milli>(t1 - t0).count());
+          }
+          t0 = t1;
+        };
         if (query_ && PdhCollectQueryData(query_) == ERROR_SUCCESS)
         {
           // Instances: pid_<pid>_luid_0x<high>_0x<low>_phys_<n>_eng_<n>_engtype_<type>.
@@ -202,19 +270,34 @@ namespace ao2::perf
             }
           }
         }
-        if (kmt_adapter_)
+        mark(ao2::spikes::kSamplePdh);
+        if ((nvml_open_ || kmt_adapter_) && temperature_samples_++ % kTemperatureSamples == 0)
         {
-          D3DKMT_ADAPTER_PERFDATA data = {};
-          D3DKMT_QUERYADAPTERINFO query = {};
-          query.hAdapter = kmt_adapter_;
-          query.Type = KMTQAITYPE_ADAPTERPERFDATA;
-          query.pPrivateDriverData = &data;
-          query.PrivateDriverDataSize = sizeof(data);
-          if (D3DKMTQueryAdapterInfo(&query) >= 0 && data.Temperature > 0)
+          WaitForPresent();
+          t0 = std::chrono::steady_clock::now();
+          if (nvml_open_)
           {
-            s.gpu_temperature = float(data.Temperature) / 10.0f;
+            if (unsigned t = nvml_.Temperature())
+            {
+              temperature_ = float(t);
+            }
           }
+          else
+          {
+            D3DKMT_ADAPTER_PERFDATA data = {};
+            D3DKMT_QUERYADAPTERINFO query = {};
+            query.hAdapter = kmt_adapter_;
+            query.Type = KMTQAITYPE_ADAPTERPERFDATA;
+            query.pPrivateDriverData = &data;
+            query.PrivateDriverDataSize = sizeof(data);
+            if (D3DKMTQueryAdapterInfo(&query) >= 0 && data.Temperature > 0)
+            {
+              temperature_ = float(data.Temperature) / 10.0f;
+            }
+          }
+          mark(ao2::spikes::kSampleTemperature);
         }
+        s.gpu_temperature = temperature_;
         if (adapter_)
         {
           DXGI_QUERY_VIDEO_MEMORY_INFO info = {};
@@ -223,6 +306,7 @@ namespace ao2::perf
             s.vram_game = double(info.CurrentUsage);
           }
           s.vram_total = vram_total_;
+          mark(ao2::spikes::kSampleDxgi);
         }
       }
 
@@ -265,6 +349,14 @@ namespace ao2::perf
         if (D3DKMTOpenAdapterFromLuid(&open) >= 0)
         {
           kmt_adapter_ = open.hAdapter;
+          D3DKMT_ADAPTERADDRESS address = {};
+          D3DKMT_QUERYADAPTERINFO query = {};
+          query.hAdapter = kmt_adapter_;
+          query.Type = KMTQAITYPE_ADAPTERADDRESS;
+          query.pPrivateDriverData = &address;
+          query.PrivateDriverDataSize = sizeof(address);
+          nvml_open_ = D3DKMTQueryAdapterInfo(&query) >= 0 &&
+                       nvml_.Open(address.BusNumber, address.DeviceNumber, address.FunctionNumber);
         }
 
         ComPtr<IDXGIFactory4> factory;
@@ -283,6 +375,11 @@ namespace ao2::perf
       PDH_HQUERY query_ = nullptr;
       PDH_HCOUNTER engines_ = nullptr, memory_ = nullptr;
       D3DKMT_HANDLE kmt_adapter_ = 0;
+      static constexpr uint32_t kTemperatureSamples = 5;
+      uint32_t temperature_samples_ = 0;
+      float temperature_ = 0.0f;
+      Nvml nvml_;
+      bool nvml_open_ = false;
       ComPtr<IDXGIAdapter3> adapter_;
       double vram_total_ = -1.0;
     };
@@ -449,7 +546,7 @@ namespace ao2::perf
 
     void Unknown()
     {
-      ImGui::TextColored(kDim, "—");
+      ImGui::TextColored(kDim, "вЂ”");
     }
 
     constexpr double kGiB = 1024.0 * 1024.0 * 1024.0;
@@ -483,6 +580,7 @@ namespace ao2::perf
     std::lock_guard lock(s.frames_mutex);
     s.presents[s.present_count % kFrames] = now;
     ++s.present_count;
+    s.presented.notify_all();
   }
 
   void Draw()
@@ -557,7 +655,7 @@ namespace ao2::perf
                          : system.gpu_temperature >= 75.0f ? ImVec4(1.0f, 0.85f, 0.35f, 1.0f)
                                                            : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
           ImGui::SameLine(0.0f, ImGui::CalcTextSize(" ").x * 2.0f);
-          ImGui::TextColored(color, "%.0f°C", system.gpu_temperature);
+          ImGui::TextColored(color, "%.0fВ°C", system.gpu_temperature);
         }
 
         Label("VRAM");
@@ -614,9 +712,9 @@ namespace ao2::perf
   void ConfigureFonts(ImFontAtlas *atlas)
   {
     static const ImWchar kRanges[] = {
-        0x0020, 0x00FF, // Basic Latin, Latin-1 (°)
+        0x0020, 0x00FF, // Basic Latin, Latin-1 (В°)
         0x0400, 0x04FF, // Cyrillic
-        0x2010, 0x205E, // punctuation (—)
+        0x2010, 0x205E, // punctuation (вЂ”)
         0,
     };
     // Monospaced, so the figures stay put.

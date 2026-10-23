@@ -9,6 +9,10 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - Two screens. **Main**: the art and logo, then Settings, Play and Exit. **Settings**: the Graphics, Controls, Keyboard,
   Gamepad, Split-Screen, Network and Advanced tabs; Back returns to the main screen. A tab longer than the panel scrolls
   (wheel, or by moving the selection).
+- **Achievements** (`src\Achievements.cs`): the current profile's achievements by section (as the game's own
+  Achievements page has them), icons, gamerscore and when each was earned. The names, descriptions and icons are the
+  game's: the game writes them to the shared cache (`Documents\armyoftworecomp_tu2\cache\achievements`) when it
+  starts, so the tab is empty until it has run once; the unlocks are read from the profile's `achievements\4541084C.toml`.
 - **Keyboard / Gamepad** (`src\BindPages.cs`, `src\Bindings.cs`): every key of the game's `keybind_*` and every gamepad
   button of `padbind_*` (plus the sticks swapped / inverted). Enter or a click waits for the key or mouse button (with
   Shift / Ctrl / Alt: a combination; a modifier let go alone binds itself), → or + adds one more key, Delete or × clears;
@@ -35,7 +39,9 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   optionally, DLC packages; the launcher works out which is which. Images and packages are read by
   `ao2_install.exe` in the game folder (`aot\tools\ao2_install.cpp`, the file system devices of rexruntime).
   The game is copied to `assets.tmp` and moved to `assets` only after it has been checked; DLC goes to
-  `Documents\armyoftworecomp_tu2\0000000000000000\4541084C\00000002\<package>`. A desktop shortcut is created
+  `dlc\<package>` in the game folder (next to `assets`). DLC that earlier versions put in
+  `Documents\armyoftworecomp_tu2\0000000000000000\4541084C\00000002` is moved there when the launcher starts
+  (the game does the same if it still finds some). A desktop shortcut is created
   after the installation (can be turned off). Later: Settings → Advanced → Game files and DLC.
   `aot\tools\make_release.ps1 [-Zip]` builds the release package without game files.
 
@@ -48,6 +54,12 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   the next start. Without a release layout (no `armyoftworecomp.exe` next to the launcher) the browser downloads the
   archive instead. Offline only the version is shown. `Updates.Version` is the package's version: bump it before
   every release, the tag is `v` + it.
+- **What's new.** The first start after an update (`seen_version` in the launcher's ini differs from
+  `Updates.Version`) fetches the description of release `v<Version>` from GitHub (`Updates.NotesFor`, markdown: headings,
+  bullets, bold and links are reduced to plain lines) and shows it in a window (scroll: wheel, ↑↓, PgUp/PgDn; Enter / Esc /
+  CLOSE). So the release description is the patch notes: write it before publishing. The PATCH NOTES button at the
+  bottom right of the main screen shows them again. A fresh install, a release without a description, or being offline shows nothing (offline: asked
+  again next start). Debug: `--notes-file=<md>` with `--snapshot` renders the window from a file.
 
 Build: `build.cmd` (Roslyn from Visual Studio / Build Tools, or the csc that ships with Windows). The pictures
 in `res\` are made by `tools\make_assets.py <background> [<logo>]`: the background is cropped to the main

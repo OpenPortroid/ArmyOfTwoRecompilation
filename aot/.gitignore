@@ -7,3 +7,4 @@ out/*
 rexglue/*
 !rexglue/README.md
 *.log
+dlc/*

@@ -2435,14 +2435,18 @@ namespace ao2::cyrillic
 
   void Tick(uint8_t *base)
   {
-    // Looked for every 60 frames until every font is ours, then every 600
-    // (fonts of a package loaded again get their letters again).
-    static uint32_t frame = 0;
+    // Looked for every second until every font is ours, then every 10 s
+    // (fonts of a package loaded again get their letters again). By time, not
+    // frames: the scan walks every object, at 200 FPS 60 frames is a third of
+    // a second.
+    static auto next = std::chrono::steady_clock::time_point{};
     static bool all = false;
     if (!g_ready.load(std::memory_order_acquire) || g_state.fonts.empty())
       return;
-    if (++frame % (all ? 600 : 60) != 0)
+    auto now_time = std::chrono::steady_clock::now();
+    if (now_time < next)
       return;
+    next = now_time + (all ? std::chrono::seconds(10) : std::chrono::seconds(1));
     int now = 0;
     all = PatchFonts(base, now);
     if (now)

@@ -474,6 +474,104 @@ namespace
     g_applied_pitch = pitch;
   }
 
+  // The look pitch's limits. The game takes the look back within them later
+  // in the step than the mouse's turn is added (the rotation reads 7100 after
+  // UpdateLookingAction, 6498 when the next step starts), so only the part of
+  // a turn within them shows; the drawn view (PredictedTurn) must not add
+  // more, or it looks past the limit and springs back. The on-foot limits
+  // are the character's (ModePitchLimits); a narrower one (cover, another
+  // camera) is learnt while the game cuts the turns short at it.
+  float g_pitch_top = 6498.0f, g_pitch_bottom = -9102.0f;
+  bool g_pitch_asked = false;    // the last step turned the pitch...
+  float g_pitch_asked_to = 0.0f; // ...to this
+
+  // The on-foot look limits of character `holder` (rotation units), from the
+  // game's settings: aiming (AO2Pawn.bIsInPrecisionMode) the character's
+  // Precision_Aiming_Min/MaxPitch (-77 / 77 degrees), otherwise its
+  // CameraSettings' Suppression_Minimum/MaximumPitch (-50 / 35.7). Aiming
+  // looks almost twice as far down; the prediction held to the limits
+  // without aim did not turn the view below them and it stuttered. The
+  // measured values while the properties are not found.
+  void ModePitchLimits(const uint8_t *base, uint32_t holder, float &bottom, float &top)
+  {
+    static int32_t precision = -1, aim_min = -1, aim_max = -1, settings = -1, min = -1, max = -1;
+    static uint32_t precision_mask = 0;
+    if (precision < 0 || aim_min < 0 || aim_max < 0 || settings < 0 || min < 0 || max < 0)
+    {
+      ao2::ue3::BoolProperty(base, "AO2Pawn", "bIsInPrecisionMode", precision, precision_mask);
+      aim_min = ao2::ue3::PropertyOffset(base, "AO2Character", "Precision_Aiming_MinPitch");
+      aim_max = ao2::ue3::PropertyOffset(base, "AO2Character", "Precision_Aiming_MaxPitch");
+      settings = ao2::ue3::PropertyOffset(base, "AO2Character", "CameraSettings");
+      min = ao2::ue3::PropertyOffset(base, "AO2CameraSettings", "Suppression_MinimumPitch");
+      max = ao2::ue3::PropertyOffset(base, "AO2CameraSettings", "Suppression_MaximumPitch");
+    }
+    constexpr float kUnitsPerDegree = 65536.0f / 360.0f;
+    bool aiming = precision >= 0 && precision_mask && (LoadU32(base, holder + precision) & precision_mask);
+    uint32_t camera = settings >= 0 ? LoadU32(base, holder + settings) : 0;
+    if (aiming && aim_min >= 0 && aim_max >= 0)
+    {
+      bottom = LoadF32(base, holder + aim_min) * kUnitsPerDegree;
+      top = LoadF32(base, holder + aim_max) * kUnitsPerDegree;
+    }
+    else if (aiming)
+    {
+      bottom = -14017.0f;
+      top = 14017.0f;
+    }
+    else if (camera && min >= 0 && max >= 0)
+    {
+      bottom = LoadF32(base, camera + min) * kUnitsPerDegree;
+      top = LoadF32(base, camera + max) * kUnitsPerDegree;
+    }
+    else
+    {
+      bottom = -9102.0f;
+      top = 6498.0f;
+    }
+    if (!(bottom < 0.0f && top > 0.0f && top - bottom < 65536.0f))
+    {
+      bottom = aiming ? -14017.0f : -9102.0f;
+      top = aiming ? 14017.0f : 6498.0f;
+    }
+  }
+
+  // The local player's pitch as a step starts, before its turn: a turn the
+  // game cut short twice in a row at the same pitch marks the limit there,
+  // otherwise the character's hold. A single short turn is not a limit: a
+  // shot's recoil lifts the view while the mouse pulls it down, the turn
+  // ends above where it was asked to, and taken for the bottom limit it
+  // held the prediction there - the view stuttered while firing.
+  float g_cut_top_at = NAN, g_cut_bottom_at = NAN; // where the last step's turn was cut short
+
+  void LearnPitchLimits(const uint8_t *base, uint32_t holder, float pitch)
+  {
+    float bottom, top;
+    ModePitchLimits(base, holder, bottom, top);
+    pitch = std::remainder(pitch, 65536.0f);
+    bool cut_top = g_pitch_asked && pitch > 0.0f && g_pitch_asked_to > pitch + 1.0f;
+    bool cut_bottom = g_pitch_asked && pitch < 0.0f && g_pitch_asked_to < pitch - 1.0f;
+    g_pitch_top = cut_top && std::fabs(pitch - g_cut_top_at) <= 1.0f ? pitch : top;
+    g_pitch_bottom = cut_bottom && std::fabs(pitch - g_cut_bottom_at) <= 1.0f ? pitch : bottom;
+    g_cut_top_at = cut_top ? pitch : NAN;
+    g_cut_bottom_at = cut_bottom ? pitch : NAN;
+    g_pitch_asked = false;
+  }
+
+  // Of a pitch turn from `pitch`, the part within the limits.
+  float KeptPitch(float pitch, float turn)
+  {
+    float now = std::remainder(pitch, 65536.0f);
+    float lo = std::min(g_pitch_bottom, now), hi = std::max(g_pitch_top, now);
+    return std::clamp(now + turn, lo, hi) - now;
+  }
+
+  // The local player's pitch turned by `turn` from `pitch` in this step.
+  void NotePitchTurn(float pitch, float turn)
+  {
+    g_pitch_asked = turn != 0.0f;
+    g_pitch_asked_to = std::remainder(pitch, 65536.0f) + turn;
+  }
+
   // UpdateLookingAction turns the view from the stick only while the
   // character's current action lets the player look: the action object
   // ([character+1736], current one through vtable +264) has the top bit of
@@ -581,6 +679,40 @@ namespace
     part(240, t->pitch_min, t->pitch_max, pitch);
   }
 
+  // Where the gun of this controller's turret points: the controller's
+  // rotation within the gun's limits.
+  void GunRotation(const uint8_t *base, uint32_t controller, uint32_t pawn, float &pitch, float &yaw)
+  {
+    pitch = float(int32_t(LoadU32(base, controller + 240)));
+    yaw = float(int32_t(LoadU32(base, controller + 244)));
+    const Turret *t = TurretOf(pawn);
+    if (!t || !t->vehicle)
+    {
+      return;
+    }
+    auto part = [&](uint32_t offset, float lo, float hi, float &angle) {
+      if (!(lo < hi) || hi - lo >= 65535.0f)
+      {
+        return;
+      }
+      float from = float(int32_t(LoadU32(base, t->vehicle + offset)));
+      angle = from + std::clamp(std::remainder(angle - from, 65536.0f), lo, hi);
+    };
+    part(240, t->pitch_min, t->pitch_max, pitch);
+    part(244, t->yaw_min, t->yaw_max, yaw);
+  }
+
+  // Getting on a turret the camera goes from the character's view to the
+  // gun's with the animation (some 20 steps), while the turret's rotation
+  // already turns with the mouse: the turn does not show, its prediction
+  // turned the drawn view and the next step's view took it back. On the gun
+  // the view is where the gun points (within 2 rotation units). Judged on
+  // every step's view (NoteView): the local player's turret pawn, the step,
+  // and whether its view was on the gun.
+  uint32_t g_gun_view_pawn = 0;
+  uint32_t g_gun_view_step = ~0u;
+  bool g_gun_view_on = true;
+
   void UnlagTurret(uint8_t *base, uint32_t pawn)
   {
     constexpr uint32_t kObjects = 0x831E4E3C; // GObjObjects (data, count)
@@ -669,6 +801,14 @@ namespace
   // The pawn is a vehicle its player drives: an SVehicle that is not a
   // turret and not a seat of another vehicle (UTWeaponPawn), by its class
   // names (FName::Names 0x831D1724, entry +16 = chars; UStruct super +60).
+  const char *ClassName(const uint8_t *base, uint32_t object)
+  {
+    constexpr uint32_t kNames = 0x831D1724;
+    uint32_t names = LoadU32(base, kNames), cls = object ? LoadU32(base, object + 52) : 0;
+    uint32_t entry = names && cls ? LoadU32(base, names + LoadU32(base, cls + 44) * 4) : 0;
+    return entry ? reinterpret_cast<const char *>(base + entry + 16) : "-";
+  }
+
   bool IsDrivenVehicle(const uint8_t *base, uint32_t pawn)
   {
     constexpr uint32_t kNames = 0x831D1724;
@@ -696,6 +836,8 @@ namespace
   }
 
   std::atomic<bool> g_driving{false};
+  // The world is the front end (InShell), as of the game thread's last pad poll.
+  std::atomic<bool> g_in_shell{false};
   // Clock ticks of the last UpdateLookingAction of any branch: it runs on
   // foot, in vehicles and on turrets, not in the menus (where the players'
   // controllers still have the menu's characters as pawns) or when paused.
@@ -954,9 +1096,15 @@ namespace ao2::mouse
     uint32_t pawn = LoadU32(base, controller + 452);
     if (pawn && pawn != holder)
     {
+      bool driven = IsDrivenVehicle(base, pawn);
+      // Still getting on the turret (the view not on the gun yet).
+      if (!driven && pawn == g_gun_view_pawn && step - g_gun_view_step <= 2 && !g_gun_view_on)
+      {
+        return false;
+      }
       float turn_yaw = float(ahead_yaw), turn_pitch = float(ahead_pitch);
       TurretTurn(base, controller, pawn, turn_yaw, turn_pitch);
-      if (IsDrivenVehicle(base, pawn))
+      if (driven)
       {
         DriverTurn(base, controller, turn_yaw, turn_pitch);
       }
@@ -965,10 +1113,7 @@ namespace ao2::mouse
     }
     else
     {
-      constexpr float kPitchUp = 6498.0f, kPitchDown = -7500.0f;
-      float now_pitch = std::remainder(LoadF32(base, holder + 3620), 65536.0f);
-      float lo = std::min(kPitchDown, now_pitch), hi = std::max(kPitchUp, now_pitch);
-      ahead_pitch = std::clamp(float(now_pitch + ahead_pitch), lo, hi) - now_pitch;
+      ahead_pitch = KeptPitch(LoadF32(base, holder + 3620), float(ahead_pitch));
     }
     // A view between the last two steps shows only alpha of the turn applied
     // on the last one.
@@ -982,9 +1127,129 @@ namespace ao2::mouse
     return yaw != 0.0f || pitch != 0.0f;
   }
 
+  void NoteView(const uint8_t *base, uint32_t controller, uint32_t step, float pitch, float yaw)
+  {
+    if (!controller || controller != (LockstepMouse(base) ? g_local_controller : g_single_controller))
+    {
+      return;
+    }
+    uint32_t pawn = LoadU32(base, controller + 452), holder = LoadU32(base, controller + 2024);
+    if (!pawn || pawn == holder || IsDrivenVehicle(base, pawn))
+    {
+      g_gun_view_pawn = 0; // off the turret: getting on again starts over
+      return;
+    }
+    // Mid-way the view is 30-60 units off still, an animation's start
+    // thousands.
+    constexpr float kOnGun = 24.0f; // rotation units
+    float gun_pitch, gun_yaw;
+    GunRotation(base, controller, pawn, gun_pitch, gun_yaw);
+    float off_pitch = std::remainder(pitch - gun_pitch, 65536.0f), off_yaw = std::remainder(yaw - gun_yaw, 65536.0f);
+    // Firing shakes the view off the gun as far (30-60 units every few
+    // steps): once on the gun it stays on, or the prediction went on and
+    // off with the shots and the view jumped by the whole predicted turn.
+    bool on = (pawn == g_gun_view_pawn && g_gun_view_on) ||
+              (std::fabs(off_pitch) <= kOnGun && std::fabs(off_yaw) <= kOnGun);
+    if ((on != g_gun_view_on || pawn != g_gun_view_pawn) && REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "step %u turret %08X view %s the gun (off by %.0f,%.0f)\n", step, pawn,
+                   on ? "on" : "not on", off_pitch, off_yaw);
+      std::fflush(DebugLog());
+    }
+    g_gun_view_pawn = pawn;
+    g_gun_view_step = step;
+    g_gun_view_on = on;
+  }
+
   bool Driving()
   {
     return g_driving.load(std::memory_order_relaxed);
+  }
+
+  bool InFrontEnd()
+  {
+    return g_in_shell.load(std::memory_order_relaxed);
+  }
+
+  uint32_t AimTogglePawn(PPCContext &ctx, uint8_t *base, uint32_t user)
+  {
+    auto looked = clock::time_point(clock::duration(g_look_seen.load(std::memory_order_relaxed)));
+    if (user >= 4)
+    {
+      return 0;
+    }
+    bool in_play = clock::now() - looked < kNativeIdle;
+    uint32_t controller = LockstepMouse(base) ? LocalController(ctx, base) : ControllerOf(ctx, base, user);
+    uint32_t holder = controller ? LoadU32(base, controller + 2024) : 0;
+    uint32_t pawn = holder ? LoadU32(base, controller + 452) : 0;
+    bool cinematic = controller && (LoadU32(base, controller + 808) & kCinematicMode);
+    bool driven = pawn && pawn != holder && IsDrivenVehicle(base, pawn);
+    uint32_t result = in_play && pawn && !cinematic && !driven ? pawn : 0;
+    static uint32_t last_pawn = ~0u, last_result = ~0u;
+    static bool last_play = false;
+    if (REXCVAR_GET(ao2_mouse_debug) && DebugLog() &&
+        (pawn != last_pawn || result != last_result || in_play != last_play))
+    {
+      std::fprintf(DebugLog(), "toggle aim pad %u: in play %d ctrl=%08X holder=%08X pawn=%08X (%s) cinematic %d driven %d -> %08X\n",
+                   user, in_play ? 1 : 0, controller, holder, pawn, ClassName(base, pawn), cinematic ? 1 : 0,
+                   driven ? 1 : 0, result);
+      std::fflush(DebugLog());
+    }
+    last_pawn = pawn;
+    last_result = result;
+    last_play = in_play;
+    return result;
+  }
+
+  bool HoldsGrenade(const uint8_t *base, uint32_t pawn)
+  {
+    constexpr uint32_t kPawnWeapon = 924; // Pawn.Weapon
+    constexpr uint32_t kNames = 0x831D1724;
+    static std::map<uint32_t, bool> by_class;
+    uint32_t weapon = pawn ? LoadU32(base, pawn + kPawnWeapon) : 0;
+    uint32_t cls = weapon ? LoadU32(base, weapon + 52) : 0;
+    if (!cls)
+    {
+      return false;
+    }
+    auto it = by_class.find(cls);
+    if (it != by_class.end())
+    {
+      return it->second;
+    }
+    uint32_t names = LoadU32(base, kNames);
+    bool grenade = false;
+    for (uint32_t c = cls, depth = 0; names && c && depth < 24 && !grenade; c = LoadU32(base, c + 60), ++depth)
+    {
+      uint32_t entry = LoadU32(base, names + LoadU32(base, c + 44) * 4);
+      grenade = entry && std::strncmp(reinterpret_cast<const char *>(base + entry + 16), "AO2Grenade", 10) == 0;
+    }
+    if (REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "weapon class %s: grenade %d\n", ClassName(base, weapon), grenade ? 1 : 0);
+      std::fflush(DebugLog());
+    }
+    if (by_class.size() > 256)
+    {
+      by_class.clear();
+    }
+    return by_class[cls] = grenade;
+  }
+
+  void NoteToggleAim(uint32_t user, uint8_t trigger, bool on)
+  {
+    static bool last_down[4] = {}, last_on[4] = {};
+    bool down = trigger >= 30;
+    if (user < 4 && (down != last_down[user] || on != last_on[user]) && REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "toggle aim pad %u: trigger %u -> aiming %d\n", user, trigger, on ? 1 : 0);
+      std::fflush(DebugLog());
+    }
+    if (user < 4)
+    {
+      last_down[user] = down;
+      last_on[user] = on;
+    }
   }
 
   uint32_t KeyboardUser()
@@ -1103,6 +1368,7 @@ extern "C" REX_FUNC(sub_82A95F70)
     Sleep(1);
     return;
   }
+  g_in_shell.store(InShell(base), std::memory_order_relaxed);
   ao2::prompts::Tick(base);
   ao2::cyrillic::Tick(base);
   if (!receiver)
@@ -1259,6 +1525,7 @@ extern "C" REX_FUNC(sub_82365150)
     {
       g_native_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
       g_view_locked = !PlayerTurnsView(ctx, base, holder);
+      LearnPitchLimits(base, holder, LoadF32(base, holder + 3620));
     }
     auto it = g_pending.find(controller);
     if (it != g_pending.end())
@@ -1270,13 +1537,15 @@ extern "C" REX_FUNC(sub_82365150)
         uint32_t rotation = holder + 3620;
         float pitch_step =
             std::clamp(float(DecodeTurn(p.pitch)), -kMaxPitchStep, kMaxPitchStep);
+        float pitch = LoadF32(base, rotation);
         StoreF32(base, rotation + 4, LoadF32(base, rotation + 4) + float(DecodeTurn(p.yaw)));
-        StoreF32(base, rotation, LoadF32(base, rotation) + pitch_step);
+        StoreF32(base, rotation, pitch + pitch_step);
         EndViewReturn(base, controller, float(DecodeTurn(p.yaw)), pitch_step);
         if (controller == g_local_controller)
         {
           NoteReplayed(p.yaw, p.pitch);
-          NoteApplied(controller, float(DecodeTurn(p.yaw)), pitch_step);
+          NoteApplied(controller, float(DecodeTurn(p.yaw)), KeptPitch(pitch, pitch_step));
+          NotePitchTurn(pitch, pitch_step);
         }
       }
     }
@@ -1296,6 +1565,7 @@ extern "C" REX_FUNC(sub_82365150)
   uint32_t rotation = holder + 3620;
   float pitch = LoadF32(base, rotation);
   float yaw = LoadF32(base, rotation + 4);
+  LearnPitchLimits(base, holder, pitch);
   bool invert = (LoadU32(base, controller + 2772) & 0x80000000) != 0;
   if (REXCVAR_GET(ao2_mouse_invert_y))
   {
@@ -1310,7 +1580,8 @@ extern "C" REX_FUNC(sub_82365150)
     StoreF32(base, rotation + 4, float(yaw + dx * units));
     StoreF32(base, rotation, pitch + pitch_step);
     EndViewReturn(base, controller, float(dx * units), pitch_step);
-    NoteApplied(controller, float(dx * units), pitch_step);
+    NoteApplied(controller, float(dx * units), KeptPitch(pitch, pitch_step));
+    NotePitchTurn(pitch, pitch_step);
   }
   else
   {
@@ -1384,6 +1655,11 @@ extern "C" REX_FUNC(sub_822F66C0)
   if (!pawn || !holder || pawn == holder)
   {
     return;
+  }
+  // On a turret UpdateLookingAction does not run: this is the sign of play.
+  if (!InShell(base))
+  {
+    g_look_seen.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
   }
   UnlagTurret(base, pawn);
   float yaw = 0.0f, pitch = 0.0f;

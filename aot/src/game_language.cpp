@@ -12,6 +12,10 @@
 // À-ÿ are. Xbox360TOC.txt gives every file's size and the engine reads that
 // many bytes: the Russian Coalesced.int is padded to the English one's size
 // with empty lines (CP1251 has a byte per letter, so it is a little smaller).
+// The downloadable content's levels (09 Kiev, 10 Miami Alternate Ending) have
+// no <package>.int, so their subtitles come from the packages in English:
+// localization\rus\dlc\09_sound_vo_main.int and the like go into Coalesced
+// whole, in the room of the editor's .int files.
 //
 // The downloadable content has whole copies of some of the files
 // (DLC<n>__AO2Game.int, ...) that the game reads over the disc's: those get
@@ -56,6 +60,7 @@
 #include <rex/runtime.h>
 
 #include "cyrillic_fonts.h"
+#include "dlc_folder.h"
 #include "keyboard_prompts.h"
 #include "utils.h"
 
@@ -259,14 +264,70 @@ namespace ao2::lang
         return data;
       }
 
-      std::string out;
-      out.reserve(data.size());
-      AppendBe32(out, count);
-      for (const Entry &e : entries)
+      // The downloadable content's levels have no .int (their packages keep
+      // the English subtitles, which the game takes when Coalesced has no
+      // <package>.int): the files of localization\rus\dlc\ that Coalesced
+      // lacks (09_sound_vo_main.int, ...) go in whole.
+      auto base_name = [](const Entry &name) {
+        std::string path(name.bytes.data(), name.bytes.size() - 1);
+        return ToLower(path.substr(path.find_last_of('\\') + 1));
+      };
+      std::vector<std::string> present;
+      for (size_t i = 0; i < entries.size(); i += 2)
+        if (entries[i].length > 1)
+          present.push_back(base_name(entries[i]));
+      int added = 0;
+      std::error_code ec;
+      for (const auto &file : fs::directory_iterator(russian_dir / "dlc", ec))
       {
-        AppendBe32(out, uint32_t(e.length));
-        out += e.bytes;
+        std::string name = file.path().filename().string();
+        std::string lower = ToLower(name);
+        std::string utf8;
+        if (!lower.ends_with(".int") || std::find(present.begin(), present.end(), lower) != present.end() ||
+            !ReadFile(file.path(), utf8))
+          continue;
+        std::string text;
+        for (char c : ToCp1251(utf8))
+          if (c != '\r')
+            text += c;
+        text += '\0';
+        std::string path = "..\\AO2Game\\Localization\\INT\\" + name + '\0';
+        entries.push_back({int32_t(path.size()), std::move(path)});
+        entries.push_back({int32_t(text.size()), std::move(text)});
+        ++added;
       }
+      count = uint32_t(entries.size());
+
+      auto serialize = [&] {
+        std::string out;
+        out.reserve(data.size());
+        AppendBe32(out, count);
+        for (const Entry &e : entries)
+        {
+          AppendBe32(out, uint32_t(e.length));
+          out += e.bytes;
+        }
+        return out;
+      };
+      std::string out = serialize();
+      // Room for them: the editor's text, which the game never reads.
+      for (const char *editor : {"unrealed.int", "editor.int", "editortips.int"})
+      {
+        if (out.size() <= data.size() || !added)
+          break;
+        for (size_t i = 0; i < entries.size(); i += 2)
+          if (entries[i].length > 1 && base_name(entries[i]) == editor)
+          {
+            entries.erase(entries.begin() + ptrdiff_t(i), entries.begin() + ptrdiff_t(i) + 2);
+            if (last > i)
+              last -= 2;
+            break;
+          }
+        count = uint32_t(entries.size());
+        out = serialize();
+      }
+      if (added)
+        REXLOG_INFO("game_language: {} Russian files of the downloadable content added", added);
       if (out.size() > data.size())
       {
         REXLOG_WARN("game_language: the Russian text is {} bytes over the English, kept English",
@@ -277,13 +338,7 @@ namespace ao2::lang
       Entry &pad = entries[last];
       pad.bytes.insert(pad.bytes.size() - 1, data.size() - out.size(), '\n');
       pad.length = int32_t(pad.bytes.size());
-      out.clear();
-      AppendBe32(out, count);
-      for (const Entry &e : entries)
-      {
-        AppendBe32(out, uint32_t(e.length));
-        out += e.bytes;
-      }
+      out = serialize();
       REXLOG_INFO("game_language: Russian text, {} strings in {} files", translated, files);
       return out;
     }
@@ -292,19 +347,19 @@ namespace ao2::lang
     // the whole file, which the game reads over the disc's) in Russian, under
     // overlay_root\<package folder>; the SDK mounts a package with the files of
     // its overlay folder in place of its own (content_overlay_root).
-    int RussianContent(const fs::path &user_data_root, const fs::path &overlay_root, const fs::path &russian_dir)
+    int RussianContent(const fs::path &content_dir, const fs::path &overlay_root, const fs::path &russian_dir)
     {
       int files = 0, translated = 0;
       std::error_code ec;
-      for (auto it = fs::recursive_directory_iterator(user_data_root, fs::directory_options::skip_permission_denied, ec);
+      for (auto it = fs::recursive_directory_iterator(content_dir, fs::directory_options::skip_permission_denied, ec);
            it != fs::recursive_directory_iterator(); it.increment(ec))
       {
         if (ec)
           break;
         if (it->is_directory(ec))
         {
-          // Packages sit at <xuid>\<title>\00000002\<package>; not into our own output.
-          if (it.depth() >= 4 || it->path() == overlay_root.parent_path())
+          // Packages sit at <content_dir>\<package> (ao2::dlc::Dir()).
+          if (it.depth() >= 1)
             it.disable_recursion_pending();
           continue;
         }
@@ -437,7 +492,7 @@ namespace ao2::lang
     if (russian)
     {
       fs::path overlays = user_data_root / "localization" / "content";
-      if (RussianContent(user_data_root, overlays, russian_dir))
+      if (RussianContent(ao2::dlc::Dir(), overlays, russian_dir))
         rex::cvar::SetFlagByName("content_overlay_root", overlays.string());
     }
 

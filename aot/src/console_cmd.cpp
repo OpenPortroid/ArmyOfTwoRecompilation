@@ -11,6 +11,8 @@
 //   console's "open" is not there): the URL
 //   Checkpoint?LoadSaveGame?CheckpointToLoad=<name>?... goes to the travel
 //   event sub_8238C8E8; "travel <url>" sends any URL that way.
+//   "set <cvar> <value>" changes a port setting (e.g. the renderer's post
+//   effects, which apply from the next frame).
 // - Queue(): the same lines from the app (the F1 debug menu).
 // - --ao2_start_checkpoint=<name>: the same at startup - the startup movies
 //   are skipped, then the checkpoint loads from the "Press Start" screen.
@@ -30,6 +32,7 @@
 #include "console_cmd.h"
 
 #include "coop.h"
+#include "coop_cmd.h"
 #include "cutscene_skip.h"
 #include "log_files.h"
 
@@ -188,6 +191,14 @@ namespace
     {
       return Travel(ctx, base, line.substr(7));
     }
+    if (line.rfind("set ", 0) == 0)
+    {
+      // A port setting (cvar) by name, e.g. "set ao2_anti_aliasing smaa".
+      char cvar[128], value[256];
+      bool ok = std::sscanf(line.c_str(), "set %127s %255s", cvar, value) == 2 && rex::cvar::SetFlagByName(cvar, value);
+      Logf("%s: %s\n", line.c_str(), ok ? "set" : "not set");
+      return ok;
+    }
     const std::string &command = line;
     uint32_t top = (ctx.r1.u32 - 1024) & ~15u;
     uint32_t player = LocalPlayer(ctx, base, top);
@@ -241,6 +252,34 @@ namespace ao2::console
   {
     if (ao2::coop::InNetworkGame(base))
     {
+      // console.txt in a network game: a checkpoint load goes to both machines through the lockstep
+      // (coop_cmd.cpp, as the F1 menu's), a port setting is this machine's own; the rest stays local-only
+      // game state, which would desync - left out.
+      static clock::time_point next_check{};
+      auto now = clock::now();
+      if (now < next_check)
+      {
+        return;
+      }
+      next_check = now + std::chrono::milliseconds(250);
+      for (const std::string &line : TakeFile())
+      {
+        char name[64];
+        int difficulty = REXCVAR_GET(ao2_start_difficulty);
+        if (std::sscanf(line.c_str(), "checkpoint %63s %d", name, &difficulty) >= 1)
+        {
+          ao2::coop::cmd::Send("checkpoint " + std::string(name) + " " + std::to_string(difficulty));
+          Logf("co-op: \"%s\" sent to both machines\n", line.c_str());
+        }
+        else if (line.rfind("set ", 0) == 0)
+        {
+          Exec(ctx, base, line);
+        }
+        else
+        {
+          Logf("co-op: \"%s\" ignored (local game state would desync)\n", line.c_str());
+        }
+      }
       return;
     }
 

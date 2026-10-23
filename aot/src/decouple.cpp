@@ -53,7 +53,9 @@
 
 #include "coop.h"
 #include "coop_link.h"
+#include "frame_spikes.h"
 #include "log_files.h"
+#include "tick_profile.h"
 
 REXCVAR_DECLARE(bool, ao2_fps_unlock);
 REXCVAR_DECLARE(bool, ao2_coop_server);
@@ -394,13 +396,27 @@ namespace ao2::decouple
 extern "C" REX_FUNC(__imp__sub_82777738);
 extern "C" REX_FUNC(sub_82777738)
 {
+  double spike_start = ao2::spikes::Enabled() ? NowMs() : 0.0;
+  struct SpikeMark
+  {
+    double start;
+    ~SpikeMark()
+    {
+      if (start > 0.0)
+      {
+        ao2::spikes::Mark(ao2::spikes::kEngineTick, NowMs() - start);
+      }
+    }
+  } spike_mark{spike_start};
   if (!g_render_only)
   {
     double start = NowMs();
     g_world_steps++;
     g_world_step_ms = g_last_draw_ms;
+    ao2::tickprof::Begin();
     __imp__sub_82777738(ctx, base);
     double ms = NowMs() - start;
+    ao2::tickprof::End(ms);
     g_stats.tick_sum += ms;
     g_stats.tick_max = std::max(g_stats.tick_max, ms);
     return;
