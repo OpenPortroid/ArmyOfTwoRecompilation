@@ -276,3 +276,18 @@ bounded by the GPU (~4 ms/frame) and the cap. The price: game actions answer ~8 
 and the logic runs at the console's rate (the mouse view is covered by ao2_predict_camera), so 60 Hz stays the
 default.
 
+
+## Cheaper object interpolation on the rendering thread (2026-10-23)
+
+`interp_objects.cpp` placed ~110 objects and posed ~85 GPU skins (~20k bone floats) before every scene drawn between
+steps and put them all back after it: 0.163 ms of the UE3 rendering thread per frame in Iraq's fight, which the game
+thread then waits for (the render fence) - the fight tick was ~0.35 ms longer with it (720p, 2+2 runs). Now:
+- the in-between place stays after the scene; the step's next UpdateTransform / skin update overwrites it, and only
+  what does not move on the next scene's step gets its own back first (0-20 a second instead of ~100 a frame);
+- a skin's pose is one fused lerp + byteswap + store loop per bone array (vectorized; the separate loops through
+  StoreF32 took ~3 ns a float), and the stale check compares the first and last bone only;
+- OnTransformChanged saves r3-r10, lr and ctr instead of copying the whole PPCContext twice per call.
+
+0.163 -> ~0.075 ms per frame (skins ~0.045), no stale objects in any run. Iraq fight at 1440p, 2+2 alternating
+runs (`work/iraq_fight/q_*`): with / without interpolation 227 / 211 vs 228 / 206 FPS, slowest seconds 185 / 182
+vs 176 / 173 - no longer measurable against the run-to-run spread.

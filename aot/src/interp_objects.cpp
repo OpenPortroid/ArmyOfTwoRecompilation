@@ -22,7 +22,11 @@
 // them carries each draw's step and alpha (decouple Alpha) from the game
 // thread to the rendering thread: before the scene is drawn, every object
 // that moved on that step gets its matrices placed between the two steps'
-// (componentwise - one step is a small move), after it the step's own.
+// (componentwise - one step is a small move). They stay there after it: the
+// next scene places them again, the step's next UpdateTransform overwrites
+// them, and an object that does not move on that scene's step gets the step's
+// own back first. Putting every object back after each scene cost as much as
+// placing it (OnTransformChanged is a guest call).
 //
 // An object's last place is checked before anything is written (the proxy
 // may have been deleted since), jumps are not interpolated, and bounds are
@@ -148,13 +152,13 @@ namespace
     uint32_t info = 0;
     uint32_t step = 0; // the step cur was set on
     bool has_prev = false;
-    Place prev, cur;
+    bool shown = false; // the proxy holds `between`, not cur
+    Place prev, cur, between;
   };
   std::unordered_map<uint32_t, Track> g_tracks; // by proxy
   uint32_t g_rt_step = 0;                       // step of the last scene drawn
   // Alpha of the scene being drawn on this thread for the particles, < 0: none.
   thread_local float t_scene_alpha = -1.0f;
-  std::vector<uint32_t> g_written;              // proxies holding an in-between place now
 
   // A GPU-skinned mesh object's bone matrices (3x4, 12 floats each) as its
   // vertex factories hold them, on the last two steps.
@@ -162,11 +166,11 @@ namespace
   {
     uint32_t step = 0;
     bool has_prev = false;
+    bool shown = false;           // the arrays hold `between`, not cur
     std::vector<uint32_t> arrays; // address, count pairs
-    std::vector<float> prev, cur;
+    std::vector<float> prev, cur, between;
   };
   std::unordered_map<uint32_t, Skin> g_skins; // by mesh object
-  std::vector<uint32_t> g_written_skins;
 
   // The tracks and skins above (rendering thread) and the guest allocations
   // they point at, against GMalloc's Free / Realloc on any thread.
@@ -231,8 +235,6 @@ namespace
       }
       return false;
     });
-    std::erase_if(g_written, [&](uint32_t proxy) { return !g_tracks.contains(proxy); });
-    std::erase_if(g_written_skins, [&](uint32_t mesh) { return !g_skins.contains(mesh); });
     for (uint32_t a : g_freed)
     {
       g_watched.erase(a);
@@ -268,8 +270,9 @@ namespace
     double window_start = 0;
     uint32_t draws = 0, empty_queue = 0, dropped = 0, updates = 0, same_step = 0, jumps = 0, placed = 0, stale = 0,
              max_tracks = 0, skin_updates = 0, skins_posed = 0, skin_stale = 0, max_skins = 0,
-             particle_fills = 0, particles_moved = 0;
-    double before_ms = 0, put_back_ms = 0; // rendering thread time in BeforeScene / PutBack
+             particle_fills = 0, particles_moved = 0, put_back = 0, skins_put_back = 0;
+    double before_ms = 0, objects_ms = 0, skins_ms = 0; // rendering thread time in BeforeScene, its two loops
+    uint64_t skin_floats = 0;                            // posed
     // One particle's move over its step and its Velocity (+48), to check the layout.
     float sample_move[3] = {}, sample_velocity[3] = {};
   } g_stats;
@@ -314,25 +317,42 @@ namespace
     }
     Log("draws %u (no entry %u, dropped %u) | updates %u (same step %u, jumps %u) | placed %u (%.1f/draw), stale %u | "
         "tracked %u | skins: updates %u, posed %u (%.1f/draw), stale %u, tracked %u | particles: fills %u, moved "
-        "%u, sample move %.2f %.2f %.2f velocity %.1f %.1f %.1f | ms/s: before %.1f put back %.1f",
+        "%u, sample move %.2f %.2f %.2f velocity %.1f %.1f %.1f | put back %u, skins %u | ms/s: before %.1f (objects %.1f, skins %.1f, %.0f floats/draw)",
         g_stats.draws, g_stats.empty_queue, g_stats.dropped, g_stats.updates, g_stats.same_step, g_stats.jumps,
         g_stats.placed, g_stats.draws ? double(g_stats.placed) / g_stats.draws : 0.0, g_stats.stale,
         g_stats.max_tracks, g_stats.skin_updates, g_stats.skins_posed,
         g_stats.draws ? double(g_stats.skins_posed) / g_stats.draws : 0.0, g_stats.skin_stale, g_stats.max_skins,
         g_stats.particle_fills, g_stats.particles_moved, g_stats.sample_move[0], g_stats.sample_move[1],
         g_stats.sample_move[2], g_stats.sample_velocity[0], g_stats.sample_velocity[1], g_stats.sample_velocity[2],
-        g_stats.before_ms, g_stats.put_back_ms);
+        g_stats.put_back, g_stats.skins_put_back, g_stats.before_ms, g_stats.objects_ms, g_stats.skins_ms,
+        g_stats.draws ? double(g_stats.skin_floats) / g_stats.draws : 0.0);
     g_stats = Stats{};
     g_stats.window_start = now;
   }
 
   void OnTransformChanged(PPCContext &ctx, uint8_t *base, uint32_t proxy)
   {
+    // Called before the hooked function itself runs: only its argument
+    // registers have to survive, the guest ABI lets a call change the other
+    // volatile ones (copying the whole context twice a call cost more than
+    // the call).
     uint32_t fn = LoadU32(base, LoadU32(base, proxy) + kProxyOnTransformChanged);
-    PPCContext saved = ctx;
+    PPCRegister *args[] = {&ctx.r3, &ctx.r4, &ctx.r5, &ctx.r6, &ctx.r7, &ctx.r8, &ctx.r9, &ctx.r10};
+    uint64_t saved[std::size(args)];
+    for (size_t i = 0; i < std::size(args); i++)
+    {
+      saved[i] = args[i]->u64;
+    }
+    uint64_t lr = ctx.lr;
+    PPCRegister ctr = ctx.ctr;
     ctx.r3.u64 = proxy;
     rex::runtime::ResolveIndirectFunction(fn)(ctx, base);
-    ctx = saved;
+    for (size_t i = 0; i < std::size(args); i++)
+    {
+      args[i]->u64 = saved[i];
+    }
+    ctx.lr = lr;
+    ctx.ctr = ctr;
   }
 
   // The bone matrix arrays UpdateDynamicData_RenderThread sub_8291B9F8 fills
@@ -386,12 +406,18 @@ namespace
 
   void ReadSkin(const uint8_t *base, const std::vector<uint32_t> &arrays, std::vector<float> &out)
   {
-    out.clear();
+    size_t total = 0;
+    for (size_t i = 0; i < arrays.size(); i += 2)
+    {
+      total += arrays[i + 1] * 12;
+    }
+    out.resize(total);
+    size_t k = 0;
     for (size_t i = 0; i < arrays.size(); i += 2)
     {
       for (uint32_t f = 0; f < arrays[i + 1] * 12; f++)
       {
-        out.push_back(LoadF32(base, arrays[i] + 4 * f));
+        out[k++] = LoadF32(base, arrays[i] + 4 * f);
       }
     }
   }
@@ -408,48 +434,48 @@ namespace
     }
   }
 
+  // The pose alpha of the way from prev to cur, into the arrays and between:
+  // one flat loop per array that the compiler vectorizes (separate loops
+  // through StoreF32 took ~3 ns a float, most of the interpolation's time).
+  void PoseSkin(uint8_t *base, Skin &s, float alpha)
+  {
+    s.between.resize(s.cur.size());
+    const float *prev = s.prev.data(), *cur = s.cur.data();
+    float *between = s.between.data();
+    for (size_t i = 0; i < s.arrays.size(); i += 2)
+    {
+      uint32_t *__restrict dst = reinterpret_cast<uint32_t *>(base + s.arrays[i]);
+      uint32_t n = s.arrays[i + 1] * 12;
+      for (uint32_t f = 0; f < n; f++)
+      {
+        float v = prev[f] + (cur[f] - prev[f]) * alpha;
+        between[f] = v;
+        dst[f] = std::byteswap(std::bit_cast<uint32_t>(v));
+      }
+      prev += n;
+      cur += n;
+      between += n;
+    }
+  }
+
+  // The first and last bone of each array (comparing all of them cost more
+  // than writing the pose).
   bool SkinIs(const uint8_t *base, const std::vector<uint32_t> &arrays, const std::vector<float> &v)
   {
     size_t k = 0;
     for (size_t i = 0; i < arrays.size(); i += 2)
     {
-      for (uint32_t f = 0; f < arrays[i + 1] * 12; f++)
+      uint32_t floats = arrays[i + 1] * 12;
+      for (uint32_t f = 0; f < floats; f = f == 11 ? std::max(12u, floats - 12) : f + 1)
       {
-        if (std::bit_cast<uint32_t>(LoadF32(base, arrays[i] + 4 * f)) != std::bit_cast<uint32_t>(v[k++]))
+        if (std::bit_cast<uint32_t>(LoadF32(base, arrays[i] + 4 * f)) != std::bit_cast<uint32_t>(v[k + f]))
         {
           return false;
         }
       }
+      k += floats;
     }
     return true;
-  }
-
-  // Puts back the step's own place of the objects drawn in between.
-  void PutBack(PPCContext &ctx, uint8_t *base)
-  {
-    t_scene_alpha = -1.0f;
-    std::lock_guard lock(g_mem);
-    Forget();
-    for (uint32_t mesh : g_written_skins)
-    {
-      auto it = g_skins.find(mesh);
-      if (it != g_skins.end())
-      {
-        WriteSkin(base, it->second.arrays, it->second.cur);
-      }
-    }
-    g_written_skins.clear();
-    for (uint32_t proxy : g_written)
-    {
-      auto it = g_tracks.find(proxy);
-      if (it == g_tracks.end())
-      {
-        continue;
-      }
-      it->second.cur.Write(base, proxy);
-      OnTransformChanged(ctx, base, proxy);
-    }
-    g_written.clear();
   }
 
   // Before a scene draw on the rendering thread.
@@ -480,21 +506,17 @@ namespace
     g_stats.draws++;
     g_stats.max_tracks = std::max<uint32_t>(g_stats.max_tracks, uint32_t(g_tracks.size()));
     g_stats.max_skins = std::max<uint32_t>(g_stats.max_skins, uint32_t(g_skins.size()));
-    if (d.alpha < 0)
-    {
-      return;
-    }
-    if (d.step != g_rt_step)
+    if (d.alpha >= 0 && d.step != g_rt_step)
     {
       g_rt_step = d.step;
-      // Forget objects that have not moved for a while.
+      // Forget objects that have not moved for a while (and hold their own place).
       if (g_tracks.size() > 4096)
       {
-        std::erase_if(g_tracks, [](const auto &kv) { return kv.second.step + 2 < g_rt_step; });
+        std::erase_if(g_tracks, [](const auto &kv) { return kv.second.step + 2 < g_rt_step && !kv.second.shown; });
       }
       if (g_skins.size() > 512)
       {
-        std::erase_if(g_skins, [](const auto &kv) { return kv.second.step + 2 < g_rt_step; });
+        std::erase_if(g_skins, [](const auto &kv) { return kv.second.step + 2 < g_rt_step && !kv.second.shown; });
       }
       // Only what the entries left still use, into the idle filter, then
       // that filter goes live.
@@ -523,23 +545,33 @@ namespace
       }
       g_filter_active.store(idle, std::memory_order_seq_cst);
     }
-    if (d.alpha >= 1.0f)
-    {
-      return;
-    }
+    // Drawn between steps: what moved on this scene's step; the rest that
+    // still holds an in-between place gets its own back.
+    bool between = d.alpha >= 0 && d.alpha < 1.0f;
+    double t0 = NowMs();
     for (auto &[proxy, t] : g_tracks)
     {
-      if (t.step != d.step || !t.has_prev)
+      bool move = between && t.step == d.step && t.has_prev;
+      if (!move && !t.shown)
       {
         continue;
       }
-      if (LoadU32(base, t.info + kInfoProxy) != proxy || !t.cur.Is(base, proxy))
+      if (LoadU32(base, t.info + kInfoProxy) != proxy || !(t.shown ? t.between : t.cur).Is(base, proxy))
       {
         g_stats.stale++;
         t.has_prev = false;
+        t.shown = false;
         continue;
       }
-      Place p;
+      if (!move)
+      {
+        t.cur.Write(base, proxy);
+        OnTransformChanged(ctx, base, proxy);
+        t.shown = false;
+        g_stats.put_back++;
+        continue;
+      }
+      Place &p = t.between;
       for (int i = 0; i < kFloats; i++)
       {
         p.m[i] = t.prev.m[i] + (t.cur.m[i] - t.prev.m[i]) * d.alpha;
@@ -547,31 +579,38 @@ namespace
       p.det = t.prev.det + (t.cur.det - t.prev.det) * d.alpha;
       p.Write(base, proxy);
       OnTransformChanged(ctx, base, proxy);
-      g_written.push_back(proxy);
+      t.shown = true;
       g_stats.placed++;
     }
-    std::vector<float> pose;
+    double t1 = NowMs();
+    g_stats.objects_ms += t1 - t0;
     for (auto &[mesh, s] : g_skins)
     {
-      if (s.step != d.step || !s.has_prev)
+      bool move = between && s.step == d.step && s.has_prev;
+      if (!move && !s.shown)
       {
         continue;
       }
-      if (!SkinIs(base, s.arrays, s.cur))
+      if (!SkinIs(base, s.arrays, s.shown ? s.between : s.cur))
       {
         g_stats.skin_stale++;
         s.has_prev = false;
+        s.shown = false;
         continue;
       }
-      pose.resize(s.cur.size());
-      for (size_t i = 0; i < pose.size(); i++)
+      if (!move)
       {
-        pose[i] = s.prev[i] + (s.cur[i] - s.prev[i]) * d.alpha;
+        WriteSkin(base, s.arrays, s.cur);
+        s.shown = false;
+        g_stats.skins_put_back++;
+        continue;
       }
-      WriteSkin(base, s.arrays, pose);
-      g_written_skins.push_back(mesh);
+      PoseSkin(base, s, d.alpha);
+      s.shown = true;
       g_stats.skins_posed++;
+      g_stats.skin_floats += s.between.size();
     }
+    g_stats.skins_ms += NowMs() - t1;
   }
 
   // A sprite emitter's vertex fill (r3 = its dynamic data) inside a scene
@@ -684,6 +723,8 @@ extern "C" REX_FUNC(sub_82643290)
   Watch(info);
   auto [it, added] = g_tracks.try_emplace(proxy);
   Track &t = it->second;
+  // SetTransform has put the step's own place there.
+  t.shown = false;
   if (!added && t.info == info && t.step == step)
   {
     g_stats.same_step++;
@@ -726,6 +767,7 @@ extern "C" REX_FUNC(sub_8291B9F8)
   }
   auto [it, added] = g_skins.try_emplace(mesh);
   Skin &s = it->second;
+  s.shown = false;
   bool same_layout = !added && s.arrays == arrays;
   if (same_layout && s.step == step)
   {
@@ -748,9 +790,7 @@ extern "C" REX_FUNC(sub_8262FC98)
   BeforeScene(ctx, base);
   g_stats.before_ms += NowMs() - t0;
   __imp__sub_8262FC98(ctx, base);
-  t0 = NowMs();
-  PutBack(ctx, base);
-  g_stats.put_back_ms += NowMs() - t0;
+  t_scene_alpha = -1.0f;
   Report();
 }
 
@@ -760,7 +800,7 @@ extern "C" REX_FUNC(sub_8262FC38)
 {
   BeforeScene(ctx, base);
   __imp__sub_8262FC38(ctx, base);
-  PutBack(ctx, base);
+  t_scene_alpha = -1.0f;
   Report();
 }
 
