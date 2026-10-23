@@ -22,6 +22,7 @@
 #include <wrl/client.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <chrono>
@@ -31,6 +32,7 @@
 #include <cstring>
 #include <deque>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -67,6 +69,8 @@ using Microsoft::WRL::ComPtr;
 using rex::graphics::FormatInfo;
 
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_capture_frame);
+REXCVAR_DECLARE(int32_t, ao2_native_gpu_capture_slow_us);
+REXCVAR_DECLARE(bool, ao2_native_gpu_static_tex_post);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_writeback_texels);
 REXCVAR_DECLARE(bool, ao2_native_gpu_debug_layer);
 REXCVAR_DECLARE(bool, ao2_native_gpu_async_pipelines);
@@ -451,6 +455,11 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       };
       std::vector<DrawTiming> draw_timings;
       uint32_t draw_timings_slot = UINT32_MAX;
+      // ao2_native_gpu_capture_slow_us: the next frame is traced (GPU time of
+      // the slow frame that triggered it), the traced one is copied to slow_N_*.
+      bool slow_capture_pending = false;
+      uint32_t slow_capture_us = 0, slow_traced_us = 0, slow_captures = 0;
+      uint64_t slow_capture_frame = 0;
       uint32_t frame_index = 0;
       uint64_t frame_number = 0;
       bool list_open = false;
@@ -1112,6 +1121,12 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           }
         }
         triggered = std::filesystem::remove("capture.trigger", ec);
+      }
+      if (g.slow_capture_pending && !triggered)
+      {
+        g.slow_capture_pending = false;
+        g.slow_traced_us = g.slow_capture_us;
+        triggered = true;
       }
       if ((capture > 0 && g.frame_number == uint64_t(capture)) || triggered)
       {
@@ -2538,12 +2553,24 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       if (g.timestamps && f.ts_resolved)
       {
         const uint64_t *t = g.timestamps + uint64_t(g.frame_index) * kTimestampsPerFrame;
+        uint64_t frame_ticks = 0;
         for (uint32_t i = 0; i + 1 < f.ts_resolved; ++i)
         {
           if (f.ts_category[i] < kGpuCategoryCount && t[i + 1] >= t[i])
           {
             g.gpu_ticks[f.ts_category[i]] += t[i + 1] - t[i];
+            frame_ticks += t[i + 1] - t[i];
           }
+        }
+        int32_t slow_us = REXCVAR_GET(ao2_native_gpu_capture_slow_us);
+        uint32_t frame_us = uint32_t(double(frame_ticks) * 1e6 / double(g.timestamp_frequency));
+        if (slow_us > 0 && frame_us > uint32_t(slow_us) && g.slow_captures < 5 && !g.slow_capture_pending &&
+            !g_trace && g.draw_timings_slot == UINT32_MAX &&
+            (g.slow_capture_frame == 0 || g.frame_number > g.slow_capture_frame + 960))
+        {
+          g.slow_capture_pending = true;
+          g.slow_capture_us = frame_us;
+          g.slow_capture_frame = g.frame_number;
         }
       }
       if (g.timestamps && g.draw_timings_slot == g.frame_index && !g.draw_timings.empty())
@@ -2605,6 +2632,18 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
                          (unsigned long long)dt.vs, (unsigned long long)dt.ps);
           }
           std::fclose(out);
+        }
+        if (g.slow_traced_us)
+        {
+          std::error_code ec;
+          std::string n = "slow_" + std::to_string(++g.slow_captures) + "_";
+          std::filesystem::copy_file("frame_trace.txt", n + "frame_trace.txt",
+                                     std::filesystem::copy_options::overwrite_existing, ec);
+          std::filesystem::copy_file("gpu_draws.txt", n + "gpu_draws.txt",
+                                     std::filesystem::copy_options::overwrite_existing, ec);
+          NativeLog("slow frame %u us: the next one traced to %sframe_trace.txt / %sgpu_draws.txt\n",
+                    g.slow_traced_us, n.c_str(), n.c_str());
+          g.slow_traced_us = 0;
         }
         g.draw_timings.clear();
         g.draw_timings_slot = UINT32_MAX;
@@ -6305,47 +6344,138 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
              uint32_t(texture_util::GetTiledOffset2D(int32_t(wb.x0 + x), int32_t(wb.y0 + y), pitch_aligned, bpp_log2));
     }
 
-    // Texel addresses and what the destination holds now, texel by texel
-    // (unreadable texels: zeros). Readability is checked once for the whole
-    // range when it is all there (the usual case), texel by texel otherwise.
-    void SnapshotWriteback(Writeback &wb)
+    // The tiled addresses of a write-back's texels and their byte range, by
+    // its layout (the same resolves come every frame).
+    struct WritebackLayout
     {
-      size_t texels = size_t(wb.width) * wb.height;
-      wb.addresses.resize(texels);
-      wb.before.assign(texels * wb.bytes_per_texel, 0);
+      std::vector<uint32_t> addresses;
       uint32_t lowest = UINT32_MAX, highest = 0;
+    };
+    std::map<std::array<uint32_t, 7>, WritebackLayout> g_writeback_layouts;
+
+    const WritebackLayout &GetWritebackLayout(const Writeback &wb)
+    {
+      std::array<uint32_t, 7> key = {wb.dest_base, wb.dest_pitch, wb.x0, wb.y0, wb.width, wb.height, wb.bytes_per_texel};
+      auto it = g_writeback_layouts.find(key);
+      if (it != g_writeback_layouts.end())
+      {
+        return it->second;
+      }
+      if (g_writeback_layouts.size() >= 256)
+      {
+        g_writeback_layouts.clear();
+      }
+      WritebackLayout &l = g_writeback_layouts[key];
+      l.addresses.resize(size_t(wb.width) * wb.height);
       for (uint32_t y = 0, i = 0; y < wb.height; ++y)
       {
         for (uint32_t x = 0; x < wb.width; ++x, ++i)
         {
           uint32_t address = WritebackAddress(wb, x, y);
-          wb.addresses[i] = address;
-          lowest = std::min(lowest, address);
-          highest = std::max(highest, address + wb.bytes_per_texel);
+          l.addresses[i] = address;
+          l.lowest = std::min(l.lowest, address);
+          l.highest = std::max(l.highest, address + wb.bytes_per_texel);
         }
       }
-      bool all = texels && IsGuestPhysicalReadable(lowest, highest - lowest);
-      uint8_t *out = wb.before.data();
+      return l;
+    }
+
+    // N = bytes per texel when known at compile time (fixed-size copies and
+    // compares instead of library calls per texel), 0 = wb.bytes_per_texel.
+    template <uint32_t N>
+    void SnapshotTexels(Writeback &wb, bool all)
+    {
+      const uint32_t n = N ? N : wb.bytes_per_texel;
       rex::memory::Memory *mem = Mem();
+      uint8_t *out = wb.before.data();
       for (uint32_t &address : wb.addresses)
       {
-        if (all || IsGuestPhysicalReadable(address, wb.bytes_per_texel))
+        if (all || IsGuestPhysicalReadable(address, n))
         {
-          std::memcpy(out, mem->TranslatePhysical(address), wb.bytes_per_texel);
+          std::memcpy(out, mem->TranslatePhysical(address), n);
         }
         else
         {
           address = UINT32_MAX;
         }
-        out += wb.bytes_per_texel;
+        out += n;
       }
-      wb.lowest = texels ? lowest : 0;
-      wb.highest = texels ? highest : 0;
+    }
+
+    // Texel addresses and what the destination holds now, texel by texel
+    // (unreadable texels: zeros). Readability is checked once for the whole
+    // range when it is all there (the usual case), texel by texel otherwise.
+    void SnapshotWriteback(Writeback &wb)
+    {
+      const WritebackLayout &l = GetWritebackLayout(wb);
+      size_t texels = l.addresses.size();
+      wb.addresses = l.addresses;
+      wb.before.assign(texels * wb.bytes_per_texel, 0);
+      bool all = texels && IsGuestPhysicalReadable(l.lowest, l.highest - l.lowest);
+      switch (wb.bytes_per_texel)
+      {
+      case 4: SnapshotTexels<4>(wb, all); break;
+      case 8: SnapshotTexels<8>(wb, all); break;
+      case 16: SnapshotTexels<16>(wb, all); break;
+      default: SnapshotTexels<0>(wb, all); break;
+      }
+      wb.lowest = texels ? l.lowest : 0;
+      wb.highest = texels ? l.highest : 0;
     }
 
     // Bytes the last write-back to each destination stored (texel order): the
     // next frames' resolves to the same place were recorded before it landed.
     std::unordered_map<uint32_t, std::vector<uint8_t>> g_written_back;
+
+    // One write-back's texels (see ApplyWritebacks). `record` holds what is
+    // to be remembered as ours, texel by texel; with `ours` it is the same
+    // buffer (each texel is compared before it is overwritten). Returns
+    // whether a texel had been changed by the CPU.
+    template <uint32_t N>
+    bool ApplyTexels(const Writeback &wb, const uint8_t *readback, const uint8_t *ours, uint8_t *record)
+    {
+      const uint32_t n = N ? N : wb.bytes_per_texel;
+      rex::memory::Memory *mem = Mem();
+      thread_local std::vector<uint32_t> columns;
+      columns.resize(wb.width);
+      for (uint32_t x = 0; x < wb.width; ++x)
+      {
+        columns[x] = (CenterPixel(wb.x0 + x, wb.scale4) - wb.host_x0) * n;
+      }
+      const uint32_t *address = wb.addresses.data();
+      const uint8_t *before = wb.before.data();
+      bool stale = false;
+      for (uint32_t y = 0; y < wb.height; ++y)
+      {
+        const uint8_t *row = readback + wb.offset + uint64_t(CenterPixel(wb.y0 + y, wb.scale4) - wb.host_y0) * wb.row_pitch;
+        for (uint32_t x = 0; x < wb.width; ++x, ++address, before += n, record += n, ours = ours ? ours + n : nullptr)
+        {
+          if (*address == UINT32_MAX)
+          {
+            std::memcpy(record, before, n);
+            continue;
+          }
+          uint8_t *dst = mem->TranslatePhysical(*address);
+          if (std::memcmp(dst, before, n) != 0 && (!ours || std::memcmp(dst, ours, n) != 0))
+          {
+            ++g.writeback_stale;
+            stale = true;
+            std::memcpy(record, before, n);
+            continue;
+          }
+          const uint8_t *src = row + columns[x];
+          for (uint32_t k = 0; k + 4 <= n; k += 4)
+          {
+            uint32_t v;
+            std::memcpy(&v, src + k, 4);
+            v = SwapWord(v, wb.endian);
+            std::memcpy(dst + k, &v, 4);
+          }
+          std::memcpy(record, dst, n);
+        }
+      }
+      return stale;
+    }
 
     // Stores the read back texels of a completed frame into guest memory
     // (tiled, endian-swapped like the GPU's resolve would have). This runs
@@ -6354,7 +6484,6 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
     // the CPU's data. Unchanged = as recorded, or as our last write-back left it.
     void ApplyWritebacks(Frame &f)
     {
-      rex::memory::Memory *mem = Mem();
       for (const Writeback &wb : f.writebacks)
       {
         // The memory may have been released since the resolve.
@@ -6362,54 +6491,31 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
         {
           continue;
         }
-        const uint32_t *address = wb.addresses.data();
-        const uint8_t *before = wb.before.data();
         std::vector<uint8_t> &last = g_written_back[wb.dest_base];
-        const uint8_t *ours = last.size() == wb.before.size() ? last.data() : nullptr;
-        std::vector<uint8_t> written = wb.before;
-        uint8_t *record = written.data();
-        bool stale = false;
+        const uint8_t *ours = nullptr;
+        if (last.size() == wb.before.size())
+        {
+          ours = last.data();
+        }
+        else
+        {
+          last = wb.before;
+        }
         // Read back at another scale than the guest's (see
         // kWritebackReducedTexels): of a texel's host texels the one nearest
         // to its centre is stored.
-        for (uint32_t y = 0; y < wb.height; ++y)
+        bool stale;
+        switch (wb.bytes_per_texel)
         {
-          const uint8_t *row = f.readback_mapped + wb.offset +
-                               uint64_t(CenterPixel(wb.y0 + y, wb.scale4) - wb.host_y0) * wb.row_pitch;
-          for (uint32_t x = 0; x < wb.width; ++x, ++address, before += wb.bytes_per_texel,
-                        record += wb.bytes_per_texel, ours = ours ? ours + wb.bytes_per_texel : nullptr)
-          {
-            if (*address == UINT32_MAX)
-            {
-              continue;
-            }
-            uint8_t *dst = mem->TranslatePhysical(*address);
-            if (std::memcmp(dst, before, wb.bytes_per_texel) != 0 &&
-                (!ours || std::memcmp(dst, ours, wb.bytes_per_texel) != 0))
-            {
-              ++g.writeback_stale;
-              stale = true;
-              continue;
-            }
-            const uint8_t *src = row + (CenterPixel(wb.x0 + x, wb.scale4) - wb.host_x0) * wb.bytes_per_texel;
-            for (uint32_t k = 0; k + 4 <= wb.bytes_per_texel; k += 4)
-            {
-              uint32_t v;
-              std::memcpy(&v, src + k, 4);
-              v = SwapWord(v, wb.endian);
-              std::memcpy(dst + k, &v, 4);
-            }
-            std::memcpy(record, dst, wb.bytes_per_texel);
-          }
+        case 4: stale = ApplyTexels<4>(wb, f.readback_mapped, ours, last.data()); break;
+        case 8: stale = ApplyTexels<8>(wb, f.readback_mapped, ours, last.data()); break;
+        case 16: stale = ApplyTexels<16>(wb, f.readback_mapped, ours, last.data()); break;
+        default: stale = ApplyTexels<0>(wb, f.readback_mapped, ours, last.data()); break;
         }
         // After a CPU change nothing counts as ours any more.
         if (stale)
         {
           last.clear();
-        }
-        else
-        {
-          last = std::move(written);
         }
       }
       f.writebacks.clear();
@@ -8186,6 +8292,41 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       f.readback_offset = offset + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
       f.probe_offset = offset;
     }
+
+    // HlslModification::tex_post of the pixel shader for this draw: each
+    // binding's post-processing from its fetch constant, as PrepareTextures
+    // gives it to xe_tex_info (signed components it may clear do nothing in
+    // the shader either way).
+    uint64_t StaticTexPost(ShaderCache &shaders, const ShaderMicrocode &code, const RegisterFile &r)
+    {
+      Shader *shader = shaders.GetShader(xenos::ShaderType::kPixel, code.dwords, code.dword_count, code.hash);
+      if (!shader)
+      {
+        return 0;
+      }
+      constexpr uint32_t kGamma = uint32_t(xenos::TextureSign::kGamma);
+      constexpr uint32_t kBiased = uint32_t(xenos::TextureSign::kUnsignedBiased);
+      uint64_t post = 0;
+      for (const auto &tb : shader->texture_bindings())
+      {
+        if (tb.binding_index >= 16)
+        {
+          continue;
+        }
+        auto fetch = r.Get<xenos::xe_gpu_texture_fetch_t>(XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0 + tb.fetch_constant * 6);
+        uint32_t signs = texture_util::SwizzleSigns(fetch);
+        uint32_t gamma = 0, biased = 0;
+        for (uint32_t i = 0; i < 4; ++i)
+        {
+          uint32_t sign = (signs >> (i * 2)) & 3;
+          gamma |= uint32_t(sign == kGamma) << i;
+          biased |= uint32_t(sign == kBiased) << i;
+        }
+        uint64_t mode = biased ? 0 : (gamma == 0 ? 1 : (gamma == 0x7 ? 2 : 0));
+        post |= mode << (2 * tb.binding_index);
+      }
+      return post;
+    }
   } // namespace
 
   // ------------------------------------------------------------ Draw
@@ -8268,6 +8409,10 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       pm.param_gen_register = program_cntl.param_gen ? (context_misc.param_gen_pos & 31) : 31;
       auto colorcontrol = r.Get<reg::RB_COLORCONTROL>();
       pm.alpha_test = colorcontrol.alpha_test_enable && colorcontrol.alpha_func != xenos::CompareFunction::kAlways;
+      if (REXCVAR_GET(ao2_native_gpu_static_tex_post))
+      {
+        pm.tex_post = StaticTexPost(shaders, ps_code, r);
+      }
       ps = shaders.Get(xenos::ShaderType::kPixel, ps_code.dwords, ps_code.dword_count, ps_code.hash, pm.value);
       uint32_t probe_size = g_probe_size.load(std::memory_order_relaxed);
       if (ps && probe_size && ps->shader)

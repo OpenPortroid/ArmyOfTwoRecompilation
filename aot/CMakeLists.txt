@@ -87,6 +87,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/decouple.cpp
     src/interp_camera.cpp
     src/interp_objects.cpp
+    src/interp_time.cpp
     src/render_fence.cpp
     src/render_idle.cpp
     src/limiter_wait.cpp

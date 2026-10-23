@@ -88,6 +88,22 @@ uint2 xe_vfetch_constant(uint index) {
   uint4 v = xe_vfetch[index >> 1];
   return (index & 1u) ? v.zw : v.xy;
 }
+// Xenos piecewise-linear gamma to linear (xenos::PWLGammaToLinear). Its
+// segments (slopes 1, 2, 4, 8 in 8-bit units, offsets 0, -64, -256, -1024)
+// make a convex curve, so the linear part is the largest of the four lines -
+// no compares and selects. The rounding term trunc(l * slope / 1024) is
+// trunc(l / 256) in the third segment and 0 in the first two (l < 128), so
+// 1 / 256 serves all three. Same bits as a select chain over the segments
+// for every float in [0, 1], with mad fused or not.
+float3 xe_gamma(float3 v) {
+  float3 g = saturate(v);
+  float3 l = max(max(g * 255.0, g * 510.0 - 64.0), max(g * 1020.0 - 256.0, g * 2040.0 - 1024.0));
+  return (l + trunc(l * (g >= 192.0 / 255.0 ? 1.0 / 128.0 : 1.0 / 256.0))) * (1.0 / 1023.0);
+}
+// The post-processing known for the draw (HlslModification::tex_post 2).
+float4 xe_tex_gamma3(float4 v, uint4 info) {
+  return float4(xe_gamma(v.xyz), v.w) * asfloat(info.y);
+}
 // Per-component texture post-processing: 2 = biased (x * 2 - 1), 3 = gamma.
 float4 xe_tex_post(float4 v, uint4 info) {
   // Most fetches have neither (the same for every pixel of a draw): one
@@ -98,12 +114,7 @@ float4 xe_tex_post(float4 v, uint4 info) {
     if (mode == 2u) {
       v[i] = v[i] * 2.0 - 1.0;
     } else if (mode == 3u) {
-      // Xenos piecewise-linear gamma to linear (xenos::PWLGammaToLinear).
-      float g = saturate(v[i]);
-      float scale = g >= 192.0 / 255.0 ? 8.0 / 1024.0 : (g >= 96.0 / 255.0 ? 4.0 / 1024.0 : (g >= 64.0 / 255.0 ? 2.0 / 1024.0 : 1.0 / 1024.0));
-      float offset = g >= 192.0 / 255.0 ? -1024.0 : (g >= 96.0 / 255.0 ? -256.0 : (g >= 64.0 / 255.0 ? -64.0 : 0.0));
-      float l = g * (255.0 * 1024.0 * scale) + offset;
-      v[i] = (l + trunc(l * scale)) * (1.0 / 1023.0);
+      v[i] = xe_gamma(v[i].xxx).x;
     }
   }
   return v * asfloat(info.y);
@@ -1466,7 +1477,11 @@ float4 xe_tex_post(float4 v, uint4 info) {
       }
       sample = fmt::format("{}.SampleLevel({}, {}, {})", tex, smp, coord, lod);
     }
-    StoreResult(instr.result, fmt::format("xe_tex_post({}, xe_tex_info[{}])", sample, binding), 0);
+    uint32_t post = binding < 16 ? uint32_t(modification().tex_post >> (2 * binding)) & 3 : 0;
+    std::string fetched = post == 1   ? fmt::format("({}) * asfloat(xe_tex_info[{}].y)", sample, binding)
+                          : post == 2 ? fmt::format("xe_tex_gamma3({}, xe_tex_info[{}])", sample, binding)
+                                      : fmt::format("xe_tex_post({}, xe_tex_info[{}])", sample, binding);
+    StoreResult(instr.result, fetched, 0);
     Close();
   }
 

@@ -233,6 +233,11 @@ twice its console CPU time per second. Levers: a 30 Hz simulation with complete 
 material time, CPU-skinned meshes are not interpolated yet; ao2_sim_hz=30 gave ~120 -> ~155 FPS in the heavy zone
 before), a faster codegen (CR emulation, byteswaps: the whole game thread), then native replacements.
 
+**Correction (same day):** the 9-14 ms ticks above were measured with the sampler on the game thread (1000
+suspensions a second) and the tick profile on; both slow the tick down. Without them (only the thread load,
+interp debug log) the fight's tick is 4.2-5.2 ms per 60 Hz step and the fight 207-219 FPS; see the next section.
+The per-actor shares above still hold (the same ratios), the absolute times don't.
+
 ## Fewer xe_mul: vertex formats that can't be infinite, cnd (2026-10-22)
 
 Ceiling first (a temporary switch, wrong in the 0 * inf cases): plain multiplication instead of xe_mul in every
@@ -243,3 +248,31 @@ infinity or NaN: only the 16- and 32-bit float ones taint now. cnd's result is o
 taint no longer reaches it. Vertex shaders: 6463 -> 4537 xe_mul calls over the 1467 dumped shaders (pixel shaders
 unchanged); all compile. Standing at the river start, uncapped, 3 alternating runs each: draw 2.626 / 2.638 / 2.644
 -> 2.612 / 2.588 / 2.596 ms, GPU 3.759 -> 3.722 ms avg, 253.9 -> 256.1 FPS.
+
+## 30 Hz simulation with materials and particles drawn between steps (2026-10-22)
+
+`ao2_sim_hz=30` halves the world ticks, but drew animated materials and particles at 30 Hz. Now:
+- Material time (`interp_time.cpp`, `ao2_interp_time`, on): the view family's world/real time (FSceneViewFamily ctor
+  sub_826179A0, f1/f2) is the step's TimeSeconds moved on by alpha x the last step's time delta. Moved forward,
+  not placed between steps, because the rendering thread writes it into LastRenderTime (sub_8261E8B8), which the
+  simulation reads; it stays between the last step's TimeSeconds and the next one's. Helps 60 Hz as well.
+- Sprite and SubUV particles (`interp_objects.cpp`, `ao2_interp_particles`, on): during the vertex fills
+  sub_828064A0 / sub_82806A78 of a scene drawn between steps every particle's OldLocation (+0) and Location (+16)
+  are moved back by (1 - alpha) of its move over the step, then put back. Layout check from the debug log: the
+  move over a step is Velocity (+48) x 0.0333 s exactly (e.g. 45.27 / 1358.1). Mesh, beam and trail emitters and
+  CPU-skinned meshes are still drawn at the step's place.
+
+Iraq 05_00 route into the fight, AO off, 1440p, cap 240, no sampler, alternating runs (`work/iraq_fight/hz*_?`):
+
+| run | avg FPS | fight (last 40 s) | fight tick / step | seconds < 200 | slowest 10 s |
+|---|---|---|---|---|---|
+| 60 Hz #1 | 225.3 | 206.7 | 4.45 ms | 6% | 180-198 |
+| 30 Hz #1 | 231.6 | 224.7 | 4.94 ms | 2% | 181-216 |
+| 60 Hz #2 | 227.1 | 218.8 | 4.19 ms | 13% | 171-188 |
+| 30 Hz #2 | 228.6 | 214.1 | 5.16 ms | 2% | 192-207 |
+
+30 Hz mostly lifts the dips (the slowest seconds +15-20 FPS, seconds below 200: 6-13% -> 2%); the average is
+bounded by the GPU (~4 ms/frame) and the cap. The price: game actions answer ~8 ms later on average than at 60 Hz
+and the logic runs at the console's rate (the mouse view is covered by ao2_predict_camera), so 60 Hz stays the
+default.
+

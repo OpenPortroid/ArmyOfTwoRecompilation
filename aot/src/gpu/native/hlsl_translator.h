@@ -38,6 +38,11 @@ namespace ao2::gpu
       // passes lost their early depth rejection to an alpha test they never
       // use.
       uint64_t alpha_test : 1;
+      // PS: texture post-processing (xenos::TextureSign after the fetch
+      // swizzle) of texture binding i in bits 2i..2i+1, known per draw so the
+      // fetch needs no per-component tests: 0 = read from xe_tex_info at run
+      // time, 1 = none (unsigned / signed), 2 = gamma on xyz, w none.
+      uint64_t tex_post : 32;
     };
   };
 

@@ -34,6 +34,17 @@
 // opening Select Mission). GMalloc's Free and Realloc are watched: an object
 // whose proxy, scene info, mesh object or bone array is freed or moved is
 // forgotten before anything is written again.
+//
+// Particles (ao2_interp_particles): every step the game thread copies each
+// sprite emitter's particles into new dynamic data for the rendering thread
+// (FDynamicSpriteEmitterData, built in sub_825FCC68: +8 active count, +16
+// stride, +20 particles, +24 u16 indices; vtable 0x82082F34, SubUV
+// 0x82082F48), and the proxy's vertex fill (sub_828064A0, SubUV
+// sub_82806A78) reads each particle's OldLocation (+0, its place on the
+// step before) and Location (+16). During the fill of a scene drawn between
+// steps both are moved back by (1 - alpha) of that step's move, so the
+// particles go with the objects drawn between the same two steps, and put
+// back after it. Particles born or gone on the step appear or go with it.
 #include <windows.h>
 
 #include <algorithm>
@@ -58,6 +69,8 @@
 
 REXCVAR_DEFINE_BOOL(ao2_interp_objects, true, "Gameplay",
                     "With ao2_decouple: draw moving objects between simulation steps (with the camera)");
+REXCVAR_DEFINE_BOOL(ao2_interp_particles, true, "Gameplay",
+                    "With ao2_decouple: draw sprite particles between simulation steps");
 REXCVAR_DEFINE_BOOL(ao2_interp_objects_debug, false, "Debug",
                     "Log object interpolation statistics once a second to interp_objects.log");
 
@@ -139,6 +152,8 @@ namespace
   };
   std::unordered_map<uint32_t, Track> g_tracks; // by proxy
   uint32_t g_rt_step = 0;                       // step of the last scene drawn
+  // Alpha of the scene being drawn on this thread for the particles, < 0: none.
+  thread_local float t_scene_alpha = -1.0f;
   std::vector<uint32_t> g_written;              // proxies holding an in-between place now
 
   // A GPU-skinned mesh object's bone matrices (3x4, 12 floats each) as its
@@ -252,7 +267,11 @@ namespace
   {
     double window_start = 0;
     uint32_t draws = 0, empty_queue = 0, dropped = 0, updates = 0, same_step = 0, jumps = 0, placed = 0, stale = 0,
-             max_tracks = 0, skin_updates = 0, skins_posed = 0, skin_stale = 0, max_skins = 0;
+             max_tracks = 0, skin_updates = 0, skins_posed = 0, skin_stale = 0, max_skins = 0,
+             particle_fills = 0, particles_moved = 0;
+    double before_ms = 0, put_back_ms = 0; // rendering thread time in BeforeScene / PutBack
+    // One particle's move over its step and its Velocity (+48), to check the layout.
+    float sample_move[3] = {}, sample_velocity[3] = {};
   } g_stats;
 
   void Log(const char *fmt, ...)
@@ -294,11 +313,15 @@ namespace
       return;
     }
     Log("draws %u (no entry %u, dropped %u) | updates %u (same step %u, jumps %u) | placed %u (%.1f/draw), stale %u | "
-        "tracked %u | skins: updates %u, posed %u (%.1f/draw), stale %u, tracked %u",
+        "tracked %u | skins: updates %u, posed %u (%.1f/draw), stale %u, tracked %u | particles: fills %u, moved "
+        "%u, sample move %.2f %.2f %.2f velocity %.1f %.1f %.1f | ms/s: before %.1f put back %.1f",
         g_stats.draws, g_stats.empty_queue, g_stats.dropped, g_stats.updates, g_stats.same_step, g_stats.jumps,
         g_stats.placed, g_stats.draws ? double(g_stats.placed) / g_stats.draws : 0.0, g_stats.stale,
         g_stats.max_tracks, g_stats.skin_updates, g_stats.skins_posed,
-        g_stats.draws ? double(g_stats.skins_posed) / g_stats.draws : 0.0, g_stats.skin_stale, g_stats.max_skins);
+        g_stats.draws ? double(g_stats.skins_posed) / g_stats.draws : 0.0, g_stats.skin_stale, g_stats.max_skins,
+        g_stats.particle_fills, g_stats.particles_moved, g_stats.sample_move[0], g_stats.sample_move[1],
+        g_stats.sample_move[2], g_stats.sample_velocity[0], g_stats.sample_velocity[1], g_stats.sample_velocity[2],
+        g_stats.before_ms, g_stats.put_back_ms);
     g_stats = Stats{};
     g_stats.window_start = now;
   }
@@ -404,6 +427,7 @@ namespace
   // Puts back the step's own place of the objects drawn in between.
   void PutBack(PPCContext &ctx, uint8_t *base)
   {
+    t_scene_alpha = -1.0f;
     std::lock_guard lock(g_mem);
     Forget();
     for (uint32_t mesh : g_written_skins)
@@ -450,6 +474,7 @@ namespace
         g_stats.empty_queue++;
       }
     }
+    t_scene_alpha = REXCVAR_GET(ao2_interp_particles) && d.alpha >= 0 && d.alpha < 1.0f ? d.alpha : -1.0f;
     std::lock_guard lock(g_mem);
     Forget();
     g_stats.draws++;
@@ -547,6 +572,75 @@ namespace
       g_written_skins.push_back(mesh);
       g_stats.skins_posed++;
     }
+  }
+
+  // A sprite emitter's vertex fill (r3 = its dynamic data) inside a scene
+  // drawn between steps: the particles placed between their last two places.
+  void FillParticles(PPCContext &ctx, uint8_t *base, void (*fill)(PPCContext &, uint8_t *))
+  {
+    constexpr int32_t kMaxParticles = 65536;
+    constexpr uint32_t kMinStride = 32, kMaxStride = 4096;
+    float alpha = t_scene_alpha;
+    uint32_t data = ctx.r3.u32;
+    int32_t count = alpha >= 0 ? int32_t(LoadU32(base, data + 8)) : 0;
+    uint32_t stride = LoadU32(base, data + 16);
+    uint32_t particles = LoadU32(base, data + 20);
+    uint32_t indices = LoadU32(base, data + 24);
+    if (count <= 0 || count > kMaxParticles || stride < kMinStride || stride > kMaxStride || !particles ||
+        !indices)
+    {
+      fill(ctx, base);
+      return;
+    }
+    thread_local std::vector<uint32_t> moved; // particle, then its 6 floats' bits
+    moved.clear();
+    float back = alpha - 1.0f;
+    for (int32_t i = 0; i < count; i++)
+    {
+      uint16_t index;
+      std::memcpy(&index, base + indices + 2 * i, 2);
+      uint32_t p = particles + std::byteswap(index) * stride;
+      float old[3], loc[3], d[3];
+      for (int k = 0; k < 3; k++)
+      {
+        old[k] = LoadF32(base, p + 4 * k);
+        loc[k] = LoadF32(base, p + 16 + 4 * k);
+        d[k] = loc[k] - old[k];
+      }
+      if (!(std::fabs(d[0]) <= kMaxMove && std::fabs(d[1]) <= kMaxMove && std::fabs(d[2]) <= kMaxMove) ||
+          (d[0] == 0 && d[1] == 0 && d[2] == 0))
+      {
+        continue;
+      }
+      if (moved.empty() && REXCVAR_GET(ao2_interp_objects_debug))
+      {
+        for (int k = 0; k < 3; k++)
+        {
+          g_stats.sample_move[k] = d[k];
+          g_stats.sample_velocity[k] = LoadF32(base, p + 48 + 4 * k);
+        }
+      }
+      moved.push_back(p);
+      for (int k = 0; k < 3; k++)
+      {
+        moved.push_back(std::bit_cast<uint32_t>(old[k]));
+        moved.push_back(std::bit_cast<uint32_t>(loc[k]));
+        StoreF32(base, p + 4 * k, old[k] + back * d[k]);
+        StoreF32(base, p + 16 + 4 * k, loc[k] + back * d[k]);
+      }
+    }
+    fill(ctx, base);
+    for (size_t i = 0; i < moved.size(); i += 7)
+    {
+      uint32_t p = moved[i];
+      for (int k = 0; k < 3; k++)
+      {
+        StoreF32(base, p + 4 * k, std::bit_cast<float>(moved[i + 1 + 2 * k]));
+        StoreF32(base, p + 16 + 4 * k, std::bit_cast<float>(moved[i + 2 + 2 * k]));
+      }
+    }
+    g_stats.particle_fills++;
+    g_stats.particles_moved += uint32_t(moved.size() / 7);
   }
 } // namespace
 
@@ -650,9 +744,13 @@ extern "C" REX_FUNC(sub_8291B9F8)
 extern "C" REX_FUNC(__imp__sub_8262FC98);
 extern "C" REX_FUNC(sub_8262FC98)
 {
+  double t0 = NowMs();
   BeforeScene(ctx, base);
+  g_stats.before_ms += NowMs() - t0;
   __imp__sub_8262FC98(ctx, base);
+  t0 = NowMs();
   PutBack(ctx, base);
+  g_stats.put_back_ms += NowMs() - t0;
   Report();
 }
 
@@ -664,6 +762,20 @@ extern "C" REX_FUNC(sub_8262FC38)
   __imp__sub_8262FC38(ctx, base);
   PutBack(ctx, base);
   Report();
+}
+
+// The sprite and SubUV emitters' vertex fills (rendering thread, r3 = the
+// emitter's dynamic data).
+extern "C" REX_FUNC(__imp__sub_828064A0);
+extern "C" REX_FUNC(sub_828064A0)
+{
+  FillParticles(ctx, base, __imp__sub_828064A0);
+}
+
+extern "C" REX_FUNC(__imp__sub_82806A78);
+extern "C" REX_FUNC(sub_82806A78)
+{
+  FillParticles(ctx, base, __imp__sub_82806A78);
 }
 
 // GMalloc, the thread-safe proxy (its vtable at 0x8206E6A0 holds Malloc
