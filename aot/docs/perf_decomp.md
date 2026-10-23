@@ -291,3 +291,40 @@ thread then waits for (the render fence) - the fight tick was ~0.35 ms longer wi
 0.163 -> ~0.075 ms per frame (skins ~0.045), no stale objects in any run. Iraq fight at 1440p, 2+2 alternating
 runs (`work/iraq_fight/q_*`): with / without interpolation 227 / 211 vs 228 / 206 FPS, slowest seconds 185 / 182
 vs 176 / 173 - no longer measurable against the run-to-run spread.
+
+## Iraq's fight on the GPU: the hit effect and lent resolves (2026-10-23)
+
+The seconds at 165-180 FPS in Iraq's fight (1440p, AO off) are GPU bound: 5.3-5.8 ms of GPU work per frame,
+the GPU ~95% busy, no gaps between the frame's submits (`idle` in the `gpu ms/frame` line, now measured). They
+have no more draws than the 240 FPS seconds of the same fight; what they add is smoke (soft particles 7D2EA5ED,
+up to 0.26 ms), more characters (1FCCC634, 11 fetches: 0.29 ms for 11 draws, all of it texture fetches -
+`ao2_native_gpu_finite_mul` off changes nothing) and the hit effect. The hit effect saves the 7e3 scene as
+2_10_10_10 bits (resolve fmt 10 -> 109D0000), lets a 4x MSAA depth/stencil use that EDRAM, and draws the bits back
+(PS 3150CB22): two fullscreen format transfers (3 -> 2 at the resolve, 2 -> 3 at the next draw, ~0.19 ms each)
+plus the copy and the copy back, in every frame it runs.
+
+- `ao2_native_gpu_resolve_pack`: the resolve encodes the float surface straight into the texture (resolve shader
+  variant 5, the transfer's Encode7e3) and the float surface keeps the EDRAM; the copy back (a plain texel-for-texel
+  copy of the saved texture, `SkipCopyBack`) gives the tiles back to the surface instead of drawing. Side effect:
+  the scene keeps its 16-bit floats - the console's round trip clamped them to 7e3's 31.875, so the bloom got
+  weaker in hit frames only; now it is the same as in the other frames (where our fp16 surface never clamps).
+- `ao2_native_gpu_resolve_lend`: a whole-screen resolve without a clear hands the render target's resource to the
+  texture like the swap (exponent bias at sampling) and the render target takes the texture's old one; its
+  contents are copied back (`ReturnLent`) only if it is used while it still holds EDRAM tiles. In the frame
+  the scene's second resolve (after translucency, exp bias -2) is lent and the depth/stencil clears that follow take
+  its tiles, so nothing is copied back. Small surfaces are not lent: the luminance reduction draws into them right
+  after each resolve, and the copy back cost as much as the copy.
+
+Measured on one fight frame frozen (`FREEZE_AB` in work/iraq_fight.sh: at the first slow seconds the game stops,
+the same frame is drawn, and a setting is switched every 8 s; tools/freeze_ab.py): pack + skip 189.2 -> 197.9
+FPS (GPU 5.10 -> 4.82 ms, transfer 0.53 -> 0.22); lend 224.3 -> 231.7 FPS (GPU 4.14 -> 3.93 ms) - the earlier
+guess that a zero copy of this resolve would gain little did not hold. Freeze with `FREEZE_CMD=pause` (the UE3
+console command): the pause menu adds its own fullscreen transfer and resolve, and in its frame the lent surface
+is needed again. Pictures (FREEZE_CAPTURE_EACH, tools/compare_captures.py): with and without lending the presented
+frame is identical; two captures of the same setting differ by ~0.2-0.9% of pixels (something still animates).
+
+Also measured on a frozen fight frame: occlusion queries on/off and `finite_mul` change nothing; static texture
+post-processing is worth +4.5%; without early submits (`submit_draws 0`) the frame rate halves.
+
+Full route, 2 runs: slowest seconds 189 189 192 194 195 / 193 194 195 196 198, minimum 189 / 193 (the same day
+before: 170-183 in 5 runs).

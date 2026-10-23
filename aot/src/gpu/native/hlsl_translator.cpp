@@ -146,6 +146,9 @@ float4 xe_tex_post(float4 v, uint4 info) {
     position_fetch_ = {};
     position_register_ = -1;
     position_state_ = 0;
+    texcoord_fetch_ = {};
+    texcoord_register_ = -1;
+    texcoord_state_ = 0;
     conditional_exec_ = false;
     std::fill(std::begin(nonfinite_), std::end(nonfinite_), uint8_t(0));
     ps_nonfinite_ = false;
@@ -994,26 +997,46 @@ float4 xe_tex_post(float4 v, uint4 info) {
   // A position export counts as pass-through when it is an unconditional
   // `max oPos.xy, rN.xy, rN.xy` of the register the first vertex fetch wrote
   // its x/y to, with nothing written to that register in between.
+  bool HlslShaderTranslator::PassThroughExport(const ParsedAluInstruction &instr, int32_t reg) const
+  {
+    const InstructionResult &vr = instr.vector_and_constant_result;
+    const InstructionOperand &a = instr.vector_operands[0];
+    return reg >= 0 && !instr.is_predicated && !conditional_exec_ && !use_loop_ && !vr.is_clamped &&
+           instr.vector_opcode == AluVectorOpcode::kMax &&
+           a.GetIdenticalComponents(instr.vector_operands[1]) == 0b1111 &&
+           a.storage_source == InstructionStorageSource::kRegister &&
+           a.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute &&
+           a.storage_index == uint32_t(reg) && !a.is_negated && !a.is_absolute_value &&
+           a.GetComponent(0) == SwizzleSource::kX && a.GetComponent(1) == SwizzleSource::kY &&
+           vr.components[0] == SwizzleSource::kX && vr.components[1] == SwizzleSource::kY;
+  }
+
   void HlslShaderTranslator::TrackPositionWrite(const ParsedAluInstruction &instr)
   {
     const InstructionResult &vr = instr.vector_and_constant_result;
     if (vr.storage_target == InstructionStorageTarget::kPosition && (vr.GetUsedWriteMask() & 0b11))
     {
-      const InstructionOperand &a = instr.vector_operands[0];
-      bool pass = position_register_ >= 0 && !instr.is_predicated && !conditional_exec_ && !use_loop_ &&
-                  !vr.is_clamped && instr.vector_opcode == AluVectorOpcode::kMax &&
-                  a.GetIdenticalComponents(instr.vector_operands[1]) == 0b1111 &&
-                  a.storage_source == InstructionStorageSource::kRegister &&
-                  a.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute &&
-                  a.storage_index == uint32_t(position_register_) && !a.is_negated && !a.is_absolute_value &&
-                  a.GetComponent(0) == SwizzleSource::kX && a.GetComponent(1) == SwizzleSource::kY &&
-                  vr.components[0] == SwizzleSource::kX && vr.components[1] == SwizzleSource::kY;
-      position_state_ = (pass && position_state_ >= 0) ? 1 : -1;
+      position_state_ = (PassThroughExport(instr, position_register_) && position_state_ >= 0) ? 1 : -1;
+    }
+    auto texcoord = [](const InstructionResult &res) {
+      return res.storage_target == InstructionStorageTarget::kInterpolator && (res.GetUsedWriteMask() & 0b11) &&
+             (res.storage_addressing_mode != InstructionStorageAddressingMode::kAbsolute || res.storage_index == 0);
+    };
+    if (texcoord(vr))
+    {
+      texcoord_state_ = (vr.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute &&
+                         PassThroughExport(instr, texcoord_register_) && texcoord_state_ >= 0)
+                            ? 1
+                            : -1;
     }
     const InstructionResult &sr = instr.scalar_result;
     if (sr.storage_target == InstructionStorageTarget::kPosition && (sr.GetUsedWriteMask() & 0b11))
     {
       position_state_ = -1;
+    }
+    if (texcoord(sr))
+    {
+      texcoord_state_ = -1;
     }
     TrackRegisterWrite(vr);
     TrackRegisterWrite(sr);
@@ -1021,13 +1044,34 @@ float4 xe_tex_post(float4 v, uint4 info) {
 
   void HlslShaderTranslator::TrackRegisterWrite(const InstructionResult &result)
   {
-    if (position_register_ >= 0 && result.storage_target == InstructionStorageTarget::kRegister &&
-        (result.GetUsedWriteMask() & 0b11) &&
-        (result.storage_addressing_mode != InstructionStorageAddressingMode::kAbsolute ||
-         result.storage_index == uint32_t(position_register_)))
+    auto lost = [&](int32_t reg) {
+      return reg >= 0 && result.storage_target == InstructionStorageTarget::kRegister &&
+             (result.GetUsedWriteMask() & 0b11) &&
+             (result.storage_addressing_mode != InstructionStorageAddressingMode::kAbsolute ||
+              result.storage_index == uint32_t(reg));
+    };
+    if (lost(position_register_))
     {
       position_register_ = -2;
     }
+    if (lost(texcoord_register_))
+    {
+      texcoord_register_ = -2;
+    }
+  }
+
+  bool HlslShaderTranslator::PassThroughFetch(const ParsedVertexFetchInstruction &instr) const
+  {
+    const auto &at = instr.attributes;
+    const InstructionResult &res = instr.result;
+    return !instr.is_mini_fetch && !instr.is_predicated && !conditional_exec_ &&
+           res.storage_target == InstructionStorageTarget::kRegister &&
+           res.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute &&
+           (res.GetUsedWriteMask() & 0b11) == 0b11 && res.components[0] == SwizzleSource::kX &&
+           res.components[1] == SwizzleSource::kY && !at.exp_adjust &&
+           (at.data_format == xenos::VertexFormat::k_32_32_FLOAT ||
+            at.data_format == xenos::VertexFormat::k_32_32_32_FLOAT ||
+            at.data_format == xenos::VertexFormat::k_32_32_32_32_FLOAT);
   }
 
   // ---------------------------------------------------------------- Fetch
@@ -1037,29 +1081,29 @@ float4 xe_tex_post(float4 v, uint4 info) {
     if (!instr.is_mini_fetch && position_register_ == -1)
     {
       // First full fetch: candidate for the pass-through position.
-      const auto &at = instr.attributes;
-      const InstructionResult &res = instr.result;
-      bool usable = !instr.is_predicated && !conditional_exec_ &&
-                    res.storage_target == InstructionStorageTarget::kRegister &&
-                    res.storage_addressing_mode == InstructionStorageAddressingMode::kAbsolute &&
-                    (res.GetUsedWriteMask() & 0b11) == 0b11 && res.components[0] == SwizzleSource::kX &&
-                    res.components[1] == SwizzleSource::kY && !at.exp_adjust &&
-                    (at.data_format == xenos::VertexFormat::k_32_32_FLOAT ||
-                     at.data_format == xenos::VertexFormat::k_32_32_32_FLOAT ||
-                     at.data_format == xenos::VertexFormat::k_32_32_32_32_FLOAT);
-      position_register_ = usable ? int32_t(res.storage_index) : -2;
+      bool usable = PassThroughFetch(instr);
+      position_register_ = usable ? int32_t(instr.result.storage_index) : -2;
       if (usable)
       {
         position_fetch_.valid = true;
         position_fetch_.fetch_constant = instr.operands[1].storage_index;
-        position_fetch_.offset = at.offset;
-        position_fetch_.stride = at.stride;
-        position_fetch_.format = at.data_format;
+        position_fetch_.offset = instr.attributes.offset;
+        position_fetch_.stride = instr.attributes.stride;
+        position_fetch_.format = instr.attributes.data_format;
       }
     }
     else
     {
       TrackRegisterWrite(instr.result);
+      // A later fetch of the same vertices: candidate for interpolator 0.
+      if (texcoord_register_ == -1 && position_fetch_.valid && PassThroughFetch(instr) &&
+          instr.operands[1].storage_index == position_fetch_.fetch_constant)
+      {
+        texcoord_register_ = int32_t(instr.result.storage_index);
+        texcoord_fetch_ = {true, position_fetch_.fetch_constant, int32_t(instr.attributes.offset),
+                           uint32_t(instr.attributes.stride),
+                           instr.attributes.data_format};
+      }
     }
     SetInstructionPredication(instr.is_predicated, instr.predicate_condition);
     const auto &at = instr.attributes;

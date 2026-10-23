@@ -94,6 +94,14 @@ REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_swap, true, "GPU",
                     "A color resolve followed by a clear hands the render target's resource to the texture and "
                     "gives the render target the texture's old one (no copy); the exponent bias is applied when "
                     "the texture is sampled");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_lend, true, "GPU",
+                    "A color resolve without a clear also hands the render target's resource to the texture; the "
+                    "render target's contents are copied back from it only if it is used again while it still "
+                    "holds EDRAM tiles (usually a draw of another format takes them first)");
+REXCVAR_DEFINE_BOOL(ao2_native_gpu_resolve_pack, true, "GPU",
+                    "A 7e3 float surface resolved as 2_10_10_10 bits is encoded straight into the texture and "
+                    "keeps the EDRAM, and a draw copying such saved bits back unchanged is skipped (the hit "
+                    "effect: no transfers between the two formats)");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_skip_depth_restore, true, "GPU",
                     "A resolve's depth clear waits for the next draw; the game's restore of that depth from the "
                     "resolved texture then needs neither the clear nor itself");
@@ -253,6 +261,9 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       // Depth: some draw had the stencil test enabled (otherwise its stencil
       // is never transferred in).
       bool stencil_used = false;
+      // Bumped whenever the resource's contents may change (draws, transfers
+      // and clears into it, a resolve taking its resource): EdramSave.
+      uint64_t writes = 0;
     };
 
     // Resolve destination (render-to-texture), keyed by guest address.
@@ -361,12 +372,13 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       kGpuCopy,
       kGpuPresent,
       kGpuPost,
+      kGpuIdle, // from the end of a list submitted mid-frame to the start of the next one
       kGpuCategoryCount,
       kGpuEnd = 0xFE, // last timestamp of a command list
       kGpuNone = 0xFF,
     };
     const char *const kGpuCategoryNames[kGpuCategoryCount] = {"draw", "transfer", "resolve", "clear",
-                                                              "upload", "copy", "present", "post"};
+                                                              "upload", "copy", "present", "post", "idle"};
     constexpr uint32_t kTimestampsPerFrame = 16384;
     constexpr uint32_t kOcclusionPerFrame = 4096; // host occlusion queries per frame slot
 
@@ -457,8 +469,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint32_t draw_timings_slot = UINT32_MAX;
       // ao2_native_gpu_capture_slow_us: the next frame is traced (GPU time of
       // the slow frame that triggered it), the traced one is copied to slow_N_*.
+      // Only after a run of slow frames: a lone spike is over by the next
+      // frame, so its trace would show an ordinary one.
       bool slow_capture_pending = false;
-      uint32_t slow_capture_us = 0, slow_traced_us = 0, slow_captures = 0;
+      uint32_t slow_capture_us = 0, slow_traced_us = 0, slow_captures = 0, slow_run = 0;
       uint64_t slow_capture_frame = 0;
       uint32_t frame_index = 0;
       uint64_t frame_number = 0;
@@ -554,7 +568,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> overlay_textures;
 
       ComPtr<ID3D12RootSignature> resolve_root;
-      std::vector<uint8_t> resolve_vs, resolve_ps[5];
+      std::vector<uint8_t> resolve_vs, resolve_ps[6];
       std::unordered_map<uint32_t, ComPtr<ID3D12PipelineState>> resolve_pipelines;
       ComPtr<ID3D12DescriptorHeap> transient_rtv_heap;
       uint32_t transient_rtvs_used = 0;
@@ -611,7 +625,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       std::unordered_map<uint64_t, FetchCacheEntry, FastHash> fetch_cache;
       // Guest display gamma ramp (DC_LUT 256-entry table), applied when presenting.
       uint32_t gamma_ramp[256] = {};
-      uint64_t resolves_copied = 0, resolves_drawn = 0, resolves_swapped = 0, lowres_copies = 0;
+      uint64_t resolves_copied = 0, resolves_drawn = 0, resolves_swapped = 0, resolves_packed = 0, lowres_copies = 0;
       uint64_t transfers_skipped = 0; // claims of fully overwritten rectangles
       uint64_t transfers_cleared = 0; // transfers of uniform tiles done as clears
       uint64_t stencil_clears_redirected = 0; // ClearStencilOnOwner
@@ -624,6 +638,29 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         float z = 0.0f;
         uint32_t raw = 0; // RB_DEPTH_CLEAR
       } pending_depth;
+      // The last resolve that copied a color surface's bits unchanged into a
+      // texture (see SkipCopyBack): `origin` held those bits in its resource
+      // then (the surface itself, or the owner they were transferred from).
+      struct EdramSave
+      {
+        RenderTarget *origin = nullptr;
+        uint64_t origin_writes = 0;
+        RenderTarget *surface = nullptr; // the resolve's source
+        D3D12_RECT rect = {};            // guest pixels of the surface
+        uint32_t dest = 0;    // the resolve's destination
+        uint64_t generation = 0;
+      } edram_save;
+      uint64_t copy_backs_skipped = 0, copy_back_saves = 0;
+      // Render targets whose resource a resolve without a clear handed to the
+      // texture at `dest` (SwapResolve's lend): their contents are there.
+      struct Lent
+      {
+        RenderTarget *rt;
+        uint32_t dest;
+        ID3D12Resource *resource; // the texture's resource holding them
+      };
+      std::vector<Lent> lent;
+      uint64_t resolves_lent = 0, lent_returned = 0;
       uint64_t depth_restores_skipped = 0;
       uint64_t resources_created = 0; // committed resources created (kernel calls) since the last stats line
 
@@ -990,6 +1027,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     bool InitTransferPipelines();
     void ApplyWritebacks(Frame &f);
     void Transition(ID3D12Resource *resource, D3D12_RESOURCE_STATES &state, D3D12_RESOURCE_STATES to);
+    void ReturnLent(RenderTarget *rt, uint32_t dest = UINT32_MAX);
     void WaitIdle();
     // Post effects / shadow resolution (see "Post effects", "Shadow resolution").
     struct HostTexture;
@@ -2321,6 +2359,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       }
       g.render_targets.clear();
       g.pending_depth = {};
+      g.edram_save = {};
+      g.lent.clear();
       std::fill(std::begin(g.edram_owner), std::end(g.edram_owner), nullptr);
       ++g.edram_generation;
       g.bound = {};
@@ -2496,6 +2536,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       {
         return;
       }
+      GpuMark(kGpuIdle);
       if (CloseList())
       {
         ID3D12CommandList *lists[] = {g.list.Get()};
@@ -2564,7 +2605,9 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         }
         int32_t slow_us = REXCVAR_GET(ao2_native_gpu_capture_slow_us);
         uint32_t frame_us = uint32_t(double(frame_ticks) * 1e6 / double(g.timestamp_frequency));
-        if (slow_us > 0 && frame_us > uint32_t(slow_us) && g.slow_captures < 5 && !g.slow_capture_pending &&
+        constexpr uint32_t kSlowRun = 8;
+        g.slow_run = slow_us > 0 && frame_us > uint32_t(slow_us) ? g.slow_run + 1 : 0;
+        if (g.slow_run >= kSlowRun && g.slow_captures < 5 && !g.slow_capture_pending &&
             !g_trace && g.draw_timings_slot == UINT32_MAX &&
             (g.slow_capture_frame == 0 || g.frame_number > g.slow_capture_frame + 960))
         {
@@ -3718,15 +3761,20 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     bool RectListExtent(const RegisterFile &r, const CompiledShader *vs, const DrawPacket &d, const Viewport &vp,
                         D3D12_RECT &out)
     {
-      if (d.prim_type != xenos::PrimitiveType::kRectangleList || d.indexed || !d.index_count || d.index_count > 12)
+      // Also a 4-vertex triangle strip whose corners make an axis-aligned
+      // rectangle (a full-screen quad drawn the D3D way), xy only (w is 1).
+      bool strip = d.prim_type == xenos::PrimitiveType::kTriangleStrip && d.index_count == 4;
+      if ((d.prim_type != xenos::PrimitiveType::kRectangleList && !strip) || d.indexed || !d.index_count ||
+          d.index_count > 12)
       {
         return false;
       }
       const auto &pf = vs->position_passthrough;
-      if (!pf.valid)
+      if (!pf.valid || (strip && pf.format != xenos::VertexFormat::k_32_32_FLOAT))
       {
         return false;
       }
+      float corner_x[4], corner_y[4];
       xenos::xe_gpu_vertex_fetch_t fetch;
       std::memcpy(&fetch, &r.v[0x4800 + pf.fetch_constant * 2], sizeof(fetch));
       uint32_t base = (fetch.address << 2) & 0x1FFFFFFF;
@@ -3752,6 +3800,11 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         float ny = xy[1] * vp.ndc_scale[1] + vp.ndc_offset[1];
         float px = vp.viewport.TopLeftX + (nx * 0.5f + 0.5f) * vp.viewport.Width;
         float py = vp.viewport.TopLeftY + (0.5f - ny * 0.5f) * vp.viewport.Height;
+        if (strip)
+        {
+          corner_x[i] = px;
+          corner_y[i] = py;
+        }
         x0 = std::min(x0, px);
         y0 = std::min(y0, py);
         x1 = std::max(x1, px);
@@ -3760,6 +3813,27 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       if (!(x0 <= x1 && y0 <= y1) || std::abs(x0) > 65536.0f || std::abs(y1) > 65536.0f)
       {
         return false;
+      }
+      if (strip)
+      {
+        // Every vertex a corner of the box, the first and last opposite and
+        // the middle two the other diagonal (the strip's two triangles then
+        // fill the box, not a bow tie).
+        for (uint32_t i = 0; i < 4; ++i)
+        {
+          if ((corner_x[i] != x0 && corner_x[i] != x1) || (corner_y[i] != y0 && corner_y[i] != y1))
+          {
+            return false;
+          }
+        }
+        auto opposite = [&](uint32_t a, uint32_t b) {
+          return corner_x[a] != corner_x[b] && corner_y[a] != corner_y[b];
+        };
+        if (!opposite(0, 3) || !opposite(1, 2) || (corner_x[1] == corner_x[0] && corner_y[1] == corner_y[0]) ||
+            (corner_x[1] == corner_x[3] && corner_y[1] == corner_y[3]))
+        {
+          return false;
+        }
       }
       out.left = std::max<LONG>(LONG(std::floor(x0)), vp.scissor.left);
       out.top = std::max<LONG>(LONG(std::floor(y0)), vp.scissor.top);
@@ -4679,6 +4753,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           }
           NativeLog("resolved %08X (%u bytes) dropped: the CPU wrote page %08X (frame %llu)\n", address, t.guest_size,
                     page << kPageShift, (unsigned long long)g.frame_number);
+        }
+        if (!g.lent.empty())
+        {
+          ReturnLent(nullptr, address);
         }
         DeferRelease(std::move(t.resource));
         DeferRelease(std::move(t.lowres));
@@ -5849,6 +5927,11 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
                        bool do_depth = true, bool do_stencil = true,
                        const std::vector<D3D12_RECT> *stencil_rects = nullptr)
     {
+      if (!g.lent.empty())
+      {
+        ReturnLent(&src);
+        ReturnLent(&dst);
+      }
       Frame &f = CurrentFrame();
       if (f.views_used + 2 > kViewsPerFrame)
       {
@@ -5986,6 +6069,7 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
       {
         return;
       }
+      ++dst.writes;
       static std::vector<uint32_t> clear_tiles, pass_tiles;
       static std::vector<D3D12_RECT> rects;
       clear_tiles.clear();
@@ -6106,6 +6190,134 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
       }
     }
 
+    // A copy draw putting back what a resolve saved (EdramSave). The hit
+    // effect saves the scene's EDRAM bits into a texture, lets a 4x MSAA
+    // depth/stencil surface use that EDRAM, then draws the texture back texel
+    // for texel. The render target that held those bits still holds them if
+    // nothing wrote it since: it gets the EDRAM tiles back instead of the
+    // draw - and instead of the transfer of the draw's result into it when the
+    // next draw wants the scene in its own format again (~0.3 ms at 1440p).
+    // Coming from a 7e3 float surface, it keeps its 16-bit floats rather than
+    // the 7e3 rounding the console's round trip makes.
+    bool SkipCopyBack(const RegisterFile &r, const CompiledShader *vs, const CompiledShader *ps, const DrawPacket &d,
+                      const Viewport &vp, RenderTarget *const color_rts[4], uint32_t rtv_count, const RenderTarget *ds,
+                      uint32_t color_mask, uint32_t blend0, uint32_t rt_format0, const D3D12_RECT &covered)
+    {
+      const auto &s = g.edram_save;
+      if (!s.origin || rtv_count != 1 || color_rts[0] != s.surface || ds || g.occlusion_active || !ps ||
+          !ps->plain_texture_copy || ps->shader->kills_pixels() || r.Get<reg::RB_COLORCONTROL>().alpha_test_enable ||
+          (color_mask & 0xF) != 0xF || blend0 != 0 || rt_format0 == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB ||
+          covered.left != s.rect.left || covered.top != s.rect.top || covered.right != s.rect.right ||
+          covered.bottom != s.rect.bottom || s.origin->writes != s.origin_writes)
+      {
+        return false;
+      }
+      // The saved texture, unchanged since, read as it was stored: same bits
+      // per texel, no swizzle, sign, exponent or filtering.
+      auto fetch = r.Get<xenos::xe_gpu_texture_fetch_t>(XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0);
+      bool same_bits = false;
+      switch (s.surface->edram_format)
+      {
+      case uint32_t(xenos::ColorRenderTargetFormat::k_8_8_8_8):
+        same_bits = fetch.format == xenos::TextureFormat::k_8_8_8_8 ||
+                    fetch.format == xenos::TextureFormat::k_8_8_8_8_AS_16_16_16_16;
+        break;
+      case uint32_t(xenos::ColorRenderTargetFormat::k_2_10_10_10):
+        same_bits = fetch.format == xenos::TextureFormat::k_2_10_10_10 ||
+                    fetch.format == xenos::TextureFormat::k_2_10_10_10_AS_16_16_16_16;
+        break;
+      default:
+        break;
+      }
+      LONG w = s.rect.right - s.rect.left, h = s.rect.bottom - s.rect.top;
+      if (!same_bits || ((fetch.base_address & 0x1FFFF) << 12) != s.dest ||
+          fetch.dimension != xenos::DataDimension::k2DOrStacked || LONG(fetch.size_2d.width) + 1 != w ||
+          LONG(fetch.size_2d.height) + 1 != h || fetch.mag_filter != xenos::TextureFilter::kPoint ||
+          fetch.min_filter != xenos::TextureFilter::kPoint || fetch.exp_adjust ||
+          fetch.swizzle != xenos::XE_GPU_TEXTURE_SWIZZLE_RGBA || fetch.sign_x != xenos::TextureSign::kUnsigned ||
+          fetch.sign_y != xenos::TextureSign::kUnsigned || fetch.sign_z != xenos::TextureSign::kUnsigned ||
+          fetch.sign_w != xenos::TextureSign::kUnsigned)
+      {
+        return false;
+      }
+      HostTexture *tex = GetResolvedTexture(s.dest);
+      if (!tex || tex->generation != s.generation || tex->exp_scale != 1.0f || tex->red_blue_swapped)
+      {
+        return false;
+      }
+      // Texel for texel: the quad's corners on the pixel grid's edges and its
+      // texture coordinates 0 / 1 at them.
+      const auto &pf = vs->position_passthrough, &tf = vs->texcoord_passthrough;
+      if (!pf.valid || !tf.valid || pf.format != xenos::VertexFormat::k_32_32_FLOAT || d.prim_type != xenos::PrimitiveType::kTriangleStrip || d.index_count != 4)
+      {
+        return false;
+      }
+      xenos::xe_gpu_vertex_fetch_t vf;
+      std::memcpy(&vf, &r.v[0x4800 + pf.fetch_constant * 2], sizeof(vf));
+      uint32_t base = (vf.address << 2) & 0x1FFFFFFF, first = r.v[XE_GPU_REG_VGT_INDX_OFFSET];
+      if (!pf.stride || pf.stride != tf.stride || !IsGuestPhysicalReadable(base + first * pf.stride * 4, pf.stride * 16))
+      {
+        return false;
+      }
+      auto load = [&](uint32_t vertex, int32_t offset, uint32_t c) {
+        uint32_t raw;
+        std::memcpy(&raw, Mem()->TranslatePhysical(base + (first + vertex) * pf.stride * 4 + uint32_t(offset + c) * 4), 4);
+        raw = SwapEndian(raw, vf.endian);
+        float f;
+        std::memcpy(&f, &raw, 4);
+        return f;
+      };
+      float px[4], py[4], u[4], v[4];
+      for (uint32_t i = 0; i < 4; ++i)
+      {
+        px[i] = vp.viewport.TopLeftX + ((load(i, pf.offset, 0) * vp.ndc_scale[0] + vp.ndc_offset[0]) * 0.5f + 0.5f) *
+                                           vp.viewport.Width;
+        py[i] = vp.viewport.TopLeftY + (0.5f - (load(i, pf.offset, 1) * vp.ndc_scale[1] + vp.ndc_offset[1]) * 0.5f) *
+                                           vp.viewport.Height;
+        u[i] = load(i, tf.offset, 0);
+        v[i] = load(i, tf.offset, 1);
+      }
+      float x0 = *std::min_element(px, px + 4), x1 = *std::max_element(px, px + 4);
+      float y0 = *std::min_element(py, py + 4), y1 = *std::max_element(py, py + 4);
+      auto near_edge = [](float a, LONG edge) { return a >= float(edge) - 0.5f - 1e-3f && a <= float(edge) + 1e-3f; };
+      if (!near_edge(x0, s.rect.left) || !near_edge(x1, s.rect.right) || !near_edge(y0, s.rect.top) ||
+          !near_edge(y1, s.rect.bottom))
+      {
+        return false;
+      }
+      for (uint32_t i = 0; i < 4; ++i)
+      {
+        if (u[i] != (px[i] == x0 ? 0.0f : 1.0f) || v[i] != (py[i] == y0 ? 0.0f : 1.0f))
+        {
+          return false;
+        }
+      }
+      ForEachTile(*s.origin, s.rect, [&](uint32_t tile) { g.edram_owner[tile] = s.origin; });
+      ++g.edram_generation;
+      Trace("    copy back of %08X skipped: its EDRAM goes back to the surface it was saved from\n", s.dest);
+      g.edram_save = {};
+      return true;
+    }
+
+    // The one render target owning every EDRAM tile `rect` of `rt` covers, if
+    // it is a 32bpp color surface laid out like `rt` (null otherwise).
+    RenderTarget *SoleOwner(RenderTarget &rt, const D3D12_RECT &rect)
+    {
+      RenderTarget *owner = nullptr;
+      bool one = true;
+      ForEachTile(rt, rect, [&](uint32_t tile) {
+        RenderTarget *o = g.edram_owner[tile];
+        one = one && o && (!owner || o == owner);
+        owner = owner ? owner : o;
+      });
+      if (!one || !owner || owner->depth || owner->is_64bpp || rt.is_64bpp || owner->edram_base != rt.edram_base ||
+          owner->edram_pitch != rt.edram_pitch || owner->samples != rt.samples || owner->scale4 != rt.scale4)
+      {
+        return nullptr;
+      }
+      return owner;
+    }
+
     // Makes `rt` the owner of the EDRAM tiles under `rect`, first bringing in
     // the contents other render targets left there - except the parts the
     // caller overwrites (`overwrite`: 1 = color / depth, 2 = stencil) in the
@@ -6113,6 +6325,10 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
     // draw ever tested.
     void ClaimEdram(RenderTarget &rt, D3D12_RECT rect, uint32_t overwrite = 0)
     {
+      if (!g.lent.empty())
+      {
+        ReturnLent(&rt);
+      }
       rect.left = std::max<LONG>(rect.left, 0);
       rect.top = std::max<LONG>(rect.top, 0);
       rect.right = std::min<LONG>(rect.right, LONG(rt.width));
@@ -6624,7 +6840,7 @@ float ps(float4 p : SV_Position) : SV_Target { return src.Load(int3(int2(p.xy) -
 #elif VARIANT == 3
 Texture2DMS<float> src : register(t0);
 float ps(float4 p : SV_Position) : SV_Target { return src.Load(int2(p.xy) - dest_offset, 0); }
-#else
+#elif VARIANT == 4
 // Box downscale by the resolution scale (sample_count = scale in quarters):
 // guest-sized copy of a scaled resolve destination. Each guest pixel is the
 // average of the host pixels under it, weighted by how much of them it covers
@@ -6642,6 +6858,20 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     }
   }
   return sum / float(s * s);
+}
+#else
+// A 7e3 float surface read as 2_10_10_10 bits (both share the EDRAM cells):
+// each channel's 7e3 encoding as a 10-bit unorm (the transfer's PackColor).
+Texture2D<float4> src : register(t0);
+uint Encode7e3(float f) {
+  uint b = asuint(clamp(f, 0.0, 31.875));
+  uint biased = b < 0x3E800000u ? ((b & 0x7FFFFFu) | 0x800000u) >> min(125u - (b >> 23), 24u) : b + 0xC2000000u;
+  return ((biased + 0x7FFFu + ((biased >> 16) & 1u)) >> 16) & 0x3FFu;
+}
+float4 ps(float4 p : SV_Position) : SV_Target {
+  float4 c = src.Load(int3(int2(p.xy) - dest_offset, 0));
+  return float4(float(Encode7e3(c.r)), float(Encode7e3(c.g)), float(Encode7e3(c.b)), round(saturate(c.a) * 3.0)) /
+         float4(1023.0, 1023.0, 1023.0, 3.0);
 }
 #endif
 )";
@@ -6670,7 +6900,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         return false;
       }
       g.resolve_vs = Compile(kResolveShader, "vs", "vs_5_1");
-      for (uint32_t variant = 0; variant < 5; ++variant)
+      for (uint32_t variant = 0; variant < 6; ++variant)
       {
         char value[2] = {char('0' + variant), 0};
         D3D_SHADER_MACRO macros[] = {{"VARIANT", value}, {nullptr, nullptr}};
@@ -6718,6 +6948,53 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       return pso.Get();
     }
 
+    // Ends the lends (SwapResolve) of render target `rt` / of the texture at
+    // `dest` before the render target is used or the texture changes: the
+    // contents are copied back if the render target still holds EDRAM tiles
+    // (otherwise nothing will read them).
+    void ReturnLent(const State::Lent &l);
+    void ReturnLent(RenderTarget *rt, uint32_t dest)
+    {
+      for (size_t i = 0; i < g.lent.size();)
+      {
+        if (g.lent[i].rt != rt && g.lent[i].dest != dest)
+        {
+          ++i;
+          continue;
+        }
+        State::Lent l = g.lent[i];
+        g.lent.erase(g.lent.begin() + i);
+        ReturnLent(l);
+      }
+    }
+
+    void ReturnLent(const State::Lent &l)
+    {
+      bool holds = false;
+      ForEachTile(*l.rt, D3D12_RECT{0, 0, LONG(l.rt->width), LONG(l.rt->height)},
+                  [&](uint32_t tile) { holds = holds || g.edram_owner[tile] == l.rt; });
+      if (!holds)
+      {
+        return;
+      }
+      auto it = g.resolved.find(l.dest);
+      HostTexture *t = it != g.resolved.end() ? it->second.get() : nullptr;
+      if (!t || t->resource.Get() != l.resource)
+      {
+        NativeLog("lent render target contents lost (texture %08X changed)\n", l.dest);
+        return;
+      }
+      Transition(t->resource.Get(), t->state, D3D12_RESOURCE_STATE_COPY_SOURCE);
+      Transition(l.rt->resource.Get(), l.rt->state, D3D12_RESOURCE_STATE_COPY_DEST);
+      GpuMark(kGpuCopy);
+      Crumb("lent contents back", uint64_t(t->resource.Get()), uint64_t(l.rt->resource.Get()));
+      g.list->CopyResource(l.rt->resource.Get(), t->resource.Get());
+      ++l.rt->writes;
+      ++g.lent_returned;
+      Trace("  lent contents of color base %u fmt %u copied back from %08X\n", l.rt->edram_base, l.rt->edram_format,
+            l.dest);
+    }
+
     // Draws `rect` of the render target into the destination with the
     // exponent bias / sample averaging / format conversion applied, `dest_row`
     // guest rows lower (a predicated tile, see the resolve).
@@ -6728,7 +7005,9 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     // part is chosen by the UV scale) and gets the exponent bias at sampling,
     // exact for a power of two. Only where nothing else is in that resource:
     // `rect` from 0,0 and no EDRAM tile of the render target outside it.
-    bool SwapResolve(RenderTarget &src, HostTexture &tex, const D3D12_RECT &rect, float scale)
+    // `lend` (no clear): the render target keeps its contents, which stay in
+    // the texture's resource until ReturnLent - its tiles outside `rect` too.
+    bool SwapResolve(RenderTarget &src, HostTexture &tex, const D3D12_RECT &rect, float scale, bool lend = false)
     {
       if (rect.left || rect.top || src.samples != 1 || src.depth)
       {
@@ -6744,7 +7023,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       ForEachTile(src, rect, [&](uint32_t tile) { inside_mask.set(tile); });
       bool outside = false;
       ForEachTile(src, D3D12_RECT{0, 0, LONG(src.width), LONG(src.height)}, [&](uint32_t tile) {
-        outside = outside || (g.edram_owner[tile] == &src && !inside_mask[tile]);
+        outside = outside || (!lend && g.edram_owner[tile] == &src && !inside_mask[tile]);
       });
       if (outside)
       {
@@ -6781,6 +7060,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       tex.exp_scale = scale;
       src.resource = std::move(spare);
       src.state = spare_state;
+      ++src.writes;
       D3D12_RENDER_TARGET_VIEW_DESC rv = {};
       rv.Format = src.format;
       rv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
@@ -6797,7 +7077,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
 
     bool ResolveWithShader(RenderTarget &src, HostTexture &dest, const ResolveFormat &rf, const D3D12_RECT &rect,
                            float scale, xenos::CopySampleSelect sample_select, bool swap_red_blue = false,
-                           uint32_t dest_row = 0)
+                           uint32_t dest_row = 0, bool pack_7e3 = false)
     {
       Frame &f = CurrentFrame();
       if (f.views_used >= kViewsPerFrame)
@@ -6805,7 +7085,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         return false;
       }
       bool ms = src.samples > 1;
-      uint32_t variant = (src.depth ? 2u : 0u) + (ms ? 1u : 0u);
+      uint32_t variant = pack_7e3 ? 5u : (src.depth ? 2u : 0u) + (ms ? 1u : 0u);
       ID3D12PipelineState *pso = GetResolvePipeline(variant, rf.rtv);
       if (!pso)
       {
@@ -8105,6 +8385,11 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         {
           g.pending_depth = {};
         }
+        if (g.edram_save.origin == rt)
+        {
+          g.edram_save = {};
+        }
+        std::erase_if(g.lent, [&](const State::Lent &l) { return l.rt == rt; });
         DeferRelease(std::move(rt->resource));
         it = g.render_targets.erase(it);
         any = true;
@@ -8657,6 +8942,12 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       GetClearDrawValues(r, vs, ps, d, vp, clear_values);
     }
+    if (REXCVAR_GET(ao2_native_gpu_resolve_pack) && SkipCopyBack(r, vs, ps, d, vp, color_rts, rtv_count, ds, color_mask, key.blend[0], key.rt_formats[0],
+                     covered))
+    {
+      ++g.copy_backs_skipped;
+      return;
+    }
     static std::vector<uint32_t> covered_tiles;
     if (g.pending_depth.rt)
     {
@@ -8697,6 +8988,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       {
         bool overwrite = may_discard && ((color_mask >> (i * 4)) & 0xF) == 0xF && key.blend[i] == 0;
         ClaimEdram(*rt, covered, overwrite ? 1u : 0u);
+        ++rt->writes;
         auto ci = r.Get<reg::RB_COLOR_INFO>(reg::RB_COLOR_INFO::rt_register_indices[i]);
         ForgetUniform(*rt, 0, covered);
         if (overwrite && clear_values.color_ok && !ci.color_exp_bias && UniformColorFormat(rt->edram_format) &&
@@ -9117,7 +9409,35 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     {
       return;
     }
-    ClaimEdram(*src, D3D12_RECT{x0, y0, x1, y1});
+    // Who holds the bits before the claim brings them in (EdramSave).
+    RenderTarget *bits_origin = is_depth ? nullptr : SoleOwner(*src, D3D12_RECT{x0, y0, x1, y1});
+    // A 7e3 float surface resolved as plain 2_10_10_10 bits (the hit effect's
+    // save of the scene): the bits are encoded from the float surface straight
+    // into the texture, which keeps the EDRAM - no transfer into the
+    // 2_10_10_10 surface first (~0.2 ms at 1440p), and the copy back
+    // (SkipCopyBack) finds its origin unchanged.
+    auto is_format = [](const RenderTarget *rt, xenos::ColorRenderTargetFormat a, xenos::ColorRenderTargetFormat b) {
+      return rt->edram_format == uint32_t(a) || rt->edram_format == uint32_t(b);
+    };
+    bool pack_7e3 = false;
+    if (bits_origin && bits_origin != src && src->samples == 1 && bits_origin->samples == 1 &&
+        bits_origin->format == DXGI_FORMAT_R16G16B16A16_FLOAT && !copy.color_clear_enable &&
+        (copy.copy_command == xenos::CopyCommand::kRaw || copy.copy_command == xenos::CopyCommand::kConvert) &&
+        is_format(src, xenos::ColorRenderTargetFormat::k_2_10_10_10,
+                  xenos::ColorRenderTargetFormat::k_2_10_10_10_AS_10_10_10_10) &&
+        is_format(bits_origin, xenos::ColorRenderTargetFormat::k_2_10_10_10_FLOAT,
+                  xenos::ColorRenderTargetFormat::k_2_10_10_10_FLOAT_AS_16_16_16_16) &&
+        x1 <= int32_t(bits_origin->width) && y1 <= int32_t(bits_origin->height) &&
+        REXCVAR_GET(ao2_native_gpu_resolve_pack) && !CurrentPostSettings().Any())
+    {
+      auto info = r.Get<reg::RB_COPY_DEST_INFO>();
+      pack_7e3 = !info.copy_dest_exp_bias && !info.copy_dest_swap &&
+                 GetResolveFormat(uint32_t(info.copy_dest_format), false).rtv == DXGI_FORMAT_R10G10B10A2_UNORM;
+    }
+    if (!pack_7e3)
+    {
+      ClaimEdram(*src, D3D12_RECT{x0, y0, x1, y1});
+    }
 
     if (copy.copy_command == xenos::CopyCommand::kRaw || copy.copy_command == xenos::CopyCommand::kConvert)
     {
@@ -9145,6 +9465,15 @@ float4 ps(float4 p : SV_Position) : SV_Target {
             break;
           }
         }
+      }
+      if (!g.lent.empty())
+      {
+        ReturnLent(pack_7e3 ? bits_origin : nullptr, dest_base);
+      }
+      if (pack_7e3 && dest_row)
+      {
+        ClaimEdram(*src, D3D12_RECT{x0, y0, x1, y1});
+        pack_7e3 = false;
       }
       uint32_t w = std::max<uint32_t>(dest_pitch.copy_dest_pitch, uint32_t(x1));
       uint32_t h = std::max<uint32_t>(dest_pitch.copy_dest_height, uint32_t(y1));
@@ -9246,13 +9575,39 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       tex->red_blue_swapped = swap_red_blue;
       // Traced frame: the resolve's GPU time goes to gpu_draws.txt like a draw's.
       uint32_t stamp_begin = g_trace ? GpuStamp(kGpuResolve) : UINT32_MAX;
-      bool swap = REXCVAR_GET(ao2_native_gpu_resolve_swap) && copy.color_clear_enable && same_family &&
+      // Only whole-screen surfaces: small ones (the luminance reduction) are
+      // drawn again right after their resolve, and a copy back costs as much.
+      bool lend = !copy.color_clear_enable && REXCVAR_GET(ao2_native_gpu_resolve_lend) && rect.right >= 640 &&
+                  rect.bottom >= 360;
+      bool swap = REXCVAR_GET(ao2_native_gpu_resolve_swap) && (copy.color_clear_enable || lend) && same_family &&
                   !src_fixed16 && !rf.fixed16 && !swap_red_blue && !dest_row && !CurrentPostSettings().Any() &&
                   rect.right <= LONG(src->width) && rect.bottom <= LONG(src->height);
       tex->exp_scale = 1.0f;
-      if (swap && SwapResolve(*src, *tex, rect, scale))
+      if (pack_7e3 && ResolveWithShader(*bits_origin, *tex, rf, rect, 1.0f, copy.copy_sample_select, false, 0, true))
       {
-        Trace("    swapped with the render target (exp scale %g)\n", scale);
+        Trace("    encoded from the 7e3 surface, which keeps the EDRAM\n");
+        ++g.resolves_drawn;
+        ++g.resolves_packed;
+        g.edram_save = {bits_origin, bits_origin->writes, src, rect, dest_base, tex->generation};
+        ++g.copy_back_saves;
+      }
+      else if (pack_7e3)
+      {
+        // No pipeline or views left: the usual way.
+        ClaimEdram(*src, D3D12_RECT{x0, y0, x1, y1});
+        if (ResolveWithShader(*src, *tex, rf, rect, scale, copy.copy_sample_select, swap_red_blue, dest_row))
+        {
+          ++g.resolves_drawn;
+        }
+      }
+      else if (swap && SwapResolve(*src, *tex, rect, scale, lend))
+      {
+        if (lend)
+        {
+          g.lent.push_back({src, dest_base, tex->resource.Get()});
+          ++g.resolves_lent;
+        }
+        Trace("    %s the render target (exp scale %g)\n", lend ? "lent the resource of" : "swapped with", scale);
         ++g.resolves_swapped;
       }
       else if (same_family && src->samples == 1 && scale == 1.0f && !swap_red_blue)
@@ -9275,6 +9630,12 @@ float4 ps(float4 p : SV_Position) : SV_Target {
           g.list->CopyTextureRegion(&t, UINT(drect.left), UINT(drect.top), 0, &s, &box);
         }
         ++g.resolves_copied;
+        // The bits went over unchanged: a draw copying them back may be skipped (SkipCopyBack).
+        if (bits_origin && !dest_row && !CurrentPostSettings().Any())
+        {
+          g.edram_save = {bits_origin, bits_origin->writes, src, rect, dest_base, tex->generation};
+          ++g.copy_back_saves;
+        }
       }
       else if (ResolveWithShader(*src, *tex, rf, rect, scale, copy.copy_sample_select, swap_red_blue, dest_row))
       {
@@ -9386,6 +9747,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       {
         g.list->ClearRenderTargetView(src->view, c, 1, &host_rect);
       }
+      ++src->writes;
       ForgetUniform(*src, 0, rect);
       uint32_t clear_format = uint32_t(KeyColorFormat(color_info.color_format));
       if (clear_format == 0 || clear_format == 2 || clear_format == 3)
@@ -9948,7 +10310,9 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     WriteCaptures();
     UpdateTraceFrame();
     auto now = std::chrono::steady_clock::now();
-    if (now - g.last_stats >= std::chrono::seconds(2))
+    // Once a second, the GPU line with the local time of decouple.log's lines,
+    // so a slow second there can be matched with its GPU time.
+    if (now - g.last_stats >= std::chrono::seconds(1))
     {
       double seconds = std::chrono::duration<double>(now - g.last_stats).count();
       g.last_stats = now;
@@ -9975,11 +10339,14 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         for (uint32_t i = 0; i < kGpuCategoryCount; ++i)
         {
           double ms = double(g.gpu_ticks[i]) * 1000.0 / double(g.timestamp_frequency) / frames;
-          total += ms;
+          total += i == kGpuIdle ? 0.0 : ms;
           n += std::snprintf(phases + n, sizeof(phases) - n, " %s %.2f", kGpuCategoryNames[i], ms);
           g.gpu_ticks[i] = 0;
         }
-        NativeLog("  gpu ms/frame:%s | total %.2f\n", phases, total);
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        NativeLog("  gpu ms/frame:%s | total %.2f [%02u:%02u:%02u.%03u]\n", phases, total, st.wHour, st.wMinute,
+                  st.wSecond, st.wMilliseconds);
       }
       g.time_fence_ns = g.time_present_ns = 0;
       g.stats_frame = g.frame_number;
@@ -9987,7 +10354,7 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       g.pso_created = 0;
       NativeLog("native frame %llu: draws=%llu skipped=%llu pending=%llu pipelines=%zu rts=%zu resolved=%zu "
                 "front=%08X present=%08X vertex_upload=%.1fMB textures=%zu binds tex/resolved/null="
-                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw/swap=%llu/%llu/%llu guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) depth restores skipped %llu writebacks=%llu\n",
+                "%llu/%llu/%llu uploads=%llu (%.1fMB) flushes=%llu resolves copy/draw/swap/packed/lent=%llu/%llu/%llu/%llu/%llu (%llu copied back) guest-res copies=%llu transfers=%llu (skipped %llu, cleared %llu, stencil clears in place %llu) depth restores skipped %llu copy backs skipped %llu of %llu writebacks=%llu\n",
                 (unsigned long long)g.frame_number, (unsigned long long)g.draws,
                 (unsigned long long)g.draws_skipped, (unsigned long long)g.draws_pending, g.pipelines.size(), g.render_targets.size(),
                 g.resolved.size(), frontbuffer, g.present_address, double(g.mirror_bytes) / 1048576.0,
@@ -9995,11 +10362,14 @@ float4 ps(float4 p : SV_Position) : SV_Target {
                 (unsigned long long)g.null_binds, (unsigned long long)g.texture_uploads,
                 double(g.texture_upload_bytes) / 1048576.0, (unsigned long long)g.flushes,
                 (unsigned long long)g.resolves_copied, (unsigned long long)g.resolves_drawn,
-                (unsigned long long)g.resolves_swapped,
+                (unsigned long long)g.resolves_swapped, (unsigned long long)g.resolves_packed,
+                (unsigned long long)g.resolves_lent, (unsigned long long)g.lent_returned,
                 (unsigned long long)g.lowres_copies,
                 (unsigned long long)g.transfers, (unsigned long long)g.transfers_skipped,
                 (unsigned long long)g.transfers_cleared, (unsigned long long)g.stencil_clears_redirected,
-                (unsigned long long)g.depth_restores_skipped, (unsigned long long)g.writebacks);
+                (unsigned long long)g.depth_restores_skipped, (unsigned long long)g.copy_backs_skipped,
+                (unsigned long long)g.copy_back_saves,
+                (unsigned long long)g.writebacks);
       NativeLog("  occlusion queries: %llu (%llu visible, %llu unknown, %llu stale), mid-frame submits %llu (early %llu, %llu of them for an idle GPU) | "
                 "stale write-back texels %llu | resolve pages "
                 "spared from block invalidation %llu, resolved textures dropped %llu\n",
@@ -10016,12 +10386,15 @@ float4 ps(float4 p : SV_Position) : SV_Target {
     g.mirror_bytes = 0;
     g.texture_binds = g.resolved_binds = g.null_binds = 0;
     g.texture_uploads = g.texture_upload_bytes = 0;
-    g.resolves_copied = g.resolves_drawn = g.resolves_swapped = g.lowres_copies = 0;
+    g.resolves_copied = g.resolves_drawn = g.resolves_swapped = g.resolves_packed = g.lowres_copies = 0;
+    g.resolves_lent = g.lent_returned = 0;
     g.transfers = 0;
     g.transfers_skipped = 0;
     g.transfers_cleared = 0;
     g.stencil_clears_redirected = 0;
     g.depth_restores_skipped = 0;
+    g.copy_backs_skipped = 0;
+    g.copy_back_saves = 0;
     g.writebacks = 0;
   }
 

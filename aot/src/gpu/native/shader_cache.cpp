@@ -17,6 +17,56 @@ namespace ao2::gpu
 
   namespace
   {
+    // From the ucode disassembly: the program is one tfetch2D of tf0 at some
+    // rN.xy into a register that goes unchanged to oC0 (mov, or max with
+    // itself - the compiler's NaN flush), nothing else but control flow.
+    bool IsPlainTextureCopy(const std::string &disassembly)
+    {
+      std::string fetched;
+      bool exported = false;
+      size_t pos = 0;
+      while (pos < disassembly.size())
+      {
+        size_t end = disassembly.find('\n', pos);
+        std::string line = disassembly.substr(pos, end == std::string::npos ? std::string::npos : end - pos);
+        pos = end == std::string::npos ? disassembly.size() : end + 1;
+        for (size_t c = line.find("/*"); c != std::string::npos; c = line.find("/*"))
+        {
+          size_t close = line.find("*/", c);
+          line.erase(c, close == std::string::npos ? std::string::npos : close + 2 - c);
+        }
+        if (size_t c = line.find("//"); c != std::string::npos)
+        {
+          line.erase(c);
+        }
+        size_t first = line.find_first_not_of(" \t\r");
+        if (first == std::string::npos)
+        {
+          continue;
+        }
+        line = line.substr(first, line.find_last_not_of(" \t\r") + 1 - first);
+        if (line == "exec" || line == "exece" || line == "alloc colors" || line == "serialize" || line == "cnop")
+        {
+          continue;
+        }
+        unsigned dst = 0, src = 0;
+        char tail = 0;
+        if (fetched.empty() && std::sscanf(line.c_str(), "tfetch2D r%u, r%u.xy, tf0%c", &dst, &src, &tail) == 2)
+        {
+          fetched = "r" + std::to_string(dst);
+          continue;
+        }
+        if (!fetched.empty() && !exported &&
+            (line == "mov oC0, " + fetched || line == "max oC0, " + fetched + ", " + fetched))
+        {
+          exported = true;
+          continue;
+        }
+        return false;
+      }
+      return exported;
+    }
+
     bool ReadFile(const std::string &path, std::vector<uint8_t> &out)
     {
       FILE *f = std::fopen(path.c_str(), "rb");
@@ -203,6 +253,11 @@ namespace ao2::gpu
     if (type == xenos::ShaderType::kVertex)
     {
       out->position_passthrough = translator_.position_passthrough();
+      out->texcoord_passthrough = translator_.texcoord_passthrough();
+    }
+    else
+    {
+      out->plain_texture_copy = IsPlainTextureCopy(shader->ucode_disassembly());
     }
     for (const auto &e : translation->errors())
     {

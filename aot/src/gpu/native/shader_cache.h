@@ -33,6 +33,11 @@ namespace ao2::gpu
     std::string error;
     // Vertex shaders: fetch exported unchanged as the position, if any.
     HlslShaderTranslator::PositionFetch position_passthrough;
+    // And interpolator 0's x/y from the same vertices, if exported unchanged.
+    HlslShaderTranslator::PositionFetch texcoord_passthrough;
+    // Pixel shaders: the whole program fetches texture binding 0 at an
+    // interpolator's xy and writes that unchanged to color 0 (a copy draw).
+    bool plain_texture_copy = false;
     std::atomic<bool> ready{false};
 
     bool ok() const { return ready.load(std::memory_order_acquire) && !bytecode.empty(); }

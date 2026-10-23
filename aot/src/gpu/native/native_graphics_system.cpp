@@ -61,7 +61,7 @@ REXCVAR_DEFINE_BOOL(ao2_native_gpu_static_tex_post, true, "GPU",
                     "Native renderer: pixel shader variants per texture post-processing of the draw (none / gamma "
                     "on RGB) instead of per-component tests in every fetch; the same result");
 REXCVAR_DEFINE_INT32(ao2_native_gpu_capture_slow_us, 0, "GPU",
-                     "Native renderer: trace the frame after one whose GPU time was above this many microseconds "
+                     "Native renderer: trace the frame after 8 in a row whose GPU time was above this many microseconds "
                      "(at most 5, 4 s apart; slow_N_frame_trace.txt / slow_N_gpu_draws.txt; 0 = off)");
 REXCVAR_DEFINE_INT32(ao2_native_gpu_writeback_texels, 4096, "GPU",
                      "Native renderer: resolves of up to this many texels are copied back to guest memory");

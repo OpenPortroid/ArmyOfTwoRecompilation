@@ -73,6 +73,12 @@ namespace ao2::gpu
     {
       return position_state_ == 1 ? position_fetch_ : PositionFetch{};
     }
+    // The same for interpolator 0's x/y (texture coordinates of a copy quad),
+    // from a fetch of the position's fetch constant.
+    PositionFetch texcoord_passthrough() const
+    {
+      return position_state_ == 1 && texcoord_state_ == 1 ? texcoord_fetch_ : PositionFetch{};
+    }
 
   protected:
     uint32_t GetModificationRegisterCount() const override;
@@ -144,6 +150,13 @@ namespace ao2::gpu
     PositionFetch position_fetch_;
     int32_t position_register_ = -1; // register with the fetched x/y; -1 none yet, -2 lost
     int position_state_ = 0;         // 0 not exported yet, 1 pass-through, -1 computed
+    PositionFetch texcoord_fetch_;   // likewise for interpolator 0
+    int32_t texcoord_register_ = -1;
+    int texcoord_state_ = 0;
+    // A full vertex fetch of x/y into a register, unpredicated (pass-through candidate).
+    bool PassThroughFetch(const rex::graphics::ParsedVertexFetchInstruction &instr) const;
+    // `instr` writes x/y of `target` (0 position, 1 interpolator 0): pass-through of `reg`?
+    bool PassThroughExport(const rex::graphics::ParsedAluInstruction &instr, int32_t reg) const;
     bool conditional_exec_ = false;
 
     // Which register components may hold infinity or NaN, in program order
