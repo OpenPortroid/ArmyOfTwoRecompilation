@@ -150,6 +150,7 @@ namespace AO2Launcher
         DateTime toastUntil;
         string gameExe;
         Updates.Release latest; // the latest release on GitHub; null until known (or offline)
+        List<Updates.Release> releases; // GitHub's release list, newest first; null until known (or offline)
         Updates.Release updTarget; // the release the update window installs: the latest, or one picked in the release list
         bool updatePrompt;      // the "update available" window is open
         int promptSel;          // in it: 0 = download, 1 = later
@@ -336,8 +337,8 @@ namespace AO2Launcher
             {
                 return;
             }
-            // --latest=<tag> (debug) is taken as it is.
-            latest = Updates.Override != null ? list[0] : Updates.NewestWithAvx1(list);
+            releases = list;
+            PickLatest();
             if (UpdateAvailable)
             {
                 updTarget = latest;
@@ -350,6 +351,18 @@ namespace AO2Launcher
                 OfferAvx1(list);
             }
             Invalidate();
+        }
+
+        // The release to update to: the newest with a .zip package; in AVX1 mode the newest with the AVX1 build.
+        // --latest=<tag> (debug) is taken as it is.
+        void PickLatest()
+        {
+            if (releases == null || releases.Count == 0)
+            {
+                return;
+            }
+            latest = Updates.Override != null ? releases[0] :
+                Game.Avx1Mode(S) ? Updates.NewestWithAvx1(releases) : Updates.NewestWithZip(releases);
         }
 
         // ------------------------------------------------------------------
@@ -407,6 +420,7 @@ namespace AO2Launcher
                     // Nothing to switch to: the setting goes back, the main build keeps running.
                     S["avx1"] = "0";
                     S.Save();
+                    PickLatest();
                     Invalidate();
                 }
                 return;
@@ -1795,6 +1809,7 @@ namespace AO2Launcher
                     Enabled = () => Game.HasAvx2(),
                     Changed = () =>
                     {
+                        PickLatest();
                         if (S.Bool("avx1"))
                         {
                             OfferAvx1();

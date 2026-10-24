@@ -48,6 +48,12 @@ namespace AO2Launcher
             return list == null ? null : list.Find(r => r.Avx1Url != null);
         }
 
+        // The newest release with a .zip package, or null.
+        public static Release NewestWithZip(System.Collections.Generic.List<Release> list)
+        {
+            return list == null ? null : list.Find(r => r.Url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+        }
+
         // Every release on GitHub, newest first, or null when it could not be reached. Blocks: call off the UI thread.
         public static System.Collections.Generic.List<Release> All()
         {
