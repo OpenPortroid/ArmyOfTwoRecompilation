@@ -11,6 +11,7 @@ namespace ao2::text
     kFr,
     kEs,
     kIt,
+    kPt,
   };
 
   // At startup, before the UI: the language the game runs in

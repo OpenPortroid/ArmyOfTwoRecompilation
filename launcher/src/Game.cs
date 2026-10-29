@@ -24,7 +24,7 @@ namespace AO2Launcher
         public const string LobbyServerName = "ao2_lobby_server.exe";
         const string FirewallRule = "Army of Two (recomp)";
         // ao2_game_language's values besides "auto".
-        static readonly string[] Languages = { "en", "ru", "fr", "de", "es", "it" };
+        static readonly string[] Languages = { "en", "ru", "pt", "fr", "de", "es", "it" };
 
         // The launcher's own folder first (the usual place: next to the game),
         // then the remembered path, then a few folders around the launcher.

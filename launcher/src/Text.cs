@@ -10,10 +10,11 @@ namespace AO2Launcher
     // is that row's text in the current language, the English itself when the
     // table has none. The text is translated where it is drawn, so a change
     // of the language shows at once.
-    static class L
+    static partial class L
     {
-        // en, then ru, fr, de, es, it.
-        static readonly string[] Codes = { "ru", "fr", "de", "es", "it" };
+        // en, then ru, fr, de, es, it (Table's columns), pt (TextPt.cs).
+        static readonly string[] Codes = { "ru", "fr", "de", "es", "it", "pt" };
+        const int Pt = 5;
         static int lang = -1; // index into Codes; -1: English
 
         public static string Code
@@ -33,8 +34,17 @@ namespace AO2Launcher
 
         public static string T(string en)
         {
+            if (en == null || lang < 0)
+            {
+                return en;
+            }
+            if (lang == Pt)
+            {
+                string pt;
+                return PtTable.TryGetValue(en, out pt) ? pt : en;
+            }
             string[] row;
-            if (en == null || lang < 0 || !Table.TryGetValue(en, out row))
+            if (!Table.TryGetValue(en, out row))
             {
                 return en;
             }
@@ -53,6 +63,11 @@ namespace AO2Launcher
                     yield return s;
                 }
             }
+            string pt;
+            if (en != null && PtTable.TryGetValue(en, out pt))
+            {
+                yield return pt;
+            }
         }
 
         public static string F(string en, params object[] args)
@@ -61,6 +76,7 @@ namespace AO2Launcher
         }
 
         static readonly Dictionary<string, string[]> Table = Build();
+        static readonly Dictionary<string, string> PtTable = BuildPt();
 
         static Dictionary<string, string[]> Build()
         {
@@ -279,11 +295,11 @@ namespace AO2Launcher
             // --- Graphics ---
             a("Language", "Язык", "Langue", "Sprache", "Idioma", "Lingua");
             a("Language of the game (text and voices) and of this launcher. Auto follows the language of Windows. " +
-              "Russian is text only, with English voices. In co-op both players need the same voices: " +
-              "English and Russian play together, the other languages only with the same language.",
-              "Язык игры (текст и озвучка) и этого лаунчера. Авто — язык Windows. Русский — только текст, озвучка " +
-              "английская. В кооперативе у обоих игроков должна быть одна озвучка: английский и русский совместимы, " +
-              "остальные языки — только с таким же.",
+              "Russian and Brazilian Portuguese are text only, with English voices. In co-op both players need the " +
+              "same voices: English, Russian and Portuguese play together, the other languages only with the same language.",
+              "Язык игры (текст и озвучка) и этого лаунчера. Авто — язык Windows. Русский и португальский (Бразилия) — " +
+              "только текст, озвучка английская. В кооперативе у обоих игроков должна быть одна озвучка: английский, " +
+              "русский и португальский совместимы, остальные языки — только с таким же.",
               "Langue du jeu (textes et voix) et de ce lanceur. Auto suit la langue de Windows. Le russe ne traduit que " +
               "le texte, les voix restent en anglais. En coop, les deux joueurs doivent avoir les mêmes voix : anglais " +
               "et russe vont ensemble, les autres langues seulement avec la même langue.",

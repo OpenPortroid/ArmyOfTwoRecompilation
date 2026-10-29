@@ -1,0 +1,266 @@
+;; Army of Two DLC (Kiev): 09_sound_vo_main, Brazilian Portuguese
+
+[SE_L09_001_RIOS_001 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: O metrô foi fechado por causa da crise." , Time=0)
+Subtitles[1]=(Text="Quem estiver aqui embaixo está tramando algo." , Time=3)
+
+[SE_L09_002_SALEM_001 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Isso inclui a gente também?" , Time=0)
+
+[SE_L09_004_RIOS_003 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: O caminho para os dutos de ventilação fica perto da entrada do nível superior." , Time=0)
+Subtitles[1]=(Text="Vamos nessa." , Time=2)
+
+[43_ACC_BANTER_SALEM SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Isso é uma puta confusão!" , Time=0)
+
+[44_ACC_BANTER_RIOS SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Mantenha a cabeça baixa." , Time=0)
+
+[SE_L09_005_SALEM_002 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: O portão está fechado." , Time=0)
+Subtitles[1]=(Text="Tem que ter alguma coisa controlando ele em algum lugar." , Time=1)
+
+[SE_L09_006_RIOS_004 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Precisamos abrir esse portão." , Time=0)
+
+[SE_L09_007_SALEM_003 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Aquilo ali embaixo não é uma sala de controle?" , Time=0)
+
+[SE_L09_008_RIOS_005 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: O console deve estar naquela salinha de controle lá embaixo." , Time=0)
+
+[SE_L09_009_RIOS_006 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Um desses interruptores deve abrir o portão." , Time=0)
+
+[SE_L09_010_SALEM_004 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Tem que ser um desses interruptores." , Time=0)
+
+[SE_L09_011_SALEM_005 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Pesadamente blindado.  Precisamos que ele avance." , Time=0)
+
+[SE_L09_012_RIOS_007 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: A entrada deve ficar logo depois dessa esquina." , Time=0)
+
+[SE_L09_013_SALEM_006 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Escada.  Deve nos levar até a entrada." , Time=0)
+
+[SE_L09_014_RIOS_008 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: O duto.  Está aqui." , Time=0)
+
+[SE_L09_015_SALEM_007 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Só pode ser esse." , Time=0)
+
+[SE_L09_016_SALEM_008 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Mano, me dá uma mão." , Time=0)
+
+[SE_L09_017_SALEM_009 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Não enxergo porra nenhuma!" , Time=0)
+
+[SE_L09_018_RIOS_009 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: O quê?  Esperava placas de trânsito e setas piscando?" , Time=0)
+
+[SE_L09_019_SALEM_010 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Caramba, até o meu apê é mais limpo que esses dutos." , Time=0)
+
+[SE_L09_020_RIOS_010 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Por algum motivo, acho isso difícil de acreditar..." , Time=0)
+
+[SE_L09_022_RIOS_011 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Se recomponha e fique de olho aberto." , Time=0)
+Subtitles[1]=(Text="O posto de comando tem que estar por aqui em algum lugar." , Time=2)
+
+[SE_L09_023_MURRAY_001 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Pessoal, o pessoal de A/V acabou de detectar um sinal de transmissão" , Time=0)
+Subtitles[1]=(Text="vindo de uma das seções abandonadas do metrô." , Time=3)
+Subtitles[2]=(Text="É fraco, mas é nossa única pista.  Procurem um túnel adjacente." , Time=5)
+Subtitles[3]=(Text="Sei que não é muito, mas nada que vocês não consigam resolver." , Time=9)
+
+[SE_L09_024_SALEM_012 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Um túnel?  Estamos no meio de um labirinto subterrâneo do caralho!" , Time=0)
+
+[SE_L09_025_RIOS_012 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Alice, vamos ficar de olho em qualquer coisa suspeita." , Time=0)
+Subtitles[1]=(Text="Só nos dê um minuto para tirar o lixo do caminho." , Time=3)
+
+[SE_L09_026_RIOS_013 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Tem alguma coisa do outro lado!  Precisamos arrombar esse portão." , Time=0)
+
+[SE_L09_027_SALEM_013 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Ali!  Vi alguma coisa." , Time=0)
+Subtitles[1]=(Text="O problema é que acho que não vamos conseguir abrir aquilo." , Time=2)
+
+[SE_L09_028_MURRAY_002 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Ei, é uma instalação ferroviária." , Time=0)
+Subtitles[1]=(Text="O único propósito do lugar é mover coisas pesadas que não saem do lugar." , Time=2)
+
+[SE_L09_029_RIOS_014 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Um transportador!  Isso deve ter um impacto e tanto." , Time=0)
+Subtitles[1]=(Text="Aposto que dá para operar lá de cima." , Time=3)
+
+[SE_L09_030_SALEM_014 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Merda, é exatamente disso que a gente precisa.  É controlado remotamente." , Time=0)
+Subtitles[1]=(Text="Não vimos umas alavancas lá em cima?" , Time=3)
+
+[SE_L09_031_RIOS_015 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Vamos precisar de outro jeito de subir." , Time=0)
+
+[SE_L09_032_SALEM_015 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Porra.  Tem que ter outro jeito de subir." , Time=0)
+
+[SE_L09_033_RIOS_016 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Escada.  Me ajude a encaixar." , Time=0)
+
+[SE_L09_034_SALEM_016 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Escada.  Preciso de uma mão, mano." , Time=0)
+
+[SE_L09_035_RIOS_017 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Isso deve ativar o transportador." , Time=0)
+
+[SE_L09_036_SALEM_017 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Hora de explodir esse portão para fora do caminho." , Time=0)
+
+[SE_L09_037_SALEM_018 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Já era de se esperar." , Time=0)
+Subtitles[1]=(Text="Vamos acabar com eles e ver o que tem do outro lado." , Time=1)
+
+[SE_L09_038_SALEM_019 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Tyse, você se lembra de alguma vez em que" , Time=0)
+Subtitles[1]=(Text="você abriu portas sem mim?" , Time=2)
+
+[SE_L09_039_RIOS_018 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Eu sei... Quase me pergunto como eu entro em casa à noite." , Time=0)
+
+[SE_L09_040_RIOS_019 SoundNodeWave]
+Subtitles[0]=(Text="RIOS & SALEM: (gritam)" , Time=0)
+
+[SE_L09_045_SALEM_022 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Alice, o caralho do chão desabou bem debaixo dos nossos pés!" , Time=0)
+
+[SE_L09_046_MURRAY_004 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Esperem um segundo!  A localização de vocês..." , Time=0)
+Subtitles[1]=(Text="Fica bem do lado do sinal que foi detectado antes." , Time=2)
+
+[SE_L09_048_SALEM_023 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Ai, merda... sangue?  E aquilo?  É o que eu estou pensando?" , Time=0)
+
+[SE_L09_049_MURRAY_005 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Não faço ideia de onde vocês caíram," , Time=0)
+Subtitles[1]=(Text="mas só pode ser aquele lugar." , Time=2)
+
+[SE_L09_050_SALEM_024 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Aqui parece um hospital..." , Time=0)
+
+[SE_L09_051_RIOS_022 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Não sei... Estou com um mau pressentimento." , Time=0)
+
+[SE_L09_052_MURRAY_006 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Pessoal, acho que vocês caíram em cima de algo grande." , Time=0)
+Subtitles[1]=(Text="Instalações médicas secretas foram construídas durante a Guerra Fria." , Time=3)
+Subtitles[2]=(Text="A maioria delas ainda não foi localizada." , Time=6)
+
+[SE_L09_053_SALEM_025 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Pois é, eu diria que isso descreve bem o lugar." , Time=0)
+
+[SE_L09_054_MURRAY_007 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Eram usadas para realizar todo tipo de experimentos ilegais" , Time=0)
+Subtitles[1]=(Text=" - controle mental, agentes biológicos.  Se vocês conseguirem trazer provas do" , Time=3)
+Subtitles[2]=(Text="que acontecia nessas clínicas, terão um bônus mais do que merecido." , Time=8)
+
+[SE_L09_055_RIOS_023 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Vamos ficar de olho." , Time=0)
+
+[SE_L09_056_RIOS_024 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: O que é isso?  Isso deve bastar para o bônus." , Time=0)
+
+[SE_L09_057_SALEM_026 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Ei, acho que achei um relatório de laboratório antigo." , Time=0)
+
+[SE_L09_058_RIOS_025 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Eu conheço esse cara!  Me ajude a tirá-lo daqui." , Time=0)
+
+[SE_L09_059_SALEM_027 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Peraí, esse cara ainda está vivo!  Precisamos tirá-lo daqui." , Time=0)
+
+[SE_L09_060_RIOS_026 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Alice?  Acho que encontramos aquele consultor da USAID." , Time=0)
+
+[SE_L09_061_MURRAY_008 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Nygel Masterson?  Levem ele para um lugar seguro." , Time=0)
+Subtitles[1]=(Text="Vamos mandar uma equipe médica para buscá-lo." , Time=3)
+
+[SE_L09_062_SALEM_028 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Entendido." , Time=0)
+
+[SE_L09_063_SALEM_029 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Ele está em péssimo estado.  Não sei se consegue nos ouvir." , Time=0)
+
+[SE_L09_064_RIOS_027 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Nygel? Nygel?  Uma equipe está a caminho.  Nygel?" , Time=0)
+
+[SE_L09_065_SALEM_030 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Ali tem um lugar seguro.  Me ajude a proteger esse lugar." , Time=0)
+
+[SE_L09_066_RIOS_028 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Vou deixá-lo aqui.  Me ajude a derrubar esse portão." , Time=0)
+
+[SE_L09_067_SALEM_031 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Vamos acabar com isso." , Time=0)
+Subtitles[1]=(Text="Tenho mais do que motivos de sobra para explodir este lugar." , Time=1)
+
+[SE_L09_068_RIOS_029 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Ali em cima!  O lugar está cheio de equipamentos." , Time=0)
+Subtitles[1]=(Text="Se a gente destruir aquela sala, cortamos a cabeça." , Time=3)
+
+[SE_L09_069_SALEM_032 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Olha!  Lá em cima!" , Time=0)
+Subtitles[1]=(Text="Deve ser onde eles guardam as coisas boas." , Time=1)
+
+[SE_L09_070_MLTA_LEAD_001 SoundNodeWave]
+Subtitles[0]=(Text="MILITIA LEAD: É triste ver como a esperteza" , Time=0)
+Subtitles[1]=(Text="da nossa operação despertaria tanta fúria." , Time=2)
+
+[SE_L09_071_MLTA_LEAD_002 SoundNodeWave]
+Subtitles[0]=(Text="MILITIA LEAD: Primeiro, vocês se infiltram num segredo nacional." , Time=0)
+Subtitles[1]=(Text="Depois, planejam sabotar os sabotadores." , Time=4)
+
+[SE_L09_072_MLTA_LEAD_003 SoundNodeWave]
+Subtitles[0]=(Text="MILITIA LEAD: Esta é a minha ideia de democracia." , Time=0)
+Subtitles[1]=(Text="Quem quer ver esses dois esquartejados?" , Time=3)
+
+[SE_L09_073A_MLTA_MEN_002 SoundNodeWave]
+Subtitles[0]=(Text="MILITIA MEN: Eu!" , Time=0)
+
+[SE_L09_073_MLTA_MEN_001 SoundNodeWave]
+Subtitles[0]=(Text="MILITIA MEN: Eu quero!" , Time=0)
+
+[52A_SOM_BANTER_SALEM SoundNodeWave]
+Subtitles[0]=(Text="SALEM: É uma loucura do caralho, cara. Esses caras estão em todo lugar." , Time=0)
+
+[SE_L09_074_RIOS_030 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Vamos subir lá rápido." , Time=0)
+
+[SE_L09_075_SALEM_033 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Alice, achamos a mina de ouro." , Time=0)
+
+[SE_L09_076_RIOS_031 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Alice, estamos no posto de comando." , Time=0)
+
+[SE_L09_077_MURRAY_009 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Bom trabalho.  Agora façam isso desaparecer." , Time=0)
+
+[SE_L09_078_RIOS_032 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Vamos dar o fora daqui!" , Time=0)
+
+[SE_L09_079_SALEM_034 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Já vi merda suficiente por um dia." , Time=0)
+
+[SE_L09_080_RIOS_033 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Alice, estamos saindo." , Time=0)
+
+[SE_L09_081_MURRAY_010 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: É isso que eu gosto de ouvir.  Sigam para a extração." , Time=0)
+Subtitles[1]=(Text="Vou deixar uns paramédicos de prontidão para o Nygel." , Time=2)
+
+[SE_L09_082_SALEM_035 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: NÃO falem comigo sobre nada vagamente médico!" , Time=0)

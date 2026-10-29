@@ -1,0 +1,1525 @@
+[1_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Bom, essa merda virou uma puta confusão." , Time=0)
+Subtitles[1]=(Text="Contrataram um mercenário figurão chamado \"Phillip Clyde\"" , Time=3)
+Subtitles[2]=(Text="pra derrubar o Mo'Alim no lugar de nós dois." , Time=5.7)
+Subtitles[3]=(Text="O cara é o melhor dos melhores, mas é meio instável." , Time=8.3)
+Subtitles[4]=(Text="Então quero vocês dois encontrando ele no velho Hotel Continental" , Time=12)
+Subtitles[5]=(Text="e garantindo que ele elimine o Mo'Alim como deveria." , Time=15)
+Subtitles[6]=(Text="Façam vocês mesmos se precisar!" , Time=19.2)
+[10_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: É, a gente manda um cartão-postal." , Time=0)
+[100_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Não sei! Parece que estamos por conta própria!" , Time=0)
+[100_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios, você tem que proteger o Salem. Ataque aqueles inimigos. Câmbio." , Time=0)
+[101_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: A gente não consegue pegar ele aqui embaixo." , Time=0)
+Subtitles[1]=(Text="SALEM: Temos que subir naquela sacada de algum jeito." , Time=1.21)
+[101_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Salem, defenda seu parceiro! Câmbio." , Time=0)
+[102_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: E como a gente faz isso?" , Time=0)
+[102_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Elliot, você precisa manter os inimigos longe do Rios." , Time=0)
+[103_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Sei lá, cara. Tem que ter um jeito." , Time=0)
+[103_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Elliot, defenda o Rios. Ataque aqueles inimigos. Câmbio." , Time=0)
+[104_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Talvez, se não dá pra subir na sacada," , Time=0)
+Subtitles[1]=(Text="RIOS: a gente puxa a sacada até aqui com aquela corrente." , Time=1.7)
+[104_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Sempre que os inimigos vierem de lados opostos, fiquem costas com costas. Câmbio." , Time=0)
+[105_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ei, talvez a gente consiga puxar a sacada" , Time=0)
+Subtitles[1]=(Text="SALEM: até aqui com aquela corrente." , Time=1.86)
+[105_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios, Salem, fiquem de costas um pro outro e ataquem os inimigos. Câmbio." , Time=0)
+[106_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ei, Salem, me ajuda a puxar essa coisa." , Time=0)
+[106_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Costas com costas. Fiquem de costas um pro outro." , Time=0)
+[107_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Soldado Salem! Me ajude com essa corrente!" , Time=0)
+[107_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Tá ótimo!" , Time=0)
+[108_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Soldado Salem, preciso que me ajude com essa corrente!" , Time=0)
+[108_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Boa, parceiros!" , Time=0)
+[109_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Ei, vamos, Rios. Me ajuda a puxar isso." , Time=0)
+[109_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: É assim que os Rangers fazem! Ótimo trabalho. Só falta uma coisa pra ensinar, mas já aviso: essa vai doer." , Time=0)
+[109A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Hahah! Foi demais! Certo, Rios, seu parceiro se machucou. Faça uma reanimação pra salvar a vida dele." , Time=0)
+[109B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Hahah! Foi demais! Certo, Salem, seu parceiro se machucou, então faça uma reanimação pra salvar a vida dele." , Time=0)
+[11_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="EISENHOWER: Ei, Elliot, se você não voltar," , Time=0)
+Subtitles[1]=(Text="EISENHOWER: posso ficar com o seu CD player?" , Time=1.5)
+Subtitles[2]=(Text="EISENHOWER: [Rindo]" , Time=3.5)
+[110_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Mano, me ajuda a puxar essa corrente!" , Time=0)
+[110_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Ótimo trabalho, rangers.  Vocês foram bem no treinamento de combate." , Time=0)
+Subtitles[1]=(Text="PEDRO: Agora vamos ver como se saem em combate de verdade." , Time=3.4)
+Subtitles[2]=(Text="PEDRO: Encontro vocês na área de pouso com o Cel. Dalton. Ooah!" , Time=6)
+[111_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Vamos, Rios, me ajuda a derrubar essa sacada." , Time=0)
+[111_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Ooah!" , Time=0)
+[112_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: E é assim que a gente se despede no nosso país, vadia!" , Time=0)
+[112_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ooah!" , Time=0)
+[113_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Vamos acabar com ele!" , Time=0)
+[116_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Seus amadores do caralho. Não acredito que vocês demoraram tanto." , Time=0)
+[117_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Que porra você tá falando? A gente acabou de fazer o seu serviço." , Time=0)
+[119_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Seu merdinha ingrato!" , Time=0)
+[12_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Pode deixar, mano." , Time=0)
+[120_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="CLYDE: Clyde para Richard Dalton.  Missão cumprida." , Time=0)
+Subtitles[1]=(Text="CLYDE: Transfira a segunda metade do meu pagamento pra minha conta." , Time=2.48)
+[121_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: É, os dois estão aqui. Vou levar os dois comigo pra extração." , Time=0)
+[123_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Melhor vocês dois correrem!" , Time=0)
+[124_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: AAAHH! Merda!" , Time=0)
+[124A_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Tá bem, cara?" , Time=0)
+[125_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: [Rindo]" , Time=0)
+[126_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Não tem graça. A gente podia ter morrido.")
+[127_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Parem de choramingar e deem a volta pro outro lado do prédio. Precisamos garantir o mercado pro Dalton pousar o helicóptero da extração." , Time=0)
+[128_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Temos que falar com o Dalton. Esse cara é um babaca." , Time=0)
+[129_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Eu sei." , Time=0)
+Subtitles[1]=(Text="RIOS: Já tentei avisar ele antes, mas ele não quis nem saber." , Time=1.2)
+[13_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="EISENHOWER: Beleza. Vamos pegar aquele buggy. E se tiverem sorte, a gente cobre vocês até saírem do alcance. Boa sorte aí - Ooah!" , Time=0)
+[13_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="PEDRO: Pedro para Rios e Salem." , Time=0)
+Subtitles[1]=(Text="PEDRO: Estão prontas, mocinhas?" , Time=2.41)
+Subtitles[2]=(Text="PEDRO: Vamos usar balas de borracha nesta simulação de treinamento," , Time=4.13)
+Subtitles[3]=(Text="PEDRO: então ninguém vai morrer. Mas se levarem um tiro," , Time=6.7)
+Subtitles[4]=(Text="PEDRO: vai arder pra caramba. Entenderam?" , Time=10.29)
+[130_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Mano, é isso que é uma merda no Exército. A gente não escolhe as missões, nem com quem trabalha. Só segue ordens." , Time=0)
+[131_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Só agora você tá percebendo isso?" , Time=0)
+[132_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="CLYDE: Vocês dois deviam usar o tiro sincronizado pra explodir aquele tanque de gás." , Time=0)
+Subtitles[1]=(Text="CLYDE: A explosão vai matar aqueles guardas." , Time=3.7)
+[135_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ah, é, a gente aprendeu isso." , Time=0)
+[136_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="CLYDE: Então porra, façam logo!" , Time=0)
+[137_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Beleza." , Time=0)
+[138_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Então acabem com eles! E de nada pela dica." , Time=0)
+[139_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: O que vocês estão fazendo? Os dois têm que atirar ao mesmo tempo!" , Time=0)
+[14_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ooah!" , Time=0)
+[14_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: É, a gente não vai ser atingido! Câmbio." , Time=0)
+[140_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Não! Os dois têm que atirar ao mesmo tempo!" , Time=0)
+[141_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Isso aí, agora você está aprendendo." , Time=0)
+[142_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Não sei o que dizer. Ou vocês levam jeito ou não levam. E vocês dois não levam." , Time=0)
+[143_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: O que esse cara está fazendo? Ele deixa a gente fazer toda a luta." , Time=0)
+[144_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Talvez ele não queira gastar munição." , Time=0)
+[145_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Acho que esse doente só gosta de ver a gente se contorcer!" , Time=0)
+[146_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Rios para Dalton. Na escuta?" , Time=0)
+[147_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Estou te ouvindo, Cabo. O que está acontecendo? Câmbio." , Time=0)
+[148_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Estamos no mercado, senhor. Tem previsão da extração? Câmbio." , Time=0)
+[149_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Negativo. Preciso que vocês limpem a área. Ainda está quente demais pra trazer o helicóptero. Câmbio." , Time=0)
+[15_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Ooah!" , Time=0)
+[15_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Isso é o que você pensa, ese. Depois daquela palhaçada que você aprontou no refeitório ontem à noite, mandei meus caras não pegarem leve! Vocês dois vão levar uma surra. Câmbio." , Time=0)
+[150_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Melhor vocês dois subirem naquela sacada e assumirem aquelas armas!" , Time=0)
+[151_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: O quê? Por quê?" , Time=0)
+[152_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Me lembro do Dalton mandando vocês garantirem aquela área. Acham que dá pra fazer isso aí embaixo com essas pistolinhas de merda?" , Time=0)
+[153_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Eu odeio tanto esse cara." , Time=0)
+[154_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: É, mas ele provavelmente tem razão. A gente devia subir." , Time=0)
+[155_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="CLYDE: O que diabos vocês estão esperando?" , Time=0)
+Subtitles[1]=(Text="CLYDE: Subam e me ajudem a segurar este lugar!" , Time=1.82)
+[156_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Se um de vocês, idiotas, quer sair daqui vivo, é melhor subir essa porra e assumir aquelas armas!" , Time=0)
+[157_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Um de vocês dá um impulso no outro até aquela sacada. Aí quem está na sacada puxa o outro pra cima." , Time=0)
+[158_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Vamos! Um de vocês, palhaços, dá um impulso no outro até a sacada. Depois puxa o cara que ficou no chão." , Time=0)
+[159_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Puta merda, esses caras estão em todo lugar!" , Time=0)
+[15A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Pule aquela cerca." , Time=0)
+[15B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Você tem que se abaixar pra passar por baixo daquele portão." , Time=0)
+[16_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="EISENHOWER: Ei, valeu pelo radinho, trouxa!" , Time=0)
+[16_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Certo. O principal aqui é treinar o fogo de supressão. Basicamente, fiquem atrás da cobertura e atirem às cegas. Câmbio." , Time=0)
+[160_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: PORRA! Merda! Estamos MUITO em desvantagem!" , Time=0)
+[161_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Bem-vindo ao Exército, soldado!" , Time=0)
+[162_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Rios para Dalton. A área está segura. Repito. A área está segura. Podem prosseguir com a extração. Câmbio." , Time=0)
+[163_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Entendido, Rios. Estou a caminho. Chego em um segundo. Câmbio e desligo." , Time=0)
+[16A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Cada um de vocês precisa chamar a atenção do metralhador. Um de cada vez. Revezem.  Quero que comecem a pensar estrategicamente. Quando um estiver sob fogo, o outro tem que dar fogo de supressão pra atrair a atenção do inimigo." , Time=0)
+[17_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Dalton para Gutierrez. Qual é a previsão de saída da sua unidade pra extração? Câmbio." , Time=0)
+[17_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Qual é o problema? Medo de balas de borracha? Um de vocês precisa achar um ângulo no metralhador. O outro tem que dar cobertura. Vamos lá. Rápido! Câmbio." , Time=0)
+[18_SOM_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Não está nada bom, senhor. Câmbio." , Time=0)
+[19_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Como assim, não está nada bom?" , Time=0)
+Subtitles[1]=(Text="DALTON: Mude para UHF Seguro. Câmbio." , Time=2)
+[20_SOM_BLACKHAWK_PILOT_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="SUPER-6-3: Mayday! Mayday! Super seis-três está caindo! Repito! Mayday! Fomos atingidos! Seis-três está caindo..." , Time=0)
+[20_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Aaah! Merda! Isso dói!" , Time=0)
+[21_SOM_RANGER_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ENNIS: Seis-três, quais são suas coordenadas? Repito. Coordenadas? Câmbio." , Time=0)
+[21_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Avisei que ardia." , Time=0)
+[22_SOM_RANGER_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ENNIS: Seis-três, seis-três, responda.  Quais são suas coordenadas? Responda! Câmbio." , Time=0)
+[22_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Porra, como arde!" , Time=0)
+[23_SOM_RANGER_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="ENNIS: Alguém em terra está vendo o Super Seis-Três?  Câmbio." , Time=0)
+[23_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Eu avisei, mano.  Se fosse em combate, você já estaria morto." , Time=0)
+[24_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="EISENHOWER: Eisenhower para Super Seis-Um. Na escuta?" , Time=0)
+[24_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Beleza, parceiros, está bom. Agora acabem com aquele metralhador!" , Time=0)
+[25_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Entendido, Eisenhower. Câmbio." , Time=0)
+[25_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Nada mal, é assim que se faz." , Time=0)
+[26_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="EISENHOWER: Solicito evacuação médica imediata, senhor. Dois homens feridos, um sangrando muito. Câmbio." , Time=0)
+[27_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="DALTON: Negativo, Eisenhower." , Time=0)
+Subtitles[1]=(Text="Perdemos dois Black Hawks e não posso arriscar perder outro." , Time=1.46)
+Subtitles[2]=(Text="Estamos mandando um veículo blindado pra tirar você e sua unidade daí. Câmbio." , Time=4.47)
+[28_SOM_RANGER_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_2: Ennis para Comando do Grupo 4: o sargento morreu. A maior parte do C-3 caiu. Só restamos eu e o Ferris. Somos os únicos que ainda conseguem atirar, senhor." , Time=0)
+[29_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_3: Entendido. Qual é a sua posição? Câmbio." , Time=0)
+[29_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Bom trabalho, Rangers! Lutem assim no campo de batalha e talvez não tenham as tripas espalhadas por Mogadício." , Time=0)
+[29A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Agora vamos treinar o lançamento de granadas." , Time=0)
+Subtitles[1]=(Text="PEDRO: Preciso que vocês joguem uma granada pra dentro daquela porta." , Time=2.3)
+[29B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Belo trabalho. Agora um de vocês, não lembro qual, tem a escopeta acoplada na frente. Quem estiver com ela, derrube aqueles alvos de metal do estande de tiro com a escopeta." , Time=0)
+[29C_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Agora tentem jogar uma lá dentro, por aquela porta. Tem que detonar do outro lado da porta. Não estraguem tudo!" , Time=0)
+[29D_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Agora vão até o estande de tiro, perto daquela fachada de prédio." , Time=0)
+Subtitles[1]=(Text="PEDRO: Ainda temos muito chão pela frente. Câmbio." , Time=3.2)
+[30_SOM_RANGER_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_2: Ainda estamos no depósito, senhor. Câmbio." , Time=0)
+[30_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Ei, Pedro, como é essa próxima área de treinamento?" , Time=0)
+[31_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_3: O quê? Mandei o C-1 ajudar na sua extração." , Time=0)
+[31_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Digamos que é uma surpresinha. Algo especial que preparei só pra vocês dois. Câmbio." , Time=0)
+[32_SOM_RANGER_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_2: Ainda não os vimos, senhor. Câmbio." , Time=0)
+[32_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Não gostei do som disso." , Time=0)
+[33_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_3: Droga! Aguente firme, Ennis. Câmbio e desligo." , Time=0)
+[33_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: O que a gente deve fazer, cara?" , Time=0)
+[34_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_3: C-1, onde diabos vocês estão? Vocês deviam fazer a extração do C-3." , Time=0)
+[34_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Não sei. Olhe em volta." , Time=0)
+[35_SOM_RANGER_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_4: Estamos encurralados, senhor. Não dá pra se mover!" , Time=0)
+[35_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Merda, cara. Estou preso. Como saio daqui?" , Time=0)
+[36_SOM_RANGER_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_3: Bom, é melhor se livrarem desse cerco. Entendido?" , Time=0)
+[36_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Não esperavam por essa, né?  Pois é, o único jeito de sair daí é aprender o básico do combate cooperativo. Rios, vá até o fim do campo e aperte o interruptor pra libertar o Salem. Mas se tentar sozinho" , Time=0)
+[37_SOM_RANGER_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RANGER_4: Sim, senhor. Pode deixar, senhor." , Time=0)
+[37_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Acho que sim." , Time=0)
+[38_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Todas as unidades, atenção. Sei que isto está virando uma merda total, mas precisamos manter a cabeça no lugar. Somos Rangers. Somos os melhores que existem e temos que agir como tal! Vamos todos sair dessa, e vamos sair juntos." , Time=0)
+[38_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Sim, senhor!" , Time=0)
+[39_SOM_VARIOUS_RANGERS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="VARIOUS_RANGERS: Ooah!" , Time=0)
+[39_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bom. Então mãos à obra. Câmbio." , Time=0)
+[40_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Está vendo o que eu vejo?" , Time=0)
+[40_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Merda, cara. Tô preso." , Time=0)
+[41_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Eu digo que a gente pula!" , Time=0)
+[41_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Qual é o problema? Ficou preso? Admite, você não esperava por essa. Bom, o único jeito de sair daí é aprender o básico do combate cooperativo.  Salem - você precisa descer o campo e apertar o botão no fim dele para li" , Time=0)
+[42_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Espera aí!" , Time=0)
+[42_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Acho que sim." , Time=0)
+[43_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Sim, senhor!" , Time=0)
+[44_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Isso foi incrível!" , Time=0)
+[44_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bom. Então mãos à obra. Câmbio." , Time=0)
+[45_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Isso é horrível." , Time=0)
+[45_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá, Rios. Você precisa atrair o fogo para longe do Salem. Não deixa ele fazer todo o trabalho. Câmbio." , Time=0)
+[46_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ah, não. Olha só isso." , Time=0)
+[46_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios - você vai perder seu parceiro se não atrair o fogo para longe dele. Câmbio." , Time=0)
+[47_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Eisenhower tinha razão. Este lugar é um inferno." , Time=0)
+[47_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios, o Salem tá ficando quente demais. Tira o fogo de cima dele! Câmbio." , Time=0)
+[48_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: NÃÃÃO!!!!" , Time=0)
+[48_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Salem, o Rios tá ficando quente demais. Atrai um pouco de fogo para longe dele. Câmbio." , Time=0)
+[49_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: AH, MERDAAAAAA!!!" , Time=0)
+[49_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Salem - é melhor você atrair o fogo para longe do Rios! Câmbio." , Time=0)
+[50_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Você tá bem, cara?" , Time=0)
+[50_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá, Salem - o Rios tá ficando quente demais. Atrai um pouco de fogo para longe dele. Câmbio." , Time=0)
+[51_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="hard wrap"
+Subtitles[0]=(Text="SALEM: Mano - minha vida inteira passou diante dos meus olhos - eu vi aquela luz no fim do túnel.  Minha avó estava lá, minha mãe, meu velho pitbull Charlie.  Mas eu voltei, cara. Voltei por você. Porque eu sabia que não tinha como você terminar essa missão sem mim!" , Time=0)
+[51_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Certo, Salem. O Rios tem a atenção deles. Avançar!" , Time=0)
+[52_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Cala a porra da boca, cara." , Time=0)
+[52_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Salem - Avançar! Vamos lá!" , Time=0)
+[53_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Qual é, cara. Eu te peguei por um minuto, admite!" , Time=0)
+[53_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Avançar, Salem! O Rios tem a atenção deles. Câmbio." , Time=0)
+[53A_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Espera. Tô ouvindo uns hostis lá em cima." , Time=0)
+Subtitles[1]=(Text="RIOS: Eu te dou um impulso e você acaba com eles." , Time=2.1)
+[53B_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Beleza. Devagar e com calma. Para bem aí." , Time=0)
+[53C_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Bom trabalho" , Time=0)
+[53D_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Agora se puxa pra cima." , Time=0)
+[53E_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Bom, agora me ajuda a subir!" , Time=0)
+[53F_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ei, tem hostis lá em cima." , Time=0)
+Subtitles[1]=(Text="SALEM: Eu te levanto e você acaba com eles." , Time=1.3)
+[53G_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Ei, boa. Peguei eles." , Time=0)
+[53H_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Boa, mano" , Time=0)
+[53I_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Uh - você não é exatamente leve, mano. Se puxa pra cima!" , Time=0)
+[53J_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Bom, agora me ajuda a subir!" , Time=0)
+[54_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Onde a gente deve encontrar esse cara?" , Time=0)
+[54_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Certo, Rios. O Salem tem a atenção deles. Avançar!" , Time=0)
+[55_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: No velho Hotel Continental." , Time=0)
+[55_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios - Avançar! Vamos lá!" , Time=0)
+[56_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Onde diabos fica isso?" , Time=0)
+[56_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Avançar, Rios! O Salem tem a atenção deles. Câmbio." , Time=0)
+[57_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Fica logo adiante, por aqui." , Time=0)
+[57_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Belo trabalho - é assim que se faz! Câmbio." , Time=0)
+[58_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="SALEM: Ainda bem que você sabe pra onde tá indo." , Time=0)
+Subtitles[1]=(Text="SALEM: Essa porra toda parece igual pra mim." , Time=1)
+[58_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bom trabalho.  Agora você pegou o jeito!" , Time=0)
+[58A_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Cuidado!" , Time=0)
+[59_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Merda, cara, eles nos encurralaram." , Time=0)
+[59_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Bom trabalho, Rangers! Ooah!" , Time=0)
+[59A_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Cuidado!" , Time=0)
+[60_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Eu sei. Não consigo dar um tiro." , Time=0)
+[60_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Oooah!" , Time=0)
+[61_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Isso tá ruim, cara. Muito ruim." , Time=0)
+[61_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ooah!" , Time=0)
+[61A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: No campo de batalha, você pode precisar usar várias armas. Então achei que ia fazer vocês trocarem de arma neste treinamento também. Quero que saquem a arma secundária." , Time=0)
+[62_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Quem esse cara pensa que é?" , Time=0)
+[62_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Isto é o Exército, manos. Se um de nós não consegue fazer algo sozinho, a gente trabalha junto. Câmbio." , Time=0)
+[63_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Mano - isso foi foda demais. Você queria ter uma habilidade dessas." , Time=0)
+[63_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Qual é o seu problema? Levantem o portão juntos. Câmbio." , Time=0)
+[64_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Sou o Cabo Tyson Rios, e este é o Soldado de Primeira Classe Elliot Salem, Chalk Four, Rangers do Exército dos EUA. Você é o Phillip Clyde?" , Time=0)
+[64_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá. Se esse portão é pesado demais, levantem os dois juntos." , Time=0)
+[65_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Que porra você acha?" , Time=0)
+[65_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Estamos na metade, então podem encarar isto como a prova do meio do curso. Quero que usem as habilidades que acabamos de ver para eliminar esse cara.  Ele tem colete e as melhores armas, então não vai ser fácil. Câmbio." , Time=0)
+[65A_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Lembrem do que aprendemos." , Time=0)
+Subtitles[1]=(Text="PEDRO: O único jeito de matar esse cara é contornando e pegando ele por trás." , Time=1.7)
+[65B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá - vocês precisam trabalhar como uma equipe. Se um de vocês vai avançar, mande o outro manter posição!" , Time=0)
+[66_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Mano. A gente devia ajudar você a eliminar o Coronel Mo'Alim." , Time=0)
+[66_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá, Rangers. Usem o combate cooperativo que expliquei. Concentrem a agressividade dele em um de vocês enquanto o outro avança. Câmbio." , Time=0)
+[67_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="CLYDE: Primeiro de tudo, eu não sou seu mano, mano." , Time=0)
+Subtitles[1]=(Text="Segundo, você não me manda esperar. Eu é que digo o que fazer." , Time=3.05)
+Subtitles[2]=(Text="E por último, se acha que preciso da sua ajuda nisso -" , Time=7.06)
+Subtitles[3]=(Text="ou em qualquer outra coisa - você é um idiota." , Time=9.86)
+Subtitles[4]=(Text="Agora que isso ficou claro, por que você não cala a porra da boca" , Time=13.27)
+Subtitles[5]=(Text="e observa um verdadeiro profissional em ação." , Time=16.16)
+Subtitles[6]=(Text="Você pode aprender uma coisa ou duas." , Time=18.21)
+[67_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Revezem-se atraindo a atenção dele e partam para o abate. Câmbio." , Time=0)
+[68_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Beleza, professor." , Time=0)
+Subtitles[1]=(Text="RIOS: Por que não começa nos ensinando onde o Mo'Alim está se escondendo." , Time=1.69)
+[68_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Lembrem do que ensinei. Um de vocês o mantém ocupado enquanto o outro avança. Tentem chegar de fininho." , Time=0)
+[69_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="CLYDE: Ele está bem aqui, dentro do Hotel Continental." , Time=0)
+Subtitles[1]=(Text="CLYDE: Por que acha que mandei vocês me encontrarem aqui?" , Time=3.25)
+[69_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Certo, Rios. Dê um fogo de supressão. Câmbio." , Time=0)
+[7_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Ooah!" , Time=0)
+[70_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Rios, Salem - já encontraram o Clyde? Câmbio." , Time=0)
+[70_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios - dê cobertura de fogo para o Salem. Vamos lá." , Time=0)
+[71_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Sim, senhor. Estamos num canal seguro, senhor?" , Time=0)
+[71_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Lembre do que aprendemos, Rios. Você tem que dar fogo de supressão para o Elliot." , Time=0)
+[72_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Sim, estamos. Qual é o problema? Câmbio." , Time=0)
+[72_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Salem! Preciso que você dê fogo de supressão para o Rios." , Time=0)
+[73_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Bom, senhor, é que ele é meio... um babaca, senhor. Câmbio." , Time=0)
+[73_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá, Salem. Lembre do que acabamos de praticar. Dê cobertura de fogo para o Rios." , Time=0)
+[74_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Bom, então não o convide para jantar quando voltar para casa. Até lá, vocês seguem as ordens dele e terminam a missão. Se não matarem o Mo'Alim, nossos homens espalhados por esta cidade estão mortos. Ficou claro?" , Time=0)
+[74_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Salem! Dê cobertura de fogo!" , Time=0)
+[75_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Senhor, sim, senhor." , Time=0)
+[75_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Belo trabalho, Rangers!" , Time=0)
+[76_SOM_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Bom. Câmbio, desligo." , Time=0)
+[76_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="PEDRO: Isso mesmo! Isso mesmo! Assim que se faz!" , Time=0)
+[77_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Tem muitos deles. A gente precisa achar cobertura." , Time=0)
+[77_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Agora vocês estão pegando o jeito! Continuem assim!" , Time=0)
+[78_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="CLYDE: Aqui - deixa eu ensinar um truquezinho." , Time=0)
+Subtitles[1]=(Text="CLYDE: Um de vocês arranca a porta daquele veículo." , Time=2.66)
+[78_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: É isso aí! Assim que a gente faz. Agora preciso que vocês dois vão para o próximo campo de treino - e rápido. Precisamos botar vocês em combate de verdade! Câmbio." , Time=0)
+[79_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: O quê?" , Time=0)
+[79_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Como você acha que a gente sobe até lá?" , Time=0)
+[8_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Ooah!" , Time=0)
+[80_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Você ouviu." , Time=0)
+[80_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Peguei." , Time=0)
+[81_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Tá tentando me tirar do sério? Eu disse para arrancar a porta daquele veículo a tiros." , Time=0)
+[81_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá, não é ciência de foguete. Um de vocês dá um impulso no outro. Aí quem subiu puxa o outro para cima. Câmbio." , Time=0)
+[82_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Beleza. Vou dar mais uma chance. Um de vocês, arranque a porta daquele maldito veículo a tiros." , Time=0)
+[82_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos lá, vocês precisam subir com o impulso. Um de vocês dá um impulso no outro. Aí quem subiu puxa o outro para cima. Câmbio." , Time=0)
+[83_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Muito bem. Agora pega ela e usa como escudo antitumulto. Os dois podem se agachar atrás. Quem vai na frente segura o escudo, quem tá atrás atira." , Time=0)
+[83_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Se vocês querem entrar para os Rangers, precisam aprender a trabalhar juntos. Um de vocês dá um impulso no outro. Aí quem subiu, puxa o outro para cima. Câmbio." , Time=0)
+[84_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Qual é o problema? São surdos e burros? Um de vocês pega aquela porta, o outro fica atrás e atira." , Time=0)
+[84_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Bom trabalho em equipe, Rangers." , Time=0)
+[84A_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Beleza, terminamos. Para onde vamos agora?" , Time=0)
+[84B_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="PEDRO: Engraçado você perguntar. Um dos equipamentos mais importantes" , Time=0)
+Subtitles[1]=(Text="que qualquer Army Ranger tem em campo é o GPS. Por que vocês não" , Time=4.2)
+Subtitles[2]=(Text="dão uma olhada no de vocês e tentam descobrir sozinhos?" , Time=7.52)
+[84C_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Por que ele tem que ser tão sabichão?" , Time=0)
+[84D_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Eu sei. O Pedro é meio babaca." , Time=0)
+[84E_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Ei - e mais uma coisa. Melhor vocês se acostumarem a trocar de arma em campo. Não quero que levem um tiro na cabeça tentando pegar a arma do parceiro. Por que não praticam isso agora. É só trocar de arma um com o outro." , Time=0)
+[84F_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="PEDRO: Agora parem aí. Estão vendo aquela armadilha lá na frente?" , Time=0)
+[84G_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Que armadilha?" , Time=0)
+[84H_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="PEDRO: Não estão vendo, né?" , Time=0)
+Subtitles[1]=(Text="PEDRO: É por isso que vocês sempre precisam checar o GPS." , Time=1.65)
+[84I_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: GPS? Achei que era só para se orientar." , Time=0)
+[84J_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Nosso GPS faz todo tipo de coisa. Ele mostra alvos para atirar, objetivos da missão e diz para onde ir. Agora chequem o GPS e destruam aquela armadilha. Vocês podem fazer um tiro coop em qualquer objeto marcado no GPS." , Time=0)
+[84K_TRAINING_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Tiro coop?" , Time=0)
+[84L_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: É. É quando vocês dois atiram ao mesmo tempo." , Time=0)
+[84M_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Certo. Bom trabalho - aposto que não estão prontos para o que eu preparei agora." , Time=0)
+[84N_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Hahah! Rios, parece que seu parceiro se machucou com a explosão. Você precisa arrastá-lo rápido para um lugar seguro onde possa prestar os primeiros socorros." , Time=0)
+[84O_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Hahah! Salem, parece que seu parceiro não está nada bem. Você precisa arrastá-lo rápido para um lugar seguro onde possa prestar os primeiros socorros." , Time=0)
+[84P_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Ei, Rios - sei que você está ferido - mas vai acabar morto se não se defender. Você precisa continuar atirando enquanto é arrastado." , Time=0)
+[84Q_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Ei, Salem - sei que você está ferido, mano - mas vai acabar morto se não se defender. Você precisa continuar atirando enquanto é arrastado." , Time=0)
+[84R_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="PEDRO: Certo, Rios, agora você precisa prestar os primeiros socorros ao Salem." , Time=0)
+[84S_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="PEDRO: Certo, Salem, agora você precisa prestar os primeiros socorros ao Rios." , Time=0)
+[84T_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos, Rios - você está perdendo ele! Merda. Agora vai ter que fazer reanimação para trazê-lo de volta à vida!" , Time=0)
+[84U_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vamos, Salem - você está perdendo ele! Merda. Agora vai ter que fazer reanimação para trazê-lo de volta à vida!" , Time=0)
+[84V_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bom trabalho, Salem - você salvou a vida do seu parceiro. Agora, Rios - aquilo que te derrubou se chama mina de proximidade. Tem mais uma por perto. É melhor atirar nela com a sua arma, a menos que queira ser atingido de novo." , Time=0)
+[84W_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bom trabalho, Rios - você salvou a vida do seu parceiro. Agora, Salem - aquilo que te derrubou se chama mina de proximidade. Tem mais uma por perto. É melhor atirar nela com a sua arma, a menos que queira ser atingido de novo." , Time=0)
+[85_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Isso é muito legal. Belo truque, parceiro." , Time=0)
+[85_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bem, agora que vocês aprenderam as táticas ofensivas importantes, vamos praticar um pouco de defesa. Estão vendo aquele círculo no chão?" , Time=0)
+[86_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="CLYDE: Também não sou seu parceiro, mano, então que tal a gente maneirar nos apelidos, hein?" , Time=0)
+[86_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Sim, e daí?" , Time=0)
+[87_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Ei, Clyde - como você consegue todas as armaduras e armas mais novas?" , Time=0)
+[87_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bem, Soldado Salem - já que perguntou - vocês precisam defender a área por um minuto. E terão que proteger um ao outro enquanto fazem isso. NÃO HÁ COBERTURA, então pensem de forma defensiva. Entendido?" , Time=0)
+[88_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Eu ganho uma puta grana, e se quero alguma coisa, eu compro." , Time=0)
+[88_TRAINING_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Sim. Acho que sim." , Time=0)
+[89_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Paga tão bem assim ser contratado de uma empresa militar privada?" , Time=0)
+[89_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Bom. Se mais de cinco inimigos entrarem no círculo, a gente recomeça tudo - e repete de novo e de novo até vocês acertarem. Mas eu não tenho o dia todo, então tentem não mandar tudo pro espaço, beleza? Câmbio." , Time=0)
+[9_SOM_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="EISENHOWER: Rios, Salem - soube que vocês estão indo pro meio dessa merda." , Time=0)
+[90_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Contratado? Me chame de mercenário. Eu trabalho pra qualquer um, pelo preço certo." , Time=0)
+[90_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Vocês dois precisam ficar juntos - não dá pra defender o parceiro direito quando estão separados. Câmbio." , Time=0)
+[91_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Então é assim, hein? Tudo está à venda pra quem pagar mais?" , Time=0)
+[91_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Fiquem juntos, Rangers! Defendam o círculo e defendam um ao outro! Câmbio." , Time=0)
+[92_SOM_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Sabe como é. Dinheiro manda." , Time=0)
+[92_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Segurem o círculo! Fiquem juntos!" , Time=0)
+[93_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Cadê o Clyde?" , Time=0)
+[93_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Um inimigo furou a defesa de vocês - não deixem acontecer de novo. Câmbio." , Time=0)
+[94_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Como diabos eu vou saber?" , Time=0)
+[94_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: O segundo inimigo passou pela defesa de vocês. Se organizem, manos!" , Time=0)
+[95_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Esse cara me dá arrepio. Não gosto de não saber onde ele está." , Time=0)
+[95_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Já são três inimigos que passaram por vocês. Defendam o círculo! Câmbio." , Time=0)
+[96_SOM_MO_ALIM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="MO ALIM: [Rindo] Ora, ora, olha quem apareceu - Johnny Americano." , Time=0)
+Subtitles[1]=(Text="MO ALIM: Vocês acham que são donos do mundo inteiro -" , Time=6)
+Subtitles[2]=(Text="MO ALIM: que podem ir aonde quiserem, pegar o que quiserem." , Time=8.2)
+Subtitles[3]=(Text="MO ALIM: Mas este não é o país de vocês. Este é o nosso país." , Time=12.37)
+Subtitles[4]=(Text="MO ALIM: E é assim que a gente dá olá no nosso país!" , Time=15.78)
+[96_SOM_MO_ALLIM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MO_ALIM: [Rindo] Ora, ora, olha quem apareceu - Johnny Americano." , Time=0)
+Subtitles[1]=(Text="MO_ALIM: Vocês acham que são donos do mundo inteiro -" , Time=6)
+Subtitles[2]=(Text="MO_ALIM: que podem ir aonde quiserem, pegar o que quiserem." , Time=8.2)
+Subtitles[3]=(Text="MO_ALIM: Mas este não é o país de vocês. Este é o nosso país." , Time=12.37)
+Subtitles[4]=(Text="MO_ALIM: E é assim que a gente dá olá no nosso país!" , Time=15.78)
+[96_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Quatro inimigos passaram pelo perímetro. Mais um e acabou o jogo." , Time=0)
+[97_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Esse cara é uma figura." , Time=0)
+[97_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Merda! Cinco inimigos entraram. Isso quer dizer que a gente tem que recomeçar. Não errem de novo! Fiquem juntos e defendam o círculo! Câmbio." , Time=0)
+[98_SOM_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="RIOS: Eles sempre são." , Time=0)
+[98_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios - defenda seu parceiro!" , Time=0)
+[99_SOM_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150340"
+Subtitles[0]=(Text="SALEM: Cadê o Clyde, porra? Achei que ele ia ser pago pra apagar esse cara." , Time=0)
+[99_TRAINING_PEDRO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="01_sound_vo_main"
+Subtitles[0]=(Text="PEDRO: Rios - Mantenha esses inimigos longe do Salem. Câmbio." , Time=0)

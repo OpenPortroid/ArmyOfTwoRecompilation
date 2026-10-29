@@ -1,0 +1,498 @@
+[AO2Weap_M4A1]
+ItemName="S-SYSTEM"
+[AO2Weap_AK47]
+ItemName="AK-47"
+[AO2Weap_Famas]
+ItemName="FELIN-2C"
+[AO2Weap_G36]
+ItemName="HK36"
+[AO2Weap_AUG]
+ItemName="AUG"
+[AO2Weap_M249]
+ItemName="M249 SAW"
+[AO2Weap_PKM]
+ItemName="PKM"
+[AO2Weap_M134]
+ItemName="M134"
+[AO2Weap_Spas12]
+ItemName="FSPS-12"
+[AO2Weap_m3]
+ItemName="M3 SUPER 90"
+[AO2Weap_Protecta]
+ItemName="DAO-X"
+[AO2Weap_MGL]
+ItemName="MGL MK-X"
+[AO2Weap_MP5k]
+ItemName="MP5k"
+[AO2Weap_Mac11]
+ItemName="MP-11A1"
+[AO2Weap_VZ61]
+ItemName="SKORPION"
+[AO2Weap_p90]
+ItemName="P90"
+[AO2Weap_mp7]
+ItemName="MP7"
+[AO2Weap_BSTV1]
+ItemName="BST-V1"
+[AO2Weap_DesertEagle]
+ItemName="DEAGLE"
+[AO2Weap_M29]
+ItemName=".44 MODEL 29"
+[AO2Weap_M92]
+ItemName="M92 ELITE II"
+[AO2Weap_MK23]
+ItemName="SOCOM MK.23"
+[AO2Weap_G26]
+ItemName="G18C"
+[AO2Weap_SVD]
+ItemName="SVD"
+[AO2Weap_PSG1]
+ItemName="MSG-90"
+[AO2Weap_M21]
+ItemName="M14"
+[AO2Weap_DSR1]
+ItemName="DSR-1"
+[AO2Weap_M107]
+ItemName="M107 LIGHT 50"
+[AO2Weap_SAL86]
+ItemName="SAL-86"
+[AO2Weap_RPG7]
+ItemName="RPG-7 V1"
+[AO2Weap_Stinger]
+ItemName="FIM92 STINGER"
+[AO2Grenade_Frag]
+ItemName="GRANADA DE FRAGMENTAÇÃO"
+[AO2Weap_C4]
+ItemName="C-4"
+[AO2Weap_C4Remote]
+ItemName="Detonador de C-4"
+[AO2WPart_unv_crt_cmg_std]
+PartName="PENTE CENTURY DE 100 TIROS"
+PartBrief="100 TIROS"
+[AO2WPart_unv_frm_209_std]
+PartName="LANÇA-GRANADAS M203 40MM"
+PartBrief=LG 40mm
+[AO2WPart_unv_frm_bg1_std]
+PartName="E40 VERTGRIP"
+PartBrief=Empunhadura
+[AO2WPart_unv_frm_key_std]
+PartName="870 MCS MASTER KEY"
+PartBrief=Escopeta
+[AO2WPart_unv_shd_m_std]
+PartName="AEGIS GUARDIAN V1"
+[AO2WPart_unv_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_unv_sup_s02_std]
+PartName="TL3 SHADOW WARRIOR"
+[AO2WPart_unv_scp_s00_std]
+PartName="EC17 TITUS PRO"
+[AO2WPart_unv_scp_s01_std]
+PartName="MK.21 FULLVIEW"
+[AO2WPart_unv_scp_s02_std]
+PartName="LR3 HUNTSMAN"
+[AO2WPart_unv_scp_s03_std]
+PartName="C3-12 LIGHTSEEKER"
+[AO2WPart_unv_scp_s04_std]
+PartName="MK.7 ADAMS DEADEYE"
+[AO2WPart_a47_bar_p01_std]
+PartName="CANO BASE AK47"
+[AO2WPart_a47_bar_p02_std]
+PartName="PRYKHODKO SPETZNAZ MK.3"
+[AO2WPart_a47_bar_p03_std]
+PartName="VLOCZ MK.2 BLACK LABEL"
+[AO2WPart_a47_crt_ext_std]
+PartName="PENTE AK47 DE 50 TIROS"
+PartBrief="50 TIROS"
+[AO2WPart_a47_crt_drm_std]
+PartName="PENTE TAMBOR AK47 DE 70 TIROS"
+PartBrief="70 TIROS"
+[AO2WPart_a47_crt_std_std]
+PartName="PENTE AK47 DE 30 TIROS"
+PartBrief="30 TIROS"
+[AO2WPart_a47_stk_a01_std]
+PartName="CORONHA BASE AK47"
+[AO2WPart_a47_stk_a02_std]
+PartName="AE9 STAR TACTICA"
+[AO2WPart_a47_stk_a03_std]
+PartName="AVTOMAT HARDLINER"
+[AO2WPart_a47_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_a47_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_a47_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_a47_scp_nil_std]
+PartName="SEM MIRA"
+[AO2WPart_m4a_bar_p01_std]
+PartName="CANO BASE S-SYSTEM"
+[AO2WPart_m4a_bar_p02_std]
+PartName="G13 THUNDERSTRIKE"
+[AO2WPart_m4a_bar_p03_std]
+PartName="402 KNIGHTS EDITION"
+[AO2WPart_m4a_crt_ext_std]
+PartName="PENTE CAIXA S-SYSTEM DE 60 TIROS"
+PartBrief="60 TIROS"
+[AO2WPart_m4a_crt_std_std]
+PartName="PENTE S-SYSTEM DE 30 TIROS"
+PartBrief="30 TIROS"
+[AO2WPart_m4a_scp_nil_std]
+PartName="SEM MIRA"
+[AO2WPart_m4a_stk_a01_std]
+PartName="CORONHA BASE S-SYSTEM"
+[AO2WPart_m4a_stk_a02_std]
+PartName="HL16 REFLEX CORE"
+[AO2WPart_m4a_stk_a03_std]
+PartName="KEVLAR DELTA MK.4"
+[AO2WPart_m4a_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_g36_bar_p01_std]
+PartName="CANO BASE HK36"
+[AO2WPart_g36_bar_p02_std]
+PartName="NIGHTWATCH VD555"
+[AO2WPart_g36_bar_p03_std]
+PartName="CL3 KRIEGER ZERSTORER"
+[AO2WPart_g36_crt_std_std]
+PartName="PENTE HK36 DE 30 TIROS"
+PartBrief="30 TIROS"
+[AO2WPart_g36_crt_ext_std]
+PartName="PENTE HK36 DE 50 TIROS"
+PartBrief="50 TIROS"
+[AO2WPart_g36_stk_a01_std]
+PartName="CORONHA BASE HK36"
+[AO2WPart_g36_stk_a02_std]
+PartName="ALU-FLEX 228"
+[AO2WPart_g36_stk_a03_std]
+PartName="TRUESHOT RF2"
+[AO2WPart_g36_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_g36_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_g36_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_g2c_bar_p01_std]
+PartName="CANO BASE FELIN-2C"
+[AO2WPart_g2c_bar_p02_std]
+PartName="336 DOBERMANN"
+[AO2WPart_g2c_bar_p03_std]
+PartName="OM LEGIONNAIRE"
+[AO2WPart_g2c_crt_std_std]
+PartName="PENTE FELIN-2C DE 30 TIROS"
+PartBrief="30 TIROS"
+[AO2WPart_g2c_crt_ext_std]
+PartName="PENTE FELIN-2C DE 60 TIROS"
+PartBrief="60 TIROS"
+[AO2WPart_g2c_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_g2c_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_g2c_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_aug_bar_p01_std]
+PartName="CANO BASE AUG"
+[AO2WPart_aug_bar_p02_std]
+PartName="BVR LEBERKASE"
+[AO2WPart_aug_bar_p03_std]
+PartName="TEICHMANN MK.2"
+[AO2WPart_aug_crt_ext_std]
+PartName="PENTE AUG DE 60 TIROS"
+PartBrief="60 TIROS"
+[AO2WPart_aug_crt_std_std]
+PartName="PENTE AUG DE 30 TIROS"
+PartBrief="30 TIROS"
+[AO2WPart_aug_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_249_bar_p01_std]
+PartName="CANO BASE M249 SAW"
+[AO2WPart_249_bar_p02_std]
+PartName="KLH WILD THING"
+[AO2WPart_249_bar_p03_std]
+PartName="ARDSMAN ROADBLOCK"
+[AO2WPart_249_bar_p04_std]
+PartName="RWS HOTSAW V2"
+[AO2WPart_249_crt_std_std]
+PartName="PENTE M249 SAW DE 60 TIROS"
+PartBrief="60 TIROS"
+[AO2WPart_249_crt_box_std]
+PartName="FITA M249 SAW DE 120 TIROS"
+PartBrief="120 TIROS"
+[AO2WPart_249_stk_a01_std]
+PartName="CORONHA BASE M249 SAW"
+[AO2WPart_249_stk_a02_std]
+PartName="RIS STEADYSHOT"
+[AO2WPart_pkm_bar_p01_std]
+PartName="CANO BASE PKM"
+[AO2WPart_pkm_bar_p02_std]
+PartName="COMRADE 64"
+[AO2WPart_pkm_bar_p03_std]
+PartName="V47 SVYATOGO MIKHAIL"
+[AO2WPart_pkm_bar_p04_std]
+PartName="PKT AVTOMAT MK.2"
+[AO2WPart_pkm_crt_std_std]
+PartName="PENTE PKM DE 100 TIROS"
+PartBrief="100 TIROS"
+[AO2WPart_pkm_stk_a01_std]
+PartName="CORONHA BASE PKM"
+[AO2WPart_pkm_stk_a02_std]
+PartName="VINTOVKA 63"
+[AO2WPart_s12_bar_p01_std]
+PartName="CANO BASE FSPS-12"
+[AO2WPart_s12_bar_p02_std]
+PartName="HURST RIOT SPECIAL"
+[AO2WPart_s12_bar_p03_std]
+PartName="DARK HORSE KTB"
+[AO2WPart_s12_bar_p04_std]
+PartName="7337 DEFENDER"
+[AO2WPart_s12_stk_a01_std]
+PartName="CORONHA BASE FSPS-12"
+[AO2WPart_s12_stk_a02_std]
+PartName="T3LA HOSTILE ENVIRONMENT"
+[AO2WPart_s12_stk_a03_std]
+PartName="332 TACTICAL ATTACKER"
+[AO2Wpart_m3_bar_p01_std]
+PartName="CANO BASE M3 SUPER 90"
+[AO2Wpart_m3_bar_p02_std]
+PartName="PLH SKELETON KEY"
+[AO2Wpart_m3_bar_p03_std]
+PartName="PAVONE GUERRIERO V5"
+[AO2Wpart_m3_bar_p04_std]
+PartName="X21 BLACK MONDAY"
+[AO2Wpart_m3_stk_a01_std]
+PartName="CORONHA BASE M3 SUPER 90"
+[AO2Wpart_m3_stk_a02_std]
+PartName="HN-H HARD FIGHTER"
+[AO2WPart_m92_bar_p01_std]
+PartName="CANO BASE M92"
+[AO2WPart_m92_bar_p02_std]
+PartName="JCP HAMMERHEAD"
+[AO2WPart_m92_bar_p03_std]
+PartName="LTD SAMURAI EDGE"
+[AO2WPart_m92_crt_std_std]
+PartName="PENTE M92 DE 8 TIROS"
+PartBrief="8 TIROS"
+[AO2WPart_m92_crt_ext_std]
+PartName="PENTE M92 DE 16 TIROS"
+PartBrief="16 TIROS"
+[AO2WPart_m92_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_m92_sup_s01_std]
+PartName="TSS QUIETSTRIKE"
+[AO2WPart_m92_sup_s02_std]
+PartName="BARRACUDA V300"
+[AO2WPart_m23_bar_p01_std]
+PartName="CANO BASE SOCOM MK.23"
+[AO2WPart_m23_bar_p02_std]
+PartName="TRITON ST51"
+[AO2WPart_m23_bar_p03_std]
+PartName="RSOC PENTAGON ELITE"
+[AO2WPart_m23_crt_std_std]
+PartName="PENTE SOCOM MK.23 DE 12 TIROS"
+PartBrief="12 TIROS"
+[AO2WPart_m23_crt_ext_std]
+PartName="PENTE SOCOM MK.23 DE 24 TIROS"
+PartBrief="24 TIROS"
+[AO2WPart_m23_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_m23_sup_s01_std]
+PartName="FSA NIGHT WING MK.7"
+[AO2WPart_g26_bar_p01_std]
+PartName="CANO BASE G18C"
+[AO2WPart_g26_bar_p02_std]
+PartName="FREIKORPS BEFREIER V3"
+[AO2WPart_g26_bar_p03_std]
+PartName="GASTON KEHRMASCHINE"
+[AO2WPart_g26_crt_std_std]
+PartName="PENTE G18C DE 24 TIROS"
+PartBrief="24 TIROS"
+[AO2WPart_g26_crt_ext_std]
+PartName="PENTE G18C DE 48 TIROS"
+PartBrief="48 TIROS"
+[AO2WPart_g26_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_g26_sup_s01_std]
+PartName="TSS QUIETSTRIKE"
+[AO2WPart_g26_sup_s02_std]
+PartName="BARRACUDA V300"
+[AO2WPart_dgl_bar_p01_std]
+PartName="CANO BASE DEAGLE"
+[AO2WPart_dgl_bar_p02_std]
+PartName="MK.76 SWORDFISH"
+[AO2WPart_dgl_bar_p03_std]
+PartName="VIAU FINAL IMPACT MK.2"
+[AO2WPart_dgl_bar_p04_std]
+PartName="EAC BROWNE CLOSER V3"
+[AO2WPart_dgl_crt_std_std]
+PartName="PENTE DEAGLE DE 8 TIROS"
+PartBrief="8 TIROS"
+[AO2WPart_dgl_crt_ext_std]
+PartName="PENTE ESTENDIDO DE 12 TIROS"
+PartBrief="12 TIROS"
+[AO2WPart_m29_bar_p01_std]
+PartName="CANO BASE M29"
+[AO2WPart_m29_bar_p02_std]
+PartName="THORS HAMMER MK.2"
+[AO2WPart_m29_bar_p03_std]
+PartName="CALHOUN HIGHNOON SPECIAL"
+[AO2WPart_m29_bar_p04_std]
+PartName="EAM DEAD MANS HAND"
+[AO2WPart_v6z_bar_p01_std]
+PartName="CANO BASE SKORPION"
+[AO2WPart_v6z_bar_p02_std]
+PartName="SANJEV SWEEPER"
+[AO2WPart_v6z_bar_p03_std]
+PartName="PZ6 WHIRLWIND PRO"
+[AO2WPart_v6z_crt_std_std]
+PartName="PENTE SKORPION DE 40 TIROS"
+PartBrief="40 TIROS"
+[AO2WPart_v6z_crt_ext_std]
+PartName="PENTE SKORPION DE 50 TIROS"
+PartBrief="50 TIROS"
+[AO2WPart_v6z_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_v6z_sup_s01_std]
+PartName="TSS QUIETSTRIKE"
+[AO2WPart_v6z_sup_s02_std]
+PartName="BARRACUDA V300"
+[AO2WPart_mp5_bar_p01_std]
+PartName="CANO BASE MP5K"
+[AO2WPart_mp5_bar_p02_std]
+PartName="CX-21 WARCHIEF"
+[AO2WPart_mp5_bar_p03_std]
+PartName="HL18 STORMCROW"
+[AO2WPart_mp5_crt_std_std]
+PartName="PENTE MP5K DE 40 TIROS"
+PartBrief="40 TIROS"
+[AO2WPart_mp5_crt_ext_std]
+PartName="PENTE ESTENDIDO DE 50 TIROS"
+PartBrief="50 TIROS"
+[AO2WPart_mp5_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_mp5_sup_s01_std]
+PartName="TSS QUIETSTRIKE"
+[AO2WPart_mp5_sup_s02_std]
+PartName="BARRACUDA V300"
+[AO2WPart_m11_bar_p01_std]
+PartName="CANO BASE MP11-A1"
+[AO2WPart_m11_bar_p02_std]
+PartName="B31-X SHORTNOSE"
+[AO2WPart_m11_bar_p03_std]
+PartName="TK200 GRINDER"
+[AO2WPart_m11_crt_std_std]
+PartName="PENTE MP11-A1 DE 40 TIROS"
+PartBrief="40 TIROS"
+[AO2WPart_m11_crt_ext_std]
+PartName="PENTE MP11-A1 DE 50 TIROS"
+PartBrief="50 TIROS"
+[AO2WPart_m11_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_m11_sup_s01_std]
+PartName="XII SILENT STORM"
+[AO2WPart_m11_sup_s02_std]
+PartName="T22 WIDEBODY"
+[AO2WPart_p90_bar_p01_std]
+PartName="CANO BASE P90"
+[AO2WPart_p90_bar_p02_std]
+PartName="HANEMAN SENATOR MK.19"
+[AO2WPart_p90_bar_p03_std]
+PartName="KOWALSKI DRAGOON V3"
+[AO2WPart_p90_crt_std_std]
+PartName="PENTE P90 DE 60 TIROS"
+PartBrief="60 TIROS"
+[AO2WPart_p90_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_p09_sup_s01_std]
+PartName="BLACK RIDGE STATIC STORM"
+[AO2WPart_p90_sup_s02_std]
+PartName="BLACK RIDGE STATIC STORM"
+[AO2WPart_psg_bar_p01_std]
+PartName="CANO BASE MSG-90"
+[AO2WPart_psg_bar_p02_std]
+PartName="MGS SNIPER-WULF MK.2"
+[AO2WPart_psg_bar_p03_std]
+PartName="BLACK BRIAR ELITE"
+[AO2WPart_psg_crt_std_std]
+PartName="PENTE MSG-90 DE 5 TIROS"
+PartBrief="5 TIROS"
+[AO2WPart_psg_crt_ext_std]
+PartName="PENTE MSG-90 DE 8 TIROS"
+PartBrief="8 TIROS"
+[AO2WPart_psg_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_psg_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_psg_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_psg_stk_a01_std]
+PartName="CORONHA BASE MSG-90"
+[AO2WPart_psg_stk_a02_std]
+PartName="REFLEX T37 BLACK-HORSE"
+[AO2WPart_psg_stk_a03_std]
+PartName="RMS JERICHO 5"
+[AO2WPart_svd_bar_p01_std]
+PartName="CANO BASE SVD"
+[AO2WPart_svd_bar_p02_std]
+PartName="VOLGOGRAD RED HAMMER"
+[AO2WPart_svd_bar_p03_std]
+PartName="KIROVO-CHEPETSK REDSTAR R110"
+[AO2WPart_svd_crt_std_std]
+PartName="PENTE SVD DE 5 TIROS"
+PartBrief="5 TIROS"
+[AO2WPart_svd_crt_ext_std]
+PartName="PENTE SVD DE 8 TIROS"
+PartBrief="8 TIROS"
+[AO2WPart_svd_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_svd_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_svd_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_svd_stk_a01_std]
+PartName="CORONHA BASE SVD"
+[AO2WPart_svd_stk_a02_std]
+PartName="WINTER WAR PL13"
+[AO2WPart_svd_stk_a03_std]
+PartName="DM2 SNAIPERSKAYA"
+[AO2WPart_m21_bar_p01_std]
+PartName="CANO BASE M21"
+[AO2WPart_m21_bar_p02_std]
+PartName="MINUTEMAN DE76"
+[AO2WPart_m21_bar_p03_std]
+PartName="THE MARCH RIDER"
+[AO2WPart_m21_crt_std_std]
+PartName="PENTE M21 DE 5 TIROS"
+PartBrief="5 TIROS"
+[AO2WPart_m21_crt_ext_std]
+PartName="PENTE M21 DE 8 TIROS"
+PartBrief="8 TIROS"
+[AO2WPart_m21_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_m21_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_m21_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_m21_stk_a01_std]
+PartName="CORONHA BASE M21"
+[AO2WPart_m21_stk_a02_std]
+PartName="LIBERTY TS1200"
+[AO2WPart_m21_stk_a03_std]
+PartName="FREEDOM MODEL 3"
+[AO2WPart_ds1_bar_p01_std]
+PartName="CANO BASE DSR-1"
+[AO2WPart_ds1_bar_p02_std]
+PartName="KAHNSTIEG RX88 GEIST"
+[AO2WPart_ds1_bar_p03_std]
+PartName="FLOOD MANHUNTER MK.6"
+[AO2WPart_ds1_crt_std_std]
+PartName="PENTE DSR-1 DE 10 TIROS"
+PartBrief="10 TIROS"
+[AO2WPart_ds1_sup_tips_std]
+PartName="SEM SUPRESSOR"
+[AO2WPart_ds1_sup_s01_std]
+PartName="ACS NIGHT-OPS"
+[AO2WPart_ds1_sup_s02_std]
+PartName="L18 DEATHS WHISPER"
+[AO2WPart_ds1_stk_a01_std]
+PartName="CORONHA BASE DSR-1"
+[AO2WPart_ds1_stk_a02_std]
+PartName="G61 HARDBACK"
+[AO2WPart_ds1_stk_a03_std]
+PartName="TANNANHAUS RANGER MK.4"

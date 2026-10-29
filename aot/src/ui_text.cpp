@@ -2,7 +2,8 @@
 // invites) in the game's language.
 //
 // The game runs in the language game_language.cpp sets (ao2_game_language:
-// the console's language, or Russian text on the English game). The text is
+// the console's language, or Russian / Brazilian Portuguese text on the
+// English game). The text is
 // keyed by its English: Tr("Invite") is the row of "Invite" in the current
 // language. The fonts cover Latin-1 and Cyrillic, so no characters beyond
 // those.
@@ -14,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <rex/cvar.h>
@@ -23,7 +25,7 @@
 
 REXCVAR_DEFINE_STRING(ao2_ui_language, "auto", "General",
                       "Language of the port's own menus (debug menu, invites, frame rate overlay): auto (the "
-                      "game's language), en, ru, de, fr, es, it.");
+                      "game's language), en, ru, pt, de, fr, es, it.");
 
 namespace
 {
@@ -307,7 +309,195 @@ namespace
   };
   // clang-format on
 
+  // Brazilian Portuguese: English -> Portuguese, the rows of kRows.
+  // clang-format off
+  const std::pair<const char *, const char *> kPt[] = {
+      {"ACHIEVEMENT UNLOCKED", "CONQUISTA DESBLOQUEADA"},
+      {"ACHIEVEMENTS", "CONQUISTAS"},
+      {"SECRET ACHIEVEMENT", "CONQUISTA SECRETA"},
+      {"STORY", "HISTÓRIA"},
+      {"CAMPAIGN", "CAMPANHA"},
+      {"GEAR AND CO-OP", "EQUIPAMENTO E COOP"},
+      {"WEAPONS", "ARMAS"},
+      {"COMBAT", "COMBATE"},
+      {"VERSUS", "VERSUS"},
+      {"SSC CHALLENGE", "SSC CHALLENGE"},
+      {"INCOMING INVITE", "CONVITE RECEBIDO"},
+      {"invites you to a private co-op game", "convida você para um jogo coop privado"},
+      {"invites you to a co-op game", "convida você para um jogo coop"},
+      {"ACCEPT", "ACEITAR"},
+      {"LIST / DECLINE", "LISTA / RECUSAR"},
+      {"ACCEPTED THE INVITE  ·  JOINING", "ACEITOU O CONVITE  ·  ENTRANDO"},
+      {"DECLINED THE INVITE", "RECUSOU O CONVITE"},
+      {"in game", "em jogo"},
+      {"in lobby", "no lobby"},
+      {"in menu", "no menu"},
+      {"CO-OP  //  INVITES", "COOP  //  CONVITES"},
+      {"CO-OP  //  PRIVATE GAME", "COOP  //  JOGO PRIVADO"},
+      {"CO-OP  //  PUBLIC GAME", "COOP  //  JOGO PÚBLICO"},
+      {"INVITE A PARTNER", "CONVIDAR PARCEIRO"},
+      {"CALLED TO ARMS", "CHAMADOS ÀS ARMAS"},
+      {"PLAYERS ONLINE", "JOGADORES ONLINE"},
+      {"GAME CREATED  ·  %d/2", "JOGO CRIADO  ·  %d/2"},
+      {"NO GAME OF YOURS", "NENHUM JOGO SEU"},
+      {"WAITING", "AGUARDANDO"},
+      {"PLAYER 1  ·  HOST", "JOGADOR 1  ·  ANFITRIÃO"},
+      {"PLAYER 2  ·  PARTNER", "JOGADOR 2  ·  PARCEIRO"},
+      {"PARTNER", "PARCEIRO"},
+      {"PLAYER 2  ·  JOINING", "JOGADOR 2  ·  ENTRANDO"},
+      {"PLAYER 2", "JOGADOR 2"},
+      {"INCOMING INVITES", "CONVITES RECEBIDOS"},
+      {"DECLINE", "RECUSAR"},
+      {"SEARCHING FOR PLAYERS", "PROCURANDO JOGADORES"},
+      {"Players on the LAN and Radmin VPN are found automatically.", "Jogadores na LAN e na Radmin VPN são encontrados automaticamente."},
+      {"Over the internet: the address below or ao2_friends in settings/online.toml.", "Pela internet: o endereço abaixo ou ao2_friends em settings/online.toml."},
+      {"  ·  hosting a game", "  ·  hospedando um jogo"},
+      {"SENDING", "ENVIANDO"},
+      {"AWAITING REPLY", "AGUARDANDO RESPOSTA"},
+      {"ACCEPTED", "ACEITO"},
+      {"DECLINED", "RECUSADO"},
+      {"NOT DELIVERED", "NÃO ENTREGUE"},
+      {"NOT JOINED", "NÃO ENTROU"},
+      {"GAME VERSIONS DIFFER", "VERSÕES DIFERENTES"},
+      {"Yours: %s", "Sua: %s"},
+      {"Co-op needs the same version on both PCs, otherwise the game desyncs.", "O coop exige a mesma versão nos dois PCs, senão o jogo dessincroniza."},
+      {"different version", "versão diferente"},
+      {"has a different version of the game", "tem uma versão diferente do jogo"},
+      {"AGAIN", "DE NOVO"},
+      {"INVITE", "CONVIDAR"},
+      {"To invite, create a game: Campaign Mode → Private Co-op Game.", "Para convidar, crie um jogo: Modo Campanha → Jogo Coop Privado."},
+      {"BY ADDRESS", "POR ENDEREÇO"},
+      {"IP or IP:port", "IP ou IP:porta"},
+      {"FIND", "BUSCAR"},
+      {"Couldn't read the address.", "Não foi possível ler o endereço."},
+      {"UDP %u must be open on both PCs (firewall)", "A porta UDP %u deve estar aberta nos dois PCs (firewall)"},
+      {"CLOSE", "FECHAR"},
+      {"Create a game first: Campaign Mode - Private (or Public) Co-op Game.", "Crie um jogo antes: Modo Campanha - Jogo Coop Privado (ou Público)."},
+      {"Debug menu", "Menu de depuração"},
+      {"Online co-op: actions go to both players.", "Coop online: as ações valem para os dois jogadores."},
+      {"Online co-op: available while a level is running.", "Coop online: disponível enquanto uma fase está em andamento."},
+      {"God mode (my character)", "Modo Deus (meu personagem)"},
+      {"God mode", "Modo Deus"},
+      {"FPS counter", "Contador de FPS"},
+      {"Off", "Desligado"},
+      {"Detailed", "Detalhado"},
+      {"Native renderer only (ao2_native_gpu).", "Somente no renderizador nativo (ao2_native_gpu)."},
+      {"%s toggles it in game too. Detailed: frame time,", "%s alterna também no jogo. Detalhado: tempo de quadro,"},
+      {"GPU load and temperature, CPU load, video and system memory.", "carga e temperatura da GPU, carga da CPU, memória de vídeo e do sistema."},
+      {"Load checkpoint", "Carregar checkpoint"},
+      {"Difficulty", "Dificuldade"},
+      {"No files in %s", "Nenhum arquivo em %s"},
+      {"Mission ", "Missão "},
+      {"  (start)", "  (início)"},
+      {"Load", "Carregar"},
+      {"Loads for both. Your partner needs the same", "Carrega para os dois. Seu parceiro precisa dos mesmos"},
+      {"files (a DLC checkpoint without the DLC breaks his game).", "arquivos (um checkpoint de DLC sem a DLC estraga o jogo dele)."},
+      {"Double-click loads too. Saving the game writes", "Clique duplo também carrega. Salvar o jogo grava"},
+      {"the loaded checkpoint to the profile as the current one.", "o checkpoint carregado no perfil como o atual."},
+      {"Somalia", "Somália"},
+      {"Afghanistan", "Afeganistão"},
+      {"Iraq", "Iraque"},
+      {"Aircraft carrier", "Porta-aviões"},
+      {"China", "China"},
+      {"Miami", "Miami"},
+      {"Kiev (DLC)", "Kiev (DLC)"},
+      {"Miami, alternate ending (DLC)", "Miami, final alternativo (DLC)"},
+      {"Frame", "Quadro"},
+      {"%5.1f ms", "%5.1f ms"},
+      {"max %.1f", "máx. %.1f"},
+      {"%.2f / %.1f GB", "%.2f / %.1f GB"},
+      {"? / %.1f GB", "? / %.1f GB"},
+      {"%.1f / %.1f GB", "%.1f / %.1f GB"},
+      {"game %.2f", "jogo %.2f"},
+      {"game %.0f%%", "jogo %.0f%%"},
+      {"Graphics", "Gráficos"},
+      {"Open", "Abrir"},
+      {"Display", "Tela"},
+      {"Effects", "Efeitos"},
+      {"Ambient occlusion", "Oclusão de ambiente"},
+      {"Motion blur", "Desfoque de movimento"},
+      {"Depth of field", "Profundidade de campo"},
+      {"Shadow resolution", "Resolução de sombras"},
+      {"Low", "Baixa"},
+      {"High", "Alta"},
+      {"Graphics and controls", "Gráficos e controles"},
+      {"Exit", "Sair"},
+      {"Display mode", "Modo de tela"},
+      {"Fullscreen", "Tela cheia"},
+      {"Windowed", "Janela"},
+      {"Render resolution", "Resolução de render"},
+      {"Resolution: after restart", "Resolução: após reiniciar"},
+      {"Aspect ratio", "Proporção"},
+      {"Aspect ratio: after restart", "Proporção: após reiniciar"},
+      {"Auto", "Auto"},
+      {"Resolution: applies on Accept", "Resolução: aplica ao Aceitar"},
+      {"Vertical sync", "Sincronia vertical"},
+      {"Wider view", "Visão ampla"},
+      {"On", "Ligado"},
+      {"FPS limit", "Limite de FPS"},
+      {"Anisotropic filtering", "Filtro anisotrópico"},
+      {"Anti-aliasing", "Antisserrilhado"},
+      {"Controls", "Controles"},
+      {"Default keys", "Teclas padrão"},
+      {"Press again to reset", "Aperte de novo para redefinir"},
+      {"Press a key...", "Pressione uma tecla..."},
+      {"Section", "Seção"},
+      {"Movement", "Movimento"},
+      {"Combat", "Combate"},
+      {"Other", "Outros"},
+      {"Mouse sensitivity", "Sensib. do mouse"},
+      {"Move forward", "Andar para frente"},
+      {"Move back", "Andar para trás"},
+      {"Move left", "Ir à esquerda"},
+      {"Move right", "Ir à direita"},
+      {"Crouch", "Agachar"},
+      {"Roll / cover / vault", "Rolar / cobertura"},
+      {"Use / heal / confirm", "Usar / curar / confirmar"},
+      {"Fire", "Atirar"},
+      {"Aim", "Mirar"},
+      {"Reload", "Recarregar"},
+      {"Inventory", "Inventário"},
+      {"Co-op commands", "Comandos coop"},
+      {"Cancel / back", "Cancelar / voltar"},
+      {"Right stick (R3)", "Analógico dir. (R3)"},
+      {"Advance", "Avançar"},
+      {"Partner view", "Ver parceiro"},
+      {"Regroup", "Reagrupar"},
+      {"Hold position", "Manter posição"},
+      {"GPS", "GPS"},
+      {"Inventory (hold)", "Inventário (segurar)"},
+      {"Primary weapon", "Arma primária"},
+      {"Secondary weapon", "Arma secundária"},
+      {"Special weapon", "Arma especial"},
+      {"Grenades", "Granadas"},
+      {"Pause", "Pausa"},
+      {"LMB", "Clique esq."},
+      {"RMB", "Clique dir."},
+      {"MMB", "Clique meio"},
+      {"Mouse 4", "Mouse 4"},
+      {"Mouse 5", "Mouse 5"},
+      {"Up", "Cima"},
+      {"Down", "Baixo"},
+      {"Left", "Esquerda"},
+      {"Right", "Direita"},
+      {"Space", "Espaço"},
+  };
+  // clang-format on
+
   std::atomic<Lang> g_game_lang{Lang::kEn};
+
+  const std::unordered_map<std::string_view, const char *> &PtTable()
+  {
+    static const auto table = [] {
+      std::unordered_map<std::string_view, const char *> t;
+      for (const auto &[en, pt] : kPt)
+      {
+        t.emplace(en, pt);
+      }
+      return t;
+    }();
+    return table;
+  }
 
   const std::unordered_map<std::string_view, const Row *> &Table()
   {
@@ -327,6 +517,7 @@ namespace
     std::transform(code.begin(), code.end(), code.begin(), [](unsigned char c) { return char(std::tolower(c)); });
     static const std::pair<const char *, Lang> kCodes[] = {
         {"en", Lang::kEn},  {"int", Lang::kEn}, {"eng", Lang::kEn}, {"ru", Lang::kRu}, {"rus", Lang::kRu},
+        {"pt", Lang::kPt},  {"ptb", Lang::kPt},
         {"de", Lang::kDe},  {"deu", Lang::kDe}, {"fr", Lang::kFr},  {"fra", Lang::kFr}, {"es", Lang::kEs},
         {"esn", Lang::kEs}, {"esm", Lang::kEs}, {"it", Lang::kIt},  {"ita", Lang::kIt},
     };
@@ -372,6 +563,11 @@ namespace ao2::text
     if (lang == Lang::kEn)
     {
       return en;
+    }
+    if (lang == Lang::kPt)
+    {
+      auto pt = PtTable().find(en);
+      return pt == PtTable().end() ? en : pt->second;
     }
     auto it = Table().find(en);
     if (it == Table().end())

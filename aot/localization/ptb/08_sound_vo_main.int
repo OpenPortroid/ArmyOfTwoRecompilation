@@ -1,0 +1,1428 @@
+[1_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Rios para s3kShUn8. Estamos no Aeroporto Marathon. O Dalton está mantendo a Murray de refém na Sede da SSC. Sabe qual é o caminho mais rápido pra chegar lá?" , Time=0)
+[10_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Cara, espero que você esteja certo." , Time=0)
+[100_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: E no sétimo dia o Senhor criou a eletricidade, pra fazer funcionar o seu monotrilho." , Time=0)
+[100A_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Vamos pro monotrilho. Já deve estar funcionando." , Time=0)
+[101_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Vamos nessa!" , Time=0)
+[102_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Cadê a porra da estação do monotrilho?" , Time=0)
+[103_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente deve ver se continuar seguindo os trilhos." , Time=0)
+[104_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ali está a estação do monotrilho." , Time=0)
+[105_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Por que essa coisa não anda?" , Time=0)
+[106_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Acho que o vagão de trás está preso." , Time=0)
+[107_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Você tem toda a razão, cara." , Time=0)
+[108_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Precisamos soltar o engate entre os vagões e apertar a ignição ao mesmo tempo." , Time=0)
+[109_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Beleza. Vamos tentar." , Time=0)
+[11_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Parece que um furacão passou por aqui." , Time=0)
+[110_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Essa coisa está caindo aos pedaços!" , Time=0)
+Subtitles[1]=(Text="SALEM: Não sei se a gente chega até a torre." , Time=1.54)
+[111_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Bom, talvez chegasse se você atirasse de verdade" , Time=0)
+Subtitles[1]=(Text="RIOS: em alguns desses filhos da puta!" , Time=1.61)
+[112_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Já matou aquele desgraçado do Clyde?" , Time=0)
+[113_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não... Escuta, Cha..." , Time=0)
+[114_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Ha ha ha. Brincadeira. Eu sei que você ainda não achou o Clyde. Sabe como eu sei?" , Time=0)
+[115_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Hã..." , Time=0)
+[116_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Eu invado as câmeras dos seus capacetes. Agora posso assistir você matar o Clyde pessoalmente. Mas se você cagar tudo, eu também vejo! Tchau!" , Time=0)
+[117_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você não devia ter mentido pro Cha Min Soo. Estamos fodidos quando ele descobrir que o Clyde morreu na queda do avião." , Time=0)
+[118_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Relaxa, cara. A gente dá um jeito." , Time=0)
+[119_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você sempre diz isso... E a gente nunca dá." , Time=0)
+[12_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Você é um comediante e tanto, Elliot." , Time=0)
+[120_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza. Essa é a nossa parada!" , Time=0)
+[121_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="DALTON: Então, vocês encontraram o caminho até o ninho de marimbondos?" , Time=0)
+Subtitles[1]=(Text="DALTON: Pena que todos os meus homens sabem que vocês aceitaram um contrato" , Time=3.37)
+Subtitles[2]=(Text="DALTON: dos terroristas pra matar um senador americano." , Time=5.43)
+Subtitles[3]=(Text="DALTON: Vejam bem, os meus homens são gente de bem." , Time=8.24)
+Subtitles[4]=(Text="DALTON: Eles não vão deixar assassinos como vocês" , Time=10.1)
+Subtitles[5]=(Text="DALTON: saírem deste prédio vivos." , Time=11.6)
+[122_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="DALTON: Sinto muito que tenha chegado a isso." , Time=0)
+Subtitles[1]=(Text="DALTON: Eu gostava de trabalhar com vocês dois." , Time=2.7)
+Subtitles[2]=(Text="DALTON: Mas é isso que acontece" , Time=5.01)
+Subtitles[3]=(Text="DALTON: quando se tenta fazer justiça com as próprias mãos." , Time=6.84)
+[123_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Dá pra acreditar que ele já foi nosso amigo?" , Time=0)
+[124_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Sabe como dizem: o poder corrompe." , Time=0)
+[125_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É, ele adora poder. Aposto o que quiser que ele está no último andar, sentado na mesa cara dele, na sala de canto enorme, esperando a gente." , Time=0)
+[126_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Vamos descobrir." , Time=0)
+[127_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: O único jeito de subir é o elevador executivo." , Time=0)
+[127a_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Tem mais dois guardas pessoais do Clyde! Peguem eles! Tchau!" , Time=0)
+[127b_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Tem um guarda pessoal do Clyde." , Time=0)
+Subtitles[1]=(Text="CHA MIN SOO: É bom matar ele! Tchau!" , Time=2.17)
+[127c_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Tem outro guarda do Clyde!" , Time=0)
+Subtitles[1]=(Text="CHA MIN SOO: Vocês dois é melhor pegarem ele!" , Time=2.11)
+[128_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Aqui está o elevador executivo." , Time=0)
+[129_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: E aí, este é o elevador executivo." , Time=0)
+[13_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152500"
+Subtitles[0]=(Text="RIOS: Estas devem ser as portas duplas" , Time=0)
+[130_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não está funcionando." , Time=0)
+[131_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Então como a gente sobe?" , Time=0)
+[132_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Parece que quebrou." , Time=0)
+[133_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Ei, Eight. Estamos no saguão da Torre SSC" , Time=0)
+Subtitles[1]=(Text="RIOS: e precisamos usar o elevador executivo," , Time=2.65)
+Subtitles[2]=(Text="RIOS: mas não está funcionando. Pode nos ajudar?" , Time=4.52)
+[133A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 3' c0mp||c4d0.  V1r3 0 d15jun70r n4 54|4 d3 c0n7r0|3 d0 3|3v4d0r" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: n0 m3z4n1n0. D3p015, d1g173 um c0d160 n4" , Time=1.5)
+Subtitles[2]=(Text="s3kShUn8: c4b1n3 d3 53gur4nc4 d0 54gu40." , Time=3)
+Subtitles[3]=(Text="s3kShUn8: V0u c0m3c4r 4 pr0cur4r 0 c0d160." , Time=4.5)
+Subtitles[4]=(Text="s3kShUn8: -S8" , Time=6)
+[134_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O que ele está dizendo?" , Time=0)
+[135_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele diz que a gente precisa ligar um disjuntor na sala de controle do elevador, no segundo andar. Depois, digitar um código na cabine de segurança do saguão." , Time=0)
+[136_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Talvez a gente devesse ficar de cabeça pra baixo e cuspir moedinhas enquanto faz isso, porque já não é complicado o bastante?" , Time=0)
+[137_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Por que você sempre tem que ser tão espertinho?" , Time=0)
+[138_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Esta é a sala de controle do elevador." , Time=0)
+[139_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Aqui está a sala de controle do elevador." , Time=0)
+[14_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Merda, está trancada." , Time=0)
+[140_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vamos descer até o console de segurança." , Time=0)
+[141_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Faça-se a luz!  Beleza, hora de digitar o código." , Time=0)
+[142_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios para Eight. Chegamos. Qual é o código?" , Time=0)
+[142A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: C-1-6-8" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=1.5)
+[143_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Entendi. Valeu." , Time=0)
+[144_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tyse, qual é o código?" , Time=0)
+[145_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios para Eight. Chegamos. Qual é o código?" , Time=0)
+[146_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele diz que é \"c-um-seis-oito.\"" , Time=0)
+[147_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Beleza. Entendi." , Time=0)
+[148_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Que porra foi essa?" , Time=0)
+[149_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: E agora, como a gente vai subir?" , Time=0)
+[15_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Será que esse é o caminho pra área de bagagem?" , Time=0)
+[150_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Temos que correr e pular pra cima do teto do elevador." , Time=0)
+[151_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Massa, igualzinho nos filmes." , Time=0)
+[152_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Dá pra pular daqui pro elevador." , Time=0)
+[152A_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Vamos, vamos acabar com esses caras e pegar o elevador!" , Time=0)
+[153_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Dá pra pular daqui pro elevador." , Time=0)
+[154_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Beleza, Eight. Estamos em cima do elevador." , Time=0)
+Subtitles[1]=(Text="RIOS: Dá pra levar a gente até o último andar?" , Time=1.98)
+[155_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: O que tá acontecendo, Eight - por que a gente parou?" , Time=0)
+[156_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Então retome o controle do elevador. Rápido! Câmbio e desligo." , Time=0)
+[157_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Indo pros andares de cima? Só se eu deixar. O que vocês não entendem é que essa palhaçada de matar o senador pode queimar a SSC. E eu não posso deixar ninguém queimar a SSC." , Time=0)
+[158_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Merda!" , Time=0)
+[159_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Lá vamos nós..." , Time=0)
+[16_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Porra de porta trancada." , Time=0)
+[160_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ei, Eight, precisamos desse elevador funcionando agora!" , Time=0)
+[161_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Dá pra ligar o elevador, POR FAVOR!" , Time=0)
+[162_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Eight - tira a gente daqui, porra!" , Time=0)
+[163_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ei, Eight. Dá pra checar as câmeras de segurança dos andares de cima? Precisamos achar onde o Dalton está agora." , Time=0)
+[164_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ele disse que não sabe onde ele está agora, mas vai mostrar um vídeo de alguns minutos atrás." , Time=0)
+[165_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Quem é aquele?" , Time=0)
+[166_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Não sei." , Time=0)
+[167_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Espero que não seja o Stockwell." , Time=0)
+[168_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não acredito que todos esses anos a gente nunca soube quem o Dalton realmente era." , Time=0)
+[169_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Sabe - você me encheu o saco com essas teorias da conspiração - mas parece que eu estava certo." , Time=0)
+[17_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ei, Eight - Estamos nas portas duplas do quarto andar. Tem algum tipo de trava magnética. Dá pra fazer alguma coisa?" , Time=0)
+[170_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Tá, tá, você tinha razão. É isso que você quer? Quer dizer \"eu avisei\"? Pode falar." , Time=0)
+[171_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eu avisei." , Time=0)
+[172_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pronto. Você disse. Que tal?" , Time=0)
+[173_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ótimo." , Time=0)
+[174_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Beleza, vamos lá." , Time=0)
+[175_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Quem está aí?" , Time=0)
+[176_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="STOCKWELL: Não atirem!" , Time=0)
+[177_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Quem tá me ligando agora?!" , Time=0)
+[179_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="STOCKWELL: Tyson Rios, aqui é Ernest Stockwell. Preciso que você me tire daqui. Pago o que vocês quiserem." , Time=0)
+[18_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ótimo. Valeu. Câmbio e desligo." , Time=0)
+[180_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Não quero seu dinheiro." , Time=0)
+Subtitles[1]=(Text="RIOS: Quero que você nos ajude a limpar nossos nomes." , Time=1.15)
+[181_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="STOCKWELL: Tenho cópias das provas espalhadas em quatro servidores na sala de arquivos. Vocês podem enviar, mas rápido. O Dalton está lá em cima tentando destruir tudo." , Time=0)
+[182_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Certo, e mais uma coisa. Se você está envolvido nessa merda - de qualquer jeito - precisa se entregar. Amigos nossos foram mortos." , Time=0)
+[183_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="STOCKWELL: Eu vou, só me tirem daqui." , Time=0)
+[184_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza. A gente cuida do Dalton e volta pra te buscar." , Time=0)
+[185_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="STOCKWELL: Obrigado." , Time=0)
+[186_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="SALEM: Idiota! O Stockwell ofereceu dinheiro pra gente," , Time=0)
+Subtitles[1]=(Text="e você veio com \"Não, faça a coisa certa.\" " , Time=2.975)
+Subtitles[2]=(Text="Desde quando você virou escoteiro, porra??" , Time=4.8)
+[187_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele disse que vai se entregar - isso é o que importa." , Time=0)
+[188_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Aham, vai nada. Esse cara vai estar na Venezuela até o amanhecer." , Time=0)
+[189_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Essa é a sala de arquivos." , Time=0)
+[19_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ainda tá preso em alguma coisa. Temos que empurrar juntos." , Time=0)
+[190_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Merda - isso é muito dinheiro." , Time=0)
+[191_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Aposto que é o assistente do Stockwell - não foi muito longe." , Time=0)
+[192_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Você é um idiota, Tyse. A gente podia ter ficado com toda essa grana." , Time=0)
+[193_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Vamos descer e achar o Dalton." , Time=0)
+[194_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: Permissão para atirar, senhor?" , Time=0)
+[195_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Tirem esses dois da minha vida!" , Time=0)
+[196_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não acredito. Ele voltou dos mortos." , Time=0)
+[197_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ninguém poderia ter sobrevivido àquela queda de avião." , Time=0)
+[198_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente sobreviveu." , Time=0)
+[199_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Bom, pelo menos a Cha Min Soo não vai mais ficar puta com a gente..." , Time=0)
+[1A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 4c4b31 d3 v3r 4 Murr4y numa c4m3r4 d3 53gur4nc4." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: 3l4 74 pr35a no" , Time=2)
+Subtitles[2]=(Text="s3kShUn8: 43r0por70 M4r47h0n - n4 4r34 d3 b4g463n5." , Time=4)
+Subtitles[3]=(Text="s3kShUn8: -S8" , Time=5)
+[2_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não é possível! Como a gente chega até ela?" , Time=0)
+[20_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CHA MIN SOO: Vocês destruíram meu avião!?? Mataram meu piloto!?? Eu faço um favor e é assim que vocês me pagam?" , Time=0)
+[200_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Bom, o que estão esperando? Ali está ele. Matem ele. Façam ele sofrer! E matem os guarda-costas dele!" , Time=0)
+[201_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Estamos trabalhando nisso, Cha Min. Só esperando o tiro perfeito aparecer, sabe." , Time=0)
+[202_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Vocês estão me frustrando... Por isso eu não trabalho com mercenários." , Time=0)
+[203_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Contratados, Cha Min. Somos contratados, não mercenários." , Time=0)
+[204_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Certo. Tchau." , Time=0)
+[205_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Esse é um dos servidores de que o Stockwell falou. Devíamos enviar o backup que ele fez pro nosso servidor FTP." , Time=0)
+[206_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei, esse é um dos servidores de que o Stockwell falou. Vou enviar o backup que ele fez pro nosso FTP." , Time=0)
+[207_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Aqui tem outro servidor." , Time=0)
+[208_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Outro servidor aqui, mano." , Time=0)
+[209_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, aqui tem outro servidor." , Time=0)
+[21_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não fomos nós. Foi o Clyde. Ele matou o piloto e derrubou o avião." , Time=0)
+[210_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Aqui tem mais um desses servidores. Vou enviar os dados." , Time=0)
+[211_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Aqui está o último servidor." , Time=0)
+[212_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O último servidor, mano." , Time=0)
+[212a_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Rios! Salem! Aquele é um dos guarda-costas do Clyde! Matem ele!" , Time=0)
+[212b_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Tem outro guarda-costa do Clyde! Matem ele!" , Time=0)
+[212c_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Rios! Salem! Mais um dos guardas pessoais do Clyde! Matem ele!" , Time=0)
+[212d_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Pega esse guarda! Pega esse guarda! Vamos! Matem ele!" , Time=0)
+[213_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: Quer um pedaço disso aqui? Vem pegar, cuzão." , Time=0)
+[213a_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: Quer um pedaço disso aqui? Vem pegar!" , Time=0)
+[214_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: \"Cuzão?\" Quem fala isso?" , Time=0)
+[214a_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: O Clyde é um psicopata total!" , Time=0)
+[215_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não sei qual é o problema desse cara, mano." , Time=0)
+[216_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: O que foi, achou que ia ganhar uma medalha por dedurar eu e o Dalton, é? Pois o que vocês vão ganhar é uma porra de uma bala na porra da cabeça." , Time=0)
+[217_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="CLYDE: Vou arrebentar vocês de um jeito que" , Time=0)
+Subtitles[1]=(Text="CLYDE: nem a sua própria mãe vai reconhecer." , Time=2.19)
+[218_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei - deixa a minha mãe fora disso." , Time=0)
+[219_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: Vou matar vocês dois, abrir vocês no meio e ir pra aula de aeróbica usando suas tripas de aquecedor de perna!" , Time=0)
+[219a_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CLYDE: Vou curtir pra caralho matar vocês!" , Time=0)
+[22_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Clyde? Quem é Clyde?" , Time=0)
+[220_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Quer dizer - isso nem faz sentido, faz?" , Time=0)
+[221_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: Vou matar vocês dois. Depois vou drenar todo o sangue, tirar os ossos, botar o corpo numa cadeirona com uns elfos e renas, sentar no colo de vocês e contar todas as coisas legais que eu quero de Natal." , Time=0)
+[221a_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text=": Quando eu acabar com vocês, nem todos os cavalos e todos os homens do rei vão conseguir juntar vocês dois, filhos da puta, de novo!" , Time=0)
+[222_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Esse cara claramente teve uma infância fodida." , Time=0)
+[223_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você acha?" , Time=0)
+[223A_MIA_CLYDE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="CLYDE: Isso não acabou!" , Time=0)
+[224_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Queria ver ele voltar dessa." , Time=0)
+[225_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Mano - não tem como. Ele está MORTO." , Time=0)
+[226_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Finalmente. Vocês mataram ele. Vou transferir uma coisinha especial pra conta bancária de vocês, de agradecimento. Tchau." , Time=0)
+[227_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Agora só falta pegar o Dalton!" , Time=0)
+[228_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O Dalton está do outro lado dessas portas. Está pronto?" , Time=0)
+[229_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Estou. Pronto." , Time=0)
+[23_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Phillip Clyde. Ele trabalha pra SSC." , Time=0)
+[230_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pronto pra acabar com o Dalton?" , Time=0)
+[231_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Sim. Vamos lá." , Time=0)
+[232_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Merda. Ele está fugindo." , Time=0)
+[233_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não está, não. Vamos." , Time=0)
+[234_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="DALTON: Vocês lembram da Somália? Nossa unidade inteira estava encurralada.  Os homens do Mo'Alim vinham pra acabar com a gente. Foi a única vez na vida em que perdi a esperança de verdade, em que senti medo de verdade. Mas vocês dois - acho que nunca perceberam quantas vidas salvaram naquele dia, o que fizeram pela nossa unidade, nem o orgulho que eu senti de vocês. E olho pra vocês agora, depois de tudo isso..." , Time=0)
+[235_MIA_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: E sei que vocês amadureceram muito - nesses quinze anos. Mas - vocês ainda são meus garotos. Ainda são os melhores dos melhores - porque fui eu que treinei vocês pra serem os melhores. A gente passou por muita coisa - nós três. E eu - eu vou sentir falta de vocês." , Time=0)
+[236_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente derruba ele?" , Time=0)
+[237_MIA_STOCKWELL SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="STOCKWELL: Vocês deixaram ele escapar. Foi um grande erro." , Time=0)
+[238_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A pesquisa diz:" , Time=0)
+[239_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você está morto." , Time=0)
+[24_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Ohhh... Odeio esse filho da puta." , Time=0)
+[240_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vamos - vamos dar o fora daqui." , Time=0)
+[25_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152500"
+Subtitles[0]=(Text="CHA MIN SOO: Vou dizer uma coisa. Mando um helicóptero buscar vocês no telhado do aeroporto. Usem o helicóptero pra achar aquele filho da puta do Clyde e matar ele pra mim. E - se virem algum guarda pessoal do Clyde, matem também!" , Time=0)
+[26_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Mas o Clyde..." , Time=0)
+[27_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: ...vai sumir. A gente pega ele pra você." , Time=0)
+[28_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Ah, e... Se vocês também baterem meu helicóptero, eu mesmo arranco o saco de vocês fora. Tchau." , Time=0)
+[28a_MIA_CHA_MIN_SOO SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="CHA_MIN_SOO: Ah, e... Se vocês também baterem meu helicóptero, eu mato vocês com as minhas próprias mãos. Devagar... Tchau." , Time=0)
+[29_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O que você está fazendo, cara? O Clyde morreu na queda do avião." , Time=0)
+[2A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: pr0cur3m 4s p0rt4s dup|4s n0 4nd4r d3 c1m4." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=2)
+[3_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele disse que a Murray está presa aqui - no aeroporto. Ela está na área de bagagens. A gente tem que procurar umas portas duplas no último andar." , Time=0)
+[30_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Relaxa, cara. Vai dar tudo certo." , Time=0)
+[31_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Olha só isso! Parece que o Dalton" , Time=0)
+Subtitles[1]=(Text="SALEM: está mandando a empresa inteira atrás da gente." , Time=1.43)
+[32_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Agradeça por a gente ainda não ter tido que lutar contra nenhum amigo nosso." , Time=0)
+[33_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É. Isso ia ser foda." , Time=0)
+[34_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, Eight. Está me ouvindo? Os portões da área de bagagens estão fechados. Dá pra fazer alguma coisa?" , Time=0)
+[34A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 3u c0n53gu0 4br1r 3l3s 4 d1s74nc14. 4gu4rd3m." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=2)
+[35_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele vai abrir os portões à distância." , Time=0)
+[36_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Rios! Salem! Aqui em cima!" , Time=0)
+[37_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Alice. Você está bem?" , Time=0)
+[38_MIA_SSC_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="MERC.: Cala a boca, vadia!" , Time=0)
+[39_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Venham pra cá, porra! Rápido, por favor!" , Time=0)
+[4_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Último andar - portas duplas. Entendido." , Time=0)
+[40_MIA_SSC_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="MERC.: Falei pra calar a porra da boca!" , Time=0)
+[41_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: AAAh!! Merda! Merda! Merda!" , Time=0)
+[42_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Vamos, pessoal!" , Time=0)
+Subtitles[1]=(Text="MURRAY: Vocês precisam empurrar a rampa até esta cela." , Time=1.25)
+[43_MIA_SSC_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="MERC.: Quer morrer, vadia?" , Time=0)
+[44_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda, a rampa travou naquela porta." , Time=0)
+[45_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Então vamos ver se a gente consegue mover a porta!" , Time=0)
+[45A_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A porta é logo por aqui!" , Time=0)
+[45B_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A porta é logo ali na frente, me segue." , Time=0)
+[46_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Beleza. A porta saiu do caminho. Vamos empurrar a rampa juntos." , Time=0)
+[47_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Alice. Você está bem? O que fizeram com você?" , Time=0)
+[48_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Uau, Alice. O que fizeram com você?" , Time=0)
+[49_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês não querem saber." , Time=0)
+[5_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Cara - o Cha Min Soo vai ficar puto" , Time=0)
+Subtitles[1]=(Text="SALEM: quando descobrir que a gente destruiu o avião dele." , Time=2.1)
+[50_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês conseguem me tirar daqui?!" , Time=0)
+[51_08_hint_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vamos derrubar esses dois guardas ao mesmo tempo." , Time=0)
+[51_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vamos, pessoal, me tirem daqui!" , Time=0)
+[52_08_hint_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Está vendo aqueles guardas? Vamos acabar com eles juntos." , Time=0)
+[52_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Me tirem logo daqui, pessoal!" , Time=0)
+[53_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Obrigada." , Time=0)
+[54_MIA_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Todo mundo sempre dizia que, se eu não tivesse entrado na SSC, já estaria preso. Minha mãe ficou tão orgulhosa de eu ter conseguido esse emprego, de ganhar dinheiro. E agora a gente provavelmente vai acabar preso do mesmo jeito por causa dessa história do Whitehorse." , Time=0)
+[54_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Não consigo ficar de pé. Algum de vocês pode me carregar?" , Time=0)
+[55_MIA_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: A gente dá um jeito de sair dessa. O Stockwell vai nos apoiar." , Time=0)
+[55_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Estou com você. Vai ficar tudo bem." , Time=0)
+[56_MIA_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Você nunca trocou duas palavras com o cara. Como sabe que ele vai nos ajudar?" , Time=0)
+[56_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Te peguei, Alice." , Time=0)
+[56a_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Ei - não tive chance de contar," , Time=0)
+Subtitles[1]=(Text="mas quando eu descobri tudo," , Time=3.6)
+Subtitles[2]=(Text="transferi um pouco do dinheiro da SSC pra uma conta offshore pra vocês." , Time=4.8)
+Subtitles[3]=(Text="Tipo um presente de despedida da empresa." , Time=8.7)
+Subtitles[4]=(Text="Assim que eu achar uma conexão com a internet," , Time=11.1)
+Subtitles[5]=(Text="passo pras contas de vocês." , Time=13.3)
+Subtitles[6]=(Text="Vocês acabaram de merecer!" , Time=15.2)
+[57_MIA_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ele tem que ajudar. Ou estamos fodidos." , Time=0)
+[57_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, Eight - a gente precisa que esse portão seja aberto!" , Time=0)
+[57A_MIA_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 7r4b4|h4nd0 n155o!" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: -S8" , Time=1)
+[58_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Valeu, cara." , Time=0)
+[59_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês têm que parar o Dalton. Ele vai matar o Stockwell." , Time=0)
+[6_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Aquele avião custou uns vinte milhões fácil. Ele vai mandar nos matar." , Time=0)
+[60_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Que diferença faz se ele matar o Stockwell - aquele cara armou pra gente." , Time=0)
+[61_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="MURRAY: Não. Não foi ele. O Stockwell pode ter sabido que o Dalton" , Time=0)
+Subtitles[1]=(Text="estava quebrando algumas regras, mas não sabia que ele estava pondo tropas americanas" , Time=2.88)
+Subtitles[2]=(Text="em perigo pra fazer a SSC parecer boa. Quando o senador Whitehorse foi morto," , Time=6.7)
+Subtitles[3]=(Text="o Stockwell descobriu e tentou entregar o Dalton pros federais." , Time=10.78)
+[62_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Está dizendo que o Dalton é o cérebro de tudo isso?" , Time=0)
+[63_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Sim. Ele vem vazando posições de tropas e pressionando o Congresso a privatizar as Forças Armadas. Só mantém o Stockwell por perto pra ele levar a culpa se alguém descobrir." , Time=0)
+[64_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: E o que acontece se esse projeto passar" , Time=0)
+Subtitles[1]=(Text="SALEM: e eles privatizarem as Forças Armadas?" , Time=1.69)
+[65_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: A SSC vira a entidade militar mais poderosa do mundo. O Dalton mata o Stockwell e faz parecer acidente. Aí ele mesmo toca a SSC - e faz coisas terríveis." , Time=0)
+[66_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tipo o quê?" , Time=0)
+[67_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Fazer países reféns, declarar guerra por lucro - o que ele quiser." , Time=0)
+[68_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Vocês têm que salvar o Stockwell. Ele é o único que pode provar que vocês são inocentes. E têm que matar o Dalton, ou ele mata vocês." , Time=0)
+[69_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza. A gente vai." , Time=0)
+[69a_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Esse é um dos guardas pessoais do Clyde." , Time=0)
+[69b_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O Cha Min Soo não disse que ia pagar a gente se a gente acabasse com esses caras?" , Time=0)
+[69c_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Disse. Disse sim." , Time=0)
+[69d_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Ei, aquele cara é guarda pessoal do Clyde." , Time=0)
+[69e_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ah, é - o Cha Min Soo disse que ia pagar pra gente matar esses caras." , Time=0)
+[7_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Nem a pau, cara. Ele não faria isso." , Time=0)
+[70_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Me ajuda com esse portão." , Time=0)
+[71_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Elliot - me ajuda com esse portão!" , Time=0)
+[72_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Vamos, cara. Me ajuda com essa porra de portão!" , Time=0)
+[73_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Me ajuda a levantar esse portão!" , Time=0)
+[74_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Preciso de uma mãozinha com esse portão, cara - vamos." , Time=0)
+[75_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Vamos, cara! Me ajuda a levantar esse portão!" , Time=0)
+[76_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza, Alice, eles deixam a gente perto da sede e depois levam você pro hospital." , Time=0)
+[77_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Perto? Vamos pousar no telhado." , Time=0)
+[78_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Esse é o helicóptero do Cha Min Soo, não vou arriscar." , Time=0)
+[79_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Se vocês não pegarem o Dalton, ele vai atrás de mim." , Time=0)
+[8_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: O cara é traficante de armas do mercado negro. Provavelmente manda matar gente todo dia." , Time=0)
+[80_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Fica tranquila. A gente pega ele." , Time=0)
+[81_MIA_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: E não deixem ele matar o Stockwell!" , Time=0)
+[82_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente precisa entrar na torre." , Time=0)
+[83_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Parece que vamos ter que achar outro jeito de entrar." , Time=0)
+[84_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não tem outro jeito de entrar." , Time=0)
+[85_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Vamos, cara. Quem quer, dá um jeito - e se a gente usar o monotrilho?" , Time=0)
+[86_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eu pensei nisso. Mas o monotrilho está sem energia." , Time=0)
+[87_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente pode ir até a usina de energia e religar." , Time=0)
+[88_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A usina de energia, é? Beleza. Vamos tentar." , Time=0)
+[89_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Lá está a usina de energia!" , Time=0)
+[9_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É, mas ele é nosso parceiro. A gente é unha e carne, cara. Ele não vai fazer algo tão drástico." , Time=0)
+[90_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Cuidado - olha aquilo." , Time=0)
+[91_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Merda. A gente tem que desligar a energia." , Time=0)
+[92_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não consigo chegar nos disjuntores do monotrilho - tem uns fios na água. Você tem que desligar a energia pra eu atravessar." , Time=0)
+[93_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Merda, cara. Tem uns fios na água. Preciso que você desligue a energia pra eu atravessar e achar o disjuntor do monotrilho." , Time=0)
+[93A_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, Elliot! Preciso que a energia volte pra eu abrir a porta! Pode religar pra mim?" , Time=0)
+[93B_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tyse, preciso que a energia volte pra abrir a porta. Pode religar?" , Time=0)
+[94_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Já achou aquele disjuntor?" , Time=0)
+[95_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Estou procurando, estou procurando." , Time=0)
+[96_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Achei!" , Time=0)
+[97_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="08_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Monotrilho! Monotrilho! Monotrilho!" , Time=0)
+[97A_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vamos até aquele monotrilho. Já deve estar funcionando." , Time=0)
+[98_MIA_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Por que a demora?" , Time=0)
+[99_MIA_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Estou tentando achar o disjuntor. Me dá um minuto." , Time=0)

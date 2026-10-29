@@ -1520,11 +1520,11 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Choice, Label = "Language", Key = "language",
-                    Values = new[] { "auto", "en", "ru", "fr", "de", "es", "it" },
-                    Names = new[] { "AUTO", "ENGLISH", "РУССКИЙ", "FRANÇAIS", "DEUTSCH", "ESPAÑOL", "ITALIANO" },
+                    Values = new[] { "auto", "en", "ru", "pt", "fr", "de", "es", "it" },
+                    Names = new[] { "AUTO", "ENGLISH", "РУССКИЙ", "PORTUGUÊS (BR)", "FRANÇAIS", "DEUTSCH", "ESPAÑOL", "ITALIANO" },
                     Desc = "Language of the game (text and voices) and of this launcher. Auto follows the language of Windows. " +
-                           "Russian is text only, with English voices. In co-op both players need the same voices: " +
-                           "English and Russian play together, the other languages only with the same language.",
+                           "Russian and Brazilian Portuguese are text only, with English voices. In co-op both players need the " +
+                           "same voices: English, Russian and Portuguese play together, the other languages only with the same language.",
                 },
                 new Row
                 {

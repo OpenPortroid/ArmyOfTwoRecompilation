@@ -1,0 +1,268 @@
+;; Army of Two DLC (Miami Alternate Ending): 10_sound_vo_main, Brazilian Portuguese
+
+[SE_L10_001_MURRAY_001 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Belo pouso." , Time=0)
+
+[SE_L10_002_SALEM_001 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Como você sabe?" , Time=0)
+
+[SE_L10_003_MURRAY_002 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Bom... não ouvi nenhum de vocês xingar." , Time=0)
+
+[SE_L10_004_RIOS_001 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: A moça nos conhece." , Time=0)
+
+[SE_L10_005_MURRAY_003 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Entrem na Sala Central das Instalações" , Time=0)
+Subtitles[1]=(Text="e não gastem bala à toa." , Time=2)
+
+[SE_L10_006_RIOS_002 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Dois guardas.  Vamos pegar eles no tiro de precisão." , Time=0)
+
+[SE_L10_007_SALEM_002 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Ei, que tal acertarmos esses caras de longe?" , Time=0)
+
+[SE_L10_013_MURRAY_004 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Pessoal, tem uma sala de energia no andar principal." , Time=0)
+Subtitles[1]=(Text="Vocês precisam desativar o que está mantendo o elevador de serviço lacrado." , Time=2)
+
+[SE_L10_014_SALEM_006 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Entendido.  E depois?" , Time=0)
+
+[SE_L10_015_MURRAY_005 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Vão pro andar seguinte." , Time=0)
+Subtitles[1]=(Text="Tem uma parede precisando de cirurgia desconstrutiva." , Time=1)
+
+[SE_L10_016_RIOS_005 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Tem um brutamontes parado na porta.  Vamos ter que derrubar ele." , Time=0)
+
+[SE_L10_017_MURRAY_006 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Já achou a sala de energia?" , Time=0)
+
+[SE_L10_018_MURRAY_007 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Pessoal, cortem a energia e abram o elevador!" , Time=0)
+
+[SE_L10_019_RIOS_006 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Achei." , Time=0)
+
+[SE_L10_020_SALEM_007 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Deve ser isso aqui." , Time=0)
+
+[SE_L10_021_SALEM_008 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Alice, estamos indo pro elevador." , Time=0)
+
+[SE_L10_022_RIOS_007 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Beco sem saída.  Essa é a sua ideia de entrada rápida?" , Time=0)
+
+[SE_L10_023_MURRAY_008 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Uns veem um beco sem saída, outros veem uma chance de pirotecnia." , Time=0)
+
+[SE_L10_025_MURRAY_010 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: O Quartel de Inteligência e Tática" , Time=0)
+Subtitles[1]=(Text="fica logo do outro lado dessa parede." , Time=2)
+
+[SE_L10_026_SALEM_009 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Odeio dizer isso, mas esse filho da puta de concreto tem que ir pro chão." , Time=0)
+
+[SE_L10_028_RIOS_008 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Lá vai!  Cubram-se!" , Time=0)
+
+[SE_L10_029_RIOS_009 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Alice, estamos do outro lado." , Time=0)
+
+[SE_L10_031_MURRAY_012 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Tenho certeza de que essa detonação não passou despercebida." , Time=0)
+Subtitles[1]=(Text="Vocês vão ter companhia." , Time=3)
+
+[SE_L10_032_RIOS_010 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Do tipo ruim.  Entendido.  A gente cuida disso" , Time=0)
+Subtitles[1]=(Text="e avisa quando estivermos no Quartel Tático." , Time=3)
+
+[SE_L10_033_MURRAY_013 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Não tem como errar." , Time=0)
+Subtitles[1]=(Text="Fica bem do lado do Quartel de Inteligência.  Câmbio, desligo." , Time=1)
+
+[SE_L10_034_SALEM_011 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Esse é o nosso passe pro Quartel Tático." , Time=0)
+
+[SE_L10_035_DALTON_001 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Que me enforquem.  A dupla improvável ataca de novo..." , Time=0)
+
+[SE_L10_036_DALTON_002 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Mas tem uma coisa que vocês nunca aprenderam - admitir a derrota." , Time=0)
+
+[SE_L10_037_DALTON_003 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Então aqui vai uma lembrança." , Time=0)
+Subtitles[1]=(Text="Desistam agora e morram com a pouca dignidade que ainda têm." , Time=2)
+
+[SE_L10_038_DALTON_004 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Agora, se me dão licença, tenho uma empresa pra dominar." , Time=0)
+Subtitles[1]=(Text="Meus rapazes aqui vão acompanhar vocês até a saída final." , Time=4)
+
+[33_afg_banter_rios SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Qual é o seu problema, cara?  Você atira feito mulherzinha." , Time=0)
+
+[34_afg_banter_salem SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Eu?  Eu detonei o dobro de caras que você." , Time=0)
+
+[35_afg_banter_rios SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Quer dizer que você desperdiçou o dobro de balas." , Time=0)
+
+[SE_L10_039_RIOS_011 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Alice, entramos e o Dalton também.  Você precisa nos levar até ele rápido." , Time=0)
+
+[SE_L10_040_MURRAY_014 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Então localizem a estação que controla" , Time=0)
+Subtitles[1]=(Text="o primeiro procedimento biométrico." , Time=2)
+
+[SE_L10_041_RIOS_012 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: A gente precisa de um jeito de entrar aí!" , Time=0)
+
+[SE_L10_042_SALEM_012 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Merda, abram essas portas!" , Time=0)
+
+[SE_L10_043_RIOS_013 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Reconhecimento de digital é o que você procura?" , Time=0)
+
+[SE_L10_044_SALEM_013 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Aqui!  Reconhecimento de digital!" , Time=0)
+
+[SE_L10_045_MURRAY_015 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Ativem isso.  Eu assumo daqui." , Time=0)
+
+[SE_L10_046_MURRAY_016 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: O próximo fica no andar principal.  Rápido." , Time=0)
+
+[SE_L10_047_SALEM_014 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Quantos mais a gente ainda vai conseguir irritar nesse lugar?" , Time=0)
+
+[SE_L10_048_RIOS_014 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Salem!  Aqui!  Preciso que você cubra minha retaguarda aí dentro!" , Time=0)
+
+[SE_L10_049_SALEM_015 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: De jeito nenhum que eu entro sozinho. Tyse, preciso que você me cubra!" , Time=0)
+
+[SE_L10_050_RIOS_015 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Reconhecimento de voz.  Murray?" , Time=0)
+
+[SE_L10_051_SALEM_016 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Murray, achei o reconhecimento de voz." , Time=0)
+
+[SE_L10_052_MURRAY_017 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Igual ao anterior.  Me coloquem online." , Time=0)
+
+[SE_L10_053_MURRAY_018 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: O último deve estar por aqui em algum lugar." , Time=0)
+
+[SE_L10_054_RIOS_016 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Beleza, isso controla o reconhecimento de retina." , Time=0)
+
+[SE_L10_055_SALEM_017 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Reconhecimento de retina... seja lá o que for isso." , Time=0)
+
+[SE_L10_056_MURRAY_019 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: É esse mesmo.  Mesma coisa." , Time=0)
+
+[SE_L10_057_MURRAY_020 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: O cofre é de vocês, pessoal.  Tragam uma lembrancinha pra mim." , Time=0)
+
+[SE_L10_058_RIOS_017 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Foi por essa porta que o Dalton passou." , Time=0)
+
+[SE_L10_059_SALEM_018 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Seguindo os passos do Dalton.  Odeio como isso soa." , Time=0)
+
+[SE_L10_060_SALEM_019 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Murray, suas habilidades de hacker é bom serem tão boas quanto as do S3kShUn8." , Time=0)
+
+[SE_L10_061_MURRAY_021 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Eu passo o dia inteiro olhando pra computador." , Time=0)
+Subtitles[1]=(Text="O mínimo que posso fazer é saber me virar neles." , Time=2)
+
+[SE_L10_063_COMP_VO_002 SoundNodeWave]
+Subtitles[0]=(Text="AUTOMATED VOICE: Autorização nível 1." , Time=0)
+
+[SE_L10_064_SALEM_020 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: O que será que eles têm aí" , Time=0)
+Subtitles[1]=(Text="que vale passar por toda essa merda?" , Time=1)
+
+[SE_L10_065_MURRAY_022 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Coisas que precisam desaparecer" , Time=0)
+Subtitles[1]=(Text=" - documentos incriminadores, provas de conspiração, artefatos roubados." , Time=2)
+
+[SE_L10_067_COMP_VO_004 SoundNodeWave]
+Subtitles[0]=(Text="AUTOMATED VOICE: Autorização nível 2." , Time=0)
+
+[SE_L10_068_RIOS_018 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Fique à vontade..." , Time=0)
+
+[SE_L10_070_SALEM_022 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Beleza... beleza..." , Time=0)
+
+[SE_L10_072_COMP_VO_006 SoundNodeWave]
+Subtitles[0]=(Text="AUTOMATED VOICE: Autorização nível 3." , Time=0)
+
+[SE_L10_075_RIOS_020 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Boa, Alice!  Avisamos quando o serviço estiver feito." , Time=0)
+
+[SE_L10_076_MURRAY_023 SoundNodeWave]
+Subtitles[0]=(Text="MURRAY: Deem o inferno pra ele.  Câmbio, desligo." , Time=0)
+
+[SE_L10_077_RIOS_021 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Está quieto demais aqui." , Time=0)
+
+[SE_L10_078_SALEM_024 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Satisfeito agora?" , Time=0)
+
+[SE_L10_079_SALEM_025 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Só tem uma saída pra isso.  Costas com costas!" , Time=0)
+
+[SE_L10_080_DALTON_005 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Parasitas.  Se eu procurar essa palavra na Wikipedia," , Time=0)
+Subtitles[1]=(Text="provavelmente vou ver uma foto das duas malditas caras de vocês." , Time=4)
+
+[SE_L10_081_DALTON_006 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Bom, vocês chegaram na hora certa." , Time=0)
+Subtitles[1]=(Text="Estou vestido pra brincar e equipado pra massacrar." , Time=2)
+
+[SE_L10_082_DALTON_007 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Cavalheiros... vamos?" , Time=0)
+
+[SE_L10_086_SALEM_027 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Isso deve doer." , Time=0)
+
+[SE_L10_087_RIOS_024 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Diz que isso tirou o sorriso da cara dele." , Time=0)
+
+[SE_L10_088_SALEM_028 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: A passarela vai ceder.  Talvez a gente possa derrubar ele." , Time=0)
+
+[SE_L10_091_SALEM_029 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Puta merda!" , Time=0)
+
+[SE_L10_092_SALEM_030 SoundNodeWave]
+Subtitles[0]=(Text="SALEM: Como diabos ele conseguiu isso?" , Time=0)
+
+[SE_L10_093_RIOS_027 SoundNodeWave]
+Subtitles[0]=(Text="RIOS: Bom, pelo menos agora a gente pode lutar de frente com ele." , Time=0)
+
+[SE_L10_096_DALTON_010 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: (risada)" , Time=0)
+
+[SE_L10_097_DALTON_011 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Parem de fingir e comecem a lutar." , Time=0)
+
+[SE_L10_098_DALTON_012 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Vou ser generoso e chamar isso de tática." , Time=0)
+
+[SE_L10_099_DALTON_013 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Tendo delírios de competência de novo?" , Time=0)
+
+[SE_L10_100_DALTON_014 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Patético.  Pena que eu sou imune à pena." , Time=0)
+
+[SE_L10_101_DALTON_015 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Isso é só desperdício de munição." , Time=0)
+
+[SE_L10_102_DALTON_016 SoundNodeWave]
+Subtitles[0]=(Text="DALTON: Morram logo pra gente acabar com isso." , Time=0)

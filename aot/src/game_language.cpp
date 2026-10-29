@@ -1,27 +1,28 @@
-// game_language.cpp - The game's text in Russian.
+// game_language.cpp - The game's text in Russian and Brazilian Portuguese.
 //
-// The disc has no Russian. The game (UE3) reads its text from
+// The disc has neither. The game (UE3) reads its text from
 // AO2Game\Localization\Coalesced.<lang>: a big-endian count of strings, then
 // (file name, file text) pairs, each an int32 length (with the terminating
-// zero; negative = UTF-16 characters) and the characters. In Russian the
-// English Coalesced.int gets the text of localization\rus\*.int (UTF-8, the
-// English files' lines with the values translated): every Key=Value of the
-// English .int whose section and key (and how many times the key came before
-// in the section) the Russian file has takes the Russian value, in CP1251.
-// The fonts only have Latin-1, so cyrillic_fonts.cpp draws the letters where
-// À-ÿ are. Xbox360TOC.txt gives every file's size and the engine reads that
-// many bytes: the Russian Coalesced.int is padded to the English one's size
-// with empty lines (CP1251 has a byte per letter, so it is a little smaller).
-// The downloadable content's levels (09 Kiev, 10 Miami Alternate Ending) have
-// no <package>.int, so their subtitles come from the packages in English:
-// localization\rus\dlc\09_sound_vo_main.int and the like go into Coalesced
-// whole, in the room of the editor's .int files.
+// zero; negative = UTF-16 characters) and the characters. In our languages
+// the English Coalesced.int gets the text of localization\<dir>\*.int (rus,
+// ptb; UTF-8, the English files' lines with the values translated): every
+// Key=Value of the English .int whose section and key (and how many times the
+// key came before in the section) our file has takes our value, in the
+// language's code page. The fonts have Latin-1: Portuguese is in it (CP1252),
+// Russian is CP1251 and cyrillic_fonts.cpp draws its letters where À-ÿ are.
+// Xbox360TOC.txt gives every file's size and the engine reads that many
+// bytes: our Coalesced.int is padded to the English one's size with empty
+// lines; when it is over, the editor's .int files, which the game never
+// reads, make room. The downloadable content's levels (09 Kiev, 10 Miami
+// Alternate Ending) have no <package>.int, so their subtitles come from the
+// packages in English: localization\<dir>\dlc\09_sound_vo_main.int and the
+// like go into Coalesced whole.
 //
 // The downloadable content has whole copies of some of the files
 // (DLC<n>__AO2Game.int, ...) that the game reads over the disc's: those get
-// the Russian text too (plus localization\rus\dlc\, the strings only they
-// have), written to an overlay folder the SDK mounts in place of the
-// package's own files (content_overlay_root).
+// our text too (plus localization\<dir>\dlc\, the strings only they have),
+// written to an overlay folder the SDK mounts in place of the package's own
+// files (content_overlay_root).
 //
 // The result, with keyboard_prompts' rewrite, is mounted over
 // game:\AO2Game\Localization (the VFS picks the longest matching mount path).
@@ -66,9 +67,9 @@
 
 REXCVAR_DEFINE_STRING(ao2_game_language, "auto", "General",
                       "Language of the game: auto (Windows' language when the game has it, else English), en, "
-                      "ru (Russian text, English voices), fr, de, es, it (the disc's, text and voices). "
-                      "Co-op partners need the same voices: en and ru go together, the others only with "
-                      "themselves.");
+                      "ru (Russian text, English voices), pt (Brazilian Portuguese text, English voices), fr, de, "
+                      "es, it (the disc's, text and voices). Co-op partners need the same voices: en, ru and pt "
+                      "go together, the others only with themselves.");
 
 namespace ao2::lang
 {
@@ -102,15 +103,26 @@ namespace ao2::lang
       return std::string(s);
     }
 
-    // UTF-8 to CP1251 ('?' for what it does not have).
-    std::string ToCp1251(const std::string &utf8)
+    // The languages with our text on the English game.
+    struct OwnText
+    {
+      const char *code, *dir, *name;
+      UINT codepage;
+    };
+    constexpr OwnText kOwnText[] = {
+        {"ru", "rus", "Russian", 1251},
+        {"pt", "ptb", "Brazilian Portuguese", 1252},
+    };
+
+    // UTF-8 to `codepage` ('?' for what it does not have).
+    std::string ToCodePage(const std::string &utf8, UINT codepage)
     {
       int wide = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), int(utf8.size()), nullptr, 0);
       std::wstring w(size_t(wide), L'\0');
       MultiByteToWideChar(CP_UTF8, 0, utf8.data(), int(utf8.size()), w.data(), wide);
-      int narrow = WideCharToMultiByte(1251, 0, w.data(), wide, nullptr, 0, "?", nullptr);
+      int narrow = WideCharToMultiByte(codepage, 0, w.data(), wide, nullptr, 0, "?", nullptr);
       std::string out(size_t(narrow), '\0');
-      WideCharToMultiByte(1251, 0, w.data(), wide, out.data(), narrow, "?", nullptr);
+      WideCharToMultiByte(codepage, 0, w.data(), wide, out.data(), narrow, "?", nullptr);
       return out;
     }
 
@@ -148,18 +160,18 @@ namespace ao2::lang
       }
     }
 
-    // The Russian values of an .int (CP1251): localization\rus\<name>, then
-    // localization\rus\dlc\<name> (the strings only the downloadable
-    // content's copy of the file has).
-    std::map<Key, std::string> RussianValues(const fs::path &russian_dir, const std::string &name)
+    // Our values of an .int, in the language's code page:
+    // localization\<dir>\<name>, then localization\<dir>\dlc\<name> (the
+    // strings only the downloadable content's copy of the file has).
+    std::map<Key, std::string> OwnValues(const fs::path &own_dir, UINT codepage, const std::string &name)
     {
       std::map<Key, std::string> values;
-      for (const fs::path &path : {russian_dir / name, russian_dir / "dlc" / name})
+      for (const fs::path &path : {own_dir / name, own_dir / "dlc" / name})
       {
         std::string utf8;
         if (!ReadFile(path, utf8))
           continue;
-        ForEachLine(ToCp1251(utf8), [&](const std::string &line, const Key *key, size_t eq) {
+        ForEachLine(ToCodePage(utf8, codepage), [&](const std::string &line, const Key *key, size_t eq) {
           if (key)
           {
             std::string value = line.substr(eq + 1);
@@ -172,7 +184,7 @@ namespace ao2::lang
       return values;
     }
 
-    // The English .int with the Russian values.
+    // The English .int with our values.
     std::string Merge(const std::string &english, const std::map<Key, std::string> &values, int &translated)
     {
       std::string out;
@@ -210,8 +222,8 @@ namespace ao2::lang
       d.append(reinterpret_cast<const char *>(&v), 4);
     }
 
-    // Coalesced.int with the Russian text; `data` itself when something is off.
-    std::string RussianCoalesced(const std::string &data, const fs::path &russian_dir)
+    // Coalesced.int with our text; `data` itself when something is off.
+    std::string OwnCoalesced(const std::string &data, const OwnText &own, const fs::path &own_dir)
     {
       struct Entry
       {
@@ -248,7 +260,8 @@ namespace ao2::lang
         std::string path(name.bytes.data(), name.bytes.size() - 1);
         if (ToLower(path).find("\\ao2game\\localization\\") == std::string::npos)
           continue;
-        std::map<Key, std::string> values = RussianValues(russian_dir, path.substr(path.find_last_of('\\') + 1));
+        std::map<Key, std::string> values =
+            OwnValues(own_dir, own.codepage, path.substr(path.find_last_of('\\') + 1));
         if (values.empty())
           continue;
         std::string merged = Merge(text.bytes.substr(0, text.bytes.size() - 1), values, translated);
@@ -260,13 +273,13 @@ namespace ao2::lang
       }
       if (!files)
       {
-        REXLOG_WARN("game_language: no Russian text in {}", russian_dir.string());
+        REXLOG_WARN("game_language: no {} text in {}", own.name, own_dir.string());
         return data;
       }
 
       // The downloadable content's levels have no .int (their packages keep
       // the English subtitles, which the game takes when Coalesced has no
-      // <package>.int): the files of localization\rus\dlc\ that Coalesced
+      // <package>.int): the files of localization\<dir>\dlc\ that Coalesced
       // lacks (09_sound_vo_main.int, ...) go in whole.
       auto base_name = [](const Entry &name) {
         std::string path(name.bytes.data(), name.bytes.size() - 1);
@@ -278,7 +291,7 @@ namespace ao2::lang
           present.push_back(base_name(entries[i]));
       int added = 0;
       std::error_code ec;
-      for (const auto &file : fs::directory_iterator(russian_dir / "dlc", ec))
+      for (const auto &file : fs::directory_iterator(own_dir / "dlc", ec))
       {
         std::string name = file.path().filename().string();
         std::string lower = ToLower(name);
@@ -287,7 +300,7 @@ namespace ao2::lang
             !ReadFile(file.path(), utf8))
           continue;
         std::string text;
-        for (char c : ToCp1251(utf8))
+        for (char c : ToCodePage(utf8, own.codepage))
           if (c != '\r')
             text += c;
         text += '\0';
@@ -310,10 +323,10 @@ namespace ao2::lang
         return out;
       };
       std::string out = serialize();
-      // Room for them: the editor's text, which the game never reads.
+      // Room: the editor's text, which the game never reads.
       for (const char *editor : {"unrealed.int", "editor.int", "editortips.int"})
       {
-        if (out.size() <= data.size() || !added)
+        if (out.size() <= data.size())
           break;
         for (size_t i = 0; i < entries.size(); i += 2)
           if (entries[i].length > 1 && base_name(entries[i]) == editor)
@@ -327,10 +340,10 @@ namespace ao2::lang
         out = serialize();
       }
       if (added)
-        REXLOG_INFO("game_language: {} Russian files of the downloadable content added", added);
+        REXLOG_INFO("game_language: {} {} files of the downloadable content added", added, own.name);
       if (out.size() > data.size())
       {
-        REXLOG_WARN("game_language: the Russian text is {} bytes over the English, kept English",
+        REXLOG_WARN("game_language: the {} text is {} bytes over the English, kept English", own.name,
                     out.size() - data.size());
         return data;
       }
@@ -339,15 +352,16 @@ namespace ao2::lang
       pad.bytes.insert(pad.bytes.size() - 1, data.size() - out.size(), '\n');
       pad.length = int32_t(pad.bytes.size());
       out = serialize();
-      REXLOG_INFO("game_language: Russian text, {} strings in {} files", translated, files);
+      REXLOG_INFO("game_language: {} text, {} strings in {} files", own.name, translated, files);
       return out;
     }
 
     // The downloadable content's text (DLC<n>__<name>.int in a package folder:
-    // the whole file, which the game reads over the disc's) in Russian, under
+    // the whole file, which the game reads over the disc's) in our language, under
     // overlay_root\<package folder>; the SDK mounts a package with the files of
     // its overlay folder in place of its own (content_overlay_root).
-    int RussianContent(const fs::path &content_dir, const fs::path &overlay_root, const fs::path &russian_dir)
+    int OwnContent(const fs::path &content_dir, const fs::path &overlay_root, const OwnText &own,
+                   const fs::path &own_dir)
     {
       int files = 0, translated = 0;
       std::error_code ec;
@@ -370,7 +384,7 @@ namespace ao2::lang
         size_t sep = name.find("__");
         if (!lower.starts_with("dlc") || !lower.ends_with(".int") || sep == std::string::npos)
           continue;
-        std::map<Key, std::string> values = RussianValues(russian_dir, name.substr(sep + 2));
+        std::map<Key, std::string> values = OwnValues(own_dir, own.codepage, name.substr(sep + 2));
         std::string english;
         if (values.empty() || !ReadFile(it->path(), english))
           continue;
@@ -387,7 +401,8 @@ namespace ao2::lang
         ++files;
       }
       if (files)
-        REXLOG_INFO("game_language: Russian downloadable content text, {} strings in {} files", translated, files);
+        REXLOG_INFO("game_language: {} downloadable content text, {} strings in {} files", own.name, translated,
+                    files);
       return files;
     }
   } // namespace
@@ -402,6 +417,7 @@ namespace ao2::lang
     };
     static const Language kLanguages[] = {
         {{"en", "int", "eng", "english"}, "en"},          {{"ru", "rus", "russian"}, "ru"},
+        {{"pt", "ptb", "pt-br", "pt_br", "portuguese", "portugues", "brazilian"}, "pt"},
         {{"fr", "fra", "french", "francais"}, "fr"},       {{"de", "deu", "ger", "german", "deutsch"}, "de"},
         {{"es", "esn", "spa", "spanish", "espanol"}, "es"}, {{"it", "ita", "italian", "italiano"}, "it"},
     };
@@ -416,6 +432,8 @@ namespace ao2::lang
     {
     case LANG_RUSSIAN:
       return "ru";
+    case LANG_PORTUGUESE:
+      return "pt";
     case LANG_FRENCH:
       return "fr";
     case LANG_GERMAN:
@@ -431,10 +449,18 @@ namespace ao2::lang
 
   bool Russian() { return std::strcmp(Code(), "ru") == 0; }
 
+  bool OwnLanguage()
+  {
+    for (const OwnText &own : kOwnText)
+      if (std::strcmp(Code(), own.code) == 0)
+        return true;
+    return false;
+  }
+
   void Install(rex::Runtime *runtime, const fs::path &game_data_root, const fs::path &user_data_root)
   {
     // The console's language (XLanguage: 1 English, 3 German, 4 French,
-    // 5 Spanish, 6 Italian); Russian runs on English.
+    // 5 Spanish, 6 Italian); our languages run on English.
     static const std::pair<const char *, int> kConsole[] = {{"fr", 4}, {"de", 3}, {"es", 5}, {"it", 6}};
     int console = 1;
     for (const auto &[code, id] : kConsole)
@@ -443,14 +469,18 @@ namespace ao2::lang
     rex::cvar::SetFlagByName("user_language", std::to_string(console));
     REXLOG_INFO("game_language: {} (console language {})", Code(), console);
 
-    bool russian = Russian(), prompts = ao2::prompts::Enabled();
-    if ((!russian && !prompts) || !runtime || !runtime->file_system())
+    const OwnText *own = nullptr;
+    for (const OwnText &t : kOwnText)
+      if (std::strcmp(Code(), t.code) == 0)
+        own = &t;
+    bool prompts = ao2::prompts::Enabled();
+    if ((!own && !prompts) || !runtime || !runtime->file_system())
       return;
-    if (russian)
+    if (Russian())
       ao2::cyrillic::Install(game_data_root, user_data_root);
     fs::path source = game_data_root / "AO2Game" / "Localization";
     fs::path target = user_data_root / "localization" / "Localization";
-    fs::path russian_dir = utils::RepoRoot() / "localization" / "rus";
+    fs::path own_dir = utils::RepoRoot() / "localization" / (own ? own->dir : "");
     std::error_code ec;
     if (!fs::is_directory(source, ec))
       return;
@@ -471,10 +501,10 @@ namespace ao2::lang
       std::string name = entry.path().filename().string();
       std::string lower = ToLower(name);
       bool english = lower == "coalesced.int";
-      if (english && russian)
-        data = RussianCoalesced(data, russian_dir);
+      if (english && own)
+        data = OwnCoalesced(data, *own, own_dir);
       if (prompts && lower.starts_with("coalesced."))
-        data = ao2::prompts::RewriteLocalization(data, english && !russian, rewritten);
+        data = ao2::prompts::RewriteLocalization(data, english && !own, rewritten);
 
       fs::path out = target / name;
       std::string existing;
@@ -489,10 +519,10 @@ namespace ao2::lang
       }
     }
 
-    if (russian)
+    if (own)
     {
       fs::path overlays = user_data_root / "localization" / "content";
-      if (RussianContent(ao2::dlc::Dir(), overlays, russian_dir))
+      if (OwnContent(ao2::dlc::Dir(), overlays, *own, own_dir))
         rex::cvar::SetFlagByName("content_overlay_root", overlays.string());
     }
 
@@ -502,7 +532,7 @@ namespace ao2::lang
       REXLOG_WARN("game_language: cannot mount {}", target.string());
       return;
     }
-    REXLOG_INFO("game_language: {}, {} strings without the controller's words ({})", russian ? "Russian" : "English",
+    REXLOG_INFO("game_language: {}, {} strings without the controller's words ({})", own ? own->name : "English",
                 rewritten, target.string());
   }
 } // namespace ao2::lang
