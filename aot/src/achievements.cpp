@@ -6,7 +6,7 @@
 // when the XEX loads, before lang::Install sets the console's language
 // (user_language), so it is always English. Setup builds it again in the
 // game's language: the disc has English, German, French, Spanish and Italian;
-// Russian is the table below. Unlocks are kept by id, untouched.
+// Russian and Brazilian Portuguese are the tables below. Unlocks are kept by id, untouched.
 //
 // The launcher shows them too, but the text and the icons are the game's, not
 // the port's: Setup writes them, every language, to <cache_root>\achievements
@@ -169,13 +169,62 @@ namespace
       {70, "Снайпер SSC", "Завершите рейтинговый матч SSC Challenge из трех раундов с точностью 75%.", nullptr},
   };
 
-  const Russian *RussianOf(uint32_t id)
+  // Brazilian Portuguese (the disc has none either), in the words of
+  // localization\ptb: Contratado / Profissional, Aggro, OVERKILL, Tiro Coop,
+  // Costas com Costas, partida ranqueada.
+  constexpr const char *kSecretPt = "Continue jogando para desbloquear esta conquista secreta.";
+
+  constexpr Russian kPortuguese[] = {
+      {7, "Missão 1 Completa", "Completou a Missão 1 como Contratado ou superior.", kSecretPt},
+      {8, "Missão 2 Completa", "Completou a Missão 2 como Contratado ou superior.", kSecretPt},
+      {9, "Missão 3 Completa", "Completou a Missão 3 como Contratado ou superior.", kSecretPt},
+      {10, "Missão 4 Completa", "Completou a Missão 4 como Contratado ou superior.", kSecretPt},
+      {11, "Missão 5 Completa", "Completou a Missão 5 como Contratado ou superior.", kSecretPt},
+      {12, "Missão 6 Completa", "Completou a Missão 6 como Contratado ou superior.", kSecretPt},
+      {15, "PMC de Elite", "Complete todas as missões como Profissional.", nullptr},
+      {17, "Meu Amigo Virtual", "Complete todas as missões com o parceiro controlado pela IA.", nullptr},
+      {20, "Diga Olá aos Meus Amiguinhos", "Compre a MP7, a M134, a DAO-X Protecta, a MGL MK-X e a M107 Light Fifty.", nullptr},
+      {21, "Homem das Mil Máscaras", "Compre todas as variantes de máscara.", nullptr},
+      {22, "Se Eu Fosse Rico", "Ganhe um milhão de dólares no total durante o modo campanha.", nullptr},
+      {24, "O Medo Mata a Mente", "Passe 1 minuto seguido com o Aggro no máximo.", nullptr},
+      {26, "Começando um Motim", "Mate 50 inimigos no total com o Escudo Antitumulto no coop.", nullptr},
+      {27, "Dois Olhos Valem Mais Que Um", "Mate 5 inimigos no total usando o Tiro Coop.", nullptr},
+      {30, "Sete-meia-dois Milímetros", "Mate 250 inimigos no total usando fuzis de assalto.", nullptr},
+      {31, "Esta é a Minha Doze!", "Mate 250 inimigos no total usando escopetas.", nullptr},
+      {32, "Chumbo Grosso", "Mate 250 inimigos no total usando metralhadoras.", nullptr},
+      {33, "A Mão do Morto", "Mate 150 inimigos no total usando pistolas.", nullptr},
+      {34, "Certo, Quem Quer Mais?", "Mate 250 inimigos no total usando submetralhadoras.", nullptr},
+      {35, "Um Tiro. Uma Morte.", "Mate 100 inimigos no total usando rifles de precisão.", nullptr},
+      {36, "Big Boom! Big Bada Boom!", "Mate 25 inimigos no total usando lança-foguetes.", nullptr},
+      {37, "Toma Essa. Toma Essa de Verdade", "Mate 50 inimigos no total com o ataque corpo a corpo.", nullptr},
+      {38, "Fission Mailed", "Mate 25 Mártires atirando nas bombas presas ao peito deles.", nullptr},
+      {39, "Se Sangra, a Gente Mata", "Mate 25 inimigos de Armadura Pesada.", nullptr},
+      {40, "Médico de Campo", "Arraste e cure seu parceiro 25 vezes.", nullptr},
+      {48, "Botas no Chão", "Termine uma partida Versus ranqueada.", nullptr},
+      {49, "O Diabo Mora nos Detalhes", "Complete 20 objetivos secundários em uma partida ranqueada.", nullptr},
+      {50, "Sobrevivendo ao Jogo", "Complete uma partida ranqueada sem precisar ser reanimado nenhuma vez.", nullptr},
+      {51, "Plano de Aposentadoria", "Ganhe um bilhão de dólares no total em partidas ranqueadas.", nullptr},
+      {54, "Quites", "Cure seu parceiro pela primeira vez. O treinamento não conta.", nullptr},
+      {55, "Uma Arma Basta", "Vença uma partida ranqueada sem comprar nenhuma arma adicional.", nullptr},
+      {59, "Fera de Duas Frentes", "Mate 50 inimigos no total em Costas com Costas.", nullptr},
+      {60, "Correndo no Escuro", "Mate 75 inimigos no modo furtivo do OVERKILL.", nullptr},
+      {61, "L'Abattoir", "Mate 100 inimigos no modo de poder do OVERKILL.", nullptr},
+      {64, "Especialista em Armas", "Compre 3 armas.", nullptr},
+      {65, "Muralha", "Mate 30 inimigos com o ataque corpo a corpo do Escudo Antitumulto.", nullptr},
+      {66, "Minha Maleta Favorita!", "Colete todas as maletas de informação do jogo inteiro.", nullptr},
+      {67, "Verdadeiro Desafiante SSC", "Vença todas as fases de uma partida ranqueada de três rodadas do SSC Challenge.", nullptr},
+      {68, "Desafiante dos Barris SSC", "Destrua 500 barris em partidas ranqueadas do SSC Challenge.", nullptr},
+      {69, "Vitória no SSC Challenge", "Vença uma partida ranqueada do SSC Challenge.", nullptr},
+      {70, "Atirador do SSC Challenge", "Alcance 75% de precisão ao final de uma partida ranqueada de três rodadas do SSC Challenge.", nullptr},
+  };
+
+  const Russian *TranslationOf(const Russian *table, size_t count, uint32_t id)
   {
-    for (const Russian &r : kRussian)
+    for (size_t i = 0; i < count; ++i)
     {
-      if (r.id == id)
+      if (table[i].id == id)
       {
-        return &r;
+        return &table[i];
       }
     }
     return nullptr;
@@ -195,9 +244,12 @@ namespace
   Text TextIn(const rex::system::util::XdbfGameData &db, const rex::system::util::XdbfAchievementTableEntry &e,
               const char *code)
   {
-    if (std::strcmp(code, "ru") == 0)
+    bool ru = std::strcmp(code, "ru") == 0, pt = std::strcmp(code, "pt") == 0;
+    if (ru || pt)
     {
-      if (const Russian *r = RussianOf(uint32_t(e.id)))
+      const Russian *r = ru ? TranslationOf(kRussian, std::size(kRussian), uint32_t(e.id))
+                            : TranslationOf(kPortuguese, std::size(kPortuguese), uint32_t(e.id));
+      if (r)
       {
         return {r->label, r->description, r->locked ? r->locked : r->description};
       }
@@ -274,7 +326,7 @@ namespace
       bool secret = !(e.flags & 0x8); // XDBF: shown before it is unlocked
       tsv += "A\t" + std::to_string(e.id) + "\t" + std::to_string(SectionOf(e.id)) + "\t" +
              std::to_string(e.gamerscore) + "\t" + std::to_string(e.image_id) + "\t" + (secret ? "1" : "0") + "\n";
-      for (const char *code : {"en", "ru", "de", "fr", "es", "it"})
+      for (const char *code : {"en", "ru", "pt", "de", "fr", "es", "it"})
       {
         Text t = TextIn(db, e, code);
         tsv += "T\t" + std::to_string(e.id) + "\t" + code + "\t" + Field(t.label) + "\t" + Field(t.description) +

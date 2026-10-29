@@ -1,13 +1,13 @@
-param([int]$Seconds = 5)
+param([int]$Seconds = 5, [string]$Name = "armyoftworecomp")
 # CPU load of the running game: whole process and the busiest threads (% of
 # one core), and CPU time per presented frame (ms/frame, FPS from native_gpu.log).
 $log = "C:\aot2\aot\out\build\win-amd64-release\native_gpu.log"
-$p = Get-Process armyoftworecomp
+$p = Get-Process $Name
 $t0 = @{}
 foreach ($t in $p.Threads) { $t0[$t.Id] = $t.TotalProcessorTime.TotalMilliseconds }
 $c0 = $p.TotalProcessorTime.TotalMilliseconds
 Start-Sleep $Seconds
-$p = Get-Process armyoftworecomp
+$p = Get-Process $Name
 $fpsMatch = Select-String -Path $log -Pattern " fps \|" | Select-Object -Last 1
 $fps = if ($fpsMatch) { [double]($fpsMatch.Line.Trim().Split(' ')[0]) } else { 0.0 }
 $proc = ($p.TotalProcessorTime.TotalMilliseconds - $c0) / $Seconds

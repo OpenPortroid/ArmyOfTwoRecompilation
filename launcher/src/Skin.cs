@@ -271,6 +271,28 @@ namespace AO2Launcher
             Fill(g, Paper, new RectangleF(r.X, r.Y, r.Width * t, r.Height));
         }
 
+        // A small rounded label ending at right, centred on cy: a hairline outline and capitals. Returns its width.
+        float Pill(Graphics g, string text, float right, float cy, Color color)
+        {
+            float w = CapsWidth(g, text, fSection, 1.6f) + 20, h = 20;
+            var r = new RectangleF(right - w, cy - h / 2, w, h);
+            var st = g.Save();
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var path = new GraphicsPath())
+            using (var pen = new Pen(Color.FromArgb(150, color), 1f))
+            using (var fill = new SolidBrush(Color.FromArgb(28, color)))
+            {
+                path.AddArc(r.X, r.Y, h, h, 90, 180);
+                path.AddArc(r.Right - h, r.Y, h, h, 270, 180);
+                path.CloseFigure();
+                g.FillPath(fill, path);
+                g.DrawPath(pen, path);
+            }
+            g.Restore(st);
+            Caps(g, text, fSection, color, r, 1.6f);
+            return w;
+        }
+
         void Dot(Graphics g, float x, float cy, bool on, string text)
         {
             var r = new RectangleF(x, cy - 4, 8, 8);

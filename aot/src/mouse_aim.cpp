@@ -536,7 +536,13 @@ namespace
   }
 
   // The local player's pitch as a step starts, before its turn: a turn the
-  // game cut short marks the limit there, otherwise the character's hold.
+  // game cut short twice in a row at the same pitch marks the limit there,
+  // otherwise the character's hold. A single short turn is not a limit: a
+  // shot's recoil lifts the view while the mouse pulls it down, the turn
+  // ends above where it was asked to, and taken for the bottom limit it
+  // held the prediction there - the view stuttered while firing.
+  float g_cut_top_at = NAN, g_cut_bottom_at = NAN; // where the last step's turn was cut short
+
   void LearnPitchLimits(const uint8_t *base, uint32_t holder, float pitch)
   {
     float bottom, top;
@@ -544,8 +550,10 @@ namespace
     pitch = std::remainder(pitch, 65536.0f);
     bool cut_top = g_pitch_asked && pitch > 0.0f && g_pitch_asked_to > pitch + 1.0f;
     bool cut_bottom = g_pitch_asked && pitch < 0.0f && g_pitch_asked_to < pitch - 1.0f;
-    g_pitch_top = cut_top ? pitch : top;
-    g_pitch_bottom = cut_bottom ? pitch : bottom;
+    g_pitch_top = cut_top && std::fabs(pitch - g_cut_top_at) <= 1.0f ? pitch : top;
+    g_pitch_bottom = cut_bottom && std::fabs(pitch - g_cut_bottom_at) <= 1.0f ? pitch : bottom;
+    g_cut_top_at = cut_top ? pitch : NAN;
+    g_cut_bottom_at = cut_bottom ? pitch : NAN;
     g_pitch_asked = false;
   }
 

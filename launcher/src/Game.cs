@@ -18,10 +18,13 @@ namespace AO2Launcher
     static class Game
     {
         public const string ExeName = "armyoftworecomp.exe";
+        // The same game built for x86-64-v2 (ExeName needs AVX2, x86-64-v3): the release's avx1-version.aot,
+        // unpacked next to ExeName by Updates.InstallAvx1.
+        public const string CompatExeName = "armyoftworecomp_compat.exe";
         public const string LobbyServerName = "ao2_lobby_server.exe";
         const string FirewallRule = "Army of Two (recomp)";
         // ao2_game_language's values besides "auto".
-        static readonly string[] Languages = { "en", "ru", "fr", "de", "es", "it" };
+        static readonly string[] Languages = { "en", "ru", "pt", "fr", "de", "es", "it" };
 
         // The launcher's own folder first (the usual place: next to the game),
         // then the remembered path, then a few folders around the launcher.
@@ -67,12 +70,99 @@ namespace AO2Launcher
         {
             try
             {
-                return Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ExeName)).Length > 0;
+                return Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ExeName)).Length > 0 ||
+                    Process.GetProcessesByName(Path.GetFileNameWithoutExtension(CompatExeName)).Length > 0;
             }
             catch
             {
                 return false;
             }
+        }
+
+        [DllImport("kernel32.dll")]
+        static extern bool IsProcessorFeaturePresent(int feature);
+
+        const int PF_SSE4_2_INSTRUCTIONS_AVAILABLE = 38;
+        const int PF_AVX2_INSTRUCTIONS_AVAILABLE = 40;
+
+        // AVX2 usable (CPU and OS). Every such CPU also has the rest of
+        // x86-64-v3 (BMI2, MOVBE, FMA...) the main build is compiled for.
+        public static bool PretendNoAvx2;
+        // Debug: act as a Windows older than 10 2004 (IsProcessorFeaturePresent knows no AVX2).
+        public static bool PretendOldWindows;
+        static bool? avx2;
+
+        public static bool HasAvx2()
+        {
+            if (PretendNoAvx2)
+            {
+                return false;
+            }
+            if (avx2 == null)
+            {
+                avx2 = DetectAvx2();
+            }
+            return avx2.Value;
+        }
+
+        static bool DetectAvx2()
+        {
+            try
+            {
+                if (!PretendOldWindows)
+                {
+                    if (IsProcessorFeaturePresent(PF_AVX2_INSTRUCTIONS_AVAILABLE))
+                    {
+                        return true;
+                    }
+                    // PF_SSSE3..PF_AVX512F came with Windows 10 2004: an older Windows answers no to all of
+                    // them. SSE4.2 is on every CPU the game runs on, so a yes to it means the AVX2 answer is real.
+                    if (IsProcessorFeaturePresent(PF_SSE4_2_INSTRUCTIONS_AVAILABLE))
+                    {
+                        Log.Write("cpu: no AVX2 (Windows)");
+                        return false;
+                    }
+                }
+            }
+            catch
+            {
+            }
+            // Windows can't tell: CPUID through ao2_install. Unknown: the compat build, which runs everywhere.
+            bool? v3 = Installer.CpuRunsMainBuild(AppDomain.CurrentDomain.BaseDirectory);
+            Log.Write("cpu: Windows does not report AVX2, ao2_install cpu: {0}", v3 == null ? "unknown" : v3.Value ? "x86-64-v3" : "no x86-64-v3");
+            return v3 == true;
+        }
+
+        // Which release CompatExeName next to it was unpacked from (Updates.InstallAvx1).
+        public const string CompatVersionName = "armyoftworecomp_compat.version";
+
+        // The AVX1 build is the one to run: the CPU has no AVX2, or the player chose it ("avx1": co-op with a
+        // partner whose CPU has none - both must run the same build).
+        public static bool Avx1Mode(Settings s)
+        {
+            return !HasAvx2() || s.Bool("avx1");
+        }
+
+        // The AVX1 build of this package's version is next to the game at exe.
+        public static bool Avx1Ready(string exe)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(exe);
+                string version = Path.Combine(dir, CompatVersionName);
+                return File.Exists(Path.Combine(dir, CompatExeName)) && File.Exists(version) &&
+                    File.ReadAllText(version).Trim() == Updates.Current;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // The program to run for the game found at exe: in AVX1 mode the compat build next to it.
+        public static string RunExe(string exe, Settings s)
+        {
+            return Avx1Mode(s) ? Path.Combine(Path.GetDirectoryName(exe), CompatExeName) : exe;
         }
 
         static string Flag(string name, bool on)
@@ -169,8 +259,6 @@ namespace AO2Launcher
             a.Add(Flag("ao2_god_mode", s.Bool("god_mode")));
             a.Add(Flag("ao2_unlock_all", s.Bool("unlock_all")));
             a.Add(Flag("ao2_achievement_notices", s.Bool("ach_notices")));
-            string spin = s["cpu_spin"];
-            a.Add("--critical_section_spin=" + (spin == "on" || spin == "auto" ? spin : "off"));
 
             // A profile other than the main one: its own user data folder, the main one's shader cache.
             string profile = s["profile"];
@@ -260,7 +348,7 @@ namespace AO2Launcher
 
         public static void Start(string exe, Settings s, string hostIp)
         {
-            var psi = new ProcessStartInfo(exe, CommandLine(s, hostIp))
+            var psi = new ProcessStartInfo(RunExe(exe, s), CommandLine(s, hostIp))
             {
                 WorkingDirectory = Path.GetDirectoryName(exe),
                 UseShellExecute = false,
@@ -341,15 +429,18 @@ namespace AO2Launcher
         public static bool AllowThroughFirewall(string exe)
         {
             string dir = Path.GetDirectoryName(exe);
-            string lobby = Path.Combine(dir, LobbyServerName);
             var cmd = new StringBuilder();
             cmd.AppendFormat("netsh advfirewall firewall delete rule name=\"{0}\" >nul 2>&1", FirewallRule);
             cmd.AppendFormat(" & netsh advfirewall firewall add rule name=\"{0}\" dir=in action=allow program=\"{1}\" enable=yes profile=any",
                 FirewallRule, exe);
-            if (File.Exists(lobby))
+            foreach (string other in new[] { CompatExeName, LobbyServerName })
             {
-                cmd.AppendFormat(" & netsh advfirewall firewall add rule name=\"{0}\" dir=in action=allow program=\"{1}\" enable=yes profile=any",
-                    FirewallRule, lobby);
+                string path = Path.Combine(dir, other);
+                if (File.Exists(path))
+                {
+                    cmd.AppendFormat(" & netsh advfirewall firewall add rule name=\"{0}\" dir=in action=allow program=\"{1}\" enable=yes profile=any",
+                        FirewallRule, path);
+                }
             }
             var psi = new ProcessStartInfo("cmd.exe", "/s /c \"" + cmd + "\"")
             {

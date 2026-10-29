@@ -1,0 +1,576 @@
+[UTGameObjective]
+LocationPrefix=Perto de
+ObjectiveName=Objetivo
+[UTOnslaughtObjective]
+ObjectiveStringSuffix=" PowerCore"
+[UTOnslaughtPowernode]
+NeutralString="PowerNode Neutro"
+ConstructingString=" Construindo PowerNode"
+ObjectiveStringSuffix=" PowerNode"
+[UTOnslaughtBunker]
+NeutralString="Conduíte Neutro"
+ObjectiveStringSuffix=" Conduíte"
+[UTPlayerController]
+MsgPlayerNotFound="Jogador não encontrado!"
+[UTSquadAI]
+SupportString=apoiando
+DefendString=defendendo
+AttackString=atacando
+HoldString=segurando
+FreelanceString=Batedor
+[UTVehicle]
+VehiclePositionString="em um veículo"
+VehicleNameString=Veículo
+[UTVehicle_Raptor]
+VehiclePositionString="em um Raptor"
+VehicleNameString=Raptor
+[UTVehicle_Cicada]
+VehiclePositionString="em um Cicada"
+VehicleNameString=Cicada
+[UTVehicle_Goliath]
+VehiclePositionString="em um Goliath"
+VehicleNameString=Goliath
+[UTVehicle_Paladin]
+VehiclePositionString="em um Paladin"
+VehicleNameString="Paladin"
+[UTTeamGame]
+Description="Duas equipes se enfrentam em busca da supremacia no campo de batalha.  Vence a equipe com mais frags no total."
+GameName="Team DeathMatch"
+[UTDeathmatch]
+Description="Todos contra todos, matar ou morrer.  Vence o jogador com mais frags."
+GameName=DeathMatch
+[UTWeap_Translocator]
+ItemName=Translocator
+PickupMessage="Você pegou um Translocator"
+[UTTeamInfo]
+TeamColorNames[0]=Vermelho
+TeamColorNames[1]=Azul
+TeamColorNames[2]=Verde
+TeamColorNames[3]=Dourado
+[UTWeap_SniperRifle]
+ItemName="Rifle de Precisão"
+PickupMessage="Você pegou um Rifle de Precisão"
+[UTOnslaughtGame]
+Description="Sua equipe deve tomar o controle dos PowerNodes em estilo 'ligue os pontos' para estabelecer uma linha direta até o PowerCore inimigo. Depois de estabelecer um elo com o próximo PowerNode, você pode destruí-lo se estiver sob controle do inimigo. Controle o PowerNode para sua equipe tocando nele para iniciar a construção (use o tiro alternativo da linkgun para acelerar). Quando sua equipe tiver um elo com o PowerCore inimigo, ataque e destrua-o."
+GameName=Onslaught
+[UTSpecialObjective]
+DestructionMessage="Objetivo desativado!"
+[UTSimpleConsole]
+LevelActionMessages="("","Carregando...","Salvando...","Conectando a...","!! Pré-carregando !!")"
+[UTCTFGame]
+Description="Sua equipe deve marcar capturas de bandeira pegando a bandeira inimiga na base inimiga e levando-a à própria bandeira.  Se o portador da bandeira for morto, ela cai no chão para qualquer um pegar.  Se a bandeira da sua equipe for levada, ela deve ser devolvida (tocando nela depois de cair) antes que sua equipe possa marcar uma captura."
+GameName="Capture a Bandeira"
+[UTLockWarningMessage]
+MissileLockOnString="Míssil travado!"
+AvrilLockOnString="AVRiL a caminho!"
+SPMAAcquiredString="SPMA adquirido"
+RadarLockString="Radar inimigo travado!"
+[UTOnslaughtMessage]
+RedTeamDominatesString="A Equipe Vermelha vence!"
+BlueTeamDominatesString="A Equipe Azul vence!"
+RedTeamPowerCoreString="PowerNode da Equipe Vermelha construído!"
+BlueTeamPowerCoreString="PowerNode da Equipe Azul construído!"
+VehicleLockedString="Veículo trancado!"
+InvincibleCoreString="Você não pode danificar PowerNodes desligados!"
+UnattainableNodeString="Você não pode obter PowerNodes desligados!"
+RedPowerCoreAttackedString="PowerCore da Equipe Vermelha sob ataque!"
+BluePowerCoreAttackedString="PowerCore da Equipe Azul sob ataque!"
+RedPowerNodeAttackedString="PowerNode da Equipe Vermelha sob ataque!"
+BluePowerNodeAttackedString="PowerNode da Equipe Azul sob ataque!"
+InWayOfVehicleSpawnString="Você está no caminho do surgimento de um veículo!"
+UnpoweredString="Torreta sem energia!"
+RedPowerCoreDestroyedString="PowerCore Vermelho destruído"
+BluePowerCoreDestroyedString="PowerCore Azul destruído"
+RedPowerNodeDestroyedString="PowerNode Vermelho destruído"
+BluePowerNodeDestroyedString="PowerNode Azul destruído"
+RedPowerCoreCriticalString="PowerCore Vermelho em estado crítico!"
+BluePowerCoreCriticalString="PowerCore Azul em estado crítico!"
+PressUseToTeleportString="Pressione Usar para se teleportar a outro nó"
+RedPowerCoreVulnerableString="PowerCore Vermelho vulnerável!"
+BluePowerCoreVulnerableString="PowerCore Azul vulnerável!"
+RedPowerNodeUnderConstructionString="PowerNode Vermelho em construção!"
+BluePowerNodeUnderConstructionString="PowerNode Azul em construção!"
+RedPowerCoreDamagedString="PowerCore Vermelho a 50%!"
+BluePowerCoreDamagedString="PowerCore Azul a 50%!"
+RedPowerNodeSeveredString="PowerNode Vermelho isolado!"
+BluePowerNodeSeveredString="PowerNode Azul isolado!"
+PowerCoresAreDrainingString="Os PowerCores estão se esgotando!"
+UnhealablePowerCoreString="Você não pode curar seu PowerCore!"
+CameraDeploy="Pressione o tiro alternativo para instalar a câmera!"
+RedConduitConstructedString="Conduíte da Equipe Vermelha construído!"
+BlueConduitConstructedString="Conduíte da Equipe Azul construído!"
+RedConduitDestroyedString="Conduíte da Equipe Vermelha destruído"
+BlueConduitDestroyedString="Conduíte da Equipe Azul destruído"
+[UTDeathMessage]
+KilledString="foi morto por"
+SomeoneString=alguém
+[UTWeap_LinkGun]
+ItemName="Link Gun"
+PickupMessage="Você pegou uma Link Gun"
+[UTWeaponLocker]
+LockerString="Armário de Armas"
+[UTCTFMessage]
+ReturnBlue="devolveu a bandeira azul!"
+ReturnRed="devolveu a bandeira vermelha!"
+ReturnedBlue="A bandeira azul foi devolvida!"
+ReturnedRed="A bandeira vermelha foi devolvida!"
+CaptureBlue="capturou a bandeira azul!"
+CaptureRed="capturou a bandeira vermelha!"
+DroppedBlue="largou a bandeira azul!"
+DroppedRed="largou a bandeira vermelha!"
+HasBlue="pegou a bandeira azul!"
+HasRed="pegou a bandeira vermelha!"
+UseToPickup="Pressione Usar para pegar esta bandeira."
+[UTOnslaughtOrbMessage]
+ReturnBlue="destruiu o orbe azul!"
+ReturnRed="destruiu o orbe vermelho!"
+ReturnedBlue="A bandeira azul foi destruída!"
+ReturnedRed="A bandeira vermelha foi destruída!"
+CaptureBlue="entregou o orbe azul!"
+CaptureRed="entregou o orbe vermelho!"
+DroppedBlue="largou o orbe azul!"
+DroppedRed="largou o orbe vermelho!"
+HasBlue="pegou o orbe azul!"
+HasRed="pegou o orbe vermelho!"
+UseToPickup="Pressione Usar para pegar este orbe."
+[UTWeap_RocketLauncher]
+ItemName="Lança-Foguetes"
+PickupMessage="Você pegou um Lança-Foguetes"
+[UTAmmoPickupFactory]
+PickupMessage="Você pegou um pouco de munição."
+[UTWeap_SpiderMineLauncher]
+ItemName="Lançador de Minas Aranha"
+PickupMessage="Você pegou o Lançador de Minas Aranha"
+[UTWeap_ShockRifle]
+ItemName="Rifle de Choque"
+PickupMessage="Você pegou um Rifle de Choque"
+[UTWeap_InstagibRifle]
+ItemName="Rifle Instagib"
+PickupMessage="Você pegou um Super Rifle de Choque"
+[UTWeap_Avril]
+ItemName=A.V.R.I.L.
+PickupMessage="Você pegou um A.V.R.I.L."
+[UTSurvivalGame]
+Description="Resista e lute até cair.  Veja quantas ondas você consegue sobreviver!"
+GameName=Sobrevivência
+[UTVWeap_CicadaMissileLauncher]
+ItemName="Lançador de Mísseis Cicada"
+[UTVWeap_ScorpionTurret]
+ItemName="Torreta Scorpion"
+[UTUDamage]
+PickupMessage="DANO DOBRADO!"
+[UTInvulnerability]
+PickupMessage="INVULNERABILIDADE!"
+[UTBerserk]
+PickupMessage="FÚRIA!"
+[UTInvisibility]
+PickupMessage="INVISIBILIDADE!"
+[UTWeap_ImpactHammer]
+ItemName="Martelo de Impacto"
+PickupMessage="É hora do martelo!"
+[UTWeap_Physicsgun]
+ItemName="Arma de Física"
+PickupMessage="Você pegou a arma de física"
+[UTWeap_TargetPainter]
+ItemName="Marcador de Alvo"
+PickupMessage="Você pegou um Marcador de Alvo"
+[UTWeap_FlakCannon]
+ItemName="Canhão Flak"
+PickupMessage="Você pegou um Canhão Flak"
+[UTStartupMessage]
+Stage[0]="Aguardando outros jogadores."
+Stage[1]="Aguardando sinais de pronto. Você está PRONTO."
+Stage[2]="A partida está prestes a começar...3"
+Stage[3]="A partida está prestes a começar...2"
+Stage[4]="A partida está prestes a começar...1"
+Stage[5]="A partida começou!"
+Stage[6]="A partida começou!"
+Stage[7]="PRORROGAÇÃO!"
+NotReady="Você NÃO está PRONTO. Pressione Atirar!"
+SinglePlayer="Pressione ATIRAR para começar!"
+[UTWeap_BioRifle]
+ItemName="Bio Rifle"
+PickupMessage="Você pegou um Bio Rifle"
+[UTArmorPickup_ShieldBelt]
+PickupMessage="Você pegou um cinto de escudo."
+[UTArmorPickup_Helmet]
+PickupMessage="Você pegou um capacete."
+[UTArmorPickup_Vest]
+PickupMessage="Você pegou um colete."
+[UTArmorPickup_thighpads]
+PickupMessage="Você pegou caneleiras."
+[UTArmorPickupFactory]
+PickupMessage="Você pegou uma armadura."
+[UTHealthPickupFactory]
+PickupMessage="Você pegou um Kit de Saúde."
+[UTDmgType_ScorpionSelfDestruct]
+DeathString="%o chegou perto demais da autodestruição do scorpion de %k."
+FemaleSuicide="%o se fritou com a própria autodestruição do scorpion."
+MaleSuicide="%o se fritou com a própria autodestruição do scorpion."
+[UTDmgType_RanOver]
+DeathString="%k atropelou %o"
+FemaleSuicide="%o se atropelou."
+MaleSuicide="%o se atropelou."
+[UTDmgType_Pancake]
+DeathString="%o foi esmagado por %k"
+FemaleSuicide="%o foi esmagada."
+MaleSuicide="%o foi esmagado."
+[UTKillingSpreeMessage]
+EndSpreeNote=" teve a sequência de mortes encerrada por"
+EndSelfSpree="estava indo bem até se matar!"
+EndFemaleSpree="estava indo bem até se matar!"
+SpreeNote[0]="está numa sequência de mortes!"
+SpreeNote[1]="está num massacre!"
+SpreeNote[2]="está dominando!"
+SpreeNote[3]="é imparável!"
+SpreeNote[4]="é um DEUS!"
+SpreeNote[5]="está INSANO!"
+SelfSpreeNote[0]="Sequência de mortes!"
+SelfSpreeNote[1]=Massacre!
+SelfSpreeNote[2]=Dominando!
+SelfSpreeNote[3]=Imparável!
+SelfSpreeNote[4]=DIVINO!
+SelfSpreeNote[5]="INSANO!"
+[UTWeap_MiniGun]
+ItemName=MiniGun
+PickupMessage="Você pegou uma Mini-Gun"
+[UTDmgType_Drowned]
+DeathString="%o esqueceu de subir para respirar."
+FemaleSuicide="%o esqueceu de subir para respirar."
+MaleSuicide="%o esqueceu de subir para respirar."
+[UTDmgType_Encroached]
+DeathString="Os átomos de %o foram substituídos pelos de %k."
+FemaleSuicide="%o se teleportou para dentro de algo sólido."
+MaleSuicide="%o se teleportou para dentro de algo sólido."
+[UTJumpBoots]
+RanOutText="As Botas de Pulo acabaram."
+PickupMessage="Você pegou as Botas de Pulo."
+[UTDmgType_SniperHeadShot]
+DeathString="A massa cinzenta de %o foi ejetada por %k."
+FemaleSuicide="%o caiu sobre a arma e deu um tiro na própria cabeça"
+MaleSuicide="%o caiu sobre a arma e deu um tiro na própria cabeça."
+[UTKillerMessage]
+YouKilled="Você matou"
+[UTFirstBloodMessage]
+FirstBloodString="fez o primeiro sangue!"
+[UTWeap_Enforcer]
+ItemName=Enforcer
+PickupMessage="Você pegou uma Enforcer"
+[UTDmgType_MinigunPrimary]
+DeathString="%o foi ceifado pela minigun de %k."
+FemaleSuicide="%o apontou a minigun para si mesma."
+MaleSuicide="%o apontou a minigun para si mesmo."
+[UTVehicleKillMessage]
+KillString[0]="Atropelamento!"
+KillString[1]="Bateu e Fugiu!"
+KillString[2]="Fúria no Trânsito!"
+KillString[3]="Homicídio Veicular!"
+KillString[4]=Panqueca!
+KillString[5]="Olho de Águia!"
+KillString[6]="Top Gun!"
+KillString[7]="Batidinha!"
+KillString[8]="Massacre no Asfalto!"
+[UTVWeap_RaptorGun]
+ItemName="Blaster de Plasma Raptor"
+[UTVWeap_GoliathTurret]
+ItemName="Torreta Goliath"
+[UTLastSecondMessage]
+LastSecondRed="Salvamento no último segundo do Vermelho!"
+LastSecondBlue="Salvamento no último segundo do Azul!"
+[UTDmgType_FlakShard]
+DeathString="%o foi picotado pelo canhão flak de %k."
+MaleSuicide="%o foi perfurado pelo próprio flak."
+FemaleSuicide="%o foi perfurada pelo próprio flak."
+[UTDmgType_ShockCombo]
+DeathString="%o não conseguiu evitar a explosão do combo de choque de %k."
+FemaleSuicide="%o cometeu um erro tático com o próprio combo de choque."
+MaleSuicide="%o cometeu um erro tático com o próprio combo de choque."
+[UTWeaponRewardMessage]
+RewardString[0]="Tiro na Cabeça!"
+RewardString[1]="Macaco do Flak!"
+RewardString[2]="Caçador de Cabeças!"
+RewardString[3]="Viciado em Combo!"
+[UTDmgType_Rocket]
+DeathString="%o foi com o foguete de %k para o esquecimento."
+FemaleSuicide="%o disparou o foguete cedo demais."
+MaleSuicide="%o disparou o foguete cedo demais."
+[UTDmgType_ScorpionBolo]
+DeathString="%o levou uma porção extra do plasma de %k."
+FemaleSuicide="%o se fritou com a própria explosão de plasma."
+MaleSuicide="%o se fritou com a própria explosão de plasma."
+[UTMultiKillMessage]
+KillString[0]="Morte Dupla!"
+KillString[1]="Multimorte!"
+KillString[2]="Megamorte!!"
+KillString[3]="ULTRAMORTE!!"
+KillString[4]="M O R T E  M O N S T R U O S A !!!"
+KillString[5]="A B S U R D O !!!"
+KillString[6]="P U T A  M E R D A !"
+[UTVictimMessage]
+YouWereKilledBy="Você foi morto por"
+KilledByTrailer=!
+[UTDmgType_MantaBolt]
+DeathString="O manta de %k estripou %o com plasma quente."
+FemaleSuicide="%o disparou a arma cedo demais."
+MaleSuicide="%o disparou a arma cedo demais."
+[UTVWeap_GoliathMachineGun]
+ItemName="Miniturreta Goliath"
+[UTSuperHealthPickup]
+PickupMessage="Você pegou um Barrilzão de Saúde."
+[UTDmgType_ScorpionBlade]
+DeathString="%o foi cortado pela lâmina de %k."
+FemaleSuicide="%o foi cortada."
+MaleSuicide="%o foi cortado."
+[UTHealthVialPickup]
+PickupMessage="Você pegou um Frasco de Saúde"
+[UTSmallArmorPickup]
+PickupMessage="Você pegou uma Armadura Pequena."
+[UTLargeArmorPickup]
+PickupMessage="Você pegou uma Super Armadura."
+[UTAmmo_SniperRifle]
+PickupMessage="Você pegou munição de precisão."
+[UTAmmo_ShockRifle]
+PickupMessage="Você pegou um Núcleo de Choque."
+[UTAmmo_RocketLauncher]
+PickupMessage="Você pegou um pacote de foguetes."
+[UTAmmo_MiniGun]
+PickupMessage="Você pegou 50 balas."
+[UTAmmo_LinkGun]
+PickupMessage="Você pegou cargas de link."
+[UTWeap_Redeemer]
+ItemName=Redeemer
+PickupMessage="Você pegou o Redeemer"
+[UTAmmo_FlakCannon]
+PickupMessage="Você pegou 10 cartuchos de Flak."
+[UTDmgType_Instagib]
+DeathString="%o foi Instagibado (tm) pelo raio de choque de %k."
+FemaleSuicide="%o conseguiu, sabe-se lá como, atirar em si mesma com o rifle de choque."
+MaleSuicide="%o conseguiu, sabe-se lá como, atirar em si mesmo com o rifle de choque."
+[UTAmmo_Enforcer]
+PickupMessage="Você pegou alguns pentes de Enforcer"
+[UTAmmo_BioRifle]
+PickupMessage="Você pegou munição de Bio-Rifle"
+[UTDmgType_RaptorBolt]
+DeathString="O Raptor de %k encheu %o de plasma."
+FemaleSuicide="%o fritou a si mesma com a própria rajada de plasma."
+MaleSuicide="%o fritou a si mesmo com a própria rajada de plasma."
+[UTDmgType_RaptorRocket]
+DeathString="%o não conseguiu evitar o míssil ar-ar de %k."
+FemaleSuicide="%o se explodiu para fora do céu."
+MaleSuicide="%o se explodiu para fora do céu."
+[UTDmgType_TankShell]
+DeathString="O projétil de tanque de %k reduziu %o a pedaços em chamas."
+FemaleSuicide="%o disparou o próprio foguete cedo demais."
+MaleSuicide="%o disparou o próprio foguete cedo demais."
+[UTDmgType_NecrisTankShell]
+DeathString="%o foi incinerado pelo projétil de tanque de %k."
+FemaleSuicide="%o se incinerou."
+MaleSuicide="%o se incinerou."
+[UTCTFBlueFlagBase]
+ObjectiveName="Bandeira Azul"
+[UTCTFRedFlagBase]
+ObjectiveName="Bandeira Vermelha"
+[UTVWeap_MantaGun]
+ItemName="Blaster de Plasma Manta"
+[UTVWeap_ViperGun]
+ItemName="Blaster de Plasma Viper"
+[UTDmgType_ImpactHammer]
+DeathString="%o foi martelado por %k."
+FemaleSuicide="%o se esmagou."
+MaleSuicide="%o se esmagou."
+[UTDmgType_Enforcer]
+DeathString="%k encheu %o de buracos com a Enforcer."
+FemaleSuicide="%o fez o impossível."
+MaleSuicide="%o fez o impossível."
+[UTDmgType_SniperPrimary]
+DeathString="%o foi abatido por %k."
+FemaleSuicide="%o caiu em cima da própria arma e deu um tiro no peito."
+MaleSuicide="%o caiu em cima da própria arma e deu um tiro no peito."
+[UTDmgType_LinkBeam]
+DeathString="%o foi retalhado pelo raio verde de %k."
+FemaleSuicide="%o se atravessou com o próprio raio."
+MaleSuicide="%o se atravessou com o próprio raio."
+[UTCTFHUDMessage]
+YouHaveFlagString="Você está com a bandeira, volte para a base!"
+EnemyHasFlagString="O inimigo está com a sua bandeira, recupere-a!"
+[UTOnslaughtHUDMessage]
+OnslaughtHUDString[0]="Você está com o orbe de energia!"
+OnslaughtHUDString[1]="Você está com o orbe, leve-o até um conduto!"
+OnslaughtHUDString[2]="Portador do orbe inimigo perto do conduto!"
+[UTDmgType_GoliathMachineGun]
+DeathString="%o foi massacrado pela torreta minigun de %k."
+FemaleSuicide="%o virou a minigun contra si mesma."
+MaleSuicide="%o virou a minigun contra si mesmo."
+[UTDmgType_MinigunSecondary]
+DeathString="%o foi estripado pela minigun de %k."
+FemaleSuicide="%o virou a minigun contra si mesma."
+MaleSuicide="%o virou a minigun contra si mesmo."
+[UTDmgType_ShockPrimary]
+DeathString="%o foi iluminado fatalmente pelo raio de choque de %k."
+FemaleSuicide="%o conseguiu, sabe-se lá como, dar um tiro em si mesma com o rifle de choque."
+MaleSuicide="%o conseguiu, sabe-se lá como, dar um tiro em si mesmo com o rifle de choque."
+[UTDmgType_Telefrag]
+DeathString="Os átomos de %o foram substituídos por %k."
+FemaleSuicide="%o desestabilizou o próprio translocador."
+MaleSuicide="%o desestabilizou o próprio translocador."
+[UTDmgType_FailedTranslocation]
+DeathString="A translocação de %o foi interrompida por %k."
+FemaleSuicide="%o desestabilizou o próprio translocador."
+MaleSuicide="%o desestabilizou o próprio translocador."
+[UTDmgType_StickyGrenade]
+DeathString="%o brincou com a bolinha feliz de %k..."
+FemaleSuicide="Que bobagem, %o, granadas são para inimigos..."
+MaleSuicide="Que bobagem, %o, granadas são para inimigos..."
+[UTDmgType_SpiderMine]
+DeathString="%o invadiu a propriedade de %k"
+FemaleSuicide="%o testou uma das próprias minas... funcionou!"
+MaleSuicide="%o testou uma das próprias minas... funcionou!"
+[UTDmgType_ShockBall]
+DeathString="%o foi eliminado pelo núcleo de choque de %k."
+FemaleSuicide="%o se apagou com o núcleo de choque."
+MaleSuicide="%o se apagou com o núcleo de choque."
+[UTDmgType_Redeemer]
+DeathString="%o foi PULVERIZADO por %k!"
+FemaleSuicide="%o foi PULVERIZADA!"
+MaleSuicide="%o foi PULVERIZADO!"
+[UTDmgType_LinkPlasma]
+DeathString="%o recebeu uma dose extra do plasma de %k."
+FemaleSuicide="%o fritou a si mesma com a própria rajada de plasma."
+MaleSuicide="%o fritou a si mesmo com a própria rajada de plasma."
+[UTDmgType_FlakShell]
+DeathString="%o foi rasgado em pedaços pelos estilhaços de %k."
+FemaleSuicide="%o se explodiu com um projétil de flak."
+MaleSuicide="%o se explodiu com um projétil de flak."
+[UTDmgType_CicadaRocket]
+DeathString="%k's explodiu %o em pedaços."
+FemaleSuicide="%o se explodiu direitinho."
+MaleSuicide="%o se explodiu direitinho."
+[UTDmgType_BioGoo]
+DeathString="%o foi melecado pela gosma biológica de %k."
+FemaleSuicide="%o sufocou na própria gosma."
+MaleSuicide="%o sufocou na própria gosma."
+[UTDmgType_AvrilRocket]
+DeathString="%k fez %o em pedaços com um AVRiL."
+FemaleSuicide="%o apontou a arma para o lado errado."
+MaleSuicide="%o apontou a arma para o lado errado."
+[UTVehicleCTFGame]
+Description="Como o Capture The Flag tradicional, mas com veículos na mistura! Só veículos terrestres podem carregar a bandeira."
+GameName="CTF com Veículos"
+[UTDmgType_CicadaLaser]
+DeathString="O blaster de %k picou %o."
+FemaleSuicide="%o usou o blaster contra si mesma."
+MaleSuicide="%o usou o blaster contra si mesmo."
+[UTWeap_TarydiumRifle]
+ItemName="Stinger"
+PickupMessage="Você pegou uma Minigun Stinger."
+[UTDmgType_TarydiumShard]
+DeathString="%o foi perfurado pelo estilhaço de %k."
+MaleSuicide="%o se perfurou."
+FemaleSuicide="%o se perfurou."
+[UTDmgType_HellBenderPrimary]
+DeathString="%o foi desintegrado pelo raio de %k."
+MaleSuicide="%o se desintegrou."
+FemaleSuicide="%o se desintegrou."
+[UTDmgType_TurretPrimary]
+DeathString="%o foi despedaçado pelo raio de %k."
+MaleSuicide="%o se explodiu."
+FemaleSuicide="%o se explodiu."
+[UTDmgType_PaladinProximityExplosion]
+DeathString="%o chegou perto demais do Paladin de %k."
+[UTDmgType_PaladinEnergyBolt]
+DeathString="%o não conseguiu evitar a explosão do Paladin de %k."
+[UTGameViewportClient]
+LevelActionMessages[0]=""
+LevelActionMessages[1]="Pausado..."
+LevelActionMessages[2]="Carregando..."
+LevelActionMessages[3]="Salvando..."
+LevelActionMessages[4]="Conectando a..."
+LevelActionMessages[5]="!! Pré-carregando !!"
+[UTSPMAMessage]
+MessageText="!! Não é possível posicionar em movimento !!"
+[UTDmgType_SPMACameraCrush]
+DeathString="%o foi esmagado quando a câmera de %k caiu do céu!"
+MaleSuicide="O céu está caindo... em cima de VOCÊ!"
+FemaleSuicide="O céu está caindo... em cima de VOCÊ!"
+[UTDmgType_SPMAShell]
+DeathString="%o foi esmagado quando o SPMA de %k acertou em cheio!"
+MaleSuicide="%o se matou com o SPMA!"
+FemaleSuicide="%o se matou com o SPMA!"
+[UTDmgType_SPMASmallShell]
+DeathString="%k estragou a festa de %o."
+MaleSuicide="%o foi morto por um ataque de artilharia."
+FemaleSuicide="%o foi morto por um ataque de artilharia."
+[UTAirVehicle]
+RadarLock="Radar Travado!"
+[UTDeployableSensor]
+ItemName="Sensor Instalável"
+PickupMessage="Você pegou um Sensor instalável"
+[UTDeployableSpiderMineTrap]
+ItemName="Armadilha de Minas Aranha Instalável"
+PickupMessage="Você pegou uma Armadilha de Minas Aranha instalável"
+[UTDeployableSlowVolume]
+ItemName="Zona de Lentidão Instalável"
+PickupMessage="Você pegou uma Zona de Lentidão instalável"
+[UTDmgType_VehicleCollision]
+DeathString="%o sofreu um acidente."
+MaleSuicide="%o sofreu um acidente."
+FemaleSuicide="%o sofreu um acidente."
+[UTDmgType_LeviathanBeam]
+DeathString="%o se explodiu em pedaços."
+MaleSuicide="%k explodiu %o em pedaços."
+FemaleSuicide="%k explodiu %o em pedaços."
+[UTDmgType_LeviathanShockBall]
+DeathString="%o levou um choque forte demais."
+MaleSuicide="%k eletrocutou %o."
+FemaleSuicide="%k eletrocutou %o."
+[UTDmgType_LeviathanShard]
+DeathString="%o morreu."
+MaleSuicide="%k empalou %o."
+FemaleSuicide="%k empalou %o."
+[UTDmgType_LeviathanRocket]
+DeathString="%k fez chover fogo sobre %o."
+MaleSuicide="%o explodiu."
+FemaleSuicide="%o explodiu."
+[UTDmgType_ScorpionFire]
+DeathString="%k incinerou %o."
+MaleSuicide="%k não aguentou o calor."
+FemaleSuicide="%k não aguentou o calor."
+[UTDmgType_VehicleExplosion]
+DeathString="%k eliminou %o com a explosão de um veículo."
+MaleSuicide="%o estava perto demais do veículo que explodiu."
+FemaleSuicide="%o estava perto demais do veículo que explodiu."
+[UTDmgType_WidowMakerEnergyShell]
+DeathString="%o foi reduzido a farelo pela WidowMaker de %k."
+MaleSuicide="%o se reduziu a farelo com a WidowMaker."
+FemaleSuicide="%o se reduziu a farelo com a WidowMaker."
+[UTTeamGameMessage]
+RequestTeamSwapPrefix=""
+RequestTeamSwapPostfix="está pedindo troca de time."
+[UTDmgType_DarkWalkerTurretBeam]
+DeathString="%o foi desintegrado pelo raio de %k."
+MaleSuicide="%o se desintegrou."
+FemaleSuicide="%o se desintegrou."
+[UTDmgType_DarkWalkerTurretBeamFinal]
+DeathString="%o foi desintegrado pelo raio de %k."
+MaleSuicide="%o se desintegrou."
+FemaleSuicide="%o se desintegrou."
+[UTDmgType_DarkWalkerBolt]
+DeathString="O Dark Walker de %k estripou %o com plasma quente."
+FemaleSuicide="%o disparou a própria arma cedo demais."
+MaleSuicide="%o disparou a própria arma cedo demais."
+[UTDmgType_LeviathanBolt]
+DeathString="O Leviathan de %k encheu %o de plasma."
+FemaleSuicide="%o fritou a si mesma com a própria rajada de plasma."
+MaleSuicide="%o fritou a si mesmo com a própria rajada de plasma."
+[UTDmgType_VehicleShockBall]
+DeathString="%o bateu na skymine de %k."
+MaleSuicide="%o bateu na própria skymine."
+FemaleSuicide="%o bateu na própria skymine."
+[UTDmgType_VehicleShockChain]
+DeathString="%o não escapou do poder incrível do combo de skymines de %k."
+MaleSuicide="%o foi apressado demais ao detonar as próprias skymines."
+FemaleSuicide="%o foi apressada demais ao detonar as próprias skymines."
+[UTDmgType_VehicleShockBeam]
+DeathString="O laser de %k eletrizou %o."
+MaleSuicide="%o usou o laser contra si mesmo."
+FemaleSuicide="%o usou o laser contra si mesma."

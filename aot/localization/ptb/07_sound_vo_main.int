@@ -1,0 +1,1066 @@
+[1_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Sabe de uma coisa? Estou feliz de a gente estar largando a SSC. A gente salva Manila do Armagedom e não leva crédito nenhum. Nem mencionam que tinha bomba nuclear no porta-aviões." , Time=0)
+[10_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Elliot. A gente acabou de cair numa armadilha pra matar um senador dos EUA." , Time=0)
+Subtitles[1]=(Text="RIOS: Nossas carreiras acabaram e estamos numa situação de vida ou morte." , Time=3.51)
+Subtitles[2]=(Text="RIOS: Por que porra você está perguntando isso agora?" , Time=6.49)
+[10_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem - vocês vão perder a comitiva do Mohammed se não chegarem naquele cais em menos de um minuto. Anda logo, porra!" , Time=0)
+[100_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você é inacreditável." , Time=0)
+[101_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Alice, você tem que dar um jeito de nos tirar daqui. Câmbio." , Time=0)
+[102_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Não acho nenhuma rota de fuga. Vou continuar procurando." , Time=0)
+[103_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tem mais alguma boa notícia?" , Time=0)
+[104_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Queria ter... Câmbio, desligo." , Time=0)
+[105_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="MURRAY: Vocês não vão acreditar, mas aquela explosão abriu um buraco" , Time=0)
+Subtitles[1]=(Text="na parede! Do outro lado tem uma instalação de processamento de" , Time=2.49)
+Subtitles[2]=(Text="minério e uns trilhos de trem. Estou vendo o horário dos trens." , Time=5.76)
+[106_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Entendido. Vamos pra instalação de processamento." , Time=0)
+[107_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Vocês dois deviam ir pra aquela instalação de processamento!" , Time=0)
+[108_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: O que vocês estão fazendo? Vão pro buraco na parede!" , Time=0)
+[109_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem - saiam daí, porra! Vão pra usina de processamento." , Time=0)
+[11_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Muita gente diz que é o RZA, mas eu curto mais o Ghost Face Killah. E... na real, acho que nunca ouvi o álbum do U-God. Você ouviu?" , Time=0)
+[11_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Rios, Salem - no topo da escada vocês têm uma boa posição pra derrubar a ponte. Câmbio, desligo." , Time=0)
+[110_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Beleza, rapazes, achei o horário dos trens. E tem um vindo na direção de vocês logo, logo. Vocês têm que pegar ele - é a única saída que eu vejo. Câmbio." , Time=0)
+[111_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Entendido! Como a gente chega nos trilhos? Câmbio." , Time=0)
+[112_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês têm que subir até o topo do segundo prédio da instalação de processamento. Uma esteira leva vocês por cima de um abismo até uma terceira estrutura, bem em cima dos trilhos. Câmbio." , Time=0)
+[113_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Entrem naquele prédio. De lá vocês sobem." , Time=0)
+[114_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Vocês dois deviam entrar naquele prédio!" , Time=0)
+[115_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Entrem naquele prédio!" , Time=0)
+[116_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Melhor vocês se apressarem, rapazes, senão perdem o trem. Câmbio, desligo." , Time=0)
+[117_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Anda logo, pessoal, aquele trem vem rápido! Câmbio." , Time=0)
+[118_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, andem logo, ou vão perder aquele trem. Câmbio." , Time=0)
+[119_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Dez minutos até o trem passar. Câmbio." , Time=0)
+[12_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Dá pra CALAR A BOCA com essa merda idiota e me deixar pensar?" , Time=0)
+[12_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: E aí, Alice. O que anda rolando lá em casa?" , Time=0)
+[120_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: O trem deve passar em uns cinco minutos, andem logo! Câmbio." , Time=0)
+[121_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: O trem chega aí em dois minutos. Câmbio." , Time=0)
+[122_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: O trem está quase aí! Um minuto!" , Time=0)
+[123_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Anda, pessoal, trinta segundos pro trem!" , Time=0)
+[124_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Isso é loucura." , Time=0)
+[125_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Esses caras não desistem nunca..." , Time=0)
+[125A_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Usa esse elevador industrial pra derrubar aquela metralhadora. Eu ativo pra você." , Time=0)
+[125B_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Ei, mano - vamos usar esse elevador pra acabar com aquele atirador. Eu ativo pra você." , Time=0)
+[126_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Não acredito, mas parece que você tinha razão. As ordens dessa missão vieram direto do Dalton. Deve ter sido ele que armou pra vocês. Câmbio." , Time=0)
+[127_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O Stockwell também está nessa?" , Time=0)
+[129_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Aposto que o Papa também está - você e suas teorias da conspiração." , Time=0)
+[13_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Relaxa, cara. Eu entendo. Os dois estamos sob muita pressão. Você lida do seu jeito, eu falo de Wu-Tang." , Time=0)
+[13_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: O projeto de privatização das Forças Armadas vai a votação em breve." , Time=0)
+Subtitles[1]=(Text="MURRAY: O senador Whitehorse tem feito uma campanha pesada contra." , Time=2.2)
+Subtitles[2]=(Text="MURRAY: Não sei se vai passar. Câmbio." , Time=5.2)
+[130_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vou ver o que mais consigo descobrir. Câmbio, desligo." , Time=0)
+[131_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Essa porra não funciona." , Time=0)
+[132_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: É, acho que não tem energia nesse prédio." , Time=0)
+[133_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Será que a gente precisa achar o disjuntor?" , Time=0)
+[134_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Nada, cara. Essa coisa está morta." , Time=0)
+[135_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: É. Não tem energia no prédio inteiro." , Time=0)
+[136_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Será que a gente acha o disjuntor?" , Time=0)
+[137_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Massa!" , Time=0)
+[138_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Agora sim." , Time=0)
+[139_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Olha só!" , Time=0)
+[14_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Se você não calar essa boca, vai lidar com meu pé na sua bunda." , Time=0)
+[14_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É dinheiro no nosso bolso, gata. Melhor torcer pra passar. Câmbio, desligo." , Time=0)
+[140_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Acho que você não é tão burro quanto parece." , Time=0)
+[141_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Aquilo parece um disjuntor." , Time=0)
+[142_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Dá pra ligar a energia dessa joça?" , Time=0)
+[143_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Mano - um disjuntor." , Time=0)
+[144_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Então o que você está esperando? Vê se consegue ligar a energia." , Time=0)
+[145_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Numa hora dessas, queria que a gente ainda estivesse no Exército." , Time=0)
+[146_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: A gente estaria duro, e se esse projeto de privatização passar," , Time=0)
+Subtitles[1]=(Text="SALEM: a gente ficaria sem emprego." , Time=3.65)
+[147_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: É, mas pelo menos nosso CO não armaria pra gente morrer." , Time=0)
+Subtitles[1]=(Text="RIOS: Não acredito que o Dalton fez essa merda." , Time=4.365)
+[148_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Sabe como é, cara: o poder corrompe." , Time=0)
+[149_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: A gente não pode deixar ele se safar dessa porra." , Time=0)
+Subtitles[1]=(Text="RIOS: A gente tem que expor ele, derrubar ele." , Time=2.33)
+[14A_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Parado!" , Time=0)
+[14B_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Autorização de segurança." , Time=0)
+[14C_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Vamos ver sua identidade." , Time=0)
+[14D_CHI_GUARD SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="Abre a porra do portão!" , Time=0)
+[15_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Beleza, pessoal, preparem o tiro. Pela simulação que a gente rodou," , Time=0)
+Subtitles[1]=(Text="MURRAY: vocês dois têm que acertar o centro da ponte ao mesmo tempo -" , Time=2.9)
+Subtitles[2]=(Text="MURRAY: bem quando o comboio passar por cima." , Time=5.74)
+[150_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Puta merda. Desde quando você virou um bom moço? Isso é a vida real." , Time=0)
+Subtitles[1]=(Text="Não é filme de ação. A gente tem que dar o fora daqui e salvar o nosso couro!" , Time=4.9)
+Subtitles[2]=(Text="É isso. Ninguém vai ser derrubado por nós!" , Time=9.26)
+[151_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Beleza, pessoal, o trem deve estar passando bem embaixo de vocês. Procurem uma escotilha ou algum jeito de descer." , Time=0)
+[152_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Pessoal, procurem uma escotilha ou algum jeito de descer até aquele trem! Câmbio." , Time=0)
+[153_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: O que vocês estão fazendo? Precisam procurar uma escotilha, ou um jeito de descer até o trem! Câmbio." , Time=0)
+[154_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Talvez dê pra arrancar as dobradiças daquela escotilha. Dá pra empurrar alguma coisa em cima dela? Câmbio." , Time=0)
+[155_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Talvez vocês consigam fazer aquela esteira funcionar. Câmbio e desligo." , Time=0)
+[156_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Talvez a esteira precise de energia." , Time=0)
+[157_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ei, olha só isso..." , Time=0)
+[158_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Pena que está vazio." , Time=0)
+[159_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Talvez a gente possa usar o guindaste da outra sala pra trazer umas pedras pra cá e arrebentar essa escotilha." , Time=0)
+[159A_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: E talvez eu possa usar minha mão pra te dar um tapa na nuca... Tá, que se foda. Vamos tentar." , Time=0)
+[159B_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tenho uma ideia, mano: vamos usar aquele guindaste da outra sala pra trazer umas pedras pra cá e arrebentar essa escotilha." , Time=0)
+[159C_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ah, tá, MacGyver. Vamos tentar." , Time=0)
+[16_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Beleza, preparem o tiro. A comitiva está a caminho. Vocês só terão uma chance." , Time=0)
+[160_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Ei, me dá uma mão com isso." , Time=0)
+[161_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Me ajuda a empurrar essa merda em cima da escotilha!" , Time=0)
+[162_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ah, MERDA!" , Time=0)
+[163_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Não funcionou." , Time=0)
+[164_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Ah, merda." , Time=0)
+[165_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Quer que a gente morra?" , Time=0)
+[166_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, vocês estão aí?" , Time=0)
+Subtitles[1]=(Text="MURRAY: Andei pesquisando sobre o Dalton e o Stockwell..." , Time=1.34)
+[167_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Ei! Esperem!" , Time=0)
+[168_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Aaaah! Nããão!" , Time=0)
+[169_CHI_KIDNAPPER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152489"
+Subtitles[0]=(Text="MERC: Você vem comigo." , Time=0)
+[17_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, preparem-se pra atirar! Mirem no centro da ponte. Câmbio e desligo." , Time=0)
+[170_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pegaram a Alice!" , Time=0)
+[171_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: QUE PORRA É ESSA!" , Time=0)
+[172_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Beleza. Vamos dar o fora daqui." , Time=0)
+[173_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: E que porra a gente vai fazer agora?" , Time=0)
+[174_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Voltar pra Miami, a gente tem que resgatar a Murray." , Time=0)
+[175_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Beleza. Bora." , Time=0)
+[18_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda!" , Time=0)
+[19_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ah, porra!" , Time=0)
+[2_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Talvez o Clyde estivesse por trás disso também. Talvez ele tenha conseguido as armas nucleares pro Abu Sayyaf." , Time=0)
+[20_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="SALEM: O que a gente vai fazer com os dados que pegamos do Clyde," , Time=0)
+Subtitles[1]=(Text="SALEM: provando que ele sabotava o Exército?" , Time=1.84)
+[20_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Que porra foi essa? Vocês acabaram de fracassar na missão!" , Time=0)
+[21_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="RIOS: A gente tem que mostrar pro Stockwell." , Time=0)
+Subtitles[1]=(Text="RIOS: Ver se ele sabe dessa merda." , Time=1.39)
+[21_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Missão cumprida!" , Time=0)
+[22_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: E se ele souber?" , Time=0)
+[22_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Agora vamos dar o fora daqui." , Time=0)
+[23_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente tem que levar isso pros federais. Ou pra imprensa, sei lá." , Time=0)
+[23_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, saiam daí agora. Câmbio!" , Time=0)
+[24_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Por que você sempre quer ser o herói, cara? Por que a gente não enterra isso e fica com o emprego?" , Time=0)
+[24_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, corram! Saiam daí! Câmbio!" , Time=0)
+[25_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você sabe que a gente não pode fazer isso." , Time=0)
+[25_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Aquele é um helicóptero do Exército chinês. Que porra eles estão fazendo aqui? Por que caralho estão atirando na gente?" , Time=0)
+[26_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="SALEM: Não, você não pode fazer isso." , Time=0)
+Subtitles[1]=(Text="SALEM: Se dependesse de mim, era isso que a gente faria." , Time=1.9)
+[26_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Hum, deixa eu ver, a gente acabou de explodir a ponte deles... talvez estejam um pouquinho putos?" , Time=0)
+[27_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Uhh... Tá cheirando a bunda aqui." , Time=0)
+[27_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, voltem pro aerodeslizador e saiam daí. Câmbio e desligo." , Time=0)
+[28_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Culpado." , Time=0)
+[28_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Que porra tá acontecendo aqui, Alice?" , Time=0)
+Subtitles[1]=(Text="RIOS: Esses não são o Abu Sayyaf. São militares chineses!" , Time=1.965)
+[29_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ah. Não acredito que você fez isso!" , Time=0)
+[29_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Não sei!" , Time=0)
+Subtitles[1]=(Text="MURRAY: Agora estou tentando achar o helicóptero de evacuação de vocês" , Time=0.67)
+Subtitles[2]=(Text="MURRAY: - parece que sumiu completamente. Câmbio." , Time=2.3)
+[3_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Você exagera demais nas suas teorias da conspiração." , Time=0)
+[30_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Silencioso, mas mortal, cara. Especialidade do Rios." , Time=0)
+[30_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Quer dizer que não temos como sair daqui?" , Time=0)
+[31_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Alguma coisa morreu dentro de você?" , Time=0)
+[31_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: É o que parece. Olha, deixa eu pensar em alguma coisa. Câmbio." , Time=0)
+[32_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Uma última missão, é? Ideia do caralho!" , Time=0)
+[33_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Você podia ter dito não." , Time=0)
+[34_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vai se foder." , Time=0)
+[35_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Esses caras estão em cima da gente." , Time=0)
+[36_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Cala a boca e atira." , Time=0)
+[37_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Inimigo se aproximando!" , Time=0)
+[38_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tô vendo, tô vendo!" , Time=0)
+[39_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Cuidado com aquele helicóptero!" , Time=0)
+[4_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Cuidado, ou você vai pro mar." , Time=0)
+[40_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Ah, merda!" , Time=0)
+[41_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Pessoal, vocês não vão acreditar, mas" , Time=0)
+Subtitles[1]=(Text="MURRAY: tem um contrato de morte contra vocês dois - são procurados por assassinato." , Time=2.01)
+[42_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Como é que é?" , Time=0)
+[43_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente não matou ninguém... Bom, na verdade... A gente matou um monte de gente..." , Time=0)
+[44_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: É uma recompensa enorme. Deve ser algum tipo de engano. Vou investigar. Câmbio e desligo." , Time=0)
+[45_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Assassinato?" , Time=0)
+[46_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Isso é ruim, cara... Muito ruim..." , Time=0)
+[47_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Meu Deus. A AP está noticiando que o senador Richard Whitehorse foi morto por terroristas coreanos ao atravessar uma ponte sobre o rio Lijiang." , Time=0)
+[48_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Mas que...?" , Time=0)
+[49_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda! Então era ele que estava na comitiva." , Time=0)
+[5_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Sério, mano, tenho certeza de que não foi o Clyde. Foi aquele babaca do \"Cebu Mohammed\", ou sei lá o quê. Mas daqui a uns dez minutos a gente mata ele, e o mundo vai ficar seguro - ninguém mais vai precisar se preocupar com terroristas pegando armas nucleares." , Time=0)
+[50_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Foi você que armou essa merda pra gente, Alice?" , Time=0)
+[51_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Mandou bem, cara: \"Só mais uma missão.\"" , Time=0)
+[51_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Vocês sabem que não fui eu. Mas alguém foi." , Time=0)
+Subtitles[1]=(Text="MURRAY: Vou descobrir quem foi. Câmbio e desligo." , Time=2.19)
+[52_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tá bom, tá bom. Admito. Foi uma péssima ideia." , Time=0)
+[52_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Isso tá começando a cheirar muito mal." , Time=0)
+[53_CHI_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você só tem ideia ruim." , Time=0)
+[54_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É, tipo quando tive a ideia de fazer dupla com você." , Time=0)
+[55_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Aliás, acabei de ver que tem recompensa por cada helicóptero militar e cada soldado chinês bem armado que vocês derrubarem. Boa sorte." , Time=0)
+[56_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: É. Beleza. Pelo menos a gente ganha uma grana! Pode deixar. Câmbio e desligo." , Time=0)
+[57_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Como você consegue pensar em dinheiro numa hora dessas?" , Time=0)
+[58_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Essa é a diferença entre eu e você, mano - eu sempre penso em dinheiro." , Time=0)
+[59_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: É, acho que precisa mesmo, já que vive sem grana." , Time=0)
+[6_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Você sabe que não funciona assim." , Time=0)
+[60_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O que é aquilo, uma represa?" , Time=0)
+[61_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Parece um sistema de eclusas, como no Canal do Panamá. Precisamos descobrir como abrir." , Time=0)
+[62_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Beleza, pessoal, é assim que a eclusa funciona." , Time=0)
+Subtitles[1]=(Text="MURRAY: Subam e abram a comporta." , Time=2.1)
+Subtitles[2]=(Text="MURRAY: Depois levem o aerodeslizador para dentro da câmara." , Time=4)
+Subtitles[3]=(Text="MURRAY: Com a comporta fechada, vocês podem encher a eclusa de água." , Time=6.5)
+Subtitles[4]=(Text="MURRAY: Quando estiver cheia, abram a segunda comporta e pronto, vocês estão fora." , Time=9.67)
+Subtitles[5]=(Text="MURRAY: Entenderam tudo?" , Time=12.68)
+[63_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ah, sim, a gente já tá bem na frente." , Time=0)
+[64_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Com certeza. Já fiz isso um milhão de vezes." , Time=0)
+[65_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Procurem um painel de controle para abrir o primeiro par de portas. Câmbio!" , Time=0)
+[66_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Já acharam o painel de controle? Câmbio." , Time=0)
+[67_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vamos lá, abram essas portas! Câmbio." , Time=0)
+[68_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Levem esse aerodeslizador para dentro da câmara da eclusa. Rápido." , Time=0)
+[69_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Levem o aerodeslizador para a câmara de alagamento! Câmbio." , Time=0)
+[7_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Cala a boca, cara." , Time=0)
+[70_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês precisam levar o aerodeslizador para dentro da câmara de alagamento, já. Câmbio e desligo." , Time=0)
+[71_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Agora precisam fechar as portas. Repito. Fechem as portas da eclusa. Câmbio." , Time=0)
+[72_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Fechem as portas e comecem a encher a câmara." , Time=0)
+[73_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Certo. Fechem a porra das portas. Câmbio." , Time=0)
+[74_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês precisam subir o nível da água." , Time=0)
+Subtitles[1]=(Text="MURRAY: Procurem um painel de controle. Câmbio." , Time=1.75)
+[75_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vocês precisam encher a câmara da eclusa com água." , Time=0)
+Subtitles[1]=(Text="MURRAY: Procurem algum tipo de interruptor" , Time=1.75)
+[76_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: O que vocês estão fazendo??!! Subam o nível da água! Câmbio." , Time=0)
+[76A_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="MURRAY: Beleza, pessoal. O nível da água subiu." , Time=0)
+Subtitles[1]=(Text="MURRAY: Agora precisam abrir o outro par de portas." , Time=1.87)
+[76B_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Quase lá, pessoal. Abram o último par de portas!" , Time=0)
+[76C_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Pessoal! Abram essas portas!" , Time=0)
+[76D_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Certo - tem uma vila rio acima. Escondam-se lá enquanto eu acho um jeito de tirar vocês dessa encrenca." , Time=0)
+[77_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente sabe que eles queriam o Whitehorse morto - pra o projeto de privatizar o exército passar." , Time=0)
+[78_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: É. E sabiam que a gente sabia do Clyde, então pensaram em matar dois coelhos com uma cajadada só." , Time=0)
+[79_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: SSC típica - uns sovinas filhos da puta." , Time=0)
+[8_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Rios, Salem - vocês devem ver um cais na margem logo à frente. Atraquem ali e subam as escadas. Câmbio e desligo." , Time=0)
+[80_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, Alice, escuta, acho que o Dalton e o Stockwell armaram pra gente." , Time=0)
+[81_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: O Stockwell talvez, mas o Dalton? Ele adora vocês, por que faria isso?" , Time=0)
+[82_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Quando estávamos no porta-aviões, descobrimos que o Clyde vazava as posições das tropas para os nossos inimigos. Achamos que é um plano pra fazer o Exército parecer ruim e a SSC ganhar mais contratos. Câmbio." , Time=0)
+[83_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: O quê? Por que não me contaram?" , Time=0)
+[84_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente não tinha certeza se podia confiar em você." , Time=0)
+[85_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152489"
+Subtitles[0]=(Text="MURRAY: Vocês não sabiam se podiam confiar em mim?" , Time=0)
+Subtitles[1]=(Text="MURRAY: Depois de tudo que a gente passou? Foda-se. Vocês." , Time=1.43)
+[86_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Boa, mano." , Time=0)
+[87_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Alice - como a gente sai daqui? Câmbio." , Time=0)
+[88_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Porra. Certo. Desculpa, Alice. Desculpa." , Time=0)
+[89_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Treze anos da minha vida que eu dei pra vocês - e vocês suspeitam de mim dessa merda?" , Time=0)
+[9_CHI_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei, Tyse - quem você acha que é o melhor rapper do Wu-Tang Clan?" , Time=0)
+[9_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="07_sound_vo_main"
+Subtitles[0]=(Text="MURRAY: Vamos lá, pessoal. Não temos tempo pra palhaçada. Atraquem o aerodeslizador naquele cais. Câmbio e desligo." , Time=0)
+[90_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Desculpa. Escuta, como a gente sai daqui?" , Time=0)
+[91_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Não sei. E parece que o exército chinês inteiro está a caminho. Tô tentando bolar alguma coisa. Câmbio e desligo." , Time=0)
+[92_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Vai ser uma merda federal. Vários helicópteros indo na direção de vocês - e muitas tropas terrestres. Preparem-se." , Time=0)
+[93_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Estou contando entre 20 e 50 soldados em terra, mais apoio aéreo. Preparem-se!" , Time=0)
+[94_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Cara, a gente tá em desvantagem demais..." , Time=0)
+[95_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Pode apostar." , Time=0)
+[96_CHI_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152489"
+Subtitles[0]=(Text="MURRAY: Rios, Salem - escutem - sei que vocês estão com a cabeça cheia agora, mas acabei de receber uma atualização do contrato dos coreanos. Eles acreditam que um agente chinês importante nos ataques recentes está na área com o laptop dele. Se vocês trouxerem o disco rígido, eles pagam muito bem." , Time=0)
+[97_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Entendido, Alice. Achar o laptop. Estamos nessa. Câmbio e desligo." , Time=0)
+[98_CHI_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não acredito que você quer fazer esses contratos logo depois de a gente cair numa armadilha." , Time=0)
+[99_CHI_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei, um cara tem que comer." , Time=0)

@@ -1,0 +1,896 @@
+[1_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Esses malditos Cowboys têm que ganhar hoje à noite." , Time=0)
+[1_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Por que o Dalton está dando o briefing da missão? Cadê a Alice?" , Time=0)
+[10_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Para de perder tempo pensando nessa merda e derruba aquele helicóptero!" , Time=0)
+[109_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Olha o paraquedas." , Time=0)
+[110_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: E se não funcionar?" , Time=0)
+[111_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Só tem um jeito de descobrir." , Time=0)
+[116_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Rios, Salem, estão me ouvindo?" , Time=0)
+[117_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Te ouvindo, chefe." , Time=0)
+[118_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Perdi o sinal das câmeras, então vocês estão por conta própria." , Time=0)
+[119_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Entendido. A gente se vira." , Time=0)
+[119A_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Aquele é o bunker de mísseis. Temos que destruir os mísseis ativos e qualquer arma convencional ou química que possa ser usada como carga nas ogivas." , Time=0)
+[120_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AUTOMATED VOICE: Evacuem a área. Lançamento de míssil em três minutos." , Time=0)
+[123_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eles estão preparando o lançamento de um desses mísseis." , Time=0)
+[124_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Não deixem esse míssil ser lançado, entenderam? Andem logo!" , Time=0)
+[125_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Entendido." , Time=0)
+[127_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AUTOMATED VOICE: Evacuem a área. Lançamento de míssil em dois minutos." , Time=0)
+[128_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AUTOMATED VOICE: Evacuem a área. Lançamento de míssil em um minuto." , Time=0)
+[129_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AUTOMATED VOICE: Evacuem imediatamente. Míssil sendo lançado." , Time=0)
+[130_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AUTOMATED VOICE: Evacuem imediatamente. Lançamento de míssil em trinta segundos." , Time=0)
+[133_AFG_AUTOMATED_VOICE SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152408"
+Subtitles[0]=(Text="AUTOMATED VOICE: Lançamento de míssil em 20," , Time=0)
+Subtitles[1]=(Text="AUTOMATED VOICE: 19" , Time=2.6)
+Subtitles[10]=(Text="AUTOMATED VOICE: 10" , Time=16.2)
+Subtitles[11]=(Text="AUTOMATED VOICE: 9" , Time=17.3)
+Subtitles[12]=(Text="AUTOMATED VOICE: 8" , Time=18.5)
+Subtitles[13]=(Text="AUTOMATED VOICE: 7" , Time=19.4)
+Subtitles[14]=(Text="AUTOMATED VOICE: 6" , Time=20.7)
+Subtitles[15]=(Text="AUTOMATED VOICE: 5" , Time=22)
+Subtitles[16]=(Text="AUTOMATED VOICE: 4" , Time=23.2)
+Subtitles[17]=(Text="AUTOMATED VOICE: 3" , Time=24.2)
+Subtitles[18]=(Text="AUTOMATED VOICE: 2" , Time=25.5)
+Subtitles[19]=(Text="AUTOMATED VOICE: 1" , Time=26.7)
+Subtitles[2]=(Text="AUTOMATED VOICE: Lançamento de míssil." , Time=4.3)
+Subtitles[20]=(Text="AUTOMATED VOICE: 18" , Time=28)
+Subtitles[3]=(Text="AUTOMATED VOICE: 17" , Time=5.8)
+Subtitles[4]=(Text="AUTOMATED VOICE: 16" , Time=7.5)
+Subtitles[5]=(Text="AUTOMATED VOICE: 15" , Time=9)
+Subtitles[6]=(Text="AUTOMATED VOICE: 14" , Time=10.7)
+Subtitles[7]=(Text="AUTOMATED VOICE: 13" , Time=12.2)
+Subtitles[8]=(Text="AUTOMATED VOICE: 12" , Time=13.8)
+Subtitles[9]=(Text="AUTOMATED VOICE: 11" , Time=15)
+[14_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Qual é, cara. Acerta o rotor de cauda!" , Time=0)
+[140_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios para Dalton. Pegamos o míssil." , Time=0)
+[141_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Bom trabalho. Ainda deve ter ogivas em algum lugar da instalação. Quero essas destruídas também." , Time=0)
+[147_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Não tenho tempo pra discutir isso. Sigam com a missão." , Time=0)
+[154_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda." , Time=0)
+[155_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ruim, ruim, ruim..." , Time=0)
+[156_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Que porra foi essa?" , Time=0)
+[157_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente tentou..." , Time=0)
+[158_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="DALTON: Tentaram? Pois não tentaram o bastante" , Time=0)
+Subtitles[1]=(Text="DALTON: e eu estou tirando vocês da missão!" , Time=3.13)
+[159_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Entendido." , Time=0)
+[169_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Verifiquem o GPS." , Time=0)
+Subtitles[1]=(Text="DALTON: Vocês devem estar perto o bastante pra captar o sinal do Hicks. Câmbio." , Time=1.5)
+[176_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Isso não tá certo. Mandar a gente aqui sem nem uma máscara de gás. Vou falar com o Dalton quando voltarmos." , Time=0)
+[178_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Salem para Dalton. Essa área está cheia de algum tipo de gás. Câmbio." , Time=0)
+[179_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: ...com a missão. Repito... sigam com a missão. Câmbio." , Time=0)
+[180_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Sigam com a missão. Estão me ouvindo? Repito: sigam com a missão. Câmbio." , Time=0)
+[183_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não ouvi nada. Peço permissão pra abortar a missão. A sala está cheia de gás e não temos o equipamento certo. Câmbio." , Time=0)
+[184_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Negativo... Sigam... Missão... Fiquem longe do... gás... limpos na base.... Câmbio e desligo." , Time=0)
+[185_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Negativo. Sigam com a missão. Só fiquem longe do gás. A gente limpa vocês na base. Câmbio e desligo." , Time=0)
+[188_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Então vamos logo. Não dá pra ficar muito tempo nesse gás." , Time=0)
+[19_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Espero que a gente ache o Bin Laden aqui embaixo... São vinte milhões de dólares..." , Time=0)
+[2_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Grande jogo, hein?" , Time=0)
+[2_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tenho certeza de que ela está bem. Você liga pra ela depois. Agora temos um trabalho a fazer." , Time=0)
+[20_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eles sabem onde ele está e não querem de jeito nenhum que a gente o encontre." , Time=0)
+[202_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="AL HABIIB: Você me diz para quem trabalha." , Time=0)
+[203_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: Vai se foder." , Time=0)
+[206_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: É o Hicks." , Time=0)
+[207_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: AAAAHHHHhhhh!" , Time=0)
+[209_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="AL HABIIB: Isso é a foda que você leva, meu amigo. Quer mais uma foda?" , Time=0)
+[21_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É mesmo?" , Time=0)
+[210_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: Aaaah. Merda. MERDA! Aah. Eu não vou falar." , Time=0)
+[211_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Estão espancando ele até quase matar. Temos que tirar ele de lá." , Time=0)
+[212_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: (GRITA DE DOR)" , Time=0)
+[213_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="AL HABIIB: Você fala - meu amigo... Sempre eles falam." , Time=0)
+[215_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele não está aqui. É uma fita!" , Time=0)
+[216_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Não brinca, Sherlock." , Time=0)
+[217_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: Aaah! Merda! Aaah!" , Time=0)
+[22_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Achem ele e a guerra acaba." , Time=0)
+Subtitles[1]=(Text="RIOS: Sem mais justificativa pra roubar o petróleo do Iraque." , Time=1.5)
+Subtitles[2]=(Text="RIOS: O Presidente não é burro, cara. Ele é do ramo do petróleo." , Time=4.2)
+Subtitles[3]=(Text="RIOS: Tem que pensar nessa merda." , Time=7.7)
+[222_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="AL HABIIB: Você acha que é forte - como Hannibal do A-Team. Mas eu quebro você... Eu quebro você, meu amigo." , Time=0)
+[223_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: Aaaah! Meeerda! AAAH!" , Time=0)
+[226_AFG_TERRORIST SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="AL HABIIB: Você pronto pra falar, meu amigo?" , Time=0)
+[23_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tem que relaxar com essas teorias da conspiração, cara." , Time=0)
+[23_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Vocês dois destruíram aquele helicóptero? Câmbio." , Time=0)
+[24_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Rios, Salem. Tenho umas notícias pra vocês." , Time=0)
+[24_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Destruímos, sim. Câmbio." , Time=0)
+[25_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="DALTON: Muito bem. Acabei de saber que Nuri Yassan estava naquele helicóptero e o Departamento de Defesa o queria morto. Vocês vão ganhar um bônus. Vou processar o pagamento imediatamente. Câmbio e desligo." , Time=0)
+[26_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Isso vem direto do Stockwell.  Ainda não foi anunciado, então fica entre a gente.  Beleza?" , Time=0)
+[263_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Hicks - é você?" , Time=0)
+[264_AFG_Hicks SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="HICKS: Q-quem tá aí?" , Time=0)
+[265_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tyson Rios - SSC. Vou te tirar daqui." , Time=0)
+[27_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Claro." , Time=0)
+[270_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei, Hicks - é você?" , Time=0)
+[271_AFG_Hicks SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="HICKS: Quem- quem tá aí?" , Time=0)
+[272_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tá tranquilo, cara. Eu sou da Companhia. Vou te tirar daqui." , Time=0)
+[28_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: A gente acabou de adquirir a Black Mountain Industries. A SSC agora é a maior empreiteira do mundo." , Time=0)
+[28_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Vocês conseguiram destruir aquele helicóptero? Câmbio." , Time=0)
+[280_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: Eu achei... as ogivas... O Al Habiib trancou elas no laboratório... Segundo andar... Tem uma fechadura digital... chama o s3kShUn8." , Time=0)
+[281_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ouviu isso, Tyse? Seu melhor amigo." , Time=0)
+[282_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Como você conhece o s3kShUn8?" , Time=0)
+[283_AFG_Hicks SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="HICKS: Todo mundo... conhece ele." , Time=0)
+[284_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="SALEM: Puta merda, cara. O que ele tem?" , Time=0)
+[285_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios chamando Dalton.  Está me ouvindo?" , Time=0)
+[289_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: ... te ouço..." , Time=0)
+[29_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Black Mountain? Esses caras quase mataram a gente no México." , Time=0)
+[29_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não.  Erramos.  Câmbio." , Time=0)
+[290_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Te ouço." , Time=0)
+[292_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Achamos o Hicks. Ele está infectado com alguma coisa." , Time=0)
+[3_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Apostei dez mil na diferença." , Time=0)
+[3_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Falando em \"trabalho a fazer\", é melhor você derrubar aquele helicóptero..." , Time=0)
+[30_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Eles só estavam fazendo o trabalho deles. Enfim, não conta pro Stockwell que eu falei isso." , Time=0)
+[30_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Que pena. O Nuri Yassan estava a bordo, e querem ele morto. Teria sido um belo bônus pra vocês. Da próxima vez, não errem. Câmbio e desligo." , Time=0)
+[302_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Desculpa, cara." , Time=0)
+[31_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pois é, como se a gente falasse com ele todo dia..." , Time=0)
+[32_AFG_BANTER_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Beleza, rapazes. Câmbio e desligo." , Time=0)
+[343_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Quer resolver um mistério? Beleza, tenho um jogo de DETETIVE pra você jogar quando a gente voltar pra casa. Até lá, foca em sair daqui sem morrer nem pegar alguma doença esquisita." , Time=0)
+[347_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O que a gente faz com esse cara?" , Time=0)
+[348_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vamos sacrificar ele." , Time=0)
+[349_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Brian - a gente vai terminar essa missão, e aí vamos dar um jeito de te tirar daqui." , Time=0)
+[366_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Ótimo. Agora termine essa missão e não fodam mais nada! Câmbio e desligo." , Time=0)
+[369_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, Eight. Está me ouvindo? É o Tyson. Sei que faz um tempo, mas a gente precisa de ajuda pra arrombar uma fechadura digital." , Time=0)
+[369A_AFG_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: J0 -" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: 907 17.  17'2 4 54f3570R 900. 2001 M0D3L." , Time=0.5)
+Subtitles[2]=(Text="s3kShUn8: jU57 4 M1nU73 PH0R 73h 0V3rriD3 k0D3.  -S8" , Time=3)
+Subtitles[3]=(Text="s3kShUn8: -S8" , Time=4.5)
+[373_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Bom ouvir você, cara. A gente precisa de ajuda pra arrombar uma fechadura digital. Pode ajudar?" , Time=0)
+[38_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, ficou sabendo da emboscada em Cabul?" , Time=0)
+[381_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: É ele." , Time=0)
+[382_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tá de sacanagem..." , Time=0)
+[382A_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AL HABIIB: Que porra vocês estão fazendo no meu laboratório?" , Time=0)
+[382B_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152408"
+Subtitles[0]=(Text="AL HABIIB: Morram, infiéis do caralho!" , Time=0)
+[383_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Toma essa, otário!" , Time=0)
+[383B_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: O que... vocês.... ainda fazem ... aí? Preciso de vocês... Matem o Al Habiib... destruam ...explosivos ou químicos que.... carregados nas ogivas." , Time=0)
+[384_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios chamando Dalton. Está me ouvindo?" , Time=0)
+[385_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Tô ouvindo, Tyse. Câmbio." , Time=0)
+[386_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Matamos o Al Habiib. Vamos destruir o depósito de ogivas e cair fora. Câmbio." , Time=0)
+[387_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151405"
+Subtitles[0]=(Text="DALTON: Rios, Salem - acabei de saber que o Departamento de Defesa quer informações sobre a fonte de financiamento desses caras. Então fiquem de olho num computador, arquivos, algo assim. Tem um belo bônus pra vocês se acharem alguma coisa. Câmbio." , Time=0)
+[39_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pois é. Ainda bem que a gente não está mais no Exército." , Time=0)
+[395_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios chamando Dalton. Pegamos aquela informação que você falou, sobre as fontes de financiamento. Estou enviando agora." , Time=0)
+[398_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Ótimo trabalho. Vou processar o pagamento de vocês. Agora terminem isso e saiam daí. Câmbio e desligo." , Time=0)
+[4_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Um ano atrás você não tinha onde cair morto e agora está torrando dez mil em apostas esportivas?" , Time=0)
+[40_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Era uma unidade Delta operando fora do radar." , Time=0)
+Subtitles[1]=(Text="RIOS: Como alguém sabia onde eles estavam?" , Time=2.49)
+[402_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Salem chamando Dalton. Pegamos aquela informação que você falou, sobre as fontes de financiamento. Estou enviando agora. Câmbio." , Time=0)
+[407_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O que ele está dizendo?" , Time=0)
+[408_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele tem o ano e o número do modelo. Está atrás do código de bloqueio do fabricante." , Time=0)
+[41_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Por que você não para de se preocupar com merda que não tem a ver com a gente e foca na missão?" , Time=0)
+[410_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O cara é bom, hein." , Time=0)
+[411_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Valeu, Eight." , Time=0)
+[411A_AFG_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: J0 -" , Time=0)
+Subtitles[1]=(Text="s3kShUn8: 7rY 769117845" , Time=0.5)
+Subtitles[2]=(Text="s3kShUn8: -S8" , Time=2.5)
+[416_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Puta merda." , Time=0)
+[417_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tem um monte de ogivas aqui." , Time=0)
+[418_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Todas cheias de armas químicas." , Time=0)
+[419_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Imagina se eles usassem tudo isso?" , Time=0)
+[420_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: É por isso que a gente vai destruir essa merda toda, cara. Pra nunca ser usada." , Time=0)
+[421_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Então bora." , Time=0)
+[423_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente conseguiu, cara!" , Time=0)
+[425_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Eu não fico pensando nessa merda, cara. Não sei por que você pensa. E agora eu só quero dar o fora daqui e ser descontaminado." , Time=0)
+[434_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda, cara. Ele morreu." , Time=0)
+[46A_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="DALTON: Rios, Salem - acabamos de colocar no ar um sistema que permite fazer compras no meio da missão. Dá pra usar isso pra conseguir armas e equipamentos novos - praticamente tudo de que precisarem em campo. Câmbio e desligo." , Time=0)
+[47_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tem alguma coisa errada, cara. Quero saber do que essa missão trata de verdade." , Time=0)
+[47_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, olha. Aquilo é um míssil M-11." , Time=0)
+[48_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Dá pra CALAR A BOCA com essa merda de uma vez? Foque no que está fazendo e não perca tempo com essa besteira!" , Time=0)
+[48_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Merda, isso não é brincadeira. Um desses faria um estrago sério." , Time=0)
+[49_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Tô falando, cara, tem coisa rolando aqui." , Time=0)
+Subtitles[1]=(Text="RIOS: Por que o Dalton está cuidando dessa missão?" , Time=2.28)
+[5_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tanto faz. Se eu ganhar, vou conseguir pagar meus cartões de crédito." , Time=0)
+[50_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Hã... Quem liga?" , Time=0)
+[51_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você não acha isso um pouco suspeito?" , Time=0)
+[52_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Não esqueçam de destruir aquele míssil." , Time=0)
+[6_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você tá maluco." , Time=0)
+[6_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tenta acertar o rotor traseiro!" , Time=0)
+[61_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Bom trabalho, pessoal. Continuem assim! Câmbio." , Time=0)
+[7_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente tá faturando tanto agora, como é que você se preocupa com grana?" , Time=0)
+[71_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O que temos aqui?" , Time=0)
+[72_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Que porra é essa?" , Time=0)
+[76_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="HICKS: ...quatro milhões... demais. Dois milhões.... Oferta final." , Time=0)
+[77_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="HICKS: ... quatro milhões é demais. Dois milhões. Essa é minha oferta final." , Time=0)
+[78_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Parece o nosso cara..." , Time=0)
+[79_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="AL_HABIIB: Você... veio... de longe... perder meu tempo. Eu não gosto... de tempo perdido." , Time=0)
+[8_AFG_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: A gente tá faturando porque estamos em guerra. Essa guerra acaba e você não vai conseguir manter seu estilo de vida." , Time=0)
+[80_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="AL_HABIIB: Você veio de longe para perder meu tempo. Eu não gosto que desperdicem meu tempo." , Time=0)
+[81_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="HICKS: Esse... preço justo....  agente... outras fontes." , Time=0)
+[82_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="HICKS: Esse é um preço justo.  Posso conseguir esse agente em outras fontes." , Time=0)
+[83_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="AL_HABIIB: ... uma pena que você não... essa oportunidade." , Time=0)
+[84_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="AL_HABIIB: [Peg...!]" , Time=0)
+[85_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="AL_HABIIB: Uma pena que você não vai ter essa oportunidade." , Time=0)
+[86_AFG_AL_HABIIB SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="AL_HABIIB: [Peguem ele!]" , Time=0)
+[87_AFG_HICKS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="04_sound_vo_main"
+Subtitles[0]=(Text="HICKS: Ei... espera... Não!" , Time=0)
+[88_AFG_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Que foi isso?" , Time=0)
+[89_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151405"
+Subtitles[0]=(Text="RIOS: Não sei.  Parece que ele estava tentando comprar alguma coisa." , Time=0)
+Subtitles[1]=(Text="RIOS: Algum tipo de agentes..." , Time=2.62)
+[9_AFG_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Relaxa, cara. Essa guerra não vai acabar tão cedo." , Time=0)
+[9_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="RIOS: O que aconteceu com a Murray? Por que o Dalton está passando o briefing da nossa missão?" , Time=0)
+[95_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios para Dalton. Na escuta?" , Time=0)
+[96_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Sim, estou ouvindo. Câmbio." , Time=0)
+[97_AFG_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Como a gente desce pro nível de baixo? Câmbio." , Time=0)
+[98_AFG_DALTON SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="DALTON: Vocês vão ter que fazer base jump." , Time=0)
+Subtitles[1]=(Text="DALTON: O Hicks deixou um paraquedas extra na beirada logo adiante." , Time=1.3)
+Subtitles[2]=(Text="DALTON: Ainda deve estar em condições de uso. Câmbio." , Time=4.5)
+[Hicks_tape_seq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="HICKS: Quatro milhões é demais. Dois milhões.  Essa é minha oferta final." , Time=0)
+Subtitles[1]=(Text="AL HABIIB: ..Você veio de longe para perder meu tempo." , Time=4.2)
+Subtitles[2]=(Text="AL HABIIB: Eu não gosto que desperdicem meu tempo." , Time=7.36)
+Subtitles[3]=(Text="HICKS: ..Esse é um preço justo. Posso conseguir esse agente em outras fontes." , Time=9.8)
+Subtitles[4]=(Text="AL HABIIB: ..Uma pena que você não vai ter essa oportunidade." , Time=13.2)
+Subtitles[5]=(Text="AL HABIIB: ..Peguem ele!" , Time=16)
+Subtitles[6]=(Text="HICKS: ..Ei... espera... Não!" , Time=16.8)

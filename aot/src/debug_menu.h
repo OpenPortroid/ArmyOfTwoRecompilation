@@ -54,6 +54,9 @@ namespace ao2::menu
   // Any thread: the same in a slot of its own, drawn after the notice (the
   // achievement toast, achievements.cpp), so neither replaces the other.
   void SetToast(std::function<bool()> draw);
+  // Any thread: a lasting banner in a slot of its own, drawn under the notice
+  // and the toast (the co-op lobby's other version warning, coop_invite.cpp).
+  void SetBanner(std::function<bool()> draw);
   // UI thread: the immediate drawer of the notices' ImGui drawer, for their
   // textures (null before Attach).
   rex::ui::ImmediateDrawer *NoticeImmediateDrawer();

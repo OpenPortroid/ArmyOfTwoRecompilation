@@ -31,27 +31,60 @@ namespace AO2Launcher
             get { return Path.Combine(Docs, "armyoftworecomp_profiles"); }
         }
 
-        // The user data folder of a profile.
+        // Where a profile goes when Documents can't be written (Controlled Folder Access, a OneDrive
+        // Documents that refuses new folders: Windows answers "file not found" there).
+        static string LocalProfilesDir
+        {
+            get
+            {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "armyoftworecomp_profiles");
+            }
+        }
+
+        static IEnumerable<string> Dirs
+        {
+            get { return new[] { ProfilesDir, LocalProfilesDir }; }
+        }
+
+        // The user data folder of a profile: where it is, Documents for a new one.
         public static string Root(string name)
         {
-            return string.IsNullOrEmpty(name) ? MainRoot : Path.Combine(ProfilesDir, name);
+            if (string.IsNullOrEmpty(name))
+            {
+                return MainRoot;
+            }
+            foreach (string dir in Dirs)
+            {
+                string root = Path.Combine(dir, name);
+                if (Directory.Exists(root))
+                {
+                    return root;
+                }
+            }
+            return Path.Combine(ProfilesDir, name);
         }
 
         // The main profile first, then the others by name.
         public static List<string> All()
         {
-            var list = new List<string> { Main };
-            try
+            var names = new List<string>();
+            foreach (string dir in Dirs)
             {
-                if (Directory.Exists(ProfilesDir))
+                try
                 {
-                    list.AddRange(Directory.GetDirectories(ProfilesDir).Select(Path.GetFileName)
-                        .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase));
+                    if (Directory.Exists(dir))
+                    {
+                        names.AddRange(Directory.GetDirectories(dir).Select(Path.GetFileName));
+                    }
+                }
+                catch
+                {
                 }
             }
-            catch
-            {
-            }
+            var list = new List<string> { Main };
+            list.AddRange(names.Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase));
             return list;
         }
 
@@ -100,7 +133,17 @@ namespace AO2Launcher
 
         public static void Create(string name)
         {
-            Directory.CreateDirectory(Root(name));
+            string docs = Path.Combine(ProfilesDir, name);
+            try
+            {
+                Directory.CreateDirectory(docs);
+                return;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("profile folder " + docs, ex);
+            }
+            Directory.CreateDirectory(Path.Combine(LocalProfilesDir, name));
         }
 
         // Earlier versions linked each profile's content folder (a junction) to the main one's, where

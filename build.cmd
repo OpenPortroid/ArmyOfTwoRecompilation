@@ -5,6 +5,7 @@ rem   build.cmd <preset> [args]  any preset from aot\CMakePresets.json, args go 
 rem   build.cmd sdk [args]       rexruntime from sdk\ (Release), copied next to the game
 rem   build.cmd gpu [args]       rexgpu-xenos plugin from sdk\ (the port build overwrites it - rerun after)
 rem   build.cmd pdb              release with debug symbols, then rexruntime from sdk\
+rem   build.cmd compat           armyoftworecomp_compat.exe for CPUs without AVX2 (x86-64-v2, out\build\compat)
 rem   build.cmd exp              experimental: guest memory without volatile (out\build\novol)
 rem   build.cmd pgo-gen          instrumented build for profile-guided optimization (out\build\pgo-gen)
 rem   build.cmd pgo-merge        pgo\*.profraw -> pgo\ao2.profdata (every build uses it when it is there)
@@ -29,6 +30,7 @@ call set "EXTRA=%%ALL:*%~1=%%"
 if /i "%MODE%"=="sdk" goto sdk
 if /i "%MODE%"=="gpu" goto gpu
 if /i "%MODE%"=="pdb" goto pdb
+if /i "%MODE%"=="compat" goto compat
 if /i "%MODE%"=="exp" goto exp
 if /i "%MODE%"=="pgo-gen" goto pgo_gen
 if /i "%MODE%"=="pgo-use" goto pgo_use
@@ -59,6 +61,11 @@ cd /d "%ROOT%aot" || exit /b 1
 cmake --preset win-amd64-release "-DCMAKE_EXE_LINKER_FLAGS=-Wl,/debug" || exit /b 1
 cmake --build --preset win-amd64-release || exit /b 1
 copy /y "%ROOT%sdk\out\win-amd64\Release\rexruntime.dll" "%GAME%\rexruntime.dll" >nul
+exit /b %errorlevel%
+
+:compat
+call :custom compat "-DAO2_CPU_ARCH=x86-64-v2" || exit /b 1
+copy /y "%ROOT%aot\out\build\compat\armyoftworecomp.exe" "%GAME%\armyoftworecomp_compat.exe" && echo copied
 exit /b %errorlevel%
 
 :exp

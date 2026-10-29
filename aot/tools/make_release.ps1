@@ -16,8 +16,12 @@ $crt = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio\2022\*\VC\Redist
   Sort-Object FullName | Select-Object -Last 1
 if (-not $crt) { throw "Visual C++ redistributable folder not found" }
 $launcher = "$root\launcher\bin\ArmyOfTwoLauncher.exe"
-foreach ($f in "$build\armyoftworecomp.exe", "$build\rexruntime.dll", "$build\ao2_install.exe", $launcher) {
+# armyoftworecomp_compat.exe: the same game for CPUs without AVX2 (build.cmd compat), packed as avx1-version.aot.
+foreach ($f in "$build\armyoftworecomp.exe", "$build\armyoftworecomp_compat.exe", "$build\rexruntime.dll", "$build\ao2_install.exe", $launcher) {
   if (-not (Test-Path $f)) { throw "not built: $f" }
+}
+if ((Get-Item "$build\armyoftworecomp_compat.exe").LastWriteTime -lt (Get-Item "$build\armyoftworecomp.exe").LastWriteTime.AddHours(-1)) {
+  throw "armyoftworecomp_compat.exe is older than armyoftworecomp.exe - run build.cmd compat"
 }
 
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
@@ -56,5 +60,23 @@ if ($Zip) {
 }
 $size = (Get-ChildItem $Out -Recurse | Measure-Object Length -Sum).Sum / 1MB
 "release: $Out ({0:N0} MB)" -f $size
+
+# avx1-version.aot, a release asset of its own next to the package: a zip with the game built for CPUs
+# without AVX2, as armyoftworecomp.exe. Not named .zip: every launcher takes a release's first .zip for
+# the package. Launchers in AVX1 mode download it (Updates.InstallAvx1) and offer updates only to
+# releases that have it - upload it with every release.
+$aot = Join-Path (Split-Path $Out) "avx1-version.aot"
+$stage = Join-Path (Split-Path $Out) "avx1-stage"
+if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+New-Item -ItemType Directory -Force $stage | Out-Null
+Copy-Item "$build\armyoftworecomp_compat.exe" "$stage\armyoftworecomp.exe" -Force
+Remove-Item $aot, "$aot.zip" -ErrorAction SilentlyContinue
+Push-Location $stage
+& "$env:WINDIR\System32\tar.exe" -a -c -f "$aot.zip" "armyoftworecomp.exe"
+Pop-Location
+if ($LASTEXITCODE -ne 0) { throw "tar failed: $LASTEXITCODE" }
+Move-Item "$aot.zip" $aot
+Remove-Item $stage -Recurse -Force
+"AVX1 build: $aot ({0:N0} MB)" -f ((Get-Item $aot).Length / 1MB)
 
 exit 0

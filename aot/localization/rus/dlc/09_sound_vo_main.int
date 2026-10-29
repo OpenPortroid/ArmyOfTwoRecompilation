@@ -1,0 +1,265 @@
+;; Army of Two DLC (Kiev): 09_sound_vo_main, Russian
+[SE_L09_001_RIOS_001 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Метро закрыли из-за кризиса." , Time=0)
+Subtitles[1]=(Text="Кто бы там ни шастал - он замышляет дрянь." , Time=3)
+
+[SE_L09_002_SALEM_001 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Мы что, тоже в этом списке?" , Time=0)
+
+[SE_L09_004_RIOS_003 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Путь к вентиляции рядом со входом на верхний уровень." , Time=0)
+Subtitles[1]=(Text="Пошли." , Time=2)
+
+[43_ACC_BANTER_SALEM SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну и пиздец тут творится!" , Time=0)
+
+[44_ACC_BANTER_RIOS SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Не высовывайся." , Time=0)
+
+[SE_L09_005_SALEM_002 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Ворота закрыты." , Time=0)
+Subtitles[1]=(Text="Где-то должно быть что-то, что ими управляет." , Time=1)
+
+[SE_L09_006_RIOS_004 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Надо открыть эти ворота." , Time=0)
+
+[SE_L09_007_SALEM_003 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Там внизу, кажется, диспетчерская?" , Time=0)
+
+[SE_L09_008_RIOS_005 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Пульт должен быть в той маленькой диспетчерской внизу." , Time=0)
+
+[SE_L09_009_RIOS_006 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Один из этих рубильников должен открыть ворота." , Time=0)
+
+[SE_L09_010_SALEM_004 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Должен быть один из этих рубильников." , Time=0)
+
+[SE_L09_011_SALEM_005 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Бронированный.  Его надо убрать." , Time=0)
+
+[SE_L09_012_RIOS_007 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Вход должен быть сразу за этим углом." , Time=0)
+
+[SE_L09_013_SALEM_006 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Лестница.  Она приведет нас ко входу." , Time=0)
+
+[SE_L09_014_RIOS_008 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Вентиляция.  Вот она." , Time=0)
+
+[SE_L09_015_SALEM_007 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Это точно она." , Time=0)
+
+[SE_L09_016_SALEM_008 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Бро, помоги." , Time=0)
+
+[SE_L09_017_SALEM_009 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Ни хрена не видно!" , Time=0)
+
+[SE_L09_018_RIOS_009 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Что?  Ты ждал дорожных знаков и светящихся стрелок?" , Time=0)
+
+[SE_L09_019_SALEM_010 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Блин, даже у меня дома чище, чем в этих трубах." , Time=0)
+
+[SE_L09_020_RIOS_010 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Что-то слабо в это верится..." , Time=0)
+
+[SE_L09_022_RIOS_011 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Соберись и смотри в оба." , Time=0)
+Subtitles[1]=(Text="Командный пункт должен быть где-то здесь." , Time=2)
+
+[SE_L09_023_MURRAY_001 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, связисты только что засекли сигнал" , Time=0)
+Subtitles[1]=(Text="из одной из заброшенных секций метро." , Time=3)
+Subtitles[2]=(Text="Он слабый, но это наша единственная зацепка.  Ищите соседний тоннель." , Time=5)
+Subtitles[3]=(Text="Знаю, что маловато, но вам, ребята, это по плечу." , Time=9)
+
+[SE_L09_024_SALEM_012 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Тоннель?  Мы посреди ебаного подземного лабиринта!" , Time=0)
+
+[SE_L09_025_RIOS_012 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Элис, мы будем смотреть в оба." , Time=0)
+Subtitles[1]=(Text="Только дай минутку, вынесем мусор." , Time=3)
+
+[SE_L09_026_RIOS_013 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Там что-то есть!  Надо вышибить эти ворота." , Time=0)
+
+[SE_L09_027_SALEM_013 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Вон!  Что-то вижу." , Time=0)
+Subtitles[1]=(Text="Только вряд ли мы эту хреновину откроем." , Time=2)
+
+[SE_L09_028_MURRAY_002 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Эй, это же железнодорожное депо." , Time=0)
+Subtitles[1]=(Text="Там как раз и двигают тяжести, которые не сдвинуть." , Time=2)
+
+[SE_L09_029_RIOS_014 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Тягач!  Ударит будь здоров." , Time=0)
+Subtitles[1]=(Text="Спорим, управлять им можно оттуда." , Time=3)
+
+[SE_L09_030_SALEM_014 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот дерьмо, то, что надо.  Он управляется дистанционно." , Time=0)
+Subtitles[1]=(Text="Мы там наверху рычаги не видели?" , Time=3)
+
+[SE_L09_031_RIOS_015 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Нужен другой путь наверх." , Time=0)
+
+[SE_L09_032_SALEM_015 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Блядь.  Должен быть другой путь наверх." , Time=0)
+
+[SE_L09_033_RIOS_016 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Лестница.  Помоги ее подцепить." , Time=0)
+
+[SE_L09_034_SALEM_016 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Лестница.  Помоги, бро." , Time=0)
+
+[SE_L09_035_RIOS_017 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Это должно запустить тягач." , Time=0)
+
+[SE_L09_036_SALEM_017 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Пора вынести эти ворота нахрен." , Time=0)
+
+[SE_L09_037_SALEM_018 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Ну разумеется." , Time=0)
+Subtitles[1]=(Text="Давай замочим их и глянем, что за воротами." , Time=1)
+
+[SE_L09_038_SALEM_019 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Тайс, ты помнишь хоть раз, когда" , Time=0)
+Subtitles[1]=(Text="ты открывал двери без меня?" , Time=2)
+
+[SE_L09_039_RIOS_018 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Знаю... Даже удивляюсь, как я по ночам домой попадаю." , Time=0)
+
+[SE_L09_040_RIOS_019 SoundNodeWave]
+Subtitles[0]=(Text="РИОС & СЕЙЛЕМ: (крик)" , Time=0)
+
+[SE_L09_045_SALEM_022 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Элис, пол, блядь, только что рухнул у нас под ногами!" , Time=0)
+
+[SE_L09_046_MURRAY_004 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Постойте!  Ваше местоположение..." , Time=0)
+Subtitles[1]=(Text="Это рядом с сигналом, о котором сообщали раньше." , Time=2)
+
+[SE_L09_048_SALEM_023 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот дерьмо... кровь?  А это?  Это то, что я думаю?" , Time=0)
+
+[SE_L09_049_MURRAY_005 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Понятия не имею, куда вы свалились," , Time=0)
+Subtitles[1]=(Text="но это наверняка то самое место." , Time=2)
+
+[SE_L09_050_SALEM_024 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Похоже на больницу..." , Time=0)
+
+[SE_L09_051_RIOS_022 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Не знаю... Мне это не нравится." , Time=0)
+
+[SE_L09_052_MURRAY_006 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Парни, кажется, вы наткнулись на что-то крупное." , Time=0)
+Subtitles[1]=(Text="Секретные медицинские объекты строили в годы холодной войны." , Time=3)
+Subtitles[2]=(Text="О многих до сих пор ничего неизвестно." , Time=6)
+
+[SE_L09_053_SALEM_025 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Ага, по-моему, это про нас." , Time=0)
+
+[SE_L09_054_MURRAY_007 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Там ставили всякие незаконные эксперименты" , Time=0)
+Subtitles[1]=(Text="  - контроль сознания, биооружие.  Если принесете доказательства того," , Time=3)
+Subtitles[2]=(Text="что творилось в этих клиниках, получите заслуженную премию." , Time=8)
+
+[SE_L09_055_RIOS_023 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Будем смотреть в оба." , Time=0)
+
+[SE_L09_056_RIOS_024 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Что это?  Для премии этого хватит." , Time=0)
+
+[SE_L09_057_SALEM_026 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Эй, кажется, я нашел старый отчет лаборатории." , Time=0)
+
+[SE_L09_058_RIOS_025 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Я знаю этого парня!  Помоги вытащить его отсюда." , Time=0)
+
+[SE_L09_059_SALEM_027 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Погоди, этот мужик еще жив!  Надо вытащить его отсюда." , Time=0)
+
+[SE_L09_060_RIOS_026 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Элис?  Кажется, мы нашли того консультанта из USAID." , Time=0)
+
+[SE_L09_061_MURRAY_008 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Найджел Мастерсон?  Вытащите его." , Time=0)
+Subtitles[1]=(Text="Мы организуем, чтобы его забрала медгруппа." , Time=3)
+
+[SE_L09_062_SALEM_028 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Понял." , Time=0)
+
+[SE_L09_063_SALEM_029 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Он в хреновом состоянии.  Не уверен, что он нас слышит." , Time=0)
+
+[SE_L09_064_RIOS_027 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Найджел? Найджел?  За тобой выехала группа.  Найджел?" , Time=0)
+
+[SE_L09_065_SALEM_030 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Вот безопасное место.  Помоги зачистить тут все." , Time=0)
+
+[SE_L09_066_RIOS_028 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Оставлю его здесь.  Помоги опустить эти ворота." , Time=0)
+
+[SE_L09_067_SALEM_031 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Давай покончим с этим." , Time=0)
+Subtitles[1]=(Text="У меня более чем достаточно причин взорвать это место." , Time=1)
+
+[SE_L09_068_RIOS_029 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Вон там!  Там полно аппаратуры." , Time=0)
+Subtitles[1]=(Text="Вынесем ту комнату - отрубим голову." , Time=3)
+
+[SE_L09_069_SALEM_032 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Смотри!  Там наверху!" , Time=0)
+Subtitles[1]=(Text="Наверняка там они и держат все самое ценное." , Time=1)
+
+[SE_L09_070_MLTA_LEAD_001 SoundNodeWave]
+Subtitles[0]=(Text="КОМАНДИР БОЕВИКОВ: Жаль, что хитроумие нашей операции" , Time=0)
+Subtitles[1]=(Text="вызвало такую ярость." , Time=2)
+
+[SE_L09_071_MLTA_LEAD_002 SoundNodeWave]
+Subtitles[0]=(Text="КОМАНДИР БОЕВИКОВ: Сначала вы проникаете в государственную тайну." , Time=0)
+Subtitles[1]=(Text="Потом хотите диверсией сорвать работу диверсантов." , Time=4)
+
+[SE_L09_072_MLTA_LEAD_003 SoundNodeWave]
+Subtitles[0]=(Text="КОМАНДИР БОЕВИКОВ: Вот мое понимание демократии." , Time=0)
+Subtitles[1]=(Text="Кто хочет увидеть этих двоих порубленными?" , Time=3)
+
+[SE_L09_073A_MLTA_MEN_002 SoundNodeWave]
+Subtitles[0]=(Text="БОЕВИКИ: Я!" , Time=0)
+
+[SE_L09_073_MLTA_MEN_001 SoundNodeWave]
+Subtitles[0]=(Text="БОЕВИКИ: Я хочу!" , Time=0)
+
+[52A_SOM_BANTER_SALEM SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Это пиздец, чувак. Эти ребята повсюду." , Time=0)
+
+[SE_L09_074_RIOS_030 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Давай быстро наверх." , Time=0)
+
+[SE_L09_075_SALEM_033 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: Элис, мы нашли золотую жилу." , Time=0)
+
+[SE_L09_076_RIOS_031 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Элис, мы в командном пункте." , Time=0)
+
+[SE_L09_077_MURRAY_009 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Отлично.  Теперь пусть это исчезнет." , Time=0)
+
+[SE_L09_078_RIOS_032 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Валим отсюда!" , Time=0)
+
+[SE_L09_079_SALEM_034 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: С меня на сегодня хватит дерьма." , Time=0)
+
+[SE_L09_080_RIOS_033 SoundNodeWave]
+Subtitles[0]=(Text="РИОС: Элис, мы выдвигаемся к выходу." , Time=0)
+
+[SE_L09_081_MURRAY_010 SoundNodeWave]
+Subtitles[0]=(Text="МЮРРЕЙ: Вот это я люблю слышать.  Идите к точке эвакуации." , Time=0)
+Subtitles[1]=(Text="Я подготовлю медиков для Найджела." , Time=2)
+
+[SE_L09_082_SALEM_035 SoundNodeWave]
+Subtitles[0]=(Text="СЕЙЛЕМ: НЕ говорите мне ни о чем, хоть отдаленно медицинском!" , Time=0)

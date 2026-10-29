@@ -68,6 +68,8 @@ REXCVAR_DEFINE_BOOL(ao2_autopilot_aimbot_net, true, "Debug",
                     "(no infinite ammo there)");
 REXCVAR_DEFINE_BOOL(ao2_autopilot_infinite_ammo, true, "Debug",
                     "Autopilot: the weapon's magazine and reserve stay full (not in online co-op)");
+REXCVAR_DEFINE_BOOL(ao2_autopilot_no_spread, true, "Debug",
+                    "Autopilot: the weapon's bullets go straight to the crosshair, no spread (not in online co-op)");
 REXCVAR_DEFINE_DOUBLE(ao2_autopilot_aim_range, 2500.0, "Debug", "Autopilot aimbot: farthest target (world units)");
 REXCVAR_DEFINE_DOUBLE(ao2_autopilot_aim_rate, 540.0, "Debug", "Autopilot aimbot: fastest turn (degrees per second)");
 REXCVAR_DEFINE_DOUBLE(ao2_autopilot_turn, 1.5, "Debug",
@@ -224,6 +226,9 @@ namespace
   constexpr uint32_t kWeaponMaxAmmo = 700;     // UTWeapon.MaxAmmoCount
   constexpr uint32_t kWeaponReserve = 1980;    // AO2Weapon.ReserveAmmoCount
   constexpr uint32_t kWeaponMaxReserve = 1984; // AO2Weapon.MaxReserveAmmoCount
+  // AO2Weapon.SpreadMin / SpreadMax / CurrentSpread: TArray<float> (data,
+  // count) per fire mode; the spread grows from min to max while firing.
+  constexpr uint32_t kWeaponSpreads[] = {1436, 1448, 1544};
   clock::time_point g_next_fight_log, g_next_idle_a;
   constexpr auto kActionHold = std::chrono::seconds(10);
   clock::time_point g_hold_until;
@@ -485,10 +490,16 @@ namespace
     }
   }
 
-  void AimPoint(const uint8_t *base, uint32_t pawn, float &x, float &y, float &z)
+  // Where to shoot `pawn`: its head, or with `body` the middle of it (its
+  // Location) - when only that is in sight.
+  void AimPoint(const uint8_t *base, uint32_t pawn, bool body, float &x, float &y, float &z)
   {
     x = LoadF32(base, pawn + kActorLocation), y = LoadF32(base, pawn + kActorLocation + 4);
     z = LoadF32(base, pawn + kActorLocation + 8);
+    if (body)
+    {
+      return;
+    }
     if (ClassFlags(base, LoadU32(base, pawn + 52)) & kIsCharacter)
     {
       x += LoadF32(base, pawn + kHeadOffset), y += LoadF32(base, pawn + kHeadOffset + 4);
@@ -500,49 +511,115 @@ namespace
     }
   }
 
-  // The engine's own sight check, as the bots use it: AController::
-  // LineOfSightTo(Other, bUseLOSFlag, chkLocation) (virtual, vtable +880;
-  // called so by execLineOfSightTo, sub_826D8CD8) - traces from the pawn's
-  // eyes to the other's location and head. Cached for kSightCache per target.
-  constexpr uint32_t kLineOfSightTo = 880;
+  // The bullets' own check: AActor::Trace(HitLocation, HitNormal, TraceEnd,
+  // TraceStart, bTraceActors, Extent, HitInfo, ExtraTraceFlags) (sub_828B8268,
+  // under execTrace = GNatives[277]) with actors and TRACEFLAG_Bullet, as an
+  // instant-hit weapon traces: crates, props, cover and the partner stop it.
+  // (The AI's LineOfSightTo, used before, traces the world only and counts
+  // the sides of the collision cylinder too - it shot through crates.)
+  constexpr uint32_t kActorTrace = 0x828B8268;
+  constexpr uint32_t kTraceFlagBullet = 1;
+
+  void StoreF32(uint8_t *base, uint32_t addr, float value)
+  {
+    StoreU32(base, addr, std::bit_cast<uint32_t>(value));
+  }
+
+  // The first actor the trace from `from` to `to` hits (0 = none); `source`
+  // (the player's pawn) is not hit.
+  uint32_t TraceHit(PPCContext &ctx, uint8_t *base, uint32_t source, const float (&from)[3], const float (&to)[3])
+  {
+    PPCContext saved = ctx;
+    uint32_t sp = (ctx.r1.u32 - 1024) & ~15u;
+    uint32_t args = sp + 128; // HitLocation, HitNormal, TraceEnd, TraceStart, Extent: 12 bytes each
+    std::memset(base + args, 0, 60);
+    for (uint32_t i = 0; i < 3; ++i)
+    {
+      StoreF32(base, args + 24 + i * 4, to[i]);
+      StoreF32(base, args + 36 + i * 4, from[i]);
+    }
+    StoreU32(base, sp, ctx.r1.u32);            // back chain
+    StoreU32(base, sp + 84, kTraceFlagBullet); // the 9th argument goes on the stack
+    ctx.r1.u64 = sp;
+    ctx.r3.u64 = source;
+    ctx.r4.u64 = args;
+    ctx.r5.u64 = args + 12;
+    ctx.r6.u64 = args + 24;
+    ctx.r7.u64 = args + 36;
+    ctx.r8.u64 = 1; // bTraceActors
+    ctx.r9.u64 = args + 48;
+    ctx.r10.u64 = 0; // no HitInfo
+    rex::runtime::ResolveIndirectFunction(kActorTrace)(ctx, base);
+    uint32_t hit = ctx.r3.u32;
+    ctx = saved;
+    return hit;
+  }
+
+  // In sight = the bullet traces from the camera and from the player's head
+  // both reach `target`'s head (or else its body) with nothing else in the
+  // way. Cached for kSightCache per target.
   constexpr auto kSightCache = std::chrono::milliseconds(200);
   struct Sight
   {
     clock::time_point when;
     bool visible;
+    bool body; // only the body is in sight: aim there
   };
   std::unordered_map<uint32_t, Sight> g_sight;
+  std::atomic<bool> g_target_body{false}; // aim at the target's body, not its head
 
-  bool LineOfSight(PPCContext &ctx, uint8_t *base, uint32_t controller, uint32_t target, clock::time_point now)
+  const Sight &LineOfSight(PPCContext &ctx, uint8_t *base, uint32_t controller, uint32_t pawn, uint32_t target,
+                           clock::time_point now)
   {
     auto it = g_sight.find(target);
     if (it != g_sight.end() && now - it->second.when < kSightCache)
     {
-      return it->second.visible;
+      return it->second;
     }
-    uint32_t vtable = LoadU32(base, controller);
-    uint32_t fn = vtable ? LoadU32(base, vtable + kLineOfSightTo) : 0;
-    bool visible = false;
-    if (fn)
+    float eyes[2][3];
+    AimPoint(base, pawn, false, eyes[0][0], eyes[0][1], eyes[0][2]);
+    int starts = 1;
+    if (uint32_t camera = LoadU32(base, controller + kCameraActor))
     {
-      PPCContext saved = ctx;
-      ctx.r1.u64 = (ctx.r1.u32 - 1024) & ~15u;
-      ctx.r3.u64 = controller;
-      ctx.r4.u64 = target;
-      ctx.r5.u64 = 0;
-      ctx.r6.u64 = 0;
-      rex::runtime::ResolveIndirectFunction(fn)(ctx, base);
-      visible = ctx.r3.u32 != 0;
-      ctx = saved;
+      for (uint32_t i = 0; i < 3; ++i)
+      {
+        eyes[1][i] = LoadF32(base, camera + kActorLocation + i * 4);
+      }
+      starts = 2;
     }
-    g_sight[target] = {now, visible};
-    return visible;
+    Sight sight{now, false, false};
+    uint32_t blocker = 0;
+    for (bool body : {false, true})
+    {
+      float to[3];
+      AimPoint(base, target, body, to[0], to[1], to[2]);
+      bool clear = true;
+      for (int s = 0; s < starts && clear; ++s)
+      {
+        uint32_t hit = TraceHit(ctx, base, pawn, eyes[s], to);
+        clear = !hit || hit == target;
+        blocker = clear ? blocker : hit;
+      }
+      if (clear)
+      {
+        sight.visible = true, sight.body = body;
+        break;
+      }
+    }
+    static clock::time_point next_log;
+    if (!sight.visible && now >= next_log)
+    {
+      next_log = now + std::chrono::seconds(1);
+      Logf("sight: %08X behind %s (%s)\n", target, NameOf(base, blocker).c_str(),
+           NameOf(base, LoadU32(base, blocker + 52)).c_str());
+    }
+    return g_sight[target] = sight;
   }
 
   // The target for this frame (0 = none): the current one while it lives and
   // is in sight (LineOfSight), else the nearest enemy in range and in sight.
-  // A target that takes no damage for 3 s while shot at (the trace sees it,
-  // the bullets do not: thin cover) is ignored for a while.
+  // A target that takes no damage for 3 s while shot at (a shield, or the
+  // weapon's spread misses past cover) is ignored for a while.
   uint32_t PickTarget(PPCContext &ctx, uint8_t *base, uint32_t controller, uint32_t pawn, clock::time_point now)
   {
     if (now >= g_next_scan)
@@ -570,7 +647,11 @@ namespace
         }
       }
       float dx = LoadF32(base, e + kActorLocation) - px, dy = LoadF32(base, e + kActorLocation + 4) - py;
-      return dx * dx + dy * dy < range * range && LineOfSight(ctx, base, controller, e, now);
+      return dx * dx + dy * dy < range * range && LineOfSight(ctx, base, controller, pawn, e, now).visible;
+    };
+    auto pick = [&](uint32_t e) {
+      g_target_body.store(g_sight[e].body, std::memory_order_relaxed);
+      return e;
     };
     uint32_t current = g_target.load(std::memory_order_relaxed);
     if (current && std::find(g_enemies.begin(), g_enemies.end(), current) != g_enemies.end() && usable(current))
@@ -582,7 +663,7 @@ namespace
       }
       if (now - g_target_hit < std::chrono::milliseconds(3000))
       {
-        return current;
+        return pick(current);
       }
       Logf("aim: %08X takes no damage, ignored for a while\n", current);
       g_ignored.push_back({current, now + std::chrono::seconds(8)});
@@ -605,10 +686,10 @@ namespace
     {
       g_target_health = LoadU32(base, best + kPawnHealth);
       g_target_since = g_target_hit = now;
-      Logf("aim: target %08X (%s) at %.0f, health %d, %zu enemies\n", best, NameOf(base, best).c_str(),
-           std::sqrt(best_d2), int32_t(g_target_health), g_enemies.size());
+      Logf("aim: target %08X (%s) at %.0f, health %d, %s in sight, %zu enemies\n", best, NameOf(base, best).c_str(),
+           std::sqrt(best_d2), int32_t(g_target_health), g_sight[best].body ? "body" : "head", g_enemies.size());
     }
-    return best;
+    return best ? pick(best) : 0;
   }
 
   // How far the look rotation of `controller` is from `target`'s aim point
@@ -624,7 +705,7 @@ namespace
       return false;
     }
     float tx, ty, tz;
-    AimPoint(base, target, tx, ty, tz);
+    AimPoint(base, target, g_target_body.load(std::memory_order_relaxed), tx, ty, tz);
     float dx = tx - LoadF32(base, camera + kActorLocation), dy = ty - LoadF32(base, camera + kActorLocation + 4);
     float dz = tz - LoadF32(base, camera + kActorLocation + 8);
     float want_yaw = std::atan2(dy, dx) * kUnitsPerRadian;
@@ -1093,6 +1174,17 @@ namespace ao2::autopilot
         if (int32_t(full) > 0 && int32_t(full) < 100000 && LoadU32(base, weapon + have) != full)
         {
           StoreU32(base, weapon + have, full);
+        }
+      }
+    }
+    if (weapon && !network && REXCVAR_GET(ao2_autopilot_no_spread))
+    {
+      for (uint32_t array : kWeaponSpreads)
+      {
+        uint32_t data = LoadU32(base, weapon + array), count = LoadU32(base, weapon + array + 4);
+        for (uint32_t i = 0; data && i < std::min(count, 8u); ++i)
+        {
+          StoreU32(base, data + i * 4, 0);
         }
       }
     }

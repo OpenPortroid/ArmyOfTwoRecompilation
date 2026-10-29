@@ -150,6 +150,28 @@ namespace AO2Launcher
             }
         }
 
+        // ao2_install cpu: whether the main game build (x86-64-v3) runs on this CPU, from CPUID; null when the
+        // tool could not tell (missing, failed).
+        public static bool? CpuRunsMainBuild(string gameDir)
+        {
+            try
+            {
+                bool? v3 = null;
+                string error = RunTool(gameDir, "cpu", line =>
+                {
+                    if (line.StartsWith("X86_64_V3="))
+                    {
+                        v3 = line.Substring(10) == "1";
+                    }
+                }, null);
+                return error == null ? v3 : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         static string Tool(string gameDir)
         {
             string tool = Path.Combine(gameDir, ToolName);
@@ -246,7 +268,12 @@ namespace AO2Launcher
                         }
                     }
                     Log.Write("tool exit code {0}{1}", p.ExitCode, error != null ? ", error: " + error : "");
-                    if (p.ExitCode != 0 && error == null)
+                    if (p.ExitCode == unchecked((int)0xC000001D) && error == null)
+                    {
+                        // STATUS_ILLEGAL_INSTRUCTION: the tool and the game need SSE4.2 (x86-64-v2).
+                        error = L.T("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)");
+                    }
+                    else if (p.ExitCode != 0 && error == null)
                     {
                         error = "ao2_install: exit code " + p.ExitCode;
                     }

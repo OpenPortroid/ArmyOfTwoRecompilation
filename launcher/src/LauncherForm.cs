@@ -150,6 +150,7 @@ namespace AO2Launcher
         DateTime toastUntil;
         string gameExe;
         Updates.Release latest; // the latest release on GitHub; null until known (or offline)
+        List<Updates.Release> releases; // GitHub's release list, newest first; null until known (or offline)
         Updates.Release updTarget; // the release the update window installs: the latest, or one picked in the release list
         bool updatePrompt;      // the "update available" window is open
         int promptSel;          // in it: 0 = download, 1 = later
@@ -178,6 +179,11 @@ namespace AO2Launcher
             BuildRows();
             tab = Math.Max(0, Math.Min(tabs.Length - 1, S.Int("tab")));
             sel = FirstSelectable();
+            // Without AVX2 only the AVX1 build runs: its setting reads on and cannot be changed.
+            if (!Game.HasAvx2())
+            {
+                S["avx1"] = "1";
+            }
             gameExe = Game.Find(S);
             // The launcher always opens on the main screen; without the game files its button reads
             // INSTALL and leads to the installation.
@@ -242,7 +248,9 @@ namespace AO2Launcher
                 clean.Start();
             }
             MoveOldDlc();
-            CheckForUpdate();
+            // Once the window exists: the answer comes back through BeginInvoke, which fails before that (a fast
+            // answer, --releases-file, was lost).
+            Shown += (s, e) => CheckForUpdate();
             CheckNotes();
         }
 
@@ -297,20 +305,22 @@ namespace AO2Launcher
             th.Start();
         }
 
-        // Asks GitHub for the latest release off the UI thread; a newer one opens the update window.
+        // Asks GitHub for the releases off the UI thread. A newer one opens the update window, but only one with
+        // the AVX1 build (avx1-version.aot): co-op partners on either build then stay on versions both can run.
+        // In AVX1 mode without the AVX1 build of this version, the window offers it instead.
         void CheckForUpdate()
         {
             if (Updates.Override != null)
             {
-                OnLatest(Updates.Latest());
+                OnReleases(new List<Updates.Release> { Updates.Latest() });
                 return;
             }
             var th = new System.Threading.Thread(() =>
             {
-                Updates.Release r = Updates.Latest();
+                List<Updates.Release> list = Updates.All();
                 try
                 {
-                    BeginInvoke(new Action(() => OnLatest(r)));
+                    BeginInvoke(new Action(() => OnReleases(list)));
                 }
                 catch (InvalidOperationException)
                 {
@@ -321,19 +331,109 @@ namespace AO2Launcher
             th.Start();
         }
 
-        void OnLatest(Updates.Release r)
+        void OnReleases(List<Updates.Release> list)
         {
-            if (IsDisposed || Disposing || r == null)
+            if (IsDisposed || Disposing || list == null || list.Count == 0)
             {
                 return;
             }
-            latest = r;
+            releases = list;
+            PickLatest();
             if (UpdateAvailable)
             {
-                updTarget = r;
+                updTarget = latest;
+                updState = UpdState.Ask;
                 updatePrompt = true;
                 promptSel = 0;
             }
+            else if (Avx1Missing)
+            {
+                OfferAvx1(list);
+            }
+            Invalidate();
+        }
+
+        // The release to update to: the newest with a .zip package; in AVX1 mode the newest with the AVX1 build.
+        // --latest=<tag> (debug) is taken as it is.
+        void PickLatest()
+        {
+            if (releases == null || releases.Count == 0)
+            {
+                return;
+            }
+            latest = Updates.Override != null ? releases[0] :
+                Game.Avx1Mode(S) ? Updates.NewestWithAvx1(releases) : Updates.NewestWithZip(releases);
+        }
+
+        // ------------------------------------------------------------------
+        // The AVX1 build: the game for CPUs without AVX2, in the release as avx1-version.aot, unpacked next to
+        // the main build (Updates.InstallAvx1). Game.Avx1Mode: the CPU has no AVX2 or the "avx1" setting is on.
+
+        // AVX1 mode without the AVX1 build of this version next to the game. Asked also before the game files
+        // are installed: the first start of a fresh package offers it at once.
+        bool Avx1Missing
+        {
+            get { return Game.Avx1Mode(S) && gameExe != null && !Game.Avx1Ready(gameExe); }
+        }
+
+        // The update window installs only the AVX1 build of the version this package is.
+        bool Avx1Only
+        {
+            get { return updTarget != null && updTarget.Version == Updates.Current && updTarget.Avx1Url != null; }
+        }
+
+        // Whether release r can be installed from the release list (AVX1 mode: only one with the AVX1 build).
+        bool CanDownload(Updates.Release r)
+        {
+            return r.Version != Updates.Current && (r.Avx1Url != null || !Game.Avx1Mode(S));
+        }
+
+        // Loads the release list off the UI thread, then OfferAvx1(list).
+        void OfferAvx1()
+        {
+            var th = new System.Threading.Thread(() =>
+            {
+                List<Updates.Release> list = Updates.All();
+                UiDo(() =>
+                {
+                    if (list == null)
+                    {
+                        ShowToast(L.T("Could not load the release list"), true);
+                        return;
+                    }
+                    OfferAvx1(list);
+                });
+            });
+            th.IsBackground = true;
+            th.Start();
+        }
+
+        // The update window for the newest release with the AVX1 build: only that build when it is this version.
+        void OfferAvx1(List<Updates.Release> list)
+        {
+            Updates.Release r = Updates.NewestWithAvx1(list);
+            if (r == null)
+            {
+                ShowToast(L.T("No version has the AVX1 build yet"), true);
+                if (Game.HasAvx2() && S.Bool("avx1"))
+                {
+                    // Nothing to switch to: the setting goes back, the main build keeps running.
+                    S["avx1"] = "0";
+                    S.Save();
+                    PickLatest();
+                    Invalidate();
+                }
+                return;
+            }
+            if (r.Version == Updates.Current && gameExe != null && Game.Avx1Ready(gameExe))
+            {
+                ShowToast(L.T("The AVX1 build of this version is installed"), false);
+                return;
+            }
+            updTarget = r;
+            updState = UpdState.Ask;
+            updatePrompt = true;
+            promptSel = 0;
             Invalidate();
         }
 
@@ -611,7 +711,7 @@ namespace AO2Launcher
                 AddHot(close, "notes_close", CloseNotes);
                 return;
             }
-            bool installed = pick.Version == Updates.Current;
+            bool installed = !CanDownload(pick);
             float bw = 180, gap = 20;
             float bx = installed ? box.X + (box.Width - bw) / 2 : box.X + (box.Width - 2 * bw - gap) / 2;
             var back = new RectangleF(bx, box.Bottom - 64, bw, 42);
@@ -684,7 +784,7 @@ namespace AO2Launcher
             relSel = i;
             relPick = i;
             notesScroll = 0;
-            relBtn = rels[i].Version == Updates.Current ? 0 : 1;
+            relBtn = CanDownload(rels[i]) ? 1 : 0;
             Invalidate();
         }
 
@@ -720,7 +820,7 @@ namespace AO2Launcher
         // Activates the notes window's highlighted button.
         void RelButton()
         {
-            if (relBtn == 0 || rels[relPick].Version == Updates.Current)
+            if (relBtn == 0 || !CanDownload(rels[relPick]))
             {
                 RelBack();
             }
@@ -757,7 +857,7 @@ namespace AO2Launcher
                 case Keys.Right:
                 case Keys.Tab:
                 case Keys.Shift | Keys.Tab:
-                    if (rels[relPick].Version != Updates.Current)
+                    if (CanDownload(rels[relPick]))
                     {
                         relBtn = 1 - relBtn;
                         Invalidate();
@@ -801,7 +901,7 @@ namespace AO2Launcher
             {
                 case Gamepad.DpadLeft:
                 case Gamepad.DpadRight:
-                    if (rels[relPick].Version != Updates.Current)
+                    if (CanDownload(rels[relPick]))
                     {
                         relBtn = 1 - relBtn;
                         Invalidate();
@@ -846,7 +946,9 @@ namespace AO2Launcher
                 {
                     Fill(g, Color.FromArgb(hv ? 26 : 16, 255, 255, 255), row);
                 }
-                DrawText(g, "v" + r.Version, fLabel, PaperHi, new RectangleF(row.X + 16, row.Y, 90, row.Height),
+                // AVX1 mode: a release without the AVX1 build can't be installed, its row is dark.
+                bool locked = Game.Avx1Mode(S) && r.Avx1Url == null;
+                DrawText(g, "v" + r.Version, fLabel, locked ? TextDim : PaperHi, new RectangleF(row.X + 16, row.Y, 90, row.Height),
                     new StringFormat { LineAlignment = StringAlignment.Center });
                 var tags = new List<string>();
                 if (i == 0)
@@ -857,8 +959,13 @@ namespace AO2Launcher
                 {
                     tags.Add(L.T("installed"));
                 }
-                DrawText(g, string.Join("  ·  ", tags), fTiny, Paper, new RectangleF(row.X + 110, row.Y, 250, row.Height),
+                DrawText(g, string.Join("  ·  ", tags), fTiny, locked ? TextDim : Paper, new RectangleF(row.X + 110, row.Y, 250, row.Height),
                     new StringFormat { LineAlignment = StringAlignment.Center });
+                if (r.Avx1Url != null && Game.Avx1Mode(S))
+                {
+                    // AVX1 mode: the release has the build for CPUs without AVX2 (avx1-version.aot).
+                    Pill(g, "AVX1", row.Right - 160, row.Y + row.Height / 2, Paper);
+                }
                 DrawText(g, r.Date, fSmall, TextDim, new RectangleF(row.Right - 150, row.Y, 110, row.Height),
                     new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center });
                 float cx = row.Right - 22, cy = row.Y + row.Height / 2;
@@ -889,10 +996,16 @@ namespace AO2Launcher
         }
 
         // UPDATE: download and install in place; without a release layout (the launcher is not next to the
-        // game) or an archive in the release, the browser opens the download instead.
+        // game) or an archive in the release, the browser opens the download instead. In AVX1 mode the AVX1
+        // build (avx1-version.aot) comes after the package, or alone for this very version.
         void StartUpdate()
         {
-            if (!Updates.CanSelfUpdate(updTarget))
+            bool avx1Only = Avx1Only;
+            // The AVX1 build too: in AVX1 mode, and always when it is all the window offers.
+            bool avx1 = updTarget.Avx1Url != null && (avx1Only || Game.Avx1Mode(S));
+            // Next to the game the launcher starts (the launcher's own folder in a release layout).
+            string gameDir = gameExe != null ? Path.GetDirectoryName(gameExe) : Updates.Dir;
+            if (!avx1Only && !Updates.CanSelfUpdate(updTarget))
             {
                 updatePrompt = false;
                 try
@@ -926,13 +1039,39 @@ namespace AO2Launcher
                 bool cancelled = false;
                 try
                 {
-                    string zip = Updates.Download(r, (done, total) =>
+                    Action<long, long> progress = (done, total) =>
                     {
                         System.Threading.Interlocked.Exchange(ref updDone, done);
                         System.Threading.Interlocked.Exchange(ref updTotal, total);
-                    }, () => cancelUpdate);
-                    UiDo(() => updState = UpdState.Installing);
-                    Updates.Install(zip, p => updProgress = p);
+                    };
+                    bool packageDone = false;
+                    if (!avx1Only)
+                    {
+                        string zip = Updates.Download(r, progress, () => cancelUpdate);
+                        UiDo(() => updState = UpdState.Installing);
+                        Updates.Install(zip, p => updProgress = p);
+                        packageDone = true;
+                    }
+                    if (avx1)
+                    {
+                        try
+                        {
+                            UiDo(() => updState = UpdState.Downloading);
+                            string aot = Updates.DownloadAvx1(r, progress, () => cancelUpdate);
+                            UiDo(() => updState = UpdState.Installing);
+                            Updates.InstallAvx1(aot, r.Version, gameDir);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (!packageDone)
+                            {
+                                throw;
+                            }
+                            // The new package is in place (cancelled or failed after it): the new launcher takes
+                            // over all the same and offers the AVX1 build again at start.
+                            Log.Write("AVX1 build not installed with the update: {0}", ex.Message);
+                        }
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -942,7 +1081,7 @@ namespace AO2Launcher
                 {
                     error = ex.Message;
                 }
-                UiDo(() => FinishUpdate(error, cancelled));
+                UiDo(() => FinishUpdate(error, cancelled, avx1Only));
             });
             th.IsBackground = true;
             th.Start();
@@ -960,7 +1099,7 @@ namespace AO2Launcher
             }
         }
 
-        void FinishUpdate(string error, bool cancelled)
+        void FinishUpdate(string error, bool cancelled, bool avx1Only)
         {
             if (cancelled)
             {
@@ -978,11 +1117,22 @@ namespace AO2Launcher
                 Invalidate();
                 return;
             }
+            if (avx1Only)
+            {
+                // Nothing else changed: no restart.
+                updState = UpdState.Ask;
+                updatePrompt = false;
+                ShowToast(L.T("The AVX1 build is installed"), false);
+                Invalidate();
+                return;
+            }
             // The new launcher takes over; it removes the old one and update.tmp when it starts.
             restarting = true;
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Application.ExecutablePath)
+                string restartArgs = string.Join(" ", Program.PretendArgs.Select(a =>
+                    "\"" + (a.StartsWith("--pretend-version=") ? "--pretend-version=" + updTarget.Version : a) + "\""));
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Application.ExecutablePath, restartArgs)
                 {
                     WorkingDirectory = Updates.Dir,
                     UseShellExecute = false,
@@ -1024,8 +1174,26 @@ namespace AO2Launcher
             }
             else
             {
-                ClosePrompt();
+                PromptSecond();
             }
+        }
+
+        // The window offers the AVX1 build by itself on a CPU without AVX2: nothing to play without it, so its
+        // second button is EXIT, not LATER.
+        bool PromptExits
+        {
+            get { return updState == UpdState.Ask && Avx1Only && !Game.HasAvx2(); }
+        }
+
+        // The second button (and Escape, B): LATER, or EXIT (PromptExits).
+        void PromptSecond()
+        {
+            if (PromptExits)
+            {
+                Close();
+                return;
+            }
+            ClosePrompt();
         }
 
         // Debug (--snapshot with --notes-file): the "what's new" window.
@@ -1046,6 +1214,12 @@ namespace AO2Launcher
             {
                 RelPick(pick);
             }
+        }
+
+        // Debug (--snapshot --avx1-offer with --releases-file): what turning the AVX1 version on offers.
+        public void SnapshotAvx1()
+        {
+            OfferAvx1(Updates.All());
         }
 
         // Debug (--snapshot with --latest): the update window in a given state.
@@ -1346,11 +1520,11 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Choice, Label = "Language", Key = "language",
-                    Values = new[] { "auto", "en", "ru", "fr", "de", "es", "it" },
-                    Names = new[] { "AUTO", "ENGLISH", "РУССКИЙ", "FRANÇAIS", "DEUTSCH", "ESPAÑOL", "ITALIANO" },
+                    Values = new[] { "auto", "en", "ru", "pt", "fr", "de", "es", "it" },
+                    Names = new[] { "AUTO", "ENGLISH", "РУССКИЙ", "PORTUGUÊS (BR)", "FRANÇAIS", "DEUTSCH", "ESPAÑOL", "ITALIANO" },
                     Desc = "Language of the game (text and voices) and of this launcher. Auto follows the language of Windows. " +
-                           "Russian is text only, with English voices. In co-op both players need the same voices: " +
-                           "English and Russian play together, the other languages only with the same language.",
+                           "Russian and Brazilian Portuguese are text only, with English voices. In co-op both players need the " +
+                           "same voices: English, Russian and Portuguese play together, the other languages only with the same language.",
                 },
                 new Row
                 {
@@ -1542,14 +1716,6 @@ namespace AO2Launcher
                     Desc = "Unlocks every difficulty and gives 9,999,999 money " +
                            "(kept at the maximum while on). Saved in the current profile. Has no effect in online co-op."
                 },
-                new Row
-                {
-                    Kind = RowKind.Choice, Label = "Processor lock waits", Key = "cpu_spin",
-                    Values = new[] { "off", "on", "auto" }, Names = new[] { "OFF", "ON", "AUTO" },
-                    Desc = "Experimental. The game's threads first wait for each other busily for a moment instead of sleeping straight away: " +
-                           "more FPS, but only on a powerful processor with threads to spare. Turn it on if you have one. Auto turns it on " +
-                           "with 6 or more processor threads and stops where it does not pay. Turn it off if the game stutters."
-                },
                 Toggle("Close the launcher", "close_on_launch", "Close this window once the game has started.", "NO", "YES"),
                 new Row
                 {
@@ -1634,6 +1800,24 @@ namespace AO2Launcher
                         ShowToast(L.T("Settings reset to defaults"), false);
                     },
                     Desc = "Return every launcher setting to its default. Game files are not changed."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "AVX1 version", Key = "avx1",
+                    Values = new[] { "0", "1" },
+                    Name = i => L.T(i == 1 || !Game.HasAvx2() ? "ON" : "OFF"),
+                    Enabled = () => Game.HasAvx2(),
+                    Changed = () =>
+                    {
+                        PickLatest();
+                        if (S.Bool("avx1"))
+                        {
+                            OfferAvx1();
+                        }
+                    },
+                    Desc = "The game built for processors without AVX2 (downloaded from the release, about 25 MB), a little slower. " +
+                           "Always on when the processor has no AVX2. Turn it on to play co-op with someone whose processor " +
+                           "has none: both players need the same version and the same build."
                 },
             };
 
@@ -2037,6 +2221,11 @@ namespace AO2Launcher
                 ShowToast(L.T("The game is already running"), true);
                 return;
             }
+            if (Avx1Missing)
+            {
+                OfferAvx1();
+                return;
+            }
             if (S.Bool("split_screen"))
             {
                 // Two players here: nobody to look for on the network.
@@ -2174,7 +2363,7 @@ namespace AO2Launcher
                         PromptActivate();
                         break;
                     case Gamepad.B:
-                        ClosePrompt();
+                        PromptSecond();
                         break;
                 }
                 return;
@@ -2270,7 +2459,7 @@ namespace AO2Launcher
                         PromptActivate();
                         return true;
                     case Keys.Escape:
-                        ClosePrompt();
+                        PromptSecond();
                         return true;
                 }
                 return true;
@@ -2896,7 +3085,12 @@ namespace AO2Launcher
         void DrawPrompt(Graphics g)
         {
             Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
-            var box = new RectangleF((W - 520) / 2, 196, 520, 210);
+            bool avx1Only = Avx1Only;
+            // Offered by itself, without AVX2: the title says why. The window widens to its title.
+            bool noAvx2 = avx1Only && !Game.HasAvx2();
+            string noAvx2Title = L.T("YOUR PROCESSOR DOES NOT SUPPORT AVX2 INSTRUCTIONS");
+            float bw0 = noAvx2 ? Math.Min(W - 80, Math.Max(520, CapsWidth(g, noAvx2Title, fTitle, 2.4f) + 80)) : 520;
+            var box = new RectangleF((W - bw0) / 2, 196, bw0, 210);
             Panel(g, box);
             var text = new StringFormat { Alignment = StringAlignment.Center };
             var line1 = new RectangleF(box.X + 30, box.Y + 62, box.Width - 60, 42);
@@ -2906,7 +3100,8 @@ namespace AO2Launcher
 
             if (updState == UpdState.Downloading || updState == UpdState.Installing)
             {
-                Caps(g, L.F("UPDATING TO {0}", ver), fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
+                Caps(g, avx1Only ? L.T("AVX1 BUILD") : L.F("UPDATING TO {0}", ver), fTitle, PaperHi,
+                    new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
                 bool dl = updState == UpdState.Downloading;
                 float t;
                 string status;
@@ -2925,7 +3120,7 @@ namespace AO2Launcher
                 }
                 DrawText(g, status, fLabel, TextLight, line1, text);
                 Progress(g, new RectangleF(box.X + 40, box.Y + 104, box.Width - 80, 4), t);
-                DrawText(g, L.T(dl ? "The launcher restarts by itself when the update is installed." : "Do not close the launcher."),
+                DrawText(g, L.T(dl && !avx1Only ? "The launcher restarts by itself when the update is installed." : "Do not close the launcher."),
                     fSmall, TextDim, new RectangleF(box.X + 30, box.Y + 118, box.Width - 60, 22), text);
                 if (dl)
                 {
@@ -2937,28 +3132,42 @@ namespace AO2Launcher
             }
 
             bool failed = updState == UpdState.Failed;
-            Caps(g, L.T(failed ? "UPDATE FAILED" : older ? "INSTALL AN OLDER VERSION" : "UPDATE AVAILABLE"), fTitle, failed ? Crimson : PaperHi,
+            Caps(g, failed ? L.T("UPDATE FAILED") : noAvx2 ? noAvx2Title
+                    : L.T(avx1Only ? "AVX1 BUILD" : older ? "INSTALL AN OLDER VERSION" : "UPDATE AVAILABLE"),
+                fTitle, failed ? Crimson : PaperHi,
                 new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
             if (failed)
             {
                 DrawText(g, updError, fLabel, TextLight, line1, text);
                 DrawText(g, L.T("Try again, or download the archive from GitHub and extract it over this folder."), fSmall, TextDim, line2, text);
             }
+            else if (noAvx2)
+            {
+                DrawText(g, L.F("Download the build with AVX1 support for {0}?", ver), fLabel, TextLight, line1, text);
+                DrawText(g, L.T("On such a processor the game runs only in its AVX1 build. About 25 MB."), fSmall, TextDim, line2, text);
+            }
+            else if (avx1Only)
+            {
+                DrawText(g, L.F("Download the build with AVX1 support for {0}?", ver), fLabel, TextLight, line1, text);
+                DrawText(g, L.T("For processors without AVX2 and co-op with such a player. About 25 MB."), fSmall, TextDim, line2, text);
+            }
             else
             {
                 DrawText(g, older ? L.F("Go back to {0}? You have {1}.", ver, "v" + Updates.Current)
                     : L.F("Version {0} is out, you have {1}. Update now?", ver, "v" + Updates.Current), fLabel, TextLight, line1, text);
-                DrawText(g, L.T("The launcher downloads and installs it by itself. Your game files, settings and saves are kept."),
+                DrawText(g, older && Game.Avx1Mode(S)
+                    ? L.F("{0} is the newest version with the AVX1 build.", ver)
+                    : L.T("The launcher downloads and installs it by itself. Your game files, settings and saves are kept."),
                     fSmall, TextDim, line2, text);
             }
 
             var go = new RectangleF(box.X + box.Width / 2 - 10 - 180, box.Bottom - 66, 180, 42);
             var later = new RectangleF(box.X + box.Width / 2 + 10, box.Bottom - 66, 180, 42);
             bool onButton = IsHover("upd_go") || IsHover("upd_later");
-            FlatButton(g, go, L.T(failed ? "RETRY" : older ? "DOWNLOAD" : "UPDATE"), fBtn, true, IsHover("upd_go") || (!onButton && promptSel == 0), false);
-            FlatButton(g, later, L.T("LATER"), fBtn, false, IsHover("upd_later") || (!onButton && promptSel == 1), false);
+            FlatButton(g, go, L.T(failed ? "RETRY" : older || avx1Only ? "DOWNLOAD" : "UPDATE"), fBtn, true, IsHover("upd_go") || (!onButton && promptSel == 0), false);
+            FlatButton(g, later, L.T(PromptExits ? "EXIT" : "LATER"), fBtn, false, IsHover("upd_later") || (!onButton && promptSel == 1), false);
             AddHot(go, "upd_go", StartUpdate);
-            AddHot(later, "upd_later", ClosePrompt);
+            AddHot(later, "upd_later", PromptSecond);
         }
 
         // Each tab's slot: its name in the current language plus one gap, the same for all, spread over the
@@ -3270,6 +3479,9 @@ namespace AO2Launcher
         [DllImport("user32.dll")]
         static extern bool SetProcessDPIAware();
 
+        // Debug options passed on to the launcher an update restarts (LauncherForm.FinishUpdate).
+        public static string[] PretendArgs = new string[0];
+
         [STAThread]
         static void Main()
         {
@@ -3296,6 +3508,22 @@ namespace AO2Launcher
             {
                 Updates.Current = opt("pretend-version").TrimStart('v', 'V');
             }
+            // --pretend-no-avx2: act as on a CPU without AVX2 (the compat game build).
+            Game.PretendNoAvx2 = args.Contains("--pretend-no-avx2");
+            // --pretend-old-windows: Windows reports no AVX2 support at all (before 10 2004): CPUID via ao2_install.
+            Game.PretendOldWindows = args.Contains("--pretend-old-windows");
+            // --cpu-check=<log>: write whether this CPU runs the main game build ("avx2" or "no avx2").
+            string cpuCheck = opt("cpu-check");
+            if (cpuCheck != null)
+            {
+                File.WriteAllText(cpuCheck, Game.HasAvx2() ? "avx2" : "no avx2");
+                return;
+            }
+            // --releases-file=<json>: the release list from this file instead of GitHub (debug: the AVX1 build).
+            Updates.ReleasesFile = opt("releases-file");
+            // The launcher an update restarts keeps these (pretending, it then pretends to be the new version).
+            PretendArgs = args.Where(a => a == "--pretend-no-avx2" || a == "--pretend-old-windows" ||
+                a.StartsWith("--releases-file=") || a.StartsWith("--pretend-version=")).ToArray();
             string snap = opt("snapshot");
             string dump = opt("dump-args");
             string probe = opt("probe");
@@ -3413,6 +3641,10 @@ namespace AO2Launcher
                 int t = 0, sl = 0;
                 int.TryParse(opt("tab"), out t);
                 int.TryParse(opt("sel"), out sl);
+                if (args.Contains("--avx1-offer"))
+                {
+                    form.SnapshotAvx1();
+                }
                 // --update-ui=downloading|installing|failed[:<0..1>] (with --latest): the update window in that state.
                 string ui = opt("update-ui");
                 if (ui != null)

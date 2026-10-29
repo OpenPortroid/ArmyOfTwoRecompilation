@@ -26,7 +26,8 @@
 // menu and its submenus (MainMenuScene, ExtrasScene...) are drawn into a
 // texture (UIScene.RenderTarget +360, main_menu_t_rtt, 608 x 400) put on the
 // stone slabs of the Shell level (pieces at different depths and angles, the
-// camera moving between menus), so their bounds are in that texture. The
+// camera moving between menus), so their bounds are in that texture (at the
+// height it was asked for when the screen's height cut it lower). The
 // renderer tells which texel of it is under the cursor (RendererMenuProbe:
 // the slabs are drawn again writing the texture's coordinates); the nearest
 // button within kSlabReach texels of it is pointed at, so its whole piece of
@@ -42,6 +43,9 @@
 // Kismet opens Extras) never run: A on it is taken out of the pad state and
 // closes the window instead.
 //
+// Debugging: ui_dump.trigger in the working directory writes the scenes and
+// their widgets to ui_dump.txt.
+//
 // Online co-op: the pause menu is this machine's UI and its focus is not part
 // of the simulation (the checksum is the shared rand() and physics), and the
 // presses go through the pad input like the keys' (Enter / Esc already did),
@@ -54,12 +58,12 @@
 #include "gpu/native/renderer.h"
 #include "graphics_menu.h"
 #include "log_files.h"
+#include "mouse_aim.h"
 #include "ue3_reflect.h"
 
 #include <windows.h>
 
 #include <algorithm>
-#include <atomic>
 #include <bit>
 #include <cmath>
 #include <cstdio>
@@ -118,8 +122,9 @@ namespace
 
   // Where the Exit label goes, in a 1280 x 720 picture: on the piece of
   // paper under Extras, which the main menu's texture does not reach. The
-  // Shell camera keeps its horizontal field of view: at other aspect ratios
-  // the picture is that one scaled to the width, centred.
+  // Shell camera keeps its horizontal field of view narrower than 16:9 and
+  // its vertical one wider (Hor+, aspect_ratio.cpp): the picture is that one
+  // scaled to the width or to the height, centred.
   constexpr float kExitX0 = 103.0f, kExitY0 = 507.0f, kExitX1 = 253.0f, kExitY1 = 539.0f;
   // Its tilt (degrees, clockwise), as the slab text around it.
   constexpr float kExitTilt = 15.0f;
@@ -249,6 +254,9 @@ namespace
     Kind kind;
     bool slab;            // drawn on the slabs: its bounds are in the texture
     float vw, vh;         // its scene's viewport
+    // On the slabs: the height its bounds are laid out in, which a render
+    // target cut to the screen's height is lower than (aspect_ratio.cpp).
+    float lh;
     float x0, y0, x1, y1; // where it is hit
     // Its rotation (Rotation.TransformMatrix: row vectors, from its top left
     // corner), inverted: a point relative to x0, y0 back to the unturned widget.
@@ -380,6 +388,7 @@ namespace
         space.slab = true;
         space.vw = size_x > 0 ? float(LoadU32(base, target + size_x)) : 0.0f;
         space.vh = size_y > 0 ? float(LoadU32(base, target + size_y)) : 0.0f;
+        space.lh = float(ao2::aspect::LayoutHeight(uint32_t(space.vw), uint32_t(space.vh)));
       }
       Collect(base, scene, space, widgets);
       return widgets.empty() ? 0 : scene; // the top scene taking input, if it has anything to point at
@@ -475,8 +484,9 @@ namespace
   // A point of the 1280 x 720 Shell picture (above) in a scene's viewport.
   void FromSlabPicture(float x, float y, float vw, float vh, float &out_x, float &out_y)
   {
-    out_x = x * vw / 1280.0f;
-    out_y = vh * 0.5f + (y - 360.0f) * vw / 1280.0f;
+    float scale = vw * 720.0f > vh * 1280.0f ? vh / 720.0f : vw / 1280.0f;
+    out_x = vw * 0.5f + (x - 640.0f) * scale;
+    out_y = vh * 0.5f + (y - 360.0f) * scale;
   }
 
   // The cursor in a widget's space; false if it is not on it (on the slabs:
@@ -495,7 +505,7 @@ namespace
       return false;
     }
     x = u * w.vw;
-    y = v * w.vh;
+    y = v * w.lh;
     return true;
   }
 
@@ -807,6 +817,130 @@ namespace
     }
   }
 
+  // --- The UI dump -----------------------------------------------------------
+
+  // ui_dump.trigger in the working directory: every scene on the stack and
+  // its widgets (Position values, scale types and aspect ratio mode,
+  // RenderBounds; the images' properties) go to ui_dump.txt.
+  void DumpProperties(FILE *f, const uint8_t *base, uint32_t object, int indent)
+  {
+    uint32_t cls = LoadU32(base, object + kClass);
+    for (const ao2::ue3::Property &p : ao2::ue3::Properties(base, cls))
+    {
+      if (p.offset < 0 || p.owner == "Object" || p.owner == "UIRoot" || p.owner == "UIScreenObject" ||
+          p.owner == "UIObject")
+      {
+        continue;
+      }
+      uint32_t at = object + uint32_t(p.offset);
+      std::fprintf(f, "%*s%s.%s +%d %s = ", indent, "", p.owner.c_str(), p.name.c_str(), p.offset, p.type.c_str());
+      if (p.type == "FloatProperty")
+      {
+        std::fprintf(f, "%g\n", LoadF32(base, at));
+      }
+      else if (p.type == "ByteProperty")
+      {
+        std::fprintf(f, "%u\n", base[at]);
+      }
+      else if (p.type == "ObjectProperty" || p.type == "ClassProperty" || p.type == "ComponentProperty")
+      {
+        uint32_t o = LoadU32(base, at);
+        std::fprintf(f, "%08X %s\n", o, o ? ao2::ue3::ObjectName(base, o).c_str() : "");
+      }
+      else if (p.type == "NameProperty")
+      {
+        std::fprintf(f, "%s\n", ao2::ue3::Name(base, LoadU32(base, at)).c_str());
+      }
+      else
+      {
+        // Ints, bools (the word), structs and arrays (their first words).
+        std::fprintf(f, "%08X %08X %08X %08X\n", LoadU32(base, at), LoadU32(base, at + 4), LoadU32(base, at + 8),
+                     LoadU32(base, at + 12));
+      }
+    }
+  }
+
+  void DumpWidgets(FILE *f, const uint8_t *base, uint32_t object, int depth)
+  {
+    for (uint32_t child : ChildrenOf(base, object).list)
+    {
+      if (child & 3)
+      {
+        continue;
+      }
+      uint32_t cls = LoadU32(base, child + kClass);
+      std::string cls_name = cls ? ao2::ue3::ObjectName(base, cls) : std::string();
+      int indent = depth * 2;
+      std::fprintf(f, "%*s%08X %s (%s)%s pos %g %g %g %g type %u %u %u %u aspect %u bounds %g %g %g %g\n", indent,
+                   "", child, ao2::ue3::ObjectName(base, child).c_str(), cls_name.c_str(),
+                   Hidden(base, child) ? " hidden" : "", LoadF32(base, child + kPosition),
+                   LoadF32(base, child + kPosition + 4), LoadF32(base, child + kPosition + 8),
+                   LoadF32(base, child + kPosition + 12), base[child + kPosition + 16], base[child + kPosition + 17],
+                   base[child + kPosition + 18], base[child + kPosition + 19], base[child + kPosition + 20],
+                   LoadF32(base, child + kRenderBounds), LoadF32(base, child + kRenderBounds + 4),
+                   LoadF32(base, child + kRenderBounds + 8), LoadF32(base, child + kRenderBounds + 12));
+      if (cls_name.find("Image") != std::string::npos)
+      {
+        DumpProperties(f, base, child, indent + 4);
+        static int32_t component = ao2::ue3::PropertyOffset(base, "UIImage", "ImageComponent");
+        static int32_t image_ref = ao2::ue3::PropertyOffset(base, "UIComp_DrawImage", "ImageRef");
+        uint32_t comp = component >= 0 ? LoadU32(base, child + component) : 0;
+        if (comp)
+        {
+          std::fprintf(f, "%*sImageComponent %08X:\n", indent + 4, "", comp);
+          DumpProperties(f, base, comp, indent + 6);
+          uint32_t ref = image_ref >= 0 ? LoadU32(base, comp + image_ref) : 0;
+          if (ref)
+          {
+            std::fprintf(f, "%*sImageRef %08X %s:\n", indent + 6, "", ref, ao2::ue3::ObjectName(base, ref).c_str());
+            DumpProperties(f, base, ref, indent + 8);
+          }
+        }
+      }
+      if (depth < 8)
+      {
+        DumpWidgets(f, base, child, depth + 1);
+      }
+    }
+  }
+
+  void DumpUi(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    FILE *f = std::fopen("ui_dump.txt", "w");
+    if (!f)
+    {
+      return;
+    }
+    std::fprintf(f, "guest %ux%u\n", ao2::aspect::GuestWidth(), ao2::aspect::GuestHeight());
+    for (uint32_t scene : scenes)
+    {
+      uint32_t cls = LoadU32(base, scene + kClass);
+      uint32_t target = LoadU32(base, scene + kRenderTarget);
+      std::fprintf(f, "\nscene %08X %s (%s) input %u viewport %g %g target %08X %s\n", scene,
+                   ao2::ue3::ObjectName(base, scene).c_str(), cls ? ao2::ue3::ObjectName(base, cls).c_str() : "",
+                   base[scene + kSceneInputMode], LoadF32(base, scene + kViewportSize),
+                   LoadF32(base, scene + kViewportSize + 4), target,
+                   target ? ao2::ue3::ObjectName(base, target).c_str() : "");
+      DumpWidgets(f, base, scene, 1);
+    }
+    std::fclose(f);
+  }
+
+  void PollUiDump(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    static uint32_t next_check = 0;
+    if (int32_t(GetTickCount() - next_check) < 0)
+    {
+      return;
+    }
+    next_check = GetTickCount() + 500;
+    if (GetFileAttributesA("ui_dump.trigger") != INVALID_FILE_ATTRIBUTES)
+    {
+      DeleteFileA("ui_dump.trigger");
+      DumpUi(base, scenes);
+    }
+  }
+
   // --- The clicks -----------------------------------------------------------
 
   bool g_left = false;                      // the left mouse button as last seen
@@ -886,24 +1020,97 @@ namespace
   // it with the D-pad, the focus following it: a focus set directly is left
   // behind by the next step. There the pick is put next to the target, not
   // the focus (it would show that mask first): the step goes from the
-  // focused mask straight to the target. False if `widget` is not a mask.
+  // focused mask straight to the target.
+  // Each step also steps the shell armor pawn's own pick by one
+  // (ScrollMaskUpgrades: the hero's MaskCollection.Index, wrapping), the mask
+  // put on the character and bought. It is put next to the target too, or
+  // the list and the character part: the mask shown and bought is not the
+  // one picked in the list.
+  bool IsMask(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t masks = ao2::ue3::FindClass(base, "UIScene_Masks");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    return masks && scene && ao2::ue3::IsA(base, scene, masks) &&
+           ao2::ue3::ObjectName(base, widget).rfind("lblbtnArmor", 0) == 0;
+  }
+
+  // The hero's AO2MaskCollection the shell armor pawn steps, 0 if not found:
+  // the pawn of the scene's player, else the only one there is.
+  uint32_t MaskCollection(const uint8_t *base, uint32_t scene)
+  {
+    static uint32_t armor = ao2::ue3::FindClass(base, "AO2ShellArmorPawn");
+    static int32_t owner = ao2::ue3::PropertyOffset(base, "UIScene", "PlayerOwner");
+    static int32_t pawn = ao2::ue3::PropertyOffset(base, "Controller", "Pawn");
+    static int32_t hero = ao2::ue3::PropertyOffset(base, "AO2ShellArmorPawn", "PlayerPawn");
+    static int32_t collection = ao2::ue3::PropertyOffset(base, "AO2Character", "MaskCollection");
+    if (!armor || owner < 0 || pawn < 0 || hero < 0 || collection < 0)
+    {
+      return 0;
+    }
+    uint32_t found = 0;
+    uint32_t player = LoadU32(base, scene + owner);
+    uint32_t controller = player ? LoadU32(base, player + 64) : 0; // LocalPlayer +64 = its PlayerController
+    uint32_t p = controller ? LoadU32(base, controller + pawn) : 0;
+    if (p && ao2::ue3::IsA(base, p, armor))
+    {
+      found = p;
+    }
+    else
+    {
+      uint32_t objects = LoadU32(base, kObjects), count = LoadU32(base, kObjects + 4);
+      for (uint32_t i = 0; objects && i < count; ++i)
+      {
+        uint32_t o = LoadU32(base, objects + i * 4);
+        if (o && ao2::ue3::IsA(base, o, armor) && ao2::ue3::ObjectName(base, o).rfind("Default__", 0) != 0)
+        {
+          if (found)
+          {
+            return 0; // one per player: whose is not known
+          }
+          found = o;
+        }
+      }
+    }
+    uint32_t h = found ? LoadU32(base, found + hero) : 0;
+    return h ? LoadU32(base, h + collection) : 0;
+  }
+
+  // Puts both picks on mask `widget`; false if the pawn's is not found (the
+  // walk then steps through every mask on the way, as the D-pad does).
   bool SetMaskIndex(uint8_t *base, uint32_t widget)
   {
     static int32_t index = ao2::ue3::PropertyOffset(base, "UIScene_Masks", "CurrentButtonIndex");
-    static uint32_t masks = ao2::ue3::FindClass(base, "UIScene_Masks");
+    static int32_t pick = ao2::ue3::PropertyOffset(base, "AO2MaskCollection", "Index");
+    std::string name = ao2::ue3::ObjectName(base, widget);
+    size_t digits = name.find_last_not_of("0123456789") + 1;
     uint32_t scene = LoadU32(base, widget + kOwnerScene);
-    if (index < 0 || !masks || !scene || !ao2::ue3::IsA(base, scene, masks))
+    uint32_t collection = index >= 0 && pick >= 0 && digits < name.size() ? MaskCollection(base, scene) : 0;
+    if (!collection)
+    {
+      return false;
+    }
+    uint32_t i = uint32_t(std::stoi(name.substr(digits))); // the buttons are lblbtnArmor0, 1...
+    StoreU32(base, scene + index, i);
+    StoreU32(base, collection + pick, i);
+    return true;
+  }
+
+  // The upgrades (UIScene_Upgrades: the weapon parts, lblbtnUpgrade0, 1...)
+  // keep the part shown and opened in their Kismet, which moves it one part
+  // per D-pad step (Upgrades_Mountpoint1, 2...): a focus put next to the
+  // target or on it directly is not seen there, the part shown is then
+  // another one. The focus only steps there, every part on the way. Only the
+  // list's buttons: another widget there still gets the focus at the end.
+  bool StepsOnly(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t upgrades = ao2::ue3::FindClass(base, "UIScene_Upgrades");
+    uint32_t scene = LoadU32(base, widget + kOwnerScene);
+    if (!upgrades || !scene || !ao2::ue3::IsA(base, scene, upgrades) || IsMask(base, widget))
     {
       return false;
     }
     std::string name = ao2::ue3::ObjectName(base, widget);
-    size_t digits = name.find_last_not_of("0123456789") + 1;
-    if (name.rfind("lblbtnArmor", 0) != 0 || digits >= name.size())
-    {
-      return false;
-    }
-    StoreU32(base, scene + index, uint32_t(std::stoi(name.substr(digits)))); // the buttons are lblbtnArmor0, 1...
-    return true;
+    return name.rfind("lblbtnUpgrade", 0) == 0 || name.rfind("lblbtnArmor", 0) == 0;
   }
 
   bool FocusAtOnce(const uint8_t *base, uint32_t widget)
@@ -952,8 +1159,14 @@ namespace
   {
     if (g_walk.target != target)
     {
-      g_walk = Walk{};
-      g_walk.target = target;
+      // A step under way is let go first: the next one pressed at once would
+      // hold the same button on, two steps the menu sees as one.
+      Walk w;
+      w.target = target;
+      w.button = g_walk.button;
+      w.phase = g_walk.phase;
+      w.since = g_walk.since;
+      g_walk = w;
     }
     g_walk.then = then ? then : g_walk.then;
   }
@@ -1007,18 +1220,22 @@ namespace
     }
     // The objectives keep their own pick and put the focus back on it: only
     // the D-pad's steps move it there, one at a time.
-    if (now != w.target && !w.steps && !w.jumped && !objectives)
+    if (now != w.target && !w.steps && !w.jumped && !objectives && !StepsOnly(base, w.target))
     {
       // Not every row on the way: the focus is put next to the target and one
       // step goes in, so a menu following the navigation sees it arrive.
       w.jumped = true;
       if (uint32_t next = NeighbourOf(base, widgets, *target, now))
       {
-        if (!SetMaskIndex(base, next))
+        if (!IsMask(base, next))
         {
           Focus(ctx, base, next);
+          now = next;
         }
-        now = next;
+        else if (SetMaskIndex(base, next))
+        {
+          now = next;
+        }
       }
     }
     if (now == w.target)
@@ -1044,6 +1261,11 @@ namespace
         Logf("objectives: stopped at %s, target %s\n", now ? ao2::ue3::ObjectName(base, now).c_str() : "nothing",
              ao2::ue3::ObjectName(base, w.target).c_str());
         w = Walk{}; // set, it would go back: as far as the steps got
+        return 0;
+      }
+      if (IsMask(base, w.target) || StepsOnly(base, w.target))
+      {
+        w = Walk{}; // a focus set directly would part the list from the character / the part shown
         return 0;
       }
       Focus(ctx, base, w.target);
@@ -1080,13 +1302,6 @@ namespace ao2::menumouse
 {
   void Attach(rex::ui::Window *window) { g_window = window; }
 
-  namespace
-  {
-    std::atomic<bool> g_menu_open{false};
-  }
-
-  bool MenuOpen() { return g_menu_open.load(std::memory_order_relaxed); }
-
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard)
   {
     if (ao2::menu::IsOpen() || ao2::gfxmenu::Capturing())
@@ -1119,14 +1334,13 @@ namespace ao2::menumouse
     };
 
     std::vector<uint32_t> scenes = Scenes(base);
-    bool menu_open = false;
     for (uint32_t s : scenes)
     {
-      menu_open = menu_open || base[s + kSceneInputMode] != 0;
+      ao2::aspect::FitUiScene(base, s);
     }
-    if (g_menu_open.exchange(menu_open, std::memory_order_relaxed) != menu_open)
+    if (keyboard)
     {
-      Logf("menu open %d (occlusion results waited for)\n", menu_open);
+      PollUiDump(base, scenes);
     }
     std::vector<Widget> widgets;
     uint32_t scene = REXCVAR_GET(ao2_menu_mouse) || REXCVAR_GET(ao2_menu_exit) ? ActiveMenu(base, scenes, widgets) : 0;
@@ -1218,8 +1432,10 @@ namespace ao2::menumouse
     // Between two menus (the camera moving along the slabs, the press of
     // Start on the title screen) one scene is closed before the next opens:
     // only scenes taking no input are left (UIScene_0, the help text). The
-    // cursor stays the menus' until the stack is empty, as it is in the game.
-    SetMenuMode(menu || (g_menu && !scenes.empty() && REXCVAR_GET(ao2_menu_mouse)));
+    // cursor stays the menus' until the stack is empty. Only in the front end:
+    // in the game the HUD's scenes stay on the stack, and after the pause menu
+    // the cursor would never go back to the camera.
+    SetMenuMode(menu || (g_menu && !scenes.empty() && ao2::mouse::InFrontEnd() && REXCVAR_GET(ao2_menu_mouse)));
     bool left = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
     bool left_pressed = left && !g_left;
     g_left = left;

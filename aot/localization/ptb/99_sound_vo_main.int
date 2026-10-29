@@ -1,0 +1,1795 @@
+[Murray_average_day_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: É assim que a gente faz, rapazes!" , Time=0)
+[Murray_better_2_do_8 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A não ser que vocês tenham algo melhor pra fazer." , Time=0)
+[Murray_cmnt_back_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, voltei." , Time=0)
+[Murray_cmnt_back_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Voltei. Sentiram minha falta?" , Time=0)
+[Murray_cmnt_back_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, onde a gente parou?" , Time=0)
+[Murray_cmnt_close_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Isso deve ser fácil." , Time=0)
+[Murray_cmnt_close_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Boa sorte, rapazes." , Time=0)
+[Murray_cmnt_close_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês dão conta disso." , Time=0)
+[Murray_cmnt_close_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vão lá e chutem uns traseiros!" , Time=0)
+[Murray_cmnt_close_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mamão com açúcar, né, rapazes?" , Time=0)
+[Murray_cmnt_close_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Moleza, né?" , Time=0)
+[Murray_cmnt_good_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom trabalho, rapazes." , Time=0)
+[Murray_cmnt_good_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom trabalho!" , Time=0)
+[Murray_cmnt_good_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mandou bem!" , Time=0)
+[Murray_cmnt_gps_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Olhem o GPS." , Time=0)
+[Murray_cmnt_gps_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Atualizei o GPS de vocês." , Time=0)
+[Murray_cmnt_gps_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Deem uma olhada no GPS." , Time=0)
+[Murray_cmnt_gps_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vejam no GPS." , Time=0)
+[Murray_cmnt_gps_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Marquei ele no GPS de vocês." , Time=0)
+[Murray_cmnt_gps_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Marquei no GPS de vocês." , Time=0)
+[Murray_cmnt_gps_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mandei um ping pro GPS de vocês." , Time=0)
+[Murray_cmnt_heli_bring_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Levem o refém até o helicóptero!" , Time=0)
+[Murray_cmnt_heli_bring_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Levem ele até o helicóptero." , Time=0)
+[Murray_cmnt_heli_go_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rápido! Corram pro helicóptero" , Time=0)
+[Murray_cmnt_heli_go_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rápido! Corram pro helicóptero." , Time=0)
+[Murray_cmnt_hurry_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vamos, mexam-se!" , Time=0)
+[Murray_cmnt_hurry_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Hoje, rapazes." , Time=0)
+[Murray_cmnt_hurry_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Se eu não soubesse, diria que vocês estão de bobeira." , Time=0)
+[Murray_cmnt_hurry_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês vão fazer isso hoje ou o quê?" , Time=0)
+[Murray_cmnt_hurry_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Cla-a-aro, sem pressa." , Time=0)
+[Murray_cmnt_hurry_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês não têm tempo a perder. Andem logo." , Time=0)
+[Murray_cmnt_hurry_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A gente não tem o dia todo pra isso. Mexam-se!" , Time=0)
+[Murray_cmnt_next_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Próxima." , Time=0)
+[Murray_cmnt_next_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Estão prontos pra essa?" , Time=0)
+[Murray_cmnt_next_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho um trabalho pra vocês." , Time=0)
+[Murray_cmnt_next_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, rapazes, prestem atenção." , Time=0)
+[Murray_cmnt_next_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Atenção, rapazes." , Time=0)
+[Murray_cmnt_next_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Certo, o próximo prato do cardápio." , Time=0)
+[Murray_cmnt_open_jobs_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Espero que vocês estejam à altura." , Time=0)
+[Murray_cmnt_open_jobs_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Esse lugar parece encrenca. Cuidado." , Time=0)
+[Murray_cmnt_open_jobs_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece um ótimo lugar pra passar as férias, hein? Pena que a gente tem trabalho." , Time=0)
+[Murray_cmnt_open_jobs_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Esse lugar é uma mina de ouro, tem um monte de objetivos aqui!" , Time=0)
+[Murray_cmnt_open_jobs_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês dois dão conta." , Time=0)
+[Murray_cmnt_othr_team_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Não sei o que tá rolando. Parece que a empresa mandou uma segunda equipe. Hoje vocês vão ter que merecer o dinheiro!" , Time=0)
+[Murray_cmnt_othr_team_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que o filho da puta do Dalton mandou uma segunda equipe! Eu disse que vocês davam conta! Bom, é melhor chegarem na frente deles!" , Time=0)
+[Murray_cmnt_othr_team_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Não acredito! Eu disse ao Dalton que vocês davam conta sozinhos, mas ele mandou outra equipe. Não deixem eles terminarem a missão antes de vocês!" , Time=0)
+[Murray_cmnt_wait_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rapazes - esperem um segundo!" , Time=0)
+[Murray_cmnt_wait_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Esperem." , Time=0)
+[Murray_cmnt_wait_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Deixa eu ver o que vem agora." , Time=0)
+[Murray_cmnt_wait_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Aguentem aí, vou achar outro alvo." , Time=0)
+[Murray_dont_look_now_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Não olhem agora, mas..." , Time=0)
+[Murray_heard_that_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ah - pode apostar!" , Time=0)
+[Murray_info_obj_1cpt2xtrc_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei - vocês estão atrás do mesmo alvo. O primeiro a chegar no ponto de extração leva a grana." , Time=0)
+[Murray_info_obj_1cpt2xtrc_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pelo visto mandaram duas equipes pra esse trabalho. Cheguem primeiro no ponto de extração e o pagamento é de vocês." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rapazes, parece que a outra equipe também quer esse pagamento. Levem o refém até o ponto de extração de vocês se quiserem a grana." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mandaram duas equipes atrás do mesmo refém. A primeira a chegar no ponto de extração leva o prêmio." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, rapazes - a outra equipe tá tentando pegar o mesmo refém. Cheguem lá primeiro e levem ele até o ponto de extração." , Time=0)
+[Murray_info_obj_1cpt2xtrc_hstg_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Acabamos de saber que a outra equipe vai atrás do mesmo refém. Vocês têm que chegar lá primeiro e levá-lo ao ponto de extração de vocês." , Time=0)
+[Murray_info_obj_1cpt2xtrc_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mandaram duas equipes atrás do mesmo objeto. A primeira a chegar no ponto de extração leva o prêmio." , Time=0)
+[Murray_info_obj_1cpt2xtrc_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rapazes. Parece que a outra equipe também quer esse pagamento. Levem o objeto até o ponto de extração de vocês se quiserem a grana." , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Acho que é hora de apimentar as coisas com uma competiçãozinha. A primeira equipe a levar o refém até o helicóptero leva o pagamento." , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, rapazes. Hora de ver o quanto vocês são competitivos. A primeira equipe que trouxer o refém leva o pagamento. A outra não ganha nada!" , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O tempo de vocês está acabando. Quem trouxer o refém de volta recebe, e pronto." , Time=0)
+[Murray_info_obj_2cpt1xtrc_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mudando as regras um pouquinho, rapazes. A primeira equipe de volta ao helicóptero recebe. A outra fica a ver navios. Melhor correrem." , Time=0)
+[Murray_info_obj_aiesc_def_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês têm que levar quem estão escoltando até o local marcado no GPS. Não deixem ninguém impedir." , Time=0)
+[Murray_info_obj_aiesc_def_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A pessoa com vocês é um infiltrado e precisa ser escoltada em segurança até o local marcado no GPS. Os outros vão tentar impedir vocês." , Time=0)
+[Murray_info_obj_aiesc_def_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Levem a pessoa que está com vocês em segurança até o local que marquei. Vocês têm que mantê-la viva a qualquer custo." , Time=0)
+[Murray_info_obj_assn_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rapazes, olhem o GPS, localizei outro alvo pra vocês." , Time=0)
+[Murray_info_obj_assn_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês estão perto de um líder militar que o Departamento de Defesa quer fora do jogo. A recompensa é bem alta. Marquei a localização dele no GPS. Vocês sabem o que fazer." , Time=0)
+[Murray_info_obj_assn_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, rapazes, marquei outro alvo pra vocês. Esse deve ser fácil. Acabem com ele e vão pra casa um pouco mais ricos!" , Time=0)
+[Murray_info_obj_assn_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Olhem o GPS e vão ver a localização do alvo. Não deve demorar muito." , Time=0)
+[Murray_info_obj_assn_gen_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Atualizei o GPS de vocês com mais uma grana fácil. Esse cara é um açougueiro. Parece que ele está se preparando pra sair, então andem logo!" , Time=0)
+[Murray_info_obj_assn_gen_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês vão gostar dessa. Esse cara tem a cabeça a prêmio por uma fortuna, mas é mortal pra caralho. Exatamente o tipo de desafio que vocês dois curtem!" , Time=0)
+[Murray_info_obj_assn_gen_7 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Aqui vai outro alvo. Cuidado, esse cara é o pior dos piores. Já perdemos alguns contratados indo atrás dele." , Time=0)
+[Murray_info_obj_assn_mult_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho uma série de alvos pra vocês eliminarem. O primeiro já deve estar no GPS. Todos valem o mesmo e vocês recebem por cada morte." , Time=0)
+[Murray_info_obj_assn_mult_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Na próxima missão, vocês precisam assassinar vários alvos. Vão ganhar grana por cada acerto, mas a outra equipe está tentando a mesma coisa, então tratem de chegar primeiro! Vejam o primeiro alvo no GPS e vão nessa." , Time=0)
+[Murray_info_obj_assn_mult_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Esta missão envolve eliminar uma série de alvos, e cada morte rende dinheiro. Mas a outra equipe está atrás dos mesmos alvos, então garantam que serão os primeiros." , Time=0)
+[Murray_info_obj_assn_mult_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Neste próximo trabalho, vocês precisam assassinar uma série de alvos. Cada um vale dinheiro. Mas também valem dinheiro pra outra equipe. Garantam que vão eliminar o alvo antes deles. O alvo número um já está no GPS." , Time=0)
+[Murray_info_obj_assn_next_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Aqui está o próximo cara. Eliminem ele." , Time=0)
+[Murray_info_obj_assn_next_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, vejam o GPS pra achar o próximo alvo e derrubem ele." , Time=0)
+[Murray_info_obj_assn_next_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Preciso que achem o próximo alvo. Vamos, o tempo está acabando." , Time=0)
+[Murray_info_obj_assn_next_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O próximo alvo está no GPS. Achem ele e derrubem." , Time=0)
+[Murray_info_obj_assn_next_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O próximo cara que vocês têm que acertar está no GPS agora. Mexam-se." , Time=0)
+[Murray_info_obj_cmpl_team_fail_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Que porra vocês estão fazendo? Acabaram de fracassar na missão!" , Time=0)
+[Murray_info_obj_cmpl_team_fail_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Qual é, pessoal, eu esperava mais de vocês!" , Time=0)
+[Murray_info_obj_cmpl_team_fail_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês fracassaram na missão! Inacreditável." , Time=0)
+[Murray_info_obj_cmpl_team_fail_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom, vocês sem dúvida fizeram merda nessa." , Time=0)
+[Murray_info_obj_cmpl_team_fail_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Muito bem, rapazes. Muuuito bem." , Time=0)
+[Murray_info_obj_cmpl_team_fail_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Foi péssimo." , Time=0)
+[Murray_info_obj_cmpl_team_succ_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom trabalho, pessoal! Missão cumprida." , Time=0)
+[Murray_info_obj_cmpl_team_succ_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Belo trabalho, rapazes, eu sabia que vocês conseguiam!" , Time=0)
+[Murray_info_obj_cmpl_team_succ_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês conseguiram! Ótimo trabalho, pessoal." , Time=0)
+[Murray_info_obj_cmpl_team_succ_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Estou transferindo o dinheiro pra conta de vocês! Mandaram bem." , Time=0)
+[Murray_info_obj_cmpl_team_succ_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Muito bem, pessoal." , Time=0)
+[Murray_info_obj_cmpl_team_succ_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: É assim que se faz, rapazes!" , Time=0)
+[Murray_info_obj_coll_chem_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Se vocês trouxerem uma amostra de qualquer produto químico que estejam produzindo na instalação, serão bem pagos." , Time=0)
+[Murray_info_obj_coll_chem_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei, o Departamento de Defesa precisa de uma amostra dos químicos que eles estão usando. Muito cuidado, mas se conseguirem uma amostra, vale uma grana!" , Time=0)
+[Murray_info_obj_coll_chem_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Peguem uma amostra dos químicos que eles estão produzindo. A gente paga por isso, mas tomem cuidado!" , Time=0)
+[Murray_info_obj_coll_docs_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Estamos atrás de informações nesta área. Se acharem documentos que pareçam importantes, peguem." , Time=0)
+[Murray_info_obj_coll_docs_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal! Procurem uns documentos. O Departamento de Defesa paga por eles." , Time=0)
+[Murray_info_obj_coll_docs_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei, deem uma olhada por aí atrás de documentos! A gente paga se trouxerem informações úteis." , Time=0)
+[Murray_info_obj_coll_drv_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal, se virem um pen drive, peguem!" , Time=0)
+[Murray_info_obj_coll_drv_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Deve ter um pen drive lá dentro, tragam de volta que a gente paga." , Time=0)
+[Murray_info_obj_coll_lapt_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei. Deve ter um laptop por perto. Peguem, as informações nele valem muito." , Time=0)
+[Murray_info_obj_coll_lapt_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Qualquer laptop que vocês acharem vale dinheiro." , Time=0)
+[Murray_info_obj_coll_lapt_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal, se acharem um dos laptops deles, tenho um bônus enorme pra vocês!" , Time=0)
+[Murray_info_obj_coll_maps_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal, procurem uns mapas por aí! A gente paga se trouxerem alguns!" , Time=0)
+[Murray_info_obj_coll_maps_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Peguem qualquer mapa que virem por perto. A gente paga bem por eles!" , Time=0)
+[Murray_info_obj_coll_maps_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Fiquem de olho em mapas da área. A gente paga se conseguirem recuperar alguns!" , Time=0)
+[Murray_info_obj_coll_plan_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal, se pegarem as plantas, elas valem uma boa grana." , Time=0)
+[Murray_info_obj_coll_plan_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Deve ter plantas lá dentro. Tenho um bônus bom pra vocês se pegarem!" , Time=0)
+[Murray_info_obj_coll_plan_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei, qualquer planta ou projeto que vocês acharem na área vale dinheiro." , Time=0)
+[Murray_info_obj_def_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal, vocês precisam defender aquele objeto até a extração chegar. Não deixem a outra equipe chegar perto daquela coisa." , Time=0)
+[Murray_info_obj_def_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês vão ganhar uma boa grana se defenderem aquele objeto até a extração chegar. Não deixem a outra equipe chegar perto de vocês nem da caixa." , Time=0)
+[Murray_info_obj_def_obj_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Esse objeto vai ser transportado daqui. Só mantenham ele inteiro até o helicóptero chegar. Não deixem aquela outra equipe chegar perto." , Time=0)
+[Murray_info_obj_dstr_driver_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho um alvo tentando fugir de veículo. Destruam o veículo e ganhem uma boa grana." , Time=0)
+[Murray_info_obj_dstr_driver_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Seus próximos alvos estão num veículo. Destruam o veículo e eliminem eles." , Time=0)
+[Murray_info_obj_dstr_driver_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Nesta próxima missão, vocês precisam destruir um veículo que está dando um baita trabalho. Acabem com ele e ganhem uma boa grana." , Time=0)
+[Murray_info_obj_dstr_driver_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O próximo alvo está ao volante de um veículo particularmente perigoso. Tem uma recompensa grande se vocês explodirem ele." , Time=0)
+[Murray_info_obj_dstr_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Certo, pessoal. Marquei um alvo no GPS. Destruam e saiam daí o quanto antes!" , Time=0)
+[Murray_info_obj_dstr_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sei que vocês nunca se cansam de explodir coisas por dinheiro, então marquei mais um alvo no GPS. Destruam!" , Time=0)
+[Murray_info_obj_dstr_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Marquei um alvo no GPS de vocês. Têm que explodir ele." , Time=0)
+[Murray_info_obj_dstr_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Só precisam ir até o alvo que marquei no GPS e destruir!" , Time=0)
+[Murray_info_obj_dstr_gen_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Escutem, mocinhas. Marquei o próximo alvo no GPS de vocês. Achem e destruam!" , Time=0)
+[Murray_info_obj_dstr_heli_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Há um helicóptero a caminho com um alvo de assassinato. Se derrubarem, a gente faz valer a pena. Tem um estoque de RPGs perto do heliponto que vocês podem usar." , Time=0)
+[Murray_info_obj_dstr_heli_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Não deixem aquele helicóptero pousar. Tem uns RPGs perto do heliponto que vocês podem usar pra derrubar." , Time=0)
+[Murray_info_obj_dstr_heli_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vão até o heliponto. Tem um RPG lá. Usem pra derrubar o helicóptero que está chegando!" , Time=0)
+[Murray_info_obj_dstr_heli_rem_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Derrubem aquele helicóptero!" , Time=0)
+[Murray_info_obj_dstr_heli_rem_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Usem aqueles RPGs pra derrubar aquele helicóptero!" , Time=0)
+[Murray_info_obj_dstr_mult_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho uma série de alvos pra vocês destruírem. O primeiro já deve estar no GPS. Todos valem o mesmo e vocês recebem por cada alvo destruído. Lembrem que é uma situação competitiva. Há outra equipe atrás desses alvos." , Time=0)
+[Murray_info_obj_dstr_mult_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Nesta missão, há vários alvos que vocês têm que destruir. Vão receber por cada um. Também estarão numa corrida contra a outra equipe, então terão que ser rápidos." , Time=0)
+[Murray_info_obj_dstr_mult_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Há vários alvos pra destruir nesta. Cada um rende grana. Vocês vão competir com a outra equipe, então precisam se apressar." , Time=0)
+[Murray_info_obj_dstr_mult_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Acabamos de saber que a outra equipe está atrás do mesmo refém. Vocês têm que chegar primeiro e levar ele até o ponto de extração." , Time=0)
+[Murray_info_obj_dstr_next_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Destruam o próximo alvo." , Time=0)
+[Murray_info_obj_dstr_next_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sigam em frente e acertem o próximo alvo." , Time=0)
+[Murray_info_obj_dstr_next_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, passem pro próximo alvo, pessoal." , Time=0)
+[Murray_info_obj_dstr_next_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Continuem indo pro próximo alvo no GPS." , Time=0)
+[Murray_info_obj_dstr_next_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vejam o GPS pro próximo alvo." , Time=0)
+[Murray_info_obj_dstr_next_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Achem o próximo alvo no GPS e mexam-se!" , Time=0)
+[Murray_info_obj_dstr_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês precisam destruir aquele objeto antes que seja transportado daqui. Não deixem a outra equipe atrapalhar." , Time=0)
+[Murray_info_obj_dstr_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Aquele objeto precisa ser destruído a qualquer custo. O transporte já está a caminho. Não deixem eles levarem isso daí!" , Time=0)
+[Murray_info_obj_dstr_obj_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O objeto no seu GPS precisa ser destruído antes que o transporte chegue pra levar ele. Não confiem na outra equipe, eles podem ter outros planos." , Time=0)
+[Murray_info_obj_esct_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal - olhem o GPS. Marquei onde está o refém. Levem ele até o ponto de extração." , Time=0)
+[Murray_info_obj_esct_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei - acabei de marcar um refém no seu GPS. Esse cara vale uma pequena fortuna. Levem ele até o ponto de extração." , Time=0)
+[Murray_info_obj_esct_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Atualizei o GPS de vocês com outro refém. Se tirarem esse daí de lá, vão ficar cheios da grana!" , Time=0)
+[Murray_info_obj_esct_gen_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Acabei de marcar outro refém no GPS. Esse cara nem merece ser salvo, mas tem um bônus gordo pra vocês se fizerem isso." , Time=0)
+[Murray_info_obj_esct_gen_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Quando vocês acabarem de fazer palhaçada, tenho outra pessoa pra resgatar. Olhem o GPS." , Time=0)
+[Murray_info_obj_esct_gen_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tem outro refém marcado no seu GPS. Parece bem guardado, mas nada que vocês não deem conta." , Time=0)
+[Murray_info_obj_flee_ai_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho um alvo tentando fugir de helicóptero. Não deixem ele chegar ao ponto de extração." , Time=0)
+[Murray_info_obj_flee_ai_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Na próxima missão, vocês precisam neutralizar o alvo antes que ele escape. A localização dele está no GPS." , Time=0)
+[Murray_info_obj_flee_ai_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O próximo alvo está em movimento. Achem ele e acabem com ele antes que chegue ao heliponto e fuja." , Time=0)
+[Murray_info_obj_flee_ai_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rápido, o próximo alvo está tentando escapar de helicóptero. Olhem o GPS e vão pegar ele antes que fuja!" , Time=0)
+[Murray_info_obj_heli_now_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês já devem estar quase vendo o helicóptero. Falta pouco, pessoal." , Time=0)
+[Murray_info_obj_heli_now_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero está se aproximando da posição de vocês. Aguentem firme." , Time=0)
+[Murray_info_obj_heli_now_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero já deve estar chegando na posição de vocês." , Time=0)
+[Murray_info_obj_opp_hstg_prev_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal - vocês têm que impedir a outra equipe de resgatar o refém a qualquer custo." , Time=0)
+[Murray_info_obj_opp_hstg_prev_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Se esse refém sair daí, vai rolar cabeça. Estão pagando vocês pra impedir a extração dele. Vocês sabem o que fazer!" , Time=0)
+[Murray_info_obj_opp_hstg_resc_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês precisam levar o refém até o ponto de extração. Fiquem ligados: outra equipe está na área tentando impedir isso." , Time=0)
+[Murray_info_obj_opp_hstg_resc_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O refém precisa chegar em segurança. Não deixem nenhuma resistência atrapalhar." , Time=0)
+[Murray_info_obj_opp_obj_prev_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mercenários vão tentar tomar aquele objeto de vocês - matem todos!" , Time=0)
+[Murray_info_obj_opp_obj_prev_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal. Tem uma recompensa grande por impedir que esse objeto caia em mãos erradas. Não tirem ele do campo de visão." , Time=0)
+[Murray_info_obj_opp_obj_xtrc_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês precisam chegar ao objeto que marquei no GPS e entregar ele no ponto de extração. Não deixem nada atrapalhar." , Time=0)
+[Murray_info_obj_opp_obj_xtrc_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei - vocês precisam entregar esse objeto no ponto de extração. Uns mercenários podem tentar impedir - não deixem!" , Time=0)
+[Murray_info_obj_opp_tgt_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei - o trabalho de vocês é assassinar o alvo. Atenção: a outra equipe foi enviada pra impedir isso." , Time=0)
+[Murray_info_obj_opp_tgt_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rapazes - assassinem o alvo. Qualquer resistência deve ser eliminada." , Time=0)
+[Murray_info_obj_opp_tgt_assn_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês têm que assassinar o alvo antes que a outra equipe extraia ele. É bom se apressarem." , Time=0)
+[Murray_info_obj_opp_tgt_def_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ei - a outra equipe foi designada pra assassinar o alvo. O trabalho de vocês é impedir isso." , Time=0)
+[Murray_info_obj_opp_tgt_def_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Não deixem o alvo ser assassinado. Defendam ele de qualquer mercenário a qualquer custo." , Time=0)
+[Murray_info_obj_opp_tgt_def_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Defendam esse alvo a qualquer custo. A outra equipe está atrás dele, então fiquem espertos." , Time=0)
+[Murray_info_obj_reach_loc_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal, preciso que vocês cheguem ao local que marquei no GPS e aguardem novas instruções. A primeira equipe a chegar lá leva uma grana." , Time=0)
+[Murray_info_obj_reach_loc_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho um serviço pra vocês. A primeira equipe a aparecer ganha um bônus. Vejam se conseguem chegar." , Time=0)
+[Murray_info_obj_reach_loc_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Se vocês forem os primeiros a chegar ao local que marquei no GPS, ganham um bônus e uma nova missão." , Time=0)
+[Murray_info_obj_rmnd_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho outro alvo pra vocês. Olhem o GPS pra mais detalhes." , Time=0)
+[Murray_info_obj_rmnd_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Atualizei o GPS de vocês com outro alvo." , Time=0)
+[Murray_info_obj_rmnd_hstg_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tem um refém aqui perto que precisa de extração. Olhem o GPS pra mais detalhes!" , Time=0)
+[Murray_info_obj_rmnd_hstg_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Atualizei o GPS de vocês com a localização de um refém. Tirem ele de lá." , Time=0)
+[Murray_info_obj_rmnd_obj_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tenho outro serviço fácil pra vocês. Marquei um objeto no GPS. Tragam de volta e vão ser pagos." , Time=0)
+[Murray_info_obj_rmnd_obj_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Olhem o GPS. Tem mais uma coisa que vocês precisam pegar." , Time=0)
+[Murray_info_obj_rmnd_time_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O tempo de vocês está acabando. Vamos resolver isso." , Time=0)
+[Murray_info_obj_rmnd_time_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mexam-se. O tempo está acabando!" , Time=0)
+[Murray_info_obj_subsq_fail_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Essa não foi das melhores, pessoal. Já vi vocês fazerem melhor." , Time=0)
+[Murray_info_obj_subsq_fail_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Foi fraco, pessoal. Muito fraco." , Time=0)
+[Murray_info_obj_subsq_fail_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Não faço ideia do que vocês estavam tentando fazer, mas com certeza não funcionou." , Time=0)
+[Murray_info_obj_subsq_fail_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sério, pessoal, minha mãe teria feito melhor que vocês." , Time=0)
+[Murray_info_obj_subsq_fail_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mais sorte da próxima vez, pessoal." , Time=0)
+[Murray_info_obj_subsq_hit_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Belo trabalho, vocês conseguiram!" , Time=0)
+[Murray_info_obj_subsq_hit_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom trabalho, pessoal!" , Time=0)
+[Murray_info_obj_subsq_hit_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Muito bem!" , Time=0)
+[Murray_info_obj_subsq_hit_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Mandaram bem! Vocês acabaram com o alvo." , Time=0)
+[Murray_info_obj_subsq_hit_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ótimo - isso vai render uma recompensa e tanto pra vocês." , Time=0)
+[Murray_info_obj_subsq_hit_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês dois fazem parecer fácil!" , Time=0)
+[Murray_info_obj_subsq_miss_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe chegou primeiro. Não deixem isso acontecer de novo!" , Time=0)
+[Murray_info_obj_subsq_miss_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe matou o alvo primeiro. Vocês precisam matar mais que eles pra vencer." , Time=0)
+[Murray_info_obj_subsq_miss_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Merda. A outra equipe levou essa morte. Esforcem-se mais da próxima vez!" , Time=0)
+[Murray_info_obj_subsq_miss_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe matou o alvo primeiro. A minha MÃE teria matado o alvo primeiro. Vamos lá, pessoal." , Time=0)
+[Murray_info_obj_subsq_miss_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sinto muito, pessoal, a outra equipe acertou o alvo antes de vocês." , Time=0)
+[Murray_info_obj_subsq_miss_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Enquanto vocês, mocinhas, faziam as unhas, a outra equipe matou o alvo. Se continuarem assim, não vão ganhar grana nenhuma." , Time=0)
+[Murray_info_obj_subsq_succ_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ótimo trabalho, pessoal. Vocês venceram a outra equipe!" , Time=0)
+[Murray_info_obj_subsq_succ_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Muito bem, rapazes. Vocês venceram a outra equipe." , Time=0)
+[Murray_info_obj_subsq_succ_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom trabalho. Vocês mostraram como se faz." , Time=0)
+[Murray_info_obj_they2_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe pegou o refém e está indo pro ponto de extração. Melhor correrem, pessoal!" , Time=0)
+[Murray_info_obj_they2_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que a outra equipe pegou o refém deles. Hora de se mexer!" , Time=0)
+[Murray_info_obj_they2_acq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O refém da outra equipe está em movimento. Vocês precisam chegar ao ponto de extração antes deles." , Time=0)
+[Murray_info_obj_they2_acq_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles pegaram o refém e estão em movimento. Não deixem eles chegarem na extração antes de vocês." , Time=0)
+[Murray_info_obj_they2_acq_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe pegou o refém." , Time=0)
+[Murray_info_obj_they2_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe largou o refém. Vocês podem chegar ao ponto de extração antes deles." , Time=0)
+[Murray_info_obj_they2_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que a outra equipe largou o refém. Rápido - cheguem ao ponto de extração antes deles!" , Time=0)
+[Murray_info_obj_they2_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O outro refém foi largado. Façam sua jogada agora e cheguem na extração antes deles." , Time=0)
+[Murray_info_obj_they2_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que vocês vão ter sorte dessa vez. Eles largaram o refém." , Time=0)
+[Murray_info_obj_they2_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe largou o refém." , Time=0)
+[Murray_info_obj_time_1min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero de extração chega em um minuto. Aguentem até lá." , Time=0)
+[Murray_info_obj_time_1min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero está a 60 segundos. Aguentem firme!" , Time=0)
+[Murray_info_obj_time_2min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero de extração chega em dois minutos. Aguentem até lá." , Time=0)
+[Murray_info_obj_time_2min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero está a dois minutos. Segurem a onda." , Time=0)
+[Murray_info_obj_time_30sec_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Trinta segundos até o helicóptero chegar. Só mais um pouco!" , Time=0)
+[Murray_info_obj_time_30sec_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero de extração está a 30 segundos." , Time=0)
+[Murray_info_obj_time_3min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero de extração chega em três minutos. Aguentem até lá." , Time=0)
+[Murray_info_obj_time_3min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero chega aí em três minutos. Aguentem firme, rapazes." , Time=0)
+[Murray_info_obj_time_gen_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que o helicóptero de extração atrasou. Vocês vão ter que se segurar até ele chegar." , Time=0)
+[Murray_info_obj_time_gen_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O transporte está a caminho, mas vai demorar uns minutos. Aguentem firme, rapazes." , Time=0)
+[Murray_info_obj_time_gen_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O helicóptero de extração está vindo, mas vai levar alguns minutos. Segurem a onda." , Time=0)
+[Murray_info_obj_trans_now_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vão pro heliponto, tem um RPG lá. Usem pra derrubar o helicóptero que está chegando!" , Time=0)
+[Murray_info_obj_trans_now_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O transporte está se aproximando da posição de vocês. Aguentem firme." , Time=0)
+[Murray_info_obj_trans_now_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O transporte já deve estar chegando na posição de vocês." , Time=0)
+[Murray_info_obj_u2_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Rapazes, vocês largaram o refém. Peguem ele e cheguem antes deles ao ponto de extração." , Time=0)
+[Murray_info_obj_u2_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O que está acontecendo, rapazes? Vocês largaram o refém. Peguem ele e se mexam!" , Time=0)
+[Murray_info_obj_u2_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que o refém caiu. Vocês não têm muito tempo pra chegar antes deles ao ponto de extração." , Time=0)
+[Murray_info_obj_u2_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês têm que pegar o refém e levar ele até o ponto de extração." , Time=0)
+[Murray_info_obj_u2_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês largaram o refém." , Time=0)
+[Murray_info_obj_updt_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O alvo foi capturado e está em movimento." , Time=0)
+[Murray_info_obj_updt_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Alguém pegou o alvo. Foram vocês?" , Time=0)
+[Murray_info_obj_updt_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O alvo está solto. Peguem ele, rapazes." , Time=0)
+[Murray_info_obj_updt_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles deixaram o alvo cair. Melhor vocês pegarem!" , Time=0)
+[Murray_info_obj_updt_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O alvo foi largado. Agora é de quem pegar." , Time=0)
+[Murray_info_obj_updt_reacq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O objetivo foi pego." , Time=0)
+[Murray_info_obj_updt_reacq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O alvo está em movimento de novo." , Time=0)
+[Murray_info_obj_updt_reacq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O alvo voltou a se mover." , Time=0)
+[Murray_info_obj_updt_they_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles estão com o refém. Interceptem antes que cheguem ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_they_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O outro time pegou o refém. Não deixem que cheguem ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_they_acq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O refém está em movimento. Cortem o caminho deles antes que o entreguem." , Time=0)
+[Murray_info_obj_updt_they_acq_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Estou vendo movimento no refém. Interceptem antes que chegue ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_they_acq_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles estão com o refém, mas vocês ainda têm tempo de tirá-lo deles e entregá-lo vocês mesmos." , Time=0)
+[Murray_info_obj_updt_they_acq_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles estão com o refém! Tentem tomar ele!" , Time=0)
+[Murray_info_obj_updt_they_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles largaram o refém. Essa é a chance de vocês pegarem ele!" , Time=0)
+[Murray_info_obj_updt_they_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe deixou o refém cair. Peguem ele." , Time=0)
+[Murray_info_obj_updt_they_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O outro time largou o refém. Peguem ele e saiam daí." , Time=0)
+[Murray_info_obj_updt_they_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O refém caiu. Vão lá e levem ele até o ponto de extração." , Time=0)
+[Murray_info_obj_updt_they_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que eles largaram o refém. Peguem ele antes que o peguem de volta." , Time=0)
+[Murray_info_obj_updt_they_drop_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles largaram o refém." , Time=0)
+[Murray_info_obj_updt_u_acq_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês estão com o refém, levem ele ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_u_acq_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sua equipe está com o refém. Levem ele ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_u_acq_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Refém capturado. Vão para o ponto de extração." , Time=0)
+[Murray_info_obj_updt_u_acq_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sua equipe pegou o refém. Tirem ele daí em segurança." , Time=0)
+[Murray_info_obj_updt_u_acq_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O refém foi capturado. Levem ele ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_u_acq_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Sua equipe está com o refém." , Time=0)
+[Murray_info_obj_updt_u_drop_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês largaram o refém. Não deixem o outro time pegar!" , Time=0)
+[Murray_info_obj_updt_u_drop_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que vocês largaram o refém. Peguem ele e saiam daí." , Time=0)
+[Murray_info_obj_updt_u_drop_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O que está acontecendo, rapazes? Vocês largaram o refém. Levem ele ao ponto de extração." , Time=0)
+[Murray_info_obj_updt_u_drop_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O refém precisa chegar ao ponto de extração. Peguem ele e se mexam." , Time=0)
+[Murray_info_obj_updt_u_drop_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Parece que vocês largaram o refém. Qual é o problema, rapazes? Têm que tirar ele daqui." , Time=0)
+[Murray_info_obj_updt_u_drop_6 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês largaram o refém." , Time=0)
+[Murray_info_stat_obj_still_avail_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês vão fazer isso hoje ou não?" , Time=0)
+[Murray_info_stat_obj_still_avail_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Alô? Vocês estão me ouvindo? Terminem o objetivo!" , Time=0)
+[Murray_info_stat_obj_still_avail_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Minha mãe cumpriria esse objetivo mais rápido que vocês dois. Anda logo!" , Time=0)
+[Murray_info_stat_obj_still_avail_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês não vão ganhar pra ficar parados. Mexam-se!" , Time=0)
+[Murray_info_stat_rnd_end_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: É isso, rapazes! Hora de voltar pra casa." , Time=0)
+[Murray_info_stat_rnd_end_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O tempo acabou, rapazes. Vamos tirar vocês daí!" , Time=0)
+[Murray_info_stat_rnd_end_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Beleza, vocês terminaram. Hora de sair daí." , Time=0)
+[Murray_info_stat_rnd_end_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Certo, acabamos. Hora de encerrar." , Time=0)
+[Murray_info_stat_rnd_end_count_1_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Um" , Time=0)
+[Murray_info_stat_rnd_end_count_2_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Dois" , Time=0)
+[Murray_info_stat_rnd_end_count_3_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Três" , Time=0)
+[Murray_info_stat_rnd_end_count_4_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Quatro" , Time=0)
+[Murray_info_stat_rnd_end_count_5_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Cinco" , Time=0)
+[Murray_info_stat_rnd_end_note_1min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Falta um minuto! Preparem-se pra extração!" , Time=0)
+[Murray_info_stat_rnd_end_note_1min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Só falta um minuto. Limpem tudo e saiam daí." , Time=0)
+[Murray_info_stat_rnd_end_note_1min_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vamos, rapazes, só restam 60 segundos!" , Time=0)
+[Murray_info_stat_rnd_end_note_30sec_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Trinta segundos, rapazes! Mexam-se!" , Time=0)
+[Murray_info_stat_rnd_end_note_5min_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Faltam cinco minutos. Preparem-se pra extração!" , Time=0)
+[Murray_info_stat_rnd_end_note_5min_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês têm cinco minutos pra cumprir os objetivos e sair daí." , Time=0)
+[Murray_info_stat_rnd_end_note_5min_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Só faltam cinco minutos. Acelerem!" , Time=0)
+[Murray_info_stat_rnd_start_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês estão dentro. Hora de ganhar dinheiro." , Time=0)
+[Murray_info_stat_rnd_start_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês estão dentro. Vamos ao que interessa!" , Time=0)
+[Murray_info_stat_rnd_start_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Prontos, rapazes? Vamos começar." , Time=0)
+[Murray_info_stat_rnd_start_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Tudo certo. Vamos nessa." , Time=0)
+[Murray_info_stat_updt_obj_othr_near_succ_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Pessoal - se eles chegarem primeiro, eles levam a grana, não vocês." , Time=0)
+[Murray_info_stat_updt_obj_othr_near_succ_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: A outra equipe está chegando ao ponto de extração." , Time=0)
+[Murray_info_stat_updt_obj_othr_near_succ_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Eles estão atrás do abate!" , Time=0)
+[Murray_info_stat_updt_team_lead_lost_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês perderam a liderança." , Time=0)
+[Murray_info_stat_updt_team_lead_lost_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Acelerem o ritmo, rapazes, a outra equipe assumiu a liderança!" , Time=0)
+[Murray_info_stat_updt_team_lead_lost_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Merda, rapazes - a outra equipe acabou de assumir a liderança." , Time=0)
+[Murray_info_stat_updt_team_lead_take_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês assumiram a liderança." , Time=0)
+[Murray_info_stat_updt_team_lead_take_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Bom trabalho, pessoal, agora vocês estão no dinheiro." , Time=0)
+[Murray_info_stat_updt_team_lead_take_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Vocês estão à frente da outra equipe agora. Continuem assim!" , Time=0)
+[Murray_lot_of_activity_9 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Estou vendo muita atividade na área de vocês." , Time=0)
+[Murray_oh_snap_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ah, merda!" , Time=0)
+[Murray_oh_yeah_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: Ah, é..." , Time=0)
+[Murray_thats_got_it_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: É isso! Conseguiram!" , Time=0)
+[Murray_what_was_that_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="MURRAY: O que foi isso?" , Time=0)
+[Rios_emo_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Você já era, babaca!" , Time=0)
+[Rios_emo_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Ah. Você tá fodido!" , Time=0)
+[Rios_emo_assn_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Últimas palavras, seu filho da puta?" , Time=0)
+[Rios_emo_assn_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Isso vai doer MUITO mais em você do que em mim." , Time=0)
+[Rios_emo_conf_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Nada que a gente não aguente." , Time=0)
+[Rios_emo_conf_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Um dia normal de trabalho." , Time=0)
+[Rios_emo_esct_carry_cmnt_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Acho que vamos ter que carregar ele." , Time=0)
+[Rios_emo_esct_carry_req_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Você carrega ele." , Time=0)
+[Rios_emo_esct_enco_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Vem, vamos tirar você daqui." , Time=0)
+[Rios_emo_esct_enco_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Vem um helicóptero. Vamos!" , Time=0)
+[Rios_emo_tmate_far_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Ei, cadê você?" , Time=0)
+[Rios_emo_tmate_far_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Onde diabos você está?" , Time=0)
+[Rios_emo_tmate_far_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Onde porra você está?" , Time=0)
+[Rios_emo_tmate_far_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Você tá nessa equipe ou não? Volta aqui!" , Time=0)
+[Rios_emo_tmate_far_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Ei!! Aonde você vai?!" , Time=0)
+[Rios_emo_tmate_near_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Tô aqui por você, amigão." , Time=0)
+[Rios_emo_tmate_near_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Ei, mano. Pronto pra detonar?" , Time=0)
+[Rios_emo_tmate_near_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Senti sua falta, amigão. Bom, nem tanto." , Time=0)
+[Rios_emo_tmate_near_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Tô cobrindo você." , Time=0)
+[Rios_emo_tmate_near_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Tá coberto." , Time=0)
+[Rios_taunt_team_v_ai_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Preparem-se pra morrer, suas putas!" , Time=0)
+[Rios_taunt_team_v_ai_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Vocês já eram!" , Time=0)
+[Rios_taunt_team_v_ai_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Vocês estão fodidos, sabiam?" , Time=0)
+[Rios_taunt_team_v_othr_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: É o melhor que vocês conseguem?" , Time=0)
+[Rios_taunt_team_v_othr_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Onde vocês aprenderam a atirar? Escola de cegos?" , Time=0)
+[Rios_taunt_team_v_othr_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Ha ha! Errou!" , Time=0)
+[Rios_taunt_tmate_v_tmate_focus_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Ei! Fica focado!" , Time=0)
+[Rios_taunt_tmate_v_tmate_good_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Boa!" , Time=0)
+[Rios_taunt_tmate_v_tmate_good_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Agora sim!" , Time=0)
+[Rios_taunt_tmate_v_tmate_help_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="RIOS: Uma ajudinha aqui!" , Time=0)
+[Salem_emo_assn_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Você já era, babaca!" , Time=0)
+[Salem_emo_assn_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Ah. Você tá fodido!" , Time=0)
+[Salem_emo_assn_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Últimas palavras, seu filho da puta?" , Time=0)
+[Salem_emo_assn_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Isso vai doer MUITO mais em você do que em mim." , Time=0)
+[Salem_emo_conf_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Nada que a gente não aguente." , Time=0)
+[Salem_emo_conf_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Um dia normal de trabalho." , Time=0)
+[Salem_emo_esct_carry_cmnt_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Acho que vamos ter que carregar ele." , Time=0)
+[Salem_emo_esct_carry_req_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Você carrega ele." , Time=0)
+[Salem_emo_esct_enco_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Vem, vamos tirar você daqui." , Time=0)
+[Salem_emo_esct_enco_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Vem um helicóptero. Vamos!" , Time=0)
+[Salem_emo_tmate_far_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Ei, cadê você?" , Time=0)
+[Salem_emo_tmate_far_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Onde diabos você está?" , Time=0)
+[Salem_emo_tmate_far_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Onde porra você está?" , Time=0)
+[Salem_emo_tmate_far_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Você tá nessa equipe ou não? Volta aqui!" , Time=0)
+[Salem_emo_tmate_far_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Ei!! Aonde você vai?!" , Time=0)
+[Salem_emo_tmate_near_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Tô aqui por você, amigão." , Time=0)
+[Salem_emo_tmate_near_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Ei, mano. Pronto pra detonar?" , Time=0)
+[Salem_emo_tmate_near_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Senti sua falta, amigão. Bom, nem tanto." , Time=0)
+[Salem_emo_tmate_near_4 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Tô cobrindo você." , Time=0)
+[Salem_emo_tmate_near_5 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Tá coberto." , Time=0)
+[Salem_taunt_team_v_ai_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Preparem-se pra morrer, suas putas!" , Time=0)
+[Salem_taunt_team_v_ai_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Você tá fodido!" , Time=0)
+[Salem_taunt_team_v_ai_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Você tá fodido, sabia?" , Time=0)
+[Salem_taunt_team_v_othr_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: É o melhor que você consegue?" , Time=0)
+[Salem_taunt_team_v_othr_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Onde vocês aprenderam a atirar? Escola de cegos?" , Time=0)
+[Salem_taunt_team_v_othr_3 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Ha ha! Errou!" , Time=0)
+[Salem_taunt_tmate_v_tmate_focus_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Ei! Fica focado!" , Time=0)
+[Salem_taunt_tmate_v_tmate_good_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Boa!" , Time=0)
+[Salem_taunt_tmate_v_tmate_good_2 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Agora sim!" , Time=0)
+[Salem_taunt_tmate_v_tmate_help_1 SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151348"
+Subtitles[0]=(Text="SALEM: Uma ajudinha aqui!" , Time=0)

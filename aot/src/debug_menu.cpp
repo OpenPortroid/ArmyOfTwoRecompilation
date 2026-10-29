@@ -255,8 +255,9 @@ namespace
   std::mutex g_notice_mutex;
   std::function<bool()> g_notice; // under g_notice_mutex
   std::function<bool()> g_toast;  // under g_notice_mutex (SetToast)
-  uint64_t g_notice_gen = 0, g_toast_gen = 0; // under g_notice_mutex: each set
-  std::atomic<bool> g_notice_on{false}; // either of them
+  std::function<bool()> g_banner; // under g_notice_mutex (SetBanner)
+  uint64_t g_notice_gen = 0, g_toast_gen = 0, g_banner_gen = 0; // under g_notice_mutex: each set
+  std::atomic<bool> g_notice_on{false}; // any of them
   rex::ui::ImmediateDrawer *g_sdk_immediate = nullptr;
 
   // The game gets no input: the menu or a port window is open.
@@ -440,22 +441,25 @@ namespace
     g_frames_wanted = g_own_drawer != nullptr;
   }
 
-  // UI thread: draws the notice (SetNotice) and the toast (SetToast);
-  // clears each once it is over.
+  // UI thread: draws the banner (SetBanner), the notice (SetNotice) and the
+  // toast (SetToast); clears each once it is over.
   void DrawNotice()
   {
-    std::function<bool()> notice, toast;
-    uint64_t notice_gen, toast_gen;
+    std::function<bool()> notice, toast, banner;
+    uint64_t notice_gen, toast_gen, banner_gen;
     {
       std::lock_guard lock(g_notice_mutex);
       notice = g_notice;
       toast = g_toast;
+      banner = g_banner;
       notice_gen = g_notice_gen;
       toast_gen = g_toast_gen;
+      banner_gen = g_banner_gen;
     }
+    bool banner_over = banner && !banner();
     bool notice_over = notice && !notice();
     bool toast_over = toast && !toast();
-    if (notice_over || toast_over)
+    if (notice_over || toast_over || banner_over)
     {
       std::lock_guard lock(g_notice_mutex);
       // Unless set again meanwhile.
@@ -467,7 +471,11 @@ namespace
       {
         g_toast = nullptr;
       }
-      g_notice_on = g_notice || g_toast;
+      if (banner_over && g_banner_gen == banner_gen)
+      {
+        g_banner = nullptr;
+      }
+      g_notice_on = g_notice || g_toast || g_banner;
     }
   }
 
@@ -805,7 +813,7 @@ namespace ao2::menu
       std::lock_guard lock(g_notice_mutex);
       g_notice = std::move(draw);
       ++g_notice_gen;
-      g_notice_on = g_notice || g_toast;
+      g_notice_on = g_notice || g_toast || g_banner;
     }
     ShowNoticeDialog();
   }
@@ -816,7 +824,18 @@ namespace ao2::menu
       std::lock_guard lock(g_notice_mutex);
       g_toast = std::move(draw);
       ++g_toast_gen;
-      g_notice_on = g_notice || g_toast;
+      g_notice_on = g_notice || g_toast || g_banner;
+    }
+    ShowNoticeDialog();
+  }
+
+  void SetBanner(std::function<bool()> draw)
+  {
+    {
+      std::lock_guard lock(g_notice_mutex);
+      g_banner = std::move(draw);
+      ++g_banner_gen;
+      g_notice_on = g_notice || g_toast || g_banner;
     }
     ShowNoticeDialog();
   }

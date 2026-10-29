@@ -11,9 +11,15 @@
 //   ao2_install extract <source> <dest dir> [--only=<path>] [--skip=<top level name>]...
 //       PROGRESS <bytes done> <bytes total>   (about ten times a second)
 //       OK
+//   ao2_install cpu
+//       X86_64_V3=1|0   (the main game build runs here: AVX2, FMA, BMI1/2, LZCNT,
+//                        MOVBE, F16C, and the OS saves the AVX registers)
+//       MISSING=<what lacks, space separated; empty when X86_64_V3=1>
 // Output is UTF-8, one item per line; errors are "ERROR <text>", exit code 1.
 
 #define _CRT_SECURE_NO_WARNINGS
+#include <intrin.h>
+
 #include <cerrno>
 #include <chrono>
 #include <cstdio>
@@ -356,10 +362,73 @@ namespace
     return 0;
   }
 
+  // XCR0. Only called when CPUID says OSXSAVE; this tool is built without
+  // the xsave target feature (x86-64-v2), so it is enabled for this function.
+  __attribute__((target("xsave"))) unsigned long long Xcr0()
+  {
+    return _xgetbv(0);
+  }
+
+  // What the main game build (x86-64-v3) needs, from CPUID: the launcher asks
+  // this when Windows cannot tell (IsProcessorFeaturePresent knows AVX2 only
+  // from Windows 10 2004 on).
+  int Cpu()
+  {
+    int r[4];
+    __cpuid(r, 0);
+    int max_leaf = r[0];
+    __cpuid(r, 1);
+    int ecx1 = r[2];
+    int ebx7 = 0;
+    if (max_leaf >= 7)
+    {
+      __cpuidex(r, 7, 0);
+      ebx7 = r[1];
+    }
+    __cpuid(r, static_cast<int>(0x80000000));
+    int ecx81 = 0;
+    if (static_cast<unsigned>(r[0]) >= 0x80000001u)
+    {
+      __cpuid(r, static_cast<int>(0x80000001));
+      ecx81 = r[2];
+    }
+    // The OS saves XMM and YMM state (XCR0 bits 1 and 2): AVX is usable.
+    bool os_avx = (ecx1 & (1 << 27)) && (Xcr0() & 6) == 6;
+    struct
+    {
+      const char *name;
+      bool present;
+    } need[] = {
+        {"AVX", (ecx1 & (1 << 28)) != 0 && os_avx},
+        {"AVX2", (ebx7 & (1 << 5)) != 0 && os_avx},
+        {"FMA", (ecx1 & (1 << 12)) != 0 && os_avx},
+        {"F16C", (ecx1 & (1 << 29)) != 0},
+        {"MOVBE", (ecx1 & (1 << 22)) != 0},
+        {"BMI1", (ebx7 & (1 << 3)) != 0},
+        {"BMI2", (ebx7 & (1 << 8)) != 0},
+        {"LZCNT", (ecx81 & (1 << 5)) != 0},
+    };
+    std::string missing;
+    for (const auto &n : need)
+    {
+      if (!n.present)
+      {
+        missing += missing.empty() ? n.name : std::string(" ") + n.name;
+      }
+    }
+    std::printf("X86_64_V3=%d\nMISSING=%s\n", missing.empty() ? 1 : 0, missing.c_str());
+    std::fflush(stdout);
+    return 0;
+  }
+
 } // namespace
 
 int wmain(int argc, wchar_t **argv)
 {
+  if (argc >= 2 && std::wcscmp(argv[1], L"cpu") == 0)
+  {
+    return Cpu();
+  }
   if (argc >= 3 && std::wcscmp(argv[1], L"probe") == 0)
   {
     return Probe(argv[2]);
@@ -382,6 +451,6 @@ int wmain(int argc, wchar_t **argv)
     }
     return Extract(argv[2], argv[3], only, skip);
   }
-  std::printf("usage: ao2_install probe <source> | extract <source> <dest> [--only=<path>] [--skip=<name>]\n");
+  std::printf("usage: ao2_install probe <source> | extract <source> <dest> [--only=<path>] [--skip=<name>] | cpu\n");
   return 2;
 }

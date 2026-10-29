@@ -14,4 +14,4 @@ Remove-Item Env:AO2_EXE
 Start-Sleep 12
 "=== $Label"
 Get-Content "$dir\perf_probe.log" -ErrorAction SilentlyContinue | Select-Object -Last 2
-& C:\aot2\tools\cpuload.ps1
+& C:\aot2\tools\cpuload.ps1 -Name ([IO.Path]::GetFileNameWithoutExtension($Exe))

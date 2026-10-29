@@ -10,10 +10,11 @@ namespace AO2Launcher
     // is that row's text in the current language, the English itself when the
     // table has none. The text is translated where it is drawn, so a change
     // of the language shows at once.
-    static class L
+    static partial class L
     {
-        // en, then ru, fr, de, es, it.
-        static readonly string[] Codes = { "ru", "fr", "de", "es", "it" };
+        // en, then ru, fr, de, es, it (Table's columns), pt (TextPt.cs).
+        static readonly string[] Codes = { "ru", "fr", "de", "es", "it", "pt" };
+        const int Pt = 5;
         static int lang = -1; // index into Codes; -1: English
 
         public static string Code
@@ -33,8 +34,17 @@ namespace AO2Launcher
 
         public static string T(string en)
         {
+            if (en == null || lang < 0)
+            {
+                return en;
+            }
+            if (lang == Pt)
+            {
+                string pt;
+                return PtTable.TryGetValue(en, out pt) ? pt : en;
+            }
             string[] row;
-            if (en == null || lang < 0 || !Table.TryGetValue(en, out row))
+            if (!Table.TryGetValue(en, out row))
             {
                 return en;
             }
@@ -53,6 +63,11 @@ namespace AO2Launcher
                     yield return s;
                 }
             }
+            string pt;
+            if (en != null && PtTable.TryGetValue(en, out pt))
+            {
+                yield return pt;
+            }
         }
 
         public static string F(string en, params object[] args)
@@ -61,6 +76,7 @@ namespace AO2Launcher
         }
 
         static readonly Dictionary<string, string[]> Table = Build();
+        static readonly Dictionary<string, string> PtTable = BuildPt();
 
         static Dictionary<string, string[]> Build()
         {
@@ -198,6 +214,56 @@ namespace AO2Launcher
               "INSTALAR UNA VERSIÓN ANTERIOR", "INSTALLA UNA VERSIONE PRECEDENTE");
             a("Go back to {0}? You have {1}.", "Вернуться на {0}? Сейчас у вас {1}.", "Revenir à la {0} ? Vous avez la {1}.",
               "Zu {0} zurückkehren? Sie haben {1}.", "¿Volver a la {0}? Tienes la {1}.", "Tornare alla {0}? Hai la {1}.");
+
+            // --- The AVX1 build (the game for processors without AVX2) ---
+            a("AVX1 version", "Версия AVX1", "Version AVX1", "AVX1-Version", "Versión AVX1", "Versione AVX1");
+            a("The game built for processors without AVX2 (downloaded from the release, about 25 MB), a little slower. " +
+              "Always on when the processor has no AVX2. Turn it on to play co-op with someone whose processor " +
+              "has none: both players need the same version and the same build.",
+              "Игра, собранная для процессоров без AVX2 (скачивается из релиза, около 25 МБ), немного медленнее. " +
+              "Всегда включена, если у процессора нет AVX2. Включите, чтобы играть в кооп с тем, у кого такой процессор: " +
+              "у обоих игроков должны быть одна версия и одна сборка.",
+              "Le jeu compilé pour les processeurs sans AVX2 (téléchargé depuis la version, environ 25 Mo), un peu plus lent. " +
+              "Toujours activé si le processeur n'a pas l'AVX2. Activez-le pour jouer en coop avec quelqu'un dont le processeur " +
+              "ne l'a pas : les deux joueurs doivent avoir la même version et la même compilation.",
+              "Das Spiel für Prozessoren ohne AVX2 (wird aus dem Release geladen, etwa 25 MB), etwas langsamer. " +
+              "Immer an, wenn der Prozessor kein AVX2 hat. Einschalten, um im Koop mit jemandem zu spielen, dessen Prozessor " +
+              "es nicht hat: beide Spieler brauchen dieselbe Version und denselben Build.",
+              "El juego compilado para procesadores sin AVX2 (se descarga de la versión, unos 25 MB), algo más lento. " +
+              "Siempre activado si el procesador no tiene AVX2. Actívalo para jugar en cooperativo con alguien cuyo procesador " +
+              "no lo tiene: ambos jugadores necesitan la misma versión y la misma compilación.",
+              "Il gioco compilato per processori senza AVX2 (scaricato dalla versione, circa 25 MB), un po' più lento. " +
+              "Sempre attivo se il processore non ha AVX2. Attivalo per giocare in cooperativa con chi ha un processore " +
+              "senza: entrambi i giocatori devono avere la stessa versione e la stessa build.");
+            a("AVX1 BUILD", "СБОРКА AVX1", "VERSION AVX1", "AVX1-BUILD", "VERSIÓN AVX1", "BUILD AVX1");
+            a("Download the build with AVX1 support for {0}?", "Скачать сборку с поддержкой AVX1 для {0}?", "Télécharger la version compatible AVX1 de la {0} ?",
+              "Den Build mit AVX1-Unterstützung für {0} herunterladen?", "¿Descargar la versión compatible con AVX1 de la {0}?", "Scaricare la build con supporto AVX1 della {0}?");
+            a("For processors without AVX2 and co-op with such a player. About 25 MB.",
+              "Для процессоров без AVX2 и для коопа с таким игроком. Около 25 МБ.",
+              "Pour les processeurs sans AVX2 et la coop avec un tel joueur. Environ 25 Mo.",
+              "Für Prozessoren ohne AVX2 und Koop mit so einem Spieler. Etwa 25 MB.",
+              "Para procesadores sin AVX2 y el cooperativo con un jugador así. Unos 25 MB.",
+              "Per processori senza AVX2 e la cooperativa con un giocatore così. Circa 25 MB.");
+            a("YOUR PROCESSOR DOES NOT SUPPORT AVX2 INSTRUCTIONS", "ВАШ ПРОЦЕССОР НЕ ПОДДЕРЖИВАЕТ ИНСТРУКЦИИ AVX2",
+              "VOTRE PROCESSEUR NE PREND PAS EN CHARGE L'AVX2", "IHR PROZESSOR UNTERSTÜTZT KEIN AVX2",
+              "TU PROCESADOR NO ADMITE AVX2", "IL TUO PROCESSORE NON SUPPORTA AVX2");
+            a("On such a processor the game runs only in its AVX1 build. About 25 MB.",
+              "На таком процессоре игра работает только в сборке AVX1. Около 25 МБ.",
+              "Sur ce processeur, le jeu ne fonctionne que dans sa version AVX1. Environ 25 Mo.",
+              "Auf so einem Prozessor läuft das Spiel nur im AVX1-Build. Etwa 25 MB.",
+              "En un procesador así el juego solo funciona con su versión AVX1. Unos 25 MB.",
+              "Su un processore così il gioco funziona solo con la build AVX1. Circa 25 MB.");
+            a("{0} is the newest version with the AVX1 build.", "{0} — последняя версия, у которой есть сборка AVX1.",
+              "La {0} est la dernière version avec la version AVX1.", "{0} ist die neueste Version mit AVX1-Build.",
+              "La {0} es la última versión con la versión AVX1.", "La {0} è l'ultima versione con la build AVX1.");
+            a("No version has the AVX1 build yet", "Пока ни у одной версии нет сборки AVX1",
+              "Aucune version n'a encore de version AVX1", "Noch keine Version hat einen AVX1-Build",
+              "Ninguna versión tiene aún la versión AVX1", "Nessuna versione ha ancora la build AVX1");
+            a("The AVX1 build of this version is installed", "Сборка AVX1 этой версии уже установлена",
+              "La version AVX1 de cette version est installée", "Der AVX1-Build dieser Version ist installiert",
+              "La versión AVX1 de esta versión está instalada", "La build AVX1 di questa versione è installata");
+            a("The AVX1 build is installed", "Сборка AVX1 установлена", "La version AVX1 est installée",
+              "Der AVX1-Build ist installiert", "La versión AVX1 está instalada", "La build AVX1 è installata");
             a("This release has no notes", "У этой версии нет описания", "Cette version n'a pas de notes", "Diese Version hat keine Hinweise",
               "Esta versión no tiene notas", "Questa versione non ha note");
             a("Update cancelled","Обновление отменено", "Mise à jour annulée", "Update abgebrochen", "Actualización cancelada",
@@ -229,11 +295,11 @@ namespace AO2Launcher
             // --- Graphics ---
             a("Language", "Язык", "Langue", "Sprache", "Idioma", "Lingua");
             a("Language of the game (text and voices) and of this launcher. Auto follows the language of Windows. " +
-              "Russian is text only, with English voices. In co-op both players need the same voices: " +
-              "English and Russian play together, the other languages only with the same language.",
-              "Язык игры (текст и озвучка) и этого лаунчера. Авто — язык Windows. Русский — только текст, озвучка " +
-              "английская. В кооперативе у обоих игроков должна быть одна озвучка: английский и русский совместимы, " +
-              "остальные языки — только с таким же.",
+              "Russian and Brazilian Portuguese are text only, with English voices. In co-op both players need the " +
+              "same voices: English, Russian and Portuguese play together, the other languages only with the same language.",
+              "Язык игры (текст и озвучка) и этого лаунчера. Авто — язык Windows. Русский и португальский (Бразилия) — " +
+              "только текст, озвучка английская. В кооперативе у обоих игроков должна быть одна озвучка: английский, " +
+              "русский и португальский совместимы, остальные языки — только с таким же.",
               "Langue du jeu (textes et voix) et de ce lanceur. Auto suit la langue de Windows. Le russe ne traduit que " +
               "le texte, les voix restent en anglais. En coop, les deux joueurs doivent avoir les mêmes voix : anglais " +
               "et russe vont ensemble, les autres langues seulement avec la même langue.",
@@ -864,26 +930,6 @@ namespace AO2Launcher
               "Der Spieler erleidet keinen Schaden. Wirkt nicht im Online-Koop.",
               "El jugador no recibe daño. No funciona en el cooperativo en línea.",
               "Il giocatore non subisce danni. Non ha effetto nella cooperativa online.");
-            a("Processor lock waits", "Ожидание потоков CPU", "Attente des verrous (processeur)", "Sperr-Warten (Prozessor)",
-              "Espera de bloqueos (procesador)", "Attesa dei lock (processore)");
-            a("Experimental. The game's threads first wait for each other busily for a moment instead of sleeping straight away: " +
-              "more FPS, but only on a powerful processor with threads to spare. Turn it on if you have one. Auto turns it on " +
-              "with 6 or more processor threads and stops where it does not pay. Turn it off if the game stutters.",
-              "Экспериментальная функция. Потоки игры сначала коротко ждут друг друга активно, а не засыпают сразу: " +
-              "больше FPS, но только на мощном процессоре со свободными потоками. Включайте, если процессор мощный. Авто включает " +
-              "её при 6 и более потоках процессора и отключает там, где она не окупается. Если игра подтормаживает, выключите.",
-              "Expérimental. Les threads du jeu s'attendent d'abord activement un court instant au lieu de se mettre en veille : " +
-              "plus d'IPS, mais seulement avec un processeur puissant ayant des threads libres. Activez-la si c'est votre cas. Auto " +
-              "l'active à partir de 6 threads processeur et l'arrête là où elle ne paie pas. Désactivez-la si le jeu saccade.",
-              "Experimentell. Die Threads des Spiels warten zuerst kurz aktiv aufeinander, statt gleich zu schlafen: " +
-              "mehr FPS, aber nur mit einem starken Prozessor mit freien Threads. Mit einem solchen einschalten. Auto schaltet " +
-              "sie ab 6 Prozessor-Threads ein und hört dort auf, wo es sich nicht lohnt. Bei Rucklern ausschalten.",
-              "Experimental. Los hilos del juego primero se esperan activamente un momento en lugar de dormir directamente: " +
-              "más FPS, pero solo con un procesador potente con hilos libres. Actívala si tienes uno. Auto la activa con 6 o más " +
-              "hilos de procesador y deja de hacerlo donde no compensa. Desactívala si el juego da tirones.",
-              "Sperimentale. I thread del gioco prima si aspettano attivamente per un attimo invece di andare subito in pausa: " +
-              "più FPS, ma solo con un processore potente con thread liberi. Attivala se ne hai uno. Auto la attiva con 6 o più " +
-              "thread del processore e smette dove non conviene. Disattivala se il gioco scatta.");
             a("Close the launcher", "Закрывать лаунчер", "Fermer le lanceur", "Launcher schließen", "Cerrar el lanzador",
               "Chiudi il launcher");
             a("Close this window once the game has started.", "Закрывать это окно после запуска игры.",
@@ -1100,6 +1146,12 @@ namespace AO2Launcher
             // --- Installation errors ---
             a("{0} is missing from the game folder", "{0} нет в папке игры", "{0} est absent du dossier du jeu",
               "{0} fehlt im Spielordner", "Falta {0} en la carpeta del juego", "{0} manca nella cartella del gioco");
+            a("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)",
+              "процессор слишком старый: нужен SSE4.2 (Intel Core i первого поколения / AMD FX и новее)",
+              "processeur trop ancien : SSE4.2 requis (Intel Core i 1re génération / AMD FX ou plus récent)",
+              "Prozessor zu alt: SSE4.2 erforderlich (Intel Core i 1. Generation / AMD FX oder neuer)",
+              "procesador demasiado antiguo: se requiere SSE4.2 (Intel Core i 1.ª generación / AMD FX o posterior)",
+              "processore troppo vecchio: serve SSE4.2 (Intel Core i 1ª generazione / AMD FX o successivi)");
             a("not an Xbox 360 disc image or a TU / DLC package", "это не образ диска Xbox 360 и не пакет TU / DLC",
               "ce n'est ni une image disque Xbox 360 ni un paquet TU / DLC", "kein Xbox-360-Disc-Image und kein TU-/DLC-Paket",
               "no es una imagen de disco de Xbox 360 ni un paquete TU / DLC",
@@ -1258,12 +1310,12 @@ namespace AO2Launcher
               "Das aktuelle Profil mit allen Spielständen löschen. Das Hauptprofil kann nicht gelöscht werden.",
               "Eliminar el perfil actual con todas sus partidas. El perfil principal no se puede eliminar.",
               "Elimina il profilo attuale con tutti i salvataggi. Il profilo principale non si può eliminare.");
-            a("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles.",
-              "Профили, кроме основного, хранятся в Documents\\armyoftworecomp_profiles.",
-              "Les profils autres que le principal sont dans Documents\\armyoftworecomp_profiles.",
-              "Profile außer dem Hauptprofil liegen in Documents\\armyoftworecomp_profiles.",
-              "Los perfiles distintos del principal se guardan en Documents\\armyoftworecomp_profiles.",
-              "I profili diversi dal principale si trovano in Documents\\armyoftworecomp_profiles.");
+            a("Profiles other than the main one are kept in Documents\\armyoftworecomp_profiles, or in AppData\\Local\\armyoftworecomp_profiles if Documents cannot be written to.",
+              "Профили, кроме основного, хранятся в Documents\\armyoftworecomp_profiles, а если в Documents нельзя писать, то в AppData\\Local\\armyoftworecomp_profiles.",
+              "Les profils autres que le principal sont dans Documents\\armyoftworecomp_profiles, ou dans AppData\\Local\\armyoftworecomp_profiles si Documents n'est pas accessible en écriture.",
+              "Profile außer dem Hauptprofil liegen in Documents\\armyoftworecomp_profiles oder, wenn Documents nicht beschreibbar ist, in AppData\\Local\\armyoftworecomp_profiles.",
+              "Los perfiles distintos del principal se guardan en Documents\\armyoftworecomp_profiles, o en AppData\\Local\\armyoftworecomp_profiles si no se puede escribir en Documents.",
+              "I profili diversi dal principale si trovano in Documents\\armyoftworecomp_profiles, oppure in AppData\\Local\\armyoftworecomp_profiles se in Documents non si può scrivere.");
             a("Enter a name for the profile", "Введите имя профиля", "Entrez un nom pour le profil", "Gib einen Namen für das Profil ein",
               "Escribe un nombre para el perfil", "Inserisci un nome per il profilo");
             a("This name cannot be used for a profile", "Такое имя для профиля не подходит", "Ce nom ne peut pas servir pour un profil",

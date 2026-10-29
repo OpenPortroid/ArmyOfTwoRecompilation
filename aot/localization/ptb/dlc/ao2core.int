@@ -1,0 +1,19 @@
+[AO2ObjectiveManager_EAMDLC]
+Objectives_KievDLC_01_Brief=Sabotar o posto de comando da milícia
+Objectives_KievDLC_01_Description=Uma milícia está agindo em conluio com políticos corruptos para fraudar uma eleição, comprometendo a democracia da Ucrânia.  Você precisa encontrar o posto de comando deles e sabotar a operação.
+Objectives_KievDLC_02_Brief=Atravessar os dutos até a Instalação de Manutenção
+Objectives_KievDLC_02_Description=Atravessando o sistema fechado do metrô para não ser detectado, você precisa localizar o duto que leva à Instalação de Manutenção.
+Objectives_KievDLC_03_Brief=Acessar o túnel abandonado
+Objectives_KievDLC_03_Description=Um sinal fraco indica que o posto de comando fica ao lado da Instalação de Manutenção.  Murray não tem nada mais específico.  Você precisa localizar o túnel e achar um jeito de passar.  
+Objectives_KievDLC_04_Brief=Levar Nygel Masterson para um local seguro
+Objectives_KievDLC_04_Description=Pelo visto, esse consultor da USAID passou uns dias difíceis na companhia da elite de Kiev.  Murray vai enviar uma equipe médica, mas antes você precisa levá-lo para um local seguro.
+Objectives_KievDLC_01_SubBrief=Trazer provas dos experimentos passados da clínica 
+Objectives_KievDLC_01_SubDescription=O Ocidente suspeitava da existência dessas clínicas durante a Guerra Fria, mas nunca se reuniram provas.  Você pode ganhar um bônus trazendo provas dos experimentos feitos aqui no passado.
+Objectives_MiamiDLC_01_Brief=Matar Richard Dalton
+Objectives_MiamiDLC_01_Description=Dalton é o mentor de toda a conspiração.  Vender posições de tropas e incriminar vocês na China fazia parte do grande plano dele.  Com Murray libertada do aeroporto e o furacão passado, é hora de ir até a SSC City e acabar com ele.  De vez...
+Objectives_MiamiDLC_02_Brief=Desativar a fonte de energia do elevador
+Objectives_MiamiDLC_02_Description=Dalton está indo para o cofre.  Para recuperar o tempo perdido, você precisa passar pelo caminho menos usado da SSC.  O atalho de Murray exige cortar a energia para acessar um poço de elevador na Sala das Instalações Centrais.
+Objectives_MiamiDLC_03_Brief=Acessar a Sede de Inteligência e Tática
+Objectives_MiamiDLC_03_Description=O poço do elevador deve dar acesso a uma pequena área recuada ao lado da Sede de Inteligência e Tática.  Não há acesso direto, cabe a você achar um jeito de entrar.
+Objectives_MiamiDLC_04_Brief=Hackear os dispositivos de segurança para acessar o cofre
+Objectives_MiamiDLC_04_Description=O cofre é protegido por um sistema de segurança de Nível 3.  Ajude Murray a hackear o software para anular os dispositivos de segurança.  Você vai encontrar o software em três locais diferentes na Sede Tática.

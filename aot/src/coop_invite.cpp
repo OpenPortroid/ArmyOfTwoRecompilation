@@ -32,8 +32,15 @@
 //   the script's OnXbInviteAccepted.
 //
 // Packets: "AO2I1 <TYPE>\n" then "key=value\n" lines. HELLO / HERE (name,
-// hosting, game state), INVITE (id, name, xuid, session, xnaddr, server),
-// ACK (id), ANSWER (id, accepted).
+// hosting, game state, build), INVITE (id, name, xuid, session, xnaddr,
+// server, build), ACK (id), ANSWER (id, accepted).
+//
+// build: a hash of this game's exe and rexruntime.dll (BuildHash). Co-op
+// runs lockstep, so two different builds desync; the players window and the
+// invites warn when a player's build is not this one (none = an older build),
+// and in the co-op lobby (a public game goes there straight, without the
+// players window) a banner stays on the screen until the game starts or the
+// lobby is left (VersionBanner).
 #include "coop_invite.h"
 
 #include "coop.h"
@@ -48,6 +55,7 @@
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #include <mstcpip.h>
+#include <windows.h>
 #ifndef SIO_UDP_CONNRESET
 #define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
 #endif
@@ -62,6 +70,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <fstream>
 #include <map>
 #include <mutex>
 #include <random>
@@ -279,6 +288,104 @@ namespace
   }
 
   // -------------------------------------------------------------------------
+  // Build hash
+  // -------------------------------------------------------------------------
+
+  // Path of a module of this process (nullptr = the exe); empty if not loaded.
+  std::wstring ModulePath(const wchar_t *name)
+  {
+    HMODULE module = name ? GetModuleHandleW(name) : nullptr;
+    if (name && !module)
+    {
+      return {};
+    }
+    std::wstring path(MAX_PATH, L'\0');
+    while (true)
+    {
+      DWORD n = GetModuleFileNameW(module, path.data(), DWORD(path.size()));
+      if (n == 0)
+      {
+        return {};
+      }
+      if (n < path.size())
+      {
+        path.resize(n);
+        return path;
+      }
+      path.resize(path.size() * 2);
+    }
+  }
+
+  // The game's build: a 64-bit hash of the exe's and rexruntime.dll's bytes,
+  // as 16 hex digits ("" if the exe can't be read). Hashing ~75 MB takes a
+  // fraction of a second, so the presence thread does it before its first
+  // beacon (Loop); later calls return the cached value.
+  const std::string &BuildHash()
+  {
+    static const std::string hash = [] {
+      uint64_t h = 0x9E3779B97F4A7C15ull;
+      auto mix = [&](uint64_t w) {
+        h ^= w * 0xFF51AFD7ED558CCDull;
+        h = (h << 31 | h >> 33) * 0xC4CEB9FE1A85EC53ull;
+      };
+      uint64_t total = 0;
+      for (const std::wstring &path : {ModulePath(nullptr), ModulePath(L"rexruntime.dll")})
+      {
+        if (path.empty())
+        {
+          continue;
+        }
+        std::ifstream file(path, std::ios::binary);
+        if (!file)
+        {
+          continue;
+        }
+        std::vector<char> buf(1 << 20);
+        while (file)
+        {
+          file.read(buf.data(), std::streamsize(buf.size()));
+          size_t n = size_t(file.gcount());
+          size_t words = n / 8;
+          for (size_t i = 0; i < words; ++i)
+          {
+            uint64_t w;
+            std::memcpy(&w, buf.data() + i * 8, 8);
+            mix(w);
+          }
+          if (n % 8)
+          {
+            uint64_t w = 0;
+            std::memcpy(&w, buf.data() + words * 8, n % 8);
+            mix(w);
+          }
+          total += n;
+        }
+        mix(total); // the files' boundary
+      }
+      if (!total)
+      {
+        return std::string();
+      }
+      char text[17];
+      std::snprintf(text, sizeof(text), "%016llx", (unsigned long long)h);
+      return std::string(text);
+    }();
+    return hash;
+  }
+
+  // A player's build differs from this one (an older build sends none).
+  bool OtherBuild(const std::string &build)
+  {
+    return !BuildHash().empty() && build != BuildHash();
+  }
+
+  // Short form for the screen: the first 8 digits, or "?" for none.
+  std::string ShortBuild(const std::string &build)
+  {
+    return build.empty() ? std::string("?") : build.substr(0, 8);
+  }
+
+  // -------------------------------------------------------------------------
   // Packets
   // -------------------------------------------------------------------------
 
@@ -378,6 +485,7 @@ namespace
     Address address;
     std::string name;
     std::string state; // menu / lobby / game
+    std::string build; // BuildHash of its game; empty = an older build
     bool hosting = false;
     Clock::time_point seen;
   };
@@ -415,6 +523,7 @@ namespace
     uint64_t session_id = 0;
     std::vector<uint8_t> xnaddr; // 36 bytes, addresses already the inviter's
     std::string server_ip;       // the inviter's EA server
+    std::string build;           // the inviter's BuildHash
     bool is_private = false;
     bool playgroup = false;      // a versus party: joined with the playgroup manager
     Clock::time_point received;
@@ -495,14 +604,25 @@ namespace
     sendto(s, packet.data(), int(packet.size()), 0, reinterpret_cast<sockaddr *>(&addr), sizeof(addr));
   }
 
+  // What this game is doing: menu / lobby (EA's game manager runs) / game
+  // (the co-op lockstep).
+  std::string OwnState()
+  {
+    const uint8_t *base = rex::Runtime::instance() ? rex::Runtime::instance()->virtual_membase() : nullptr;
+    return base && ao2::coop::OnlineLockstep(base) ? "game" : ao2::coop::network_session ? "lobby" : "menu";
+  }
+
   // What this game is doing, for the other players' lists.
   Fields Presence()
   {
     ao2::ea::HostedGame game;
     bool hosting = MyHostedGame(&game);
-    const uint8_t *base = rex::Runtime::instance() ? rex::Runtime::instance()->virtual_membase() : nullptr;
-    std::string st = base && ao2::coop::OnlineLockstep(base) ? "game" : ao2::coop::network_session ? "lobby" : "menu";
-    return {{"name", LocalName()}, {"iid", InstanceId()}, {"hosting", hosting ? "1" : "0"}, {"state", st}};
+    std::string st = OwnState();
+    return {{"name", LocalName()},
+            {"iid", InstanceId()},
+            {"hosting", hosting ? "1" : "0"},
+            {"state", st},
+            {"build", BuildHash()}};
   }
 
   // HELLO to the broadcast addresses, the configured and the known players.
@@ -570,12 +690,15 @@ namespace
       {
         std::lock_guard lock(st.mutex);
         Peer &p = st.peers[from];
-        if (p.name.empty())
+        std::string build = Get(f, "build");
+        if (p.name.empty() || p.build != build)
         {
-          Log("found %s at %s:%u", name.c_str(), IpString(from.ip).c_str(), from.port);
+          Log("found %s at %s:%u, build %s%s", name.c_str(), IpString(from.ip).c_str(), from.port,
+              build.empty() ? "(none)" : build.c_str(), OtherBuild(build) ? " - not ours" : "");
         }
         p.address = from;
         p.name = name;
+        p.build = build;
         p.state = Get(f, "state", "menu");
         p.hosting = Get(f, "hosting") == "1";
         p.seen = now;
@@ -633,6 +756,7 @@ namespace
       inv.xnaddr = Unhex(Get(f, "xnaddr"));
       inv.is_private = Get(f, "private") == "1";
       inv.playgroup = Get(f, "playgroup") == "1";
+      inv.build = Get(f, "build");
       // The inviter's lobby server; a loopback address means the inviter's
       // own PC (unless both run on this one).
       Address server;
@@ -705,10 +829,139 @@ namespace
     }
   }
 
+  // -------------------------------------------------------------------------
+  // The co-op lobby's version banner
+  // -------------------------------------------------------------------------
+
+  // A warning sign: a triangle with "!".
+  void WarningSign(ImDrawList *dl, ImVec2 c, float r, ImU32 col, float thickness)
+  {
+    dl->AddTriangle(ImVec2(c.x, c.y - r), ImVec2(c.x + r * 1.1f, c.y + r * 0.8f), ImVec2(c.x - r * 1.1f, c.y + r * 0.8f),
+                    col, thickness);
+    dl->AddLine(ImVec2(c.x, c.y - r * 0.35f), ImVec2(c.x, c.y + r * 0.25f), col, thickness);
+    dl->AddCircleFilled(ImVec2(c.x, c.y + r * 0.52f), thickness * 0.72f, col);
+  }
+
+  // While this game is in the co-op lobby: the players also in a lobby (or
+  // already in a game) whose build is not this one, as "name (build)". The
+  // partner is one of them; another lobby on the LAN may be too.
+  std::vector<std::string> LobbyMismatches()
+  {
+    std::vector<std::string> out;
+    if (OwnState() != "lobby")
+    {
+      return out;
+    }
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    for (const auto &[addr, p] : st.peers)
+    {
+      if (p.state != "menu" && OtherBuild(p.build))
+      {
+        out.push_back(p.name + " (" + ShortBuild(p.build) + ")");
+      }
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+  }
+
+  std::atomic<bool> g_banner_shown{false};
+
+  // Presence thread: puts the banner up when there is something to warn
+  // about; it takes itself down (fading out) once there is none.
+  void VersionBanner()
+  {
+    if (g_banner_shown || LobbyMismatches().empty())
+    {
+      return;
+    }
+    g_banner_shown = true;
+    Log("in the lobby with another build: banner");
+    struct Anim
+    {
+      double start = -1.0;
+      double gone = -1.0; // when the mismatch went away (fading out)
+      std::vector<std::string> who;
+      double checked = -1.0;
+    };
+    auto anim = std::make_shared<Anim>();
+    ao2::menu::SetBanner([anim]() {
+      namespace ui = ao2::ui;
+      using ui::FontKind;
+      constexpr float kOut = 0.3f;
+      double now = ImGui::GetTime();
+      if (anim->start < 0.0)
+      {
+        anim->start = now;
+      }
+      // The peers' list changes a few times a second at most.
+      if (now - anim->checked > 0.25)
+      {
+        anim->checked = now;
+        std::vector<std::string> who = LobbyMismatches();
+        if (who.empty())
+        {
+          if (anim->gone < 0.0)
+          {
+            anim->gone = now;
+          }
+        }
+        else
+        {
+          anim->who = std::move(who);
+          anim->gone = -1.0;
+        }
+      }
+      float out = anim->gone < 0.0 ? 0.0f : ui::EaseOutCubic(float(now - anim->gone) / kOut);
+      if (out >= 1.0f || anim->who.empty())
+      {
+        g_banner_shown = false;
+        return false;
+      }
+      float since = float(now - anim->start);
+      ImDrawList *dl = ImGui::GetForegroundDrawList();
+      const ImGuiViewport *vp = ImGui::GetMainViewport();
+      float s = ui::Scale();
+      float a = ui::Clamp01(since / 0.2f) * (1.0f - out);
+      float drop = ui::EaseOutBack(since / 0.5f);
+      float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
+
+      std::string who;
+      for (const std::string &m : anim->who)
+      {
+        who += (who.empty() ? "" : ", ") + m;
+      }
+      char mine[64];
+      std::snprintf(mine, sizeof(mine), Tr("Yours: %s"), ShortBuild(BuildHash()).c_str());
+      std::string line = who + "  ·  " + mine;
+      const char *hint = Tr("Co-op needs the same version on both PCs, otherwise the game desyncs.");
+      float text_w = std::max({ui::CapsSize(FontKind::kLabel, Tr("GAME VERSIONS DIFFER")).x,
+                               ui::TextSize(FontKind::kBody, line.c_str()).x, ui::TextSize(FontKind::kSmall, hint).x});
+      ImVec2 size(std::min(std::max(560.0f * s, text_w + 96.0f * s), vp->Size.x - 32.0f * s), 92.0f * s);
+      float top = vp->Pos.y + vp->Size.y * 0.05f;
+      ImVec2 mn(vp->Pos.x + (vp->Size.x - size.x) * 0.5f, top - (1.0f - drop) * (top - vp->Pos.y + size.y));
+      ImVec2 mx(mn.x + size.x, mn.y + size.y);
+
+      dl->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
+      dl->AddRectFilled(mn, mx, ui::Fade(ui::kRed, 0.10f * a));
+      dl->AddRect(mn, mx, ui::Fade(ui::kRed, (0.30f + 0.30f * pulse) * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+      dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kRed, a));
+      WarningSign(dl, ImVec2(mn.x + 40.0f * s, mn.y + size.y * 0.5f), 17.0f * s, ui::Fade(ui::kRed, a), 2.5f * s);
+      float tx = mn.x + 76.0f * s;
+      dl->PushClipRect(mn, ImVec2(mx.x - 12.0f * s, mx.y), true);
+      ui::Caps(dl, FontKind::kLabel, ImVec2(tx, mn.y + 12.0f * s), ui::Fade(ui::kRed, a), Tr("GAME VERSIONS DIFFER"));
+      ui::Text(dl, FontKind::kBody, ImVec2(tx, mn.y + 32.0f * s), ui::Fade(ui::kText, a), line.c_str());
+      ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a), hint);
+      dl->PopClipRect();
+      return true;
+    });
+  }
+
   void Loop()
   {
     auto &st = state();
     char buf[2048];
+    Log("build %s", BuildHash().empty() ? "(unknown)" : BuildHash().c_str());
     while (true)
     {
       auto now = Clock::now();
@@ -743,6 +996,7 @@ namespace
       {
         Beacon();
       }
+      VersionBanner();
       for (const auto &[to, packet] : resend)
       {
         SendTo(to, packet);
@@ -807,7 +1061,8 @@ namespace
                                 {"xnaddr", Hex(game.xnaddr)},
                                 {"private", game.is_private ? "1" : "0"},
                                 {"playgroup", game.playgroup ? "1" : "0"},
-                                {"server", rex::cvar::GetFlagByName("net_title_server_ip")}});
+                                {"server", rex::cvar::GetFlagByName("net_title_server_ip")},
+                                {"build", BuildHash()}});
     s.next_send = Clock::now();
     Log("inviting %s (%s:%u) to game %u, session %s", name.c_str(), IpString(to.ip).c_str(), to.port, game.gid,
         session);
@@ -883,6 +1138,7 @@ namespace
       auto &st = state();
       std::string name;
       bool is_private = false;
+      bool other_build = false;
       Clock::time_point received;
       {
         std::lock_guard lock(st.mutex);
@@ -892,6 +1148,7 @@ namespace
         }
         name = st.received.back().name;
         is_private = st.received.back().is_private;
+        other_build = OtherBuild(st.received.back().build);
         received = st.received.back().received;
       }
       float left = std::chrono::duration<float>(kInviteLifetime - (Clock::now() - received)).count();
@@ -942,8 +1199,16 @@ namespace
       ui::Text(dl, FontKind::kSmall, ImVec2(mx.x - 14.0f * s - ts.x, mn.y + 14.0f * s), ui::Fade(ui::kMuted, a),
                timer);
       ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 30.0f * s), ui::Fade(ui::kText, a), name.c_str());
-      ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a),
-               is_private ? Tr("invites you to a private co-op game") : Tr("invites you to a co-op game"));
+      if (other_build)
+      {
+        ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kRed, a),
+                 Tr("has a different version of the game"));
+      }
+      else
+      {
+        ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a),
+                 is_private ? Tr("invites you to a private co-op game") : Tr("invites you to a co-op game"));
+      }
 
       float kx = tx, ky = mn.y + 86.0f * s, kh = 22.0f * s;
       auto hint = [&](const std::string &key, const char *text) {
@@ -1040,6 +1305,7 @@ namespace
     float panel_h = 0.0f;
     std::map<std::string, double> row_shown; // when each player's row came in
     std::map<std::string, double> row_flash; // when that player was invited
+    double mismatch_shown = -1.0;            // when the other version warning came in
     std::atomic<bool> close_requested = false; // the players key, from any thread
 
     void BeginClose()
@@ -1180,6 +1446,61 @@ namespace
       dl->AddRectFilled(ImVec2(cx0, y - 1.0f * s), ImVec2(cx0 + 56.0f * s * line, y + 1.0f * s), ui::Fade(ui::kAccent, a));
       y += 24.0f * s;
 
+      // --- Other version: players whose build is not this one ------------
+      std::vector<std::string> mismatched; // "name (build)"
+      for (const ReceivedInvite &inv : received)
+      {
+        if (OtherBuild(inv.build))
+        {
+          mismatched.push_back(inv.name + " (" + ShortBuild(inv.build) + ")");
+        }
+      }
+      for (const Peer &p : peers)
+      {
+        std::string who = p.name + " (" + ShortBuild(p.build) + ")";
+        if (OtherBuild(p.build) && std::find(mismatched.begin(), mismatched.end(), who) == mismatched.end())
+        {
+          mismatched.push_back(who);
+        }
+      }
+      if (mismatched.empty())
+      {
+        mismatch_shown = -1.0;
+      }
+      else
+      {
+        if (mismatch_shown < 0.0)
+        {
+          mismatch_shown = std::max(now, opened + 0.15);
+        }
+        float bt = ui::EaseOutBack(float(now - mismatch_shown) / 0.45f);
+        float ba = a * ui::Clamp01(float(now - mismatch_shown) / 0.2f);
+        std::string who;
+        for (const std::string &m : mismatched)
+        {
+          who += (who.empty() ? "" : ", ") + m;
+        }
+        char mine[64];
+        std::snprintf(mine, sizeof(mine), Tr("Yours: %s"), ShortBuild(BuildHash()).c_str());
+        std::string line1 = who + "  ·  " + mine;
+        float bh = 92.0f * s;
+        float bx = cx0 + (1.0f - bt) * 36.0f * s;
+        ImVec2 mn(bx, y), mx(bx + (cx1 - cx0), y + bh);
+        dl->AddRectFilled(mn, mx, ui::Fade(ui::kRed, 0.10f * ba));
+        dl->AddRect(mn, mx, ui::Fade(ui::kRed, (0.30f + 0.30f * pulse) * ba), 0.0f, ImDrawFlags_None, 1.0f * s);
+        dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kRed, ba));
+        WarningSign(dl, ImVec2(mn.x + 38.0f * s, mn.y + bh * 0.5f), 17.0f * s, ui::Fade(ui::kRed, ba), 2.5f * s);
+        float tx = mn.x + 72.0f * s;
+        dl->PushClipRect(mn, ImVec2(mx.x - 12.0f * s, mx.y), true);
+        ui::Caps(dl, FontKind::kLabel, ImVec2(tx, mn.y + 12.0f * s), ui::Fade(ui::kRed, ba),
+                 Tr("GAME VERSIONS DIFFER"));
+        ui::Text(dl, FontKind::kBody, ImVec2(tx, mn.y + 32.0f * s), ui::Fade(ui::kText, ba), line1.c_str());
+        ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, ba),
+                 Tr("Co-op needs the same version on both PCs, otherwise the game desyncs."));
+        dl->PopClipRect();
+        y += bh + 26.0f * s;
+      }
+
       // --- Squad: the two seats of the hosted game -----------------------
       if (hosting)
       {
@@ -1263,6 +1584,12 @@ namespace
                             "  ·  " + IpString(inv.from.ip);
           ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, mn.y + 48.0f * s), ui::Fade(ui::kMuted, a),
                    sub.c_str());
+          if (OtherBuild(inv.build))
+          {
+            float sx = mn.x + 20.0f * s + ui::TextSize(FontKind::kSmall, sub.c_str()).x;
+            std::string other = std::string("  ·  ") + Tr("different version");
+            ui::Text(dl, FontKind::kSmall, ImVec2(sx, mn.y + 48.0f * s), ui::Fade(ui::kRed, a), other.c_str());
+          }
           float frac = ui::Clamp01(1.0f - std::chrono::duration<float>(Clock::now() - inv.received).count() /
                                               std::chrono::duration<float>(kInviteLifetime).count());
           ImVec2 bar(mn.x + 2.0f * s, mx.y - 2.0f * s);
@@ -1358,6 +1685,12 @@ namespace
         std::string sub = IpString(p.address.ip) + "  ·  " + StateText(p.state) + (p.hosting ? Tr("  ·  hosting a game") : "");
         ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 42.0f * s, mn.y + 32.0f * s), ui::Fade(ui::kMuted, ra),
                  sub.c_str());
+        if (OtherBuild(p.build))
+        {
+          float sx = mn.x + 42.0f * s + ui::TextSize(FontKind::kSmall, sub.c_str()).x;
+          std::string other = std::string("  ·  ") + Tr("different version");
+          ui::Text(dl, FontKind::kSmall, ImVec2(sx, mn.y + 32.0f * s), ui::Fade(ui::kRed, ra), other.c_str());
+        }
 
         auto si = std::find_if(sent.begin(), sent.end(), [&](const SentInvite &x) { return x.to == p.address; });
         SentState state = si != sent.end() ? si->state : SentState::kFailed;

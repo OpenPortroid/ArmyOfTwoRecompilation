@@ -1,0 +1,767 @@
+[100_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Não sei... Talvez um transmissor de rádio ou algo assim." , Time=0)
+[101_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Vamos dar a volta por trás desse cara, pelo prédio." , Time=0)
+[102_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Cristo!" , Time=0)
+[103_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Que porra foi essa?" , Time=0)
+[104_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, acabei de saber que o Exército dos EUA achou" , Time=0)
+Subtitles[1]=(Text="MURRAY: a fonte da transmissão de rádio" , Time=1.7)
+Subtitles[2]=(Text="MURRAY: e lançou um míssil inteligente no prédio." , Time=4.2)
+Subtitles[3]=(Text="MURRAY: Vocês viram alguma coisa? Câmbio." , Time=6.4)
+[105_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vimos, sim -" , Time=0)
+[106_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ouvimos. Câmbio." , Time=0)
+[107_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Certo, então esse é o objetivo de vocês. Vasculhem a área do impacto atrás de qualquer sinal de Ali Yousseff. Câmbio e desligo." , Time=0)
+[112_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Talvez a gente consiga entrar pelo telhado." , Time=0)
+[113_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Aposto que dá pra entrar pelo telhado." , Time=0)
+[121a_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="MURRAY: Derrubem aquele helicóptero. É um dos tenentes do Ali Youssef!" , Time=0)
+Subtitles[1]=(Text="MURRAY: Não deixem ele escapar!" , Time=2.67)
+[137_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eu cuido do helicóptero, você pega os caras no chão." , Time=0)
+[14_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="SALEM: Esse lugar foi destruído." , Time=0)
+Subtitles[1]=(Text="SALEM: Você acha mesmo que o Eisenhower está aqui em algum lugar?" , Time=1.52)
+[141_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não deixa o helicóptero escapar, eu cuido desses caras." , Time=0)
+[145_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tyse, segura esses caras pra mim, eu cuido do helicóptero!" , Time=0)
+[147_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tá tudo sob controle, não deixa o helicóptero escapar!" , Time=0)
+[149_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Boo-yah." , Time=0)
+[15_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não parece, mas vamos dar uma olhada." , Time=0)
+[150_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda. Ele escapou." , Time=0)
+[151_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Odeio quando isso acontece." , Time=0)
+[152_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, boas notícias." , Time=0)
+Subtitles[1]=(Text="Quem estava naquele helicóptero fez uma ligação de celular pro próprio Ali Youssef." , Time=1.71)
+Subtitles[2]=(Text="Consegui rastrear e descobri onde o Youssef está." , Time=5.44)
+Subtitles[3]=(Text="Ele está numa base militar iraquiana a alguns quilômetros daqui." , Time=8.51)
+Subtitles[4]=(Text="Vou marcar no GPS de vocês. Câmbio." , Time=11.85)
+[153_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ótimo, já estamos indo! Câmbio e desligo." , Time=0)
+[154_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Sabe, eu andei pensando. Como fomos emboscados antes? Usamos frequências codificadas. Só a SSC e o QG do Exército sabiam nossa localização." , Time=0)
+[155_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não sei. Não ligo." , Time=0)
+[156_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ouvimos falar dessas emboscadas todo dia no noticiário. Acho que alguém está contando pra eles onde estão nossas tropas." , Time=0)
+[16_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Já ficou sabendo desse projeto de lei de que estão falando?" , Time=0)
+[16_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="RIOS: Sam, é você? Merda, é o Tyson Rios!" , Time=0)
+[161_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Você e suas teorias da conspiração. Você é foda, Tyse." , Time=0)
+[166_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Parece que achamos a base do Ali Youssef." , Time=0)
+[167_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: O que te deu essa ideia? Os guardas, as armas, as torres? Ou você é um maldito vidente?" , Time=0)
+[168_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Pode me chamar de Mãe Dináh!" , Time=0)
+[169_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 152426"
+Subtitles[0]=(Text="MURRAY: Ei, pessoal, mais uma boa notícia. Acontece que a Coalizão" , Time=0)
+Subtitles[1]=(Text="MURRAY: procurava a base do Ali Youssef há muito tempo" , Time=2.63)
+Subtitles[2]=(Text="MURRAY: - e vocês foram os primeiros a achar." , Time=4.9)
+Subtitles[3]=(Text="MURRAY: O bunker da base é usado pra fabricar armas." , Time=6.6)
+Subtitles[4]=(Text="MURRAY: O Departamento de Defesa vai pagar bem se vocês destruírem. Câmbio." , Time=9)
+[17_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Que \"projeto de lei?\"" , Time=0)
+[17_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Nunca pensei que fosse te ver de novo!" , Time=0)
+[170_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza. Parece bom pra mim!" , Time=0)
+[171_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Eu sabia que ia gostar. Ah, e não é só isso. Vamos deixar um caça de prontidão, então se precisarem de ajuda pra eliminar inimigos, é só colocar um dos seus sinalizadores nos alvos e a gente manda o caça. Certo? Câmbio e desligo" , Time=0)
+[171e_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Mantenha eles ocupados. Vou plantar o sinalizador e chamar o ataque aéreo." , Time=0)
+[171f_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza, Alice, plantamos o sinalizador. Pode chamar o ataque aéreo? Câmbio." , Time=0)
+[171g_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Pode deixar, Tyson. Saiam da área. Câmbio e desligo!" , Time=0)
+[171h_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Mantém eles ocupados, mano. Vou plantar este sinalizador e chamar um ataque aéreo." , Time=0)
+[171i_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei, Alice, pode chamar o ataque aéreo agora. Plantamos o sinalizador. Câmbio." , Time=0)
+[171j_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Sem problema, Elliot. Sai da linha de fogo. Câmbio e desligo." , Time=0)
+[171k_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Puta merda, eles fizeram mesmo!" , Time=0)
+[171l_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Isso faz valer pagar imposto." , Time=0)
+[171m_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="MURRAY: Pessoal! Ali Youseff está indo pro helicóptero." , Time=0)
+Subtitles[1]=(Text="MURRAY: Não deixem ele escapar!" , Time=2.08)
+[172_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pega o helicóptero, ele tá fugindo!" , Time=0)
+[173_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não!" , Time=0)
+[174_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: De novo não." , Time=0)
+[175_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Esse cara circula mais que padre em jardim de infância." , Time=0)
+[176_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="SALEM: Esse cara é mais difícil de achar que a calcinha da Britney." , Time=0)
+[177_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O que você acabou de dizer?" , Time=0)
+[178_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ei, Alice. Dá pra descobrir pra onde aquele helicóptero está indo? Câmbio." , Time=0)
+[179_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Já me adiantei. Ele acabou de pousar numa ilha pequena ao sul da posição de vocês, perto de uma refinaria de petróleo. Câmbio." , Time=0)
+[18_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Pra privatizar o exército." , Time=0)
+[18_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você tá bem?" , Time=0)
+[180_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Entendido. Estamos a caminho. Câmbio e desligo." , Time=0)
+[181_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="RIOS: E aí, Oito. Escuta. Preciso que me ajude com uma coisa. Sabe essas emboscadas que a gente ouve falar no Iraque e no Afeganistão? Pois é. Acho que alguém está vazando a posição das tropas pros nossos inimigos. Quero que procure qualquer coisa saindo do Exército ou dos contratados privados que tenham acesso a esse tipo de informação. Está comigo?" , Time=0)
+[181A_OIL_S3kShUn8 SoundNodeWave]
+bAlwaysLocalise=False
+bManualWordWrap=True
+Comment="cl# 150714"
+Subtitles[0]=(Text="s3kShUn8: 5uR3. 17'z 4 819 j08..." , Time=0)
+Subtitles[1]=(Text="s3kShUn8: ..S8" , Time=2)
+[183_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Valeu, cara. A gente se fala. Câmbio e desligo." , Time=0)
+[19_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="SALEM: Sabe, eles querem substituir o Exército inteiro" , Time=0)
+Subtitles[1]=(Text="SALEM: por contratados como a gente." , Time=1.85)
+[19_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="EISENHOWER: Hã... Parece pior do que é. Vou ficar bem." , Time=0)
+Subtitles[1]=(Text="EISENHOWER: Quanto tempo faz, tipo dez anos?" , Time=2.19)
+[20_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="RIOS: Não vai passar. Eles sempre falam" , Time=0)
+Subtitles[1]=(Text="RIOS: de merda assim, mas nunca passa." , Time=2.07)
+[20_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Mais. Desde a Somália." , Time=0)
+[206_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza. Cadê esse cara?" , Time=0)
+[207_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Sai daí, sai daí, onde quer que você esteja..." , Time=0)
+[208_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você sempre foi tão infantil ou está passando por uma fase de \"segunda infância\"?" , Time=0)
+[209_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Lá está ele!" , Time=0)
+[21_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Por que você sempre tem que cagar na minha festa?" , Time=0)
+[210_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Já era hora!" , Time=0)
+[211_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Merda, cara - é ele! Ali Youssef!" , Time=0)
+[212_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você é um homem morto!" , Time=0)
+[213_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Fica parado, filho da puta!" , Time=0)
+[213A_OIL_ALI_YOUSSEF SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="ALI YOUSSEF: Vida longa a Saddam!" , Time=0)
+[218_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele tá fugindo." , Time=0)
+[219_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não por muito tempo... Não por muito tempo, mano." , Time=0)
+[221_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Porra, é isso aí. Essa é por Eisenhower." , Time=0)
+[222_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: É melhor não deixarem ele chegar naquele helicóptero." , Time=0)
+[223_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não vamos deixar, relaxa." , Time=0)
+[224_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="MURRAY: Rios, Salem. Vocês conseguiram." , Time=0)
+Subtitles[1]=(Text="MURRAY: Eu sabia que vocês dariam conta dessa. Câmbio e desligo." , Time=1.67)
+[229_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="RIOS: Sabe, eu não paro de ouvir as palavras dele na cabeça - sobre a empresa não ter moral, sobre governos terem exércitos, não empresas, sabe? E isso me preocupa, cara; eu não confio em todo mundo na SSC." , Time=0)
+[23_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: É, acho que não consigo andar, cara. Se importa de me carregar?" , Time=0)
+[230_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="SALEM: Assim que a gente voltar a Bagdá, vamos tomar umas cervejas, quem sabe ir num daqueles bares de narguilé. Confia, uma noite comigo na Zona Verde e você esquece tudo isso." , Time=0)
+[231_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: É. Talvez você tenha razão." , Time=0)
+[24_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você inventa essa merda toda?" , Time=0)
+[24_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tô contigo, amigão." , Time=0)
+[25_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Explodiram nosso veículo. Sobrou algum veículo funcionando nessa base?" , Time=0)
+[26_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="EISENHOWER: Tem um tanque M1 perto do perímetro." , Time=0)
+Subtitles[1]=(Text="EISENHOWER: Ainda deve estar funcionando." , Time=2)
+[27_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Beleza. Vamos usar esse." , Time=0)
+[30_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Não acredito que pegaram o Eisenhower." , Time=0)
+[31_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Não parece certo, sabe? Ele tinha mulher e filhos em casa. Parece que devia ter sido a gente no lugar dele." , Time=0)
+[31_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei - Sam - sou eu, Elliot - dos Rangers!" , Time=0)
+[32_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Talvez devesse ter sido você..." , Time=0)
+[32_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Nunca pensei que veria você de novo! Continua uma mariquinha, olha só pra você!" , Time=0)
+[33_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você acha que ele sabia de alguma coisa?" , Time=0)
+[33_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tá tudo bem, cara?" , Time=0)
+[34_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Quem?" , Time=0)
+[34_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Ah... Parece pior do que é. Eu fico bem. Quanto tempo faz, uns dez anos?" , Time=0)
+[35_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eisenhower - você acha que foi por isso que mataram ele?" , Time=0)
+[35_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Mais. Desde lá na Somália, cara." , Time=0)
+[36_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Tá maluco, cara?" , Time=0)
+[37_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Eles escolheram ele. Sabiam que ele estava naquele helicóptero. Ele sabia de alguma coisa. Não podiam deixar ele voltar pra base." , Time=0)
+[38_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Quem são 'eles'? Qual é a sua com essas teorias da conspiração? Ele estava no lugar errado na hora errada - simples assim." , Time=0)
+[38_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: É, acho que não consigo andar, cara. Se importa de me carregar?" , Time=0)
+[39_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Beleza, pode deixar." , Time=0)
+[40_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ei, a gente precisa te tirar daqui e explodiram nosso veículo. Sabe se sobrou algum veículo funcionando nessa base?" , Time=0)
+[41_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="EISENHOWER: Tem um tanque M1 perto do perímetro." , Time=0)
+Subtitles[1]=(Text="EISENHOWER: Ainda deve estar funcionando." , Time=2.33)
+[42_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Beleza. Vamos usar esse." , Time=0)
+[45_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="EISENHOWER: Algum de vocês ainda tem contato com alguém da nossa unidade?" , Time=0)
+[46_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="RIOS: Só o Dalton. Ele é nosso chefe na SSC." , Time=0)
+[50_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 152426"
+Subtitles[0]=(Text="EISENHOWER: Os três foram pro lado negro, né? Eu devia ter feito a mesma porra, tô te falando, porque a gente só tem equipamento de segunda mão de merda. E parece que a cada dois dias morre alguém que eu conheço numa dessas emboscadas." , Time=0)
+[51_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Dizem que a gente não precisa mais de Exército. Empresas privadas fazem tudo." , Time=0)
+[52_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Deixa eu te falar uma coisa bem claro. Se a sua força de combate ganha dinheiro toda vez que tem guerra, você vai ver muito mais guerra, parceiro. Esse não é o futuro que eu quero ver." , Time=0)
+[53_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Cuidado!" , Time=0)
+[54_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Merda! Bloquearam o nosso caminho." , Time=0)
+[55_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: É outra emboscada?" , Time=0)
+[56_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Parece que sim." , Time=0)
+[57_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Não sei como eles sempre sabem onde a gente tá, mas ultimamente levamos uma emboscada por semana." , Time=0)
+[59_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Esse calor tá me matando." , Time=0)
+[59_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Rios, Salem, o que vocês estão fazendo?" , Time=0)
+[60_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: É o deserto. Não sei o que você esperava." , Time=0)
+[60_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Fomos emboscados. A estrada está bloqueada. Câmbio." , Time=0)
+[61_OIL_BANTER_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Eu sei, mano. Só tô dizendo. Tá quente." , Time=0)
+[62_OIL_BANTER_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Você só reclama. Vive reclamando de alguma coisa. Tô de saco cheio." , Time=0)
+[64_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente topou com o Dustin uns anos atrás fazendo segurança pra um cartel de drogas." , Time=0)
+[65_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Ele trabalhava pra um traficante?" , Time=0)
+[66_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Ele veio pra cima de nós como se nem nos conhecesse." , Time=0)
+[67_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="cl# 151790"
+Subtitles[0]=(Text="EISENHOWER: Pera aí. Tô tentando processar isso." , Time=0)
+Subtitles[1]=(Text="EISENHOWER: Você tá me dizendo que... Por favor... Vocês não..." , Time=1.83)
+[68_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: A gente não teve escolha. Era nós ou ele." , Time=0)
+[69_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Não vê como isso é errado? Sério, é por isso que as forças armadas devem ser comandadas por governos, não por empresas." , Time=0)
+[75_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Escuta, desculpa pela merda que eu disse lá atrás. Vocês mandaram bem hoje." , Time=0)
+[76_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Tá tudo certo, cara. Foi bom te ver de novo depois de tantos anos." , Time=0)
+[77_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: É, se cuida, mano." , Time=0)
+[78_OIL_EISENHOWER SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="EISENHOWER: Vocês também. Vamos tomar uma cerveja quando essa guerra acabar, seus filhos da puta." , Time=0)
+[79_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Vamos sim... Vamos sim!" , Time=0)
+[80_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Rios para Murray. Missão cumprida. Eisenhower está no helicóptero. Seguimos para a extração por conta própria, ou -" , Time=0)
+[81_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Puta merda!" , Time=0)
+[82_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Meu Deus..." , Time=0)
+[83_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: O-o que aconteceu?" , Time=0)
+[84_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Aquele é o helicóptero do Eisenhower!" , Time=0)
+[85_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: O helicóptero do Eisenhower acabou de explodir!" , Time=0)
+[86_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="MURRAY: Merda. Vou ligar pro Departamento de Defesa. Câmbio e desligo." , Time=0)
+[89_OIL_MURRAY SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 151790"
+Subtitles[0]=(Text="MURRAY: Acabamos de interceptar uma transmissão de rádio. Ali Youssef assumiu a autoria da explosão do helicóptero. Rastreamos a transmissão até uma vila perto da sua posição." , Time=0)
+[93_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Ainda não acredito, cara. O Eisenhower..." , Time=0)
+[94_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Nem eu, cara, nem eu." , Time=0)
+[95_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Fora o Dalton, somos praticamente os únicos vivos do nosso esquadrão." , Time=0)
+[96_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Menos o Pedro." , Time=0)
+[97_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="SALEM: Quatro de dez, não é uma boa estatística." , Time=0)
+[98_OIL_RIOS SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=False
+Comment="cl# 150714"
+Subtitles[0]=(Text="RIOS: Guerra é um negócio perigoso, cara." , Time=0)
+[99_OIL_SALEM SoundNodeWave]
+bAlwaysLocalise=True
+bManualWordWrap=True
+Comment="05_sound_vo_main"
+Subtitles[0]=(Text="SALEM: Beleza. E aí, o que estamos procurando?" , Time=0)
