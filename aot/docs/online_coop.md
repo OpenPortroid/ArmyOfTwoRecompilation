@@ -325,8 +325,18 @@ simulation's state and replayed right after the first record of each frame
 (only inside the replay does the viewport hand input to the controller). The
 bots walk along a network built from the level's navigation points and the
 AI's cover nodes (`AO2CoverNode`: the versus maps have few navigation points),
-shoot enemies in sight and log to `versus_bots.log`. Tested on one PC (host
-with three bots, Iraq); a match with other players and bots is not tested yet.
+shoot enemies in sight and log to `versus_bots.log`. Its links are checked with
+traces against the collision characters walk against: a small box (a bullet's
+line goes through invisible walls), a slope's terrain bulge passed over, and a
+vault (Y) only through an `AO2GameplayMechanicsVolume` - nothing else can be
+vaulted. A bot that gets no nearer to its goal along its path bars that link
+for a while and backs off. Y is a context button (vault, roll, slide into
+cover; a dodge while aiming): pressed during a roll it can start a vault that
+leaves the character rolling for good (`Suppression_Rolling_InRoll` waits for
+its animation), so bots never press it while rolling or vaulting. Bots have
+infinite ammo (`ao2_versus_bots_infinite_ammo`), wait to be healed when down
+and heal partners that lie. Tested on one PC (host with three bots, Iraq); a
+match with other players and bots is not tested yet.
 
 ## Testing on one PC
 

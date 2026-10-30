@@ -38,11 +38,23 @@
 // - With a target it aims (LT) at it, a little off at random, and shoots
 //   (RT) once it has had it in view for a moment and the aim is close; far
 //   away it walks closer, near it steps sideways. An empty magazine: X.
+//   Its ammo does not run out (ao2_versus_bots_infinite_ammo).
+// - Lying (versus "dead": unconscious) it does nothing until its partner
+//   heals it or it gets up on its own - no respawn for money. A partner
+//   that lies is gone to and healed (A) when there is no target; enemies
+//   that lie (invulnerable) are not shot at.
 // - Without one it walks to the nearest enemy along the level's navigation
 //   network (A* over the navigation points and the cover nodes, see below;
 //   with no way there, to the point nearest to it it can reach), round what
-//   a trace finds in the way, and looks where it goes. Stuck: Y (vault) and
-//   A by turns, then a step aside, and obstacles passed on the other side.
+//   a trace finds in the way, and looks where it goes. Walking is
+//   checked with a box traced against the collision characters walk
+//   against (invisible walls too), not a bullet's line. Not moving: Y
+//   (vault, with LT let go: aiming it dodges) and B (out of cover) by
+//   turns; Y too in a vaulting volume and held on a vault link (one through
+//   a vaulting volume: nothing else can be vaulted), walked straight.
+//   The way left along its path no shorter for a while: the link it
+//   walks is barred from its paths for 30 s, it backs off from the wall and
+//   goes another way.
 // - Dead: A now and then.
 //
 // Every machine must have the same ao2_versus_bots (and bot settings): a
@@ -62,6 +74,7 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <rex/cvar.h>
@@ -74,6 +87,8 @@ REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_range, 4000.0, "Online", "Versus bots: far
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_turn, 9.0, "Online", "Versus bots: fastest turn of the view (degrees per frame)");
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_miss, 1.5, "Online",
                       "Versus bots: how far off the aim wanders (degrees); 0 = they aim true");
+REXCVAR_DEFINE_BOOL(ao2_versus_bots_infinite_ammo, true, "Online",
+                    "Versus bots: their weapons never run out of ammo (as the game's AI partner)");
 REXCVAR_DEFINE_INT32(ao2_versus_bots_reaction, 12, "Online",
                      "Versus bots: frames a target is in view before they shoot");
 
@@ -99,6 +114,9 @@ namespace
   constexpr uint32_t kPawnHealth = 708;
   constexpr uint32_t kPawnWeapon = 924;
   constexpr uint32_t kWeaponAmmo = 692;      // UTWeapon.AmmoCount (the magazine)
+  constexpr uint32_t kWeaponMaxAmmo = 700;     // UTWeapon.MaxAmmoCount
+  constexpr uint32_t kWeaponReserve = 1980;    // AO2Weapon.ReserveAmmoCount
+  constexpr uint32_t kWeaponMaxReserve = 1984; // AO2Weapon.MaxReserveAmmoCount
   constexpr uint32_t kHeadOffset = 2780;     // AO2CharacterNative.CachedHeadBoneOffsetFromLocation
   constexpr uint32_t kTeamAI = 1088;         // AO2AIBaseNative.TeamAI
   constexpr uint32_t kTeamAITeam = 452;      // AO2TeamAI.Team
@@ -106,6 +124,9 @@ namespace
   constexpr uint32_t kLookRotation = 3620;   // float pitch, yaw, roll (65536 = full turn)
   constexpr uint32_t kActorTrace = 0x828B8268;
   constexpr uint32_t kTraceFlagBullet = 1;
+  constexpr uint32_t kTraceFlagBlocking = 8; // blocking volumes too (invisible walls)
+  constexpr float kWalkExtent = 15.0f;       // half size of the box traced for walking (a character: radius 46; narrow ways)
+  constexpr float kWalkTrim = 45.0f;         // ... not this near the ends
 
   constexpr float kUnitsPerRadian = 65536.0f / 6.2831853f;
   constexpr float kUnitsPerDegree = 65536.0f / 360.0f;
@@ -118,8 +139,14 @@ namespace
   constexpr float kStuckMove = 30.0f;     // moved less than this in kStuckFrames
   constexpr float kNearFight = 1800.0f;   // nearer: steps aside, farther: walks closer
   constexpr float kWaypoint = 110.0f;     // a path node counts as reached this close
+  constexpr float kHealRange = 3000.0f;   // a partner that lies this near is gone to and healed
+  constexpr float kHealReach = 110.0f;    // ... from this close
   constexpr float kWallProbe = 250.0f;    // how far ahead the way must be clear
   constexpr uint32_t kProbeFrames = 3;    // the way ahead is probed this often
+  constexpr uint32_t kProgressFrames = 150; // no nearer to its path point for this long: stuck
+  constexpr float kProgressStep = 60.0f;    // ... nearer by this much
+  constexpr uint32_t kBarFrames = 1800;     // a point it could not get to is left out of its paths so long
+  constexpr uint32_t kEscapeFrames = 50;    // then it walks away from the wall so long
 
   enum Button : uint32_t
   {
@@ -292,9 +319,11 @@ namespace
     return player ? LoadU32(base, player + 64) : 0;
   }
 
-  // The first actor a bullet trace from `from` to `to` hits (0 = none);
-  // `source` is not hit (as autopilot.cpp TraceHit).
-  uint32_t TraceHit(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to)
+  // The first actor a trace from `from` to `to` hits (0 = none); `source`
+  // is not hit (as autopilot.cpp TraceHit). By default a bullet's: a line,
+  // the meshes' own triangles.
+  uint32_t TraceHit(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
+                    float extent = 0.0f, uint32_t flags = kTraceFlagBullet)
   {
     PPCContext saved = ctx;
     uint32_t sp = (ctx.r1.u32 - 1024) & ~15u;
@@ -303,7 +332,8 @@ namespace
     StoreF32(base, args + 24, to.x), StoreF32(base, args + 28, to.y), StoreF32(base, args + 32, to.z);
     StoreF32(base, args + 36, from.x), StoreF32(base, args + 40, from.y), StoreF32(base, args + 44, from.z);
     StoreU32(base, sp, ctx.r1.u32);
-    StoreU32(base, sp + 84, kTraceFlagBullet);
+    StoreF32(base, args + 48, extent), StoreF32(base, args + 52, extent), StoreF32(base, args + 56, extent);
+    StoreU32(base, sp + 84, flags);
     ctx.r1.u64 = sp;
     ctx.r3.u64 = source;
     ctx.r4.u64 = args;
@@ -390,6 +420,32 @@ namespace
     return {v.x + h.x, v.y + h.y, v.z + h.z};
   }
 
+  // How a character lies: 0 standing, 1 wounded (crawls; its partner can
+  // heal it), 2 unconscious or knocked down. In versus "dead" is unconscious
+  // with 1 health (AO2Character.MultiplayerUnconsciousOnEntry), invulnerable,
+  // until the player respawns (A, for money), its partner heals it, or it
+  // gets up on its own after twice Dead_Revive_Time.
+  uint8_t DownState(const uint8_t *base, uint32_t pawn)
+  {
+    static bool looked = false;
+    static int32_t offsets[3];
+    static uint32_t masks[3];
+    if (!looked)
+    {
+      looked = true;
+      const char *names[3] = {"bIsWounded", "bIsUnconscious", "bIsKnockedDown"};
+      for (int i = 0; i < 3; ++i)
+      {
+        if (!ao2::ue3::BoolProperty(base, "AO2CharacterNative", names[i], offsets[i], masks[i]))
+        {
+          offsets[i] = -1;
+        }
+      }
+    }
+    auto flag = [&](int i) { return offsets[i] >= 0 && (LoadU32(base, pawn + offsets[i]) & masks[i]); };
+    return flag(1) || flag(2) ? 2 : flag(0) ? 1 : 0;
+  }
+
   // The team a controller plays for: its player's team, or an AI's TeamAI team.
   uint32_t TeamOf(const uint8_t *base, uint32_t controller)
   {
@@ -417,6 +473,7 @@ namespace
     uint32_t team;
     bool ai;
     Vec at;
+    uint8_t down; // DownState
   };
   std::vector<Character> g_characters;
 
@@ -442,7 +499,8 @@ namespace
         continue;
       }
       uint32_t c = LoadU32(base, o + kPawnController);
-      g_characters.push_back({o, c, TeamOf(base, c), IsAI(base, c), LoadVec(base, o + kActorLocation)});
+      g_characters.push_back(
+          {o, c, TeamOf(base, c), IsAI(base, c), LoadVec(base, o + kActorLocation), DownState(base, o)});
     }
     std::sort(g_characters.begin(), g_characters.end(), [](const Character &a, const Character &b) {
       if (a.at.x != b.at.x)
@@ -459,9 +517,9 @@ namespace
 
   bool Enemy(const Character &bot, const Character &other)
   {
-    if (other.pawn == bot.pawn || !other.team)
+    if (other.pawn == bot.pawn || !other.team || other.down == 2)
     {
-      return false; // civilians and anybody with no team are left alone
+      return false; // civilians, anybody with no team and the "dead" are left alone
     }
     return other.team != bot.team;
   }
@@ -488,11 +546,57 @@ namespace
   bool g_nav_ready = false;
   uint32_t g_nav_world = 0; // the WorldInfo the network is from
   uint32_t g_nav_first = 0;
+  // Links walked by a vault (Y): only where a vaulting volume
+  // (AO2GameplayMechanicsVolume, its brush's bounds) is - elsewhere nothing
+  // can be vaulted, not even a low wall.
+  std::unordered_set<uint64_t> g_vault_links;
+  struct Box
+  {
+    Vec lo, hi;
+  };
+  std::vector<Box> g_vault_boxes;
+
+  uint64_t LinkKey(int a, int b)
+  {
+    return uint64_t(uint32_t(a)) << 32 | uint32_t(b);
+  }
+
+  // The segment from a to b passes through the box (grown by `grow`).
+  bool SegmentInBox(const Vec &a, const Vec &b, const Box &box, float grow)
+  {
+    float t0 = 0.0f, t1 = 1.0f;
+    const float pa[3] = {a.x, a.y, a.z}, pb[3] = {b.x, b.y, b.z};
+    const float lo[3] = {box.lo.x - grow, box.lo.y - grow, box.lo.z - grow};
+    const float hi[3] = {box.hi.x + grow, box.hi.y + grow, box.hi.z + grow};
+    for (int i = 0; i < 3; ++i)
+    {
+      float d = pb[i] - pa[i];
+      if (std::fabs(d) < 1e-4f)
+      {
+        if (pa[i] < lo[i] || pa[i] > hi[i])
+        {
+          return false;
+        }
+        continue;
+      }
+      float u = (lo[i] - pa[i]) / d, v = (hi[i] - pa[i]) / d;
+      t0 = std::max(t0, std::min(u, v));
+      t1 = std::min(t1, std::max(u, v));
+      if (t0 > t1)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
 
   constexpr float kCoverBody = 32.0f;    // a cover node is this far below a character's middle
   constexpr float kLinkRange = 1100.0f;  // farthest link between points
   constexpr float kLinkClimb = 200.0f;   // most height between linked points
-  constexpr float kVaultHeight = 70.0f;  // a low wall: the trace this much higher is clear (Y vaults it)
+  constexpr float kVaultHeight = 70.0f;  // a low wall or ledge: the trace this much higher is clear (Y vaults it)
+  constexpr float kVaultReach = 60.0f;   // ... and the link passes this near a vaulting volume
+  constexpr float kTerrainLift = 50.0f;  // a slope: the line this much higher is clear
+  constexpr float kTerrainSlope = 0.6f;  // ... no steeper than this
   constexpr float kVaultCost = 1.5f;     // a link over one costs this much more
   constexpr size_t kLinksPerPoint = 14;  // nearest points tried per point
   constexpr size_t kLinksPerFrame = 600; // traces per frame while the network is built
@@ -527,10 +631,29 @@ namespace
     return a.x != b.x ? a.x < b.x : a.y != b.y ? a.y < b.y : a.z < b.z;
   }
 
-  // A trace between two points is clear: nothing but characters in the way.
+  // A character walks from one point to the other: a box traced between them
+  // hits nothing but characters. Not a bullet's line: that goes through
+  // invisible walls (blocking volumes block boxes only) and gaps the meshes'
+  // simple collision, which characters walk against, has not.
   bool ClearLine(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to)
   {
-    uint32_t hit = TraceHit(ctx, base, source, from, to);
+    // A line the whole way; the box only between points kWalkTrim from the
+    // ends: a cover node stands closer than the box's size to its wall, and
+    // a box that starts in a wall hits it at once.
+    uint32_t hit = TraceHit(ctx, base, source, from, to, 0.0f, kTraceFlagBlocking);
+    if (hit && !IsCharacter(base, hit))
+    {
+      return false;
+    }
+    Vec d{to.x - from.x, to.y - from.y, to.z - from.z};
+    float len = std::hypot(std::hypot(d.x, d.y), d.z);
+    if (len <= 2.0f * kWalkTrim + 10.0f)
+    {
+      return true;
+    }
+    float k = kWalkTrim / len;
+    Vec a{from.x + d.x * k, from.y + d.y * k, from.z + d.z * k}, b{to.x - d.x * k, to.y - d.y * k, to.z - d.z * k};
+    hit = TraceHit(ctx, base, source, a, b, kWalkExtent, kTraceFlagBlocking);
     return !hit || IsCharacter(base, hit);
   }
 
@@ -564,6 +687,8 @@ namespace
     }
     g_nodes.clear();
     g_links.clear();
+    g_vault_links.clear();
+    g_vault_boxes.clear();
     g_links_checked = 0;
     g_nav_ready = false;
 
@@ -600,6 +725,31 @@ namespace
       points.push_back({{at.x, at.y, at.z + kCoverBody}, o, false});
     }
     std::sort(points.begin(), points.end(), [](const Point &a, const Point &b) { return Before(a.at, b.at); });
+
+    // The vaulting volumes' bounds.
+    static int32_t brush_off = -2, bounds_off;
+    if (brush_off == -2)
+    {
+      brush_off = ao2::ue3::PropertyOffset(base, "Brush", "BrushComponent");
+      bounds_off = ao2::ue3::PropertyOffset(base, "PrimitiveComponent", "Bounds");
+    }
+    uint32_t vault_class = ao2::ue3::FindClass(base, "AO2GameplayMechanicsVolume");
+    for (uint32_t i = 0; vault_class && brush_off >= 0 && bounds_off >= 0 && i < count; ++i)
+    {
+      uint32_t o = ao2::ue3::ObjectAt(base, i);
+      uint32_t brush = o && ao2::ue3::IsA(base, o, vault_class) ? LoadU32(base, o + brush_off) : 0;
+      if (!brush)
+      {
+        continue;
+      }
+      Vec c = LoadVec(base, brush + bounds_off), e = LoadVec(base, brush + bounds_off + 12);
+      if (e.x > 0 && e.y > 0 && e.z > 0 && e.x < 5000 && e.y < 5000 && e.z < 5000)
+      {
+        g_vault_boxes.push_back({{c.x - e.x, c.y - e.y, c.z - e.z}, {c.x + e.x, c.y + e.y, c.z + e.z}});
+      }
+    }
+    std::sort(g_vault_boxes.begin(), g_vault_boxes.end(),
+              [](const Box &a, const Box &b) { return Before(a.lo, b.lo); });
     std::unordered_map<uint32_t, int> index;
     g_nodes.resize(points.size());
     for (size_t i = 0; i < points.size(); ++i)
@@ -660,8 +810,9 @@ namespace
     }
     std::sort(g_links.begin(), g_links.end());
     g_links.erase(std::unique(g_links.begin(), g_links.end()), g_links.end());
-    Logf("navigation: %zu points (%zu navigation points, %zu of their paths), %zu links to check\n", g_nodes.size(),
-         navs, specs, g_links.size());
+    Logf("navigation: %zu points (%zu navigation points, %zu of their paths), %zu links to check, %zu vaulting "
+         "volumes\n",
+         g_nodes.size(), navs, specs, g_links.size(), g_vault_boxes.size());
   }
 
   void BuildNavigation(PPCContext &ctx, uint8_t *base, uint32_t source)
@@ -690,10 +841,28 @@ namespace
       const Vec &pa = g_nodes[a].at, &pb = g_nodes[b].at;
       float cost = Dist3D(pa, pb);
       bool clear = ClearLine(ctx, base, source, pa, pb);
-      if (!clear && ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kVaultHeight}, {pb.x, pb.y, pb.z + kVaultHeight}))
+      if (!clear && std::fabs(pa.z - pb.z) < kTerrainSlope * Dist2D(pa, pb))
+      {
+        // Over the bulge of a slope: the line hits the terrain only, one
+        // kTerrainLift higher is clear.
+        static uint32_t terrain_class = 0;
+        terrain_class = terrain_class ? terrain_class : ao2::ue3::FindClass(base, "Terrain");
+        uint32_t hit = TraceHit(ctx, base, source, pa, pb, 0.0f, kTraceFlagBlocking);
+        clear = hit && terrain_class && ao2::ue3::IsA(base, hit, terrain_class) &&
+                ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kTerrainLift}, {pb.x, pb.y, pb.z + kTerrainLift});
+      }
+      bool vault = false;
+      for (size_t k = 0; !clear && k < g_vault_boxes.size() && !vault; ++k)
+      {
+        vault = SegmentInBox(pa, pb, g_vault_boxes[k], kVaultReach);
+      }
+      if (vault &&
+          ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kVaultHeight}, {pb.x, pb.y, pb.z + kVaultHeight}))
       {
         clear = true;
         cost *= kVaultCost;
+        g_vault_links.insert(LinkKey(a, b));
+        g_vault_links.insert(LinkKey(b, a));
       }
       if (clear)
       {
@@ -738,20 +907,44 @@ namespace
         sizes.push_back(n);
       }
       std::sort(sizes.rbegin(), sizes.rend());
-      Logf("navigation ready: %zu points, %zu links, %zu parts (largest %zu %zu %zu)\n", g_nodes.size(), links,
-           sizes.size(), sizes.size() > 0 ? sizes[0] : 0, sizes.size() > 1 ? sizes[1] : 0,
+      Logf("navigation ready: %zu points, %zu links (%zu vaults), %zu parts (largest %zu %zu %zu)\n", g_nodes.size(),
+           links, g_vault_links.size(), sizes.size(), sizes.size() > 0 ? sizes[0] : 0, sizes.size() > 1 ? sizes[1] : 0,
            sizes.size() > 2 ? sizes[2] : 0);
     }
   }
 
-  // Of the few points nearest to `at`, the nearest a trace from it reaches;
-  // else the nearest.
-  int NearestNode(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &at)
+  // A link a bot found it could not walk: from point `from` (-1: from where
+  // it stood, to its path's first point) to point `to`, until a frame.
+  struct Bar
+  {
+    int from, to;
+    uint32_t until;
+  };
+
+  bool Barred(const std::vector<Bar> &barred, int from, int to)
+  {
+    for (const Bar &b : barred)
+    {
+      if (b.from == from && b.to == to)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Of the few points nearest to `at` (not barred as a first point), the
+  // nearest a trace from it reaches; else the nearest.
+  int NearestNode(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &at, const std::vector<Bar> &barred)
   {
     std::vector<std::pair<float, int>> near;
     near.reserve(g_nodes.size());
     for (size_t i = 0; i < g_nodes.size(); ++i)
     {
+      if (Barred(barred, -1, int(i)))
+      {
+        continue;
+      }
       const Vec &n = g_nodes[i].at;
       float dz = (n.z - at.z) * 3.0f;
       near.push_back({(n.x - at.x) * (n.x - at.x) + (n.y - at.y) * (n.y - at.y) + dz * dz, int(i)});
@@ -768,14 +961,16 @@ namespace
     return k ? near[0].second : -1;
   }
 
-  // A* from the node nearest to `from` to the one nearest to `to`.
-  std::vector<int> FindPath(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to)
+  // A* from the node nearest to `from` to the one nearest to `to`, round
+  // the barred links (ones the bot found it could not walk).
+  std::vector<int> FindPath(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
+                            const std::vector<Bar> &barred)
   {
     if (!g_nav_ready)
     {
       return {};
     }
-    int start = NearestNode(ctx, base, source, from), goal = NearestNode(ctx, base, source, to);
+    int start = NearestNode(ctx, base, source, from, barred), goal = NearestNode(ctx, base, source, to, {});
     if (start < 0 || goal < 0)
     {
       return {};
@@ -806,6 +1001,10 @@ namespace
       }
       for (auto [j, c] : g_nodes[i].next)
       {
+        if (Barred(barred, i, j))
+        {
+          continue;
+        }
         float n = cost[i] + c;
         if (n < cost[j])
         {
@@ -866,15 +1065,27 @@ namespace
     uint32_t next_path = 0;
     Vec stuck_at;
     uint32_t stuck_check = 0;
-    int stuck = 0;
-    uint32_t aside_until = 0;
-    float aside = 0;
+    int stuck = 0;               // times in a row it did not move
+    uint32_t unaim_until = 0;    // LT let go until this frame
+    uint32_t press_at = 0;       // ... and this button pressed at this frame
+    uint32_t press = 0;
+    uint32_t next_vault = 0;
+    uint32_t maneuver_since = 0; // frame its roll or vault began (0: none)
+    bool progress = false;   // counting
+    float progress_left = 0; // the least way left to its goal along its path so far
+    Vec progress_goal;       // where the goal was then
+    uint32_t progress_until = 0;
+    std::vector<Bar> barred;
+    uint32_t escape_until = 0;
+    float escape_dir = 0; // radians
     float walk_dir = 0;      // radians, the way chosen by the last probe
     int side = 1;            // obstacles are passed on this side first
     uint32_t next_probe = 0;
     uint32_t reload_until = 0, next_reload = 0;
     uint32_t next_respawn = 0;
     uint32_t next_log = 0;
+    Vec last_at;             // where it was the frame before
+    uint32_t still = 0;      // frames it has not moved with the stick pushed
   };
   std::array<Bot, 4> g_bots;
 
@@ -883,6 +1094,51 @@ namespace
     float lx = 0, ly = 0; // left stick: x right, y forward
     uint32_t buttons = 0;
   };
+
+  // The bot's inventory gets infinite ammo, as the game's own AI gets it
+  // (AO2AIBase.Possess: AO2InventoryManager(Pawn.InvManager).bInfiniteAmmo,
+  // declared by UTInventoryManager).
+  void InfiniteAmmo(uint8_t *base, uint32_t pawn)
+  {
+    static bool looked = false;
+    static int32_t inventory = -1, flag = -1;
+    static uint32_t mask = 0;
+    if (!looked)
+    {
+      looked = true;
+      inventory = ao2::ue3::PropertyOffset(base, "Pawn", "InvManager");
+      if (!ao2::ue3::BoolProperty(base, "UTInventoryManager", "bInfiniteAmmo", flag, mask))
+      {
+        flag = -1;
+      }
+      Logf("infinite ammo: Pawn.InvManager +%d, UTInventoryManager.bInfiniteAmmo +%d mask %08X\n", inventory, flag,
+           mask);
+    }
+    uint32_t manager = inventory >= 0 ? LoadU32(base, pawn + inventory) : 0;
+    static uint32_t manager_class = 0, weapon_class = 0;
+    manager_class = manager_class ? manager_class : ao2::ue3::FindClass(base, "AO2InventoryManager");
+    weapon_class = weapon_class ? weapon_class : ao2::ue3::FindClass(base, "AO2Weapon");
+    if (manager && flag >= 0 && manager_class && ao2::ue3::IsA(base, manager, manager_class))
+    {
+      StoreU32(base, manager + flag, LoadU32(base, manager + flag) | mask);
+    }
+    // That keeps the reserve; the magazine still empties and wants a
+    // reload. It stays full too (as the autopilot's infinite ammo).
+    uint32_t weapon = LoadU32(base, pawn + kPawnWeapon);
+    if (weapon && weapon_class && ao2::ue3::IsA(base, weapon, weapon_class))
+    {
+      int32_t max = int32_t(LoadU32(base, weapon + kWeaponMaxAmmo));
+      int32_t max_reserve = int32_t(LoadU32(base, weapon + kWeaponMaxReserve));
+      if (max > 0 && max < 10000)
+      {
+        StoreU32(base, weapon + kWeaponAmmo, uint32_t(max));
+      }
+      if (max_reserve > 0 && max_reserve < 100000)
+      {
+        StoreU32(base, weapon + kWeaponReserve, uint32_t(max_reserve));
+      }
+    }
+  }
 
   // Turns the bot's view towards yaw / pitch (rotation units) by at most
   // the turn rate; true when it is there (within `tolerance`).
@@ -929,7 +1185,7 @@ namespace
         {
           float a = want + float(side * step) * (30.0f / 57.29578f);
           Vec end{at.x + std::cos(a) * probe, at.y + std::sin(a) * probe, at.z};
-          if (!TraceHit(ctx, base, pawn, at, end))
+          if (ClearLine(ctx, base, pawn, at, end))
           {
             bot.walk_dir = a;
             found = true;
@@ -943,6 +1199,43 @@ namespace
       }
     }
     return {at.x + std::cos(bot.walk_dir) * 500.0f, at.y + std::sin(bot.walk_dir) * 500.0f, to.z};
+  }
+
+  // Away from what holds the bot: of the ways back from `want` (radians),
+  // the first clear one, the bot's side first.
+  float EscapeDir(PPCContext &ctx, uint8_t *base, uint32_t pawn, const Vec &at, float want, int side)
+  {
+    for (float turn : {180.0f, 135.0f, 90.0f, 45.0f})
+    {
+      for (int s : {side, -side})
+      {
+        float a = want + float(s) * turn / 57.29578f;
+        if (ClearLine(ctx, base, pawn, at, {at.x + std::cos(a) * 200.0f, at.y + std::sin(a) * 200.0f, at.z}))
+        {
+          return a;
+        }
+      }
+    }
+    return want + 3.1415927f;
+  }
+
+  // The character rolls or vaults (its state: the state frame's +4). Y
+  // then starts a vault inside the roll, and the roll waits for its
+  // animation to end for good (Suppression_Rolling_InRoll, AnimJustEnded).
+  bool Maneuvering(const uint8_t *base, uint32_t pawn, std::string *state_name = nullptr)
+  {
+    uint32_t frame = LoadU32(base, pawn + 24);
+    uint32_t state = frame ? LoadU32(base, frame + 4) : 0;
+    if (!state)
+    {
+      return false;
+    }
+    std::string name = ao2::ue3::ObjectName(base, state);
+    if (state_name)
+    {
+      *state_name = name;
+    }
+    return name.find("Rolling") != std::string::npos || name.find("Vault") != std::string::npos;
   }
 
   bool InSight(PPCContext &ctx, uint8_t *base, uint32_t pawn, uint32_t target, bool &body)
@@ -978,9 +1271,38 @@ namespace
       }
       return in;
     }
-    Character me{pawn, controller, TeamOf(base, controller), false, LoadVec(base, pawn + kActorLocation)};
+    Character me{pawn, controller, TeamOf(base, controller), false, LoadVec(base, pawn + kActorLocation),
+                 DownState(base, pawn)};
+    if (me.down == 2)
+    {
+      // Lies still until healed or up again; no paid respawn (the team's money is its score).
+      bot.target = 0;
+      bot.path.clear();
+      bot.still = 0;
+      bot.stuck_check = 0;
+      return in;
+    }
+    std::erase_if(bot.barred, [&](const Bar &b) { return frame >= b.until; });
+    std::string state;
+    bool maneuvering = Maneuvering(base, pawn, &state);
+    if (!maneuvering)
+    {
+      bot.maneuver_since = 0;
+    }
+    else if (!bot.maneuver_since)
+    {
+      bot.maneuver_since = frame;
+    }
+    else if (frame - bot.maneuver_since == 300)
+    {
+      Logf("frame %u: bot %u in %s for 300 frames\n", frame, id, state.c_str());
+    }
     float view_yaw = LoadF32(base, holder + kLookRotation + 4);
     Vec eye = Head(base, pawn);
+    if (REXCVAR_GET(ao2_versus_bots_infinite_ammo))
+    {
+      InfiniteAmmo(base, pawn);
+    }
 
     // Target.
     if (frame >= bot.next_scan)
@@ -1025,12 +1347,13 @@ namespace
       bot.target = found;
       bot.target_body = body;
     }
-    if (bot.target && !Alive(base, bot.target))
+    if (bot.target && (!Alive(base, bot.target) || DownState(base, bot.target) == 2))
     {
       bot.target = 0;
     }
 
-    // Where to go: towards the target, else the nearest enemy anywhere.
+    // Where to go: towards the target; else to a partner that lies (to
+    // heal it), else the nearest enemy anywhere.
     const Character *goal = nullptr;
     float goal_d = INFINITY;
     for (const Character &c : g_characters)
@@ -1039,6 +1362,40 @@ namespace
       if (bot.target ? c.pawn == bot.target : Enemy(me, c) && d < goal_d)
       {
         goal = &c, goal_d = d;
+      }
+    }
+    const Character *partner = nullptr;
+    for (const Character &c : g_characters)
+    {
+      float d = Dist2D(me.at, c.at);
+      if (!bot.target && !me.down && c.pawn != pawn && c.team && c.team == me.team && !c.ai && c.down &&
+          d < kHealRange && (!partner || d < Dist2D(me.at, partner->at)))
+      {
+        partner = &c;
+      }
+    }
+    if (partner)
+    {
+      goal = partner, goal_d = Dist2D(me.at, partner->at);
+      if (goal_d < kHealReach && std::fabs(me.at.z - partner->at.z) < 150.0f)
+      {
+        // At its side: face it and press A (now and again: the heal starts
+        // with a press, and its mini game takes presses).
+        TurnTowards(base, holder, std::atan2(partner->at.y - me.at.y, partner->at.x - me.at.x) * kUnitsPerRadian,
+                    -20.0f * kUnitsPerDegree, 0.0f);
+        if (frame % 12 < 6)
+        {
+          in.buttons |= kA;
+        }
+        if (frame >= bot.next_log)
+        {
+          bot.next_log = frame + 150;
+          Logf("frame %u: bot %u heals %08X (%s, down %u)\n", frame, id, partner->pawn,
+               ao2::ue3::ObjectName(base, partner->pawn).c_str(), partner->down);
+        }
+        bot.still = 0;
+        bot.stuck_check = 0;
+        return in;
       }
     }
 
@@ -1082,7 +1439,7 @@ namespace
       if (bot.path.empty() || frame >= bot.next_path || Dist2D(bot.path_goal, goal->at) > 600.0f)
       {
         bot.next_path = frame + kPathFrames;
-        bot.path = FindPath(ctx, base, pawn, me.at, goal->at);
+        bot.path = FindPath(ctx, base, pawn, me.at, goal->at, bot.barred);
         bot.path_at = 0;
         bot.path_goal = goal->at;
       }
@@ -1097,17 +1454,31 @@ namespace
         }
         ++bot.path_at;
       }
-      Vec to = bot.path_at < bot.path.size() && Dist2D(me.at, goal->at) > 400.0f ? g_nodes[bot.path[bot.path_at]].at
-                                                                                  : goal->at;
-      Vec way = WalkTarget(ctx, base, pawn, me.at, to, bot, frame);
-      if (frame < bot.aside_until)
+      bool on_path = bot.path_at < bot.path.size() && Dist2D(me.at, goal->at) > 400.0f;
+      Vec to = on_path ? g_nodes[bot.path[bot.path_at]].at : goal->at;
+      int from_node = on_path && bot.path_at > 0 ? bot.path[bot.path_at - 1] : -1;
+      bool vault_link = on_path && from_node >= 0 && g_vault_links.count(LinkKey(from_node, bot.path[bot.path_at]));
+      // A vault: straight at the wall, not round it.
+      Vec way = vault_link ? to : WalkTarget(ctx, base, pawn, me.at, to, bot, frame);
+      if (frame < bot.escape_until)
       {
-        in.lx = bot.aside;
-        in.ly = 0.3f;
+        way = {me.at.x + std::cos(bot.escape_dir) * 500.0f, me.at.y + std::sin(bot.escape_dir) * 500.0f, me.at.z};
+        speed = 1.0f;
       }
-      else
+      Steer(me.at, way, view_yaw, speed, in);
+      // A ledge or a low wall on the way (a spawn's way out may be one): Y
+      // in a vaulting volume, or on a vault link once the wall holds it (on
+      // open ground Y rolls); LT let go (aiming, Y dodges). Walking to and
+      // fro it would not stand still long enough for the stuck check's Y.
+      static int32_t vaulting = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
+      bool in_volume = vaulting >= 0 && LoadU32(base, pawn + vaulting);
+      bool held = Dist2D(me.at, bot.last_at) < 3.0f;
+      if ((in_volume || (vault_link && held)) && frame >= bot.next_vault && frame >= bot.escape_until)
       {
-        Steer(me.at, way, view_yaw, speed, in);
+        bot.next_vault = frame + 90;
+        bot.unaim_until = frame + 20;
+        bot.press_at = frame + 6;
+        bot.press = kY;
       }
       if (!bot.target)
       {
@@ -1115,25 +1486,18 @@ namespace
         float want_yaw = std::atan2(way.y - me.at.y, way.x - me.at.x) * kUnitsPerRadian;
         TurnTowards(base, holder, want_yaw, 0.0f, 0.0f);
       }
-      // Stuck: Y (vault), A, then a step aside and another path.
+      // Not moving: Y and B by turns. Y is the context button (vault, also
+      // slide into cover or roll) but a dodge while aiming, so LT is let go
+      // a moment first. B leaves cover: pushed against a wall that gives
+      // cover, a character locks into it and then only slides along it.
       if (frame >= bot.stuck_check)
       {
         if (bot.stuck_check && Dist2D(me.at, bot.stuck_at) < kStuckMove)
         {
           ++bot.stuck;
-          in.buttons |= bot.stuck % 2 ? kY : kA;
-          if (bot.stuck >= 3)
-          {
-            bot.side = -bot.side;
-            bot.aside = Noise(frame, id + 31) < 0 ? -1.0f : 1.0f;
-            bot.aside_until = frame + 40;
-            bot.next_path = frame;
-            if (bot.path_at + 1 < bot.path.size())
-            {
-              ++bot.path_at;
-            }
-            bot.stuck = 0;
-          }
+          bot.unaim_until = frame + 20;
+          bot.press_at = frame + 6;
+          bot.press = bot.stuck % 2 ? kY : kB;
         }
         else
         {
@@ -1142,10 +1506,92 @@ namespace
         bot.stuck_at = me.at;
         bot.stuck_check = frame + kStuckFrames;
       }
+      // The way left to the goal along the path no shorter for
+      // kProgressFrames (against a wall, or to and fro by a link it cannot
+      // walk, back to the path's first point each time the path is found
+      // again): the link it walks is barred from its paths for a while, it
+      // walks away from the wall and finds another way.
+      int node = on_path ? bot.path[bot.path_at] : -1;
+      float left = Dist2D(me.at, to);
+      if (on_path)
+      {
+        for (size_t k = bot.path_at; k + 1 < bot.path.size(); ++k)
+        {
+          left += Dist3D(g_nodes[bot.path[k]].at, g_nodes[bot.path[k + 1]].at);
+        }
+        left += Dist2D(g_nodes[bot.path.back()].at, goal->at);
+      }
+      if (!bot.progress || left < bot.progress_left - kProgressStep ||
+          Dist2D(bot.progress_goal, goal->at) > 300.0f)
+      {
+        bot.progress = true;
+        bot.progress_until = frame + kProgressFrames;
+        bot.progress_left = left;
+        bot.progress_goal = goal->at;
+      }
+      bot.progress_left = std::min(bot.progress_left, left);
+      if (frame >= bot.progress_until && frame >= bot.escape_until)
+      {
+        float want = std::atan2(to.y - me.at.y, to.x - me.at.x);
+        int from = on_path && bot.path_at > 0 ? bot.path[bot.path_at - 1] : -1;
+        if (node >= 0)
+        {
+          bot.barred.push_back({from, node, frame + kBarFrames});
+        }
+        bot.side = -bot.side;
+        bot.escape_dir = EscapeDir(ctx, base, pawn, me.at, want, bot.side);
+        bot.escape_until = frame + kEscapeFrames;
+        bot.next_path = bot.escape_until;
+        bot.next_probe = 0;
+        bot.progress = false;
+        Logf("frame %u: bot %u gets no nearer: link %d -> %d (%.0f %.0f %.0f) from %.0f %.0f %.0f barred (%zu), "
+             "backs off %.0f degrees\n",
+             frame, id, from, node, to.x, to.y, to.z, me.at.x, me.at.y, me.at.z, bot.barred.size(),
+             std::remainder(bot.escape_dir - want, 6.2831853f) * 57.29578f);
+      }
     }
     else
     {
       bot.stuck_check = 0;
+      bot.progress = false;
+    }
+
+    // Debug: what holds a bot that does not move with the stick pushed.
+    {
+      bool pushed = std::hypot(in.lx, in.ly) > 0.5f;
+      bool moved = Dist2D(me.at, bot.last_at) > 2.0f;
+      bot.last_at = me.at;
+      bot.still = pushed && !moved ? bot.still + 1 : 0;
+      if (bot.still == 60 || (bot.still && bot.still % 300 == 0))
+      {
+        static int32_t cover_node = -2, cover_ratio, vault_volume;
+        if (cover_node == -2)
+        {
+          cover_node = ao2::ue3::PropertyOffset(base, "AO2PlayerControllerNative", "CoverEntry_CurrentCoverNode");
+          cover_ratio = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "CoverRatio");
+          vault_volume = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
+        }
+        float yaw = view_yaw / kUnitsPerRadian;
+        float dir = std::atan2(in.lx, in.ly) + yaw; // where the stick pushes, in the world
+        Vec ahead{me.at.x + std::cos(dir) * 150.0f, me.at.y + std::sin(dir) * 150.0f, me.at.z};
+        uint32_t hit = TraceHit(ctx, base, pawn, me.at, ahead);
+        uint32_t node = cover_node >= 0 ? LoadU32(base, controller + cover_node) : 0;
+        Logf("frame %u: bot %u still %u frames at %.0f %.0f %.0f: stick %.2f %.2f, buttons %X, physics %u, cover "
+             "node %08X ratio %.2f, vault volume %08X, ahead %s (%s), path %zu/%zu\n",
+             frame, id, bot.still, me.at.x, me.at.y, me.at.z, in.lx, in.ly, in.buttons, base[pawn + 88], node,
+             cover_ratio >= 0 ? LoadF32(base, pawn + cover_ratio) : -1.0f,
+             vault_volume >= 0 ? LoadU32(base, pawn + vault_volume) : 0, hit ? ao2::ue3::ObjectName(base, hit).c_str() : "-",
+             hit ? ao2::ue3::ObjectName(base, LoadU32(base, hit + 52)).c_str() : "-", bot.path_at, bot.path.size());
+      }
+    }
+
+    if (frame < bot.unaim_until)
+    {
+      in.buttons &= ~(kLT | kRT);
+    }
+    if (frame >= bot.press_at && frame < bot.press_at + 2 && !(bot.press == kY && maneuvering))
+    {
+      in.buttons |= bot.press;
     }
 
     // Reload an empty magazine.
@@ -1164,9 +1610,10 @@ namespace
     {
       bot.next_log = frame + 150;
       Logf("frame %u: bot %u at %.0f %.0f %.0f team %08X, target %08X, goal %08X %.0f, path %zu/%zu, "
-           "stick %.2f %.2f, buttons %X\n",
+           "stick %.2f %.2f, buttons %X, ammo %d\n",
            frame, id, me.at.x, me.at.y, me.at.z, me.team, bot.target, goal ? goal->pawn : 0,
-           goal ? goal_d : 0.0f, bot.path_at, bot.path.size(), in.lx, in.ly, in.buttons);
+           goal ? goal_d : 0.0f, bot.path_at, bot.path.size(), in.lx, in.ly, in.buttons,
+           weapon ? int32_t(LoadU32(base, weapon + kWeaponAmmo)) : -1);
     }
     return in;
   }
@@ -1292,6 +1739,8 @@ namespace ao2::versus
     g_nav_world = g_nav_first = 0;
     g_nodes.clear();
     g_links.clear();
+    g_vault_links.clear();
+    g_vault_boxes.clear();
     g_nav_ready = false;
     if (mask)
     {
