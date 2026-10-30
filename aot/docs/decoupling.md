@@ -43,7 +43,9 @@ limiter at `ao2_fps_target` - is render-only: the frame sync tick hook
 (`frame_time.cpp`) returns without the tick, and `UGameEngine::Tick` only calls
 the viewport draw, with the shared `rand()` state put back afterwards. Nothing
 is interpolated, so a render-only frame repeats the last picture. Single
-player steps by exactly 1/`ao2_sim_hz`; the lockstep keeps the game's own
+player steps by 1/`ao2_sim_hz`, or by as many periods as the step is late
+(up to 4: below `ao2_sim_hz` frames a second one period a frame ran the game
+in slow motion, x0.5 at 30 FPS); the lockstep keeps the game's own
 step (the players now report the step length), and its input lead
 (`coop_input_delay.cpp`) is counted in simulation steps.
 `--ao2_decouple_debug=true` logs once a second to `decouple.log` (frames,

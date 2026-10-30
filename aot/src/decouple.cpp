@@ -90,6 +90,11 @@ namespace
   // Further behind than this many steps: restart the clock (load, hitch,
   // a long wait for the co-op partner) instead of catching up.
   constexpr double kMaxBehindSteps = 4.0;
+  // Outside a network game a late step covers the periods it is late by, up
+  // to this many: below ao2_sim_hz frames a second (a 30 FPS cap, a slow
+  // processor, vsync at 50 Hz) one fixed step a frame ran the game in slow
+  // motion (x0.5 at 30 FPS). Online the lockstep needs the fixed step.
+  constexpr int kMaxCatchUpPeriods = 4;
 
   uint32_t LoadU32(const uint8_t *base, uint32_t addr)
   {
@@ -175,6 +180,7 @@ namespace
   uint32_t g_sim_steps = 0;  // since decoupling went on
   uint32_t g_world_steps = 0;   // world ticks run (GEngine->Tick of a simulation step)
   double g_world_step_ms = 0;   // start of the frame of the last world tick
+  double g_step_len_ms = 0;     // length of the last simulation step
   bool g_in_extra_draw = false; // inside DrawOnly (the rand() state is put back after it)
 
   // The settings in effect: in a network session the shared ones (fixed
@@ -346,7 +352,7 @@ namespace ao2::decouple
 
   double Alpha()
   {
-    double period = 1000.0 / g_settings.sim_hz;
+    double period = g_step_len_ms > 0 ? g_step_len_ms : 1000.0 / g_settings.sim_hz;
     return std::clamp((g_last_draw_ms - g_world_step_ms) / period, 0.0, 1.0);
   }
 
@@ -375,13 +381,19 @@ namespace ao2::decouple
         uint32_t tick = engine ? LoadU32(base, LoadU32(base, engine) + 264) : 0;
         Log("decoupling on: sim %d Hz, GEngine->Tick = %08X (expected %08X)", settings.sim_hz, tick, kEngineTick);
       }
+      int periods = 1;
       if (g_next_sim_ms == 0 || now - g_next_sim_ms > kMaxBehindSteps * period)
       {
         g_next_sim_ms = now;
       }
-      g_next_sim_ms += period;
+      else if (!ao2::coop::InNetworkGame(base))
+      {
+        periods = std::clamp(1 + int((now - g_next_sim_ms + kDueToleranceMs) / period), 1, kMaxCatchUpPeriods);
+      }
+      g_next_sim_ms += periods * period;
       g_sim_steps++;
-      *sim_dt = 1.0 / settings.sim_hz;
+      g_step_len_ms = periods * period;
+      *sim_dt = double(periods) / settings.sim_hz;
       g_stats.Frame(now, true);
       return false;
     }

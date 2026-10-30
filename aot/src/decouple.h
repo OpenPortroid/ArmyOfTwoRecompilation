@@ -9,8 +9,9 @@ namespace ao2::decouple
 {
   // Called by the frame sync tick hook (frame_time.cpp) once per game-thread
   // frame, before the tick. True: a render-only frame - skip the tick, no
-  // simulation step. False: a simulation step; *sim_dt is its fixed length
-  // in seconds when decoupling is on (both machines the same online), else 0.
+  // simulation step. False: a simulation step; *sim_dt is its length in
+  // seconds when decoupling is on (fixed online, the same on both machines;
+  // outside a network game a late step is up to 4 periods long), else 0.
   bool BeginFrame(PPCContext &ctx, uint8_t *base, double *sim_dt);
 
   // Length of a simulation step in ms while decoupling is on, else 0.
