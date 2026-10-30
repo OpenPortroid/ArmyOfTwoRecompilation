@@ -315,6 +315,19 @@ callback the recompiler never saw. `scan_missing_funcs.py --data` (dev tools) fi
 code addresses referenced from lis/addi pairs, vtables and dispatch tables that
 are not function entries; 220 were added to `default_functions.toml`.
 
+### Versus bots (`src/versus_bots.cpp`)
+
+A versus match can start with fewer than 4 players (`ao2_versus_min_players`,
+`src/versus_lobby.cpp`); bots play the empty places (`ao2_versus_bots`, on by
+default - every player of the match needs the same setting). Versus is the
+same lockstep: a bot is input, made on every machine alike from the
+simulation's state and replayed right after the first record of each frame
+(only inside the replay does the viewport hand input to the controller). The
+bots walk along a network built from the level's navigation points and the
+AI's cover nodes (`AO2CoverNode`: the versus maps have few navigation points),
+shoot enemies in sight and log to `versus_bots.log`. Tested on one PC (host
+with three bots, Iraq); a match with other players and bots is not tested yet.
+
 ## Testing on one PC
 
 Dev scripts (in `C:\aot2\tools`, outside this repo): `coop\coop_start.ps1` starts two instances (`C:\aot2\work\runA` hosting on

@@ -52,6 +52,7 @@
 #include "cutscene_skip.h"
 #include "decouple.h"
 #include "mouse_aim.h"
+#include "versus_bots.h"
 #include "cyrillic_fonts.h"
 #include "keyboard_prompts.h"
 #include "log_files.h"
@@ -1443,6 +1444,7 @@ extern "C" REX_FUNC(__imp__sub_82A0EEC8);
 extern "C" REX_FUNC(sub_82A0EEC8)
 {
   uint32_t record = ctx.r3.u32;
+  ao2::versus::NoteReplayedRecord(base, record);
   bool online = record && ao2::coop::OnlineLockstep(base);
   bool mouse = record && REXCVAR_GET(ao2_mouse_aim) && LockstepMouse(base);
   bool commands_on = record && ao2::coop::cmd::Ready(base);
@@ -1496,6 +1498,11 @@ extern "C" REX_FUNC(sub_82A0EEC8)
     }
     ctx = after;
   }
+  // Versus bots: their records after the frame's first one.
+  PPCContext after = ctx;
+  ctx.r1 = saved.r1;
+  ao2::versus::AfterReplayedRecord(ctx, base);
+  ctx = after;
 }
 
 // AAO2PlayerControllerNative::UpdateLookingAction (r3 = controller, f1 = dt).

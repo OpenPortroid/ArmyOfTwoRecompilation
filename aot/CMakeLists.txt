@@ -77,6 +77,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/cutscene_skip.cpp
     src/cheats.cpp
     src/aim_assist.cpp
+    src/versus_bots.cpp
     src/versus_lobby.cpp
     src/debug_menu.cpp
     src/dlc_folder.cpp

@@ -15,10 +15,13 @@
 // well), and the count must equal the lobby's places (+2788, 4 in a 2-on-2
 // match). With ao2_versus_min_players the host may start once every player
 // but one (the host) is ready and at least that many are in the lobby; the
-// places left empty stay empty (no bots: the game has none in versus).
+// places left empty stay empty: the game has no bots in versus, ours play
+// them (versus_bots.cpp).
 //
 // Co-op (not the multiplayer mode), ranked matches and a lobby with the
 // count already taken from +2788 (+5) keep the game's rule.
+#include "versus_bots.h"
+
 #include <bit>
 #include <cstdint>
 #include <cstring>
@@ -30,7 +33,7 @@
 REXCVAR_DEFINE_INT32(ao2_versus_min_players, 1, "Online",
                      "Versus (custom and private matches): the host can start once everybody in the lobby is ready "
                      "and at least this many players are there (1-4); 0 = only with every place taken, as on the "
-                     "console. Empty places stay empty.");
+                     "console. Bots play the empty places (ao2_versus_bots).");
 
 namespace
 {
@@ -235,6 +238,7 @@ extern "C" REX_FUNC(sub_82A153C0)
 {
   uint32_t lobby = ctx.r3.u32;
   __imp__sub_82A153C0(ctx, base);
+  ao2::versus::SetEmptyPlaces(0);
   uint32_t modes = LoadU32(base, kGameModes);
   uint32_t controller = lobby ? LoadU32(base, lobby + kController) : 0;
   uint32_t list = lobby ? LoadU32(base, lobby + kPlayers) : 0;
@@ -252,6 +256,7 @@ extern "C" REX_FUNC(sub_82A153C0)
   }
   uint32_t top = (ctx.r1.u32 - 1024) & ~15u;
   uint32_t ids = top + 256; // TArray<int> {data, count, max}
+  uint32_t empty = 0;
   for (uint32_t id = 0; id < 4; ++id)
   {
     if (taken[id])
@@ -266,5 +271,7 @@ extern "C" REX_FUNC(sub_82A153C0)
     CallGuest(ctx, base, kRegisterRemote, top, controller, id, 0, ids);
     CallGuest(ctx, base, kArrayFree, top, ids);
     REXLOG_INFO("versus_lobby: empty place {} registered as a remote player (controller {})", id, id);
+    empty |= 1u << id;
   }
+  ao2::versus::SetEmptyPlaces(empty);
 }
