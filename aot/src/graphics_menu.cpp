@@ -411,19 +411,8 @@ namespace
        {"Mouse sensitivity", nullptr, 0}},
   };
 
-  // Every keyboard bind and its default (settings/mapping.toml, the launcher's
-  // Bindings.cs): "Default keys" restores them.
-  constexpr const char *kDefaultBinds[][2] = {
-      {"a", "E,Return"},       {"b", "Q,Backspace"},          {"x", "R"},
-      {"y", "Space"},          {"left_trigger", "RMB"},       {"right_trigger", "LMB"},
-      {"left_shoulder", "Z,1,2,3,4,G"}, {"right_shoulder", "F"}, {"lstick_up", "W"},
-      {"lstick_down", "S"},    {"lstick_left", "A"},          {"lstick_right", "D"},
-      {"lstick_press", "Control,C"}, {"rstick_up", ""},       {"rstick_down", ""},
-      {"rstick_left", ""},     {"rstick_right", ""},          {"rstick_press", "MMB"},
-      {"dpad_up", "Up,1"},     {"dpad_down", "Down,4,G"},     {"dpad_left", "Left,2"},
-      {"dpad_right", "Right,3"}, {"back", "Tab"},             {"start", "Escape"},
-      {"guide", ""},
-  };
+  // The keyboard binds' defaults (utils.h): "Default keys" restores them.
+  using utils::kDefaultBinds;
 
   // The choice nearest to the cvar's current value.
   int CurrentChoice(const Setting &s)

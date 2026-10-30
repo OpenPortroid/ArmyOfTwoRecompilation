@@ -82,6 +82,11 @@ public:
   void OnPostSetup() override
   {
     utils::LoadSettingsFiles();
+    if (!std::filesystem::exists(utils::SettingsDir() / "mapping.toml"))
+    {
+      REXLOG_WARN("{} not found (was the game moved without its settings folder?): default keys",
+                  rex::path_to_utf8(utils::SettingsDir() / "mapping.toml"));
+    }
     // After the runtime's own setup, so its filter does not replace ours.
     ao2::hang::InstallCrashHandler();
     // The port's own menus speak the game's language.
