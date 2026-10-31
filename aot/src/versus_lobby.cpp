@@ -156,26 +156,86 @@ extern "C" REX_FUNC(sub_82A14E08)
 }
 
 // The match's travel URL (sub_82A1A3E0, r3 = lobby: "<map>?Game=...
-// ?MPPlayer1Type=%d...?MPPlayer4Type=%d") reads the type (+48) of the players
-// with ids 0-3 through sub_82A02D50 (r3 = slots, r4 = id; NULL when no slot
-// has the id) without a check: while it runs, a missing player is the one
-// there with the lowest id (an empty place takes that player's type).
+// ?MPPlayer1Type=%d...?MPPlayer4Type=%d") reads the type (+48: the
+// character, 1-20, package AO2MPPlayerCharN) of the players with ids 0-3
+// through sub_82A02D50 (r3 = slots, r4 = id; NULL when no slot has the id)
+// without a check. While it runs, a missing player is a stand-in: a copy of
+// the player there with the lowest id (+4 the missing id) with a character
+// of its own - none of the players' and no other empty place's, picked by a
+// hash of the id and the players' characters (each machine builds the URL:
+// it must be the same everywhere).
 namespace
 {
+  constexpr uint32_t kType = 48;
+  constexpr uint32_t kCharacters = 20;
+  constexpr uint32_t kStandInSize = 256;
   thread_local bool g_filling = false;
-}
+  thread_local uint32_t g_stand_ins = 0; // guest: a stand-in per id, kStandInSize each
+
+  uint32_t Mix(uint32_t h)
+  {
+    h ^= h >> 16;
+    h *= 0x7FEB352Du;
+    h ^= h >> 15;
+    h *= 0x846CA68Bu;
+    h ^= h >> 16;
+    return h;
+  }
+
+  // The character of each empty place (0 for the players' ids).
+  void EmptyPlaceTypes(const uint8_t *base, uint32_t list, uint32_t types[4])
+  {
+    bool used[kCharacters + 1] = {};
+    bool taken[4] = {};
+    uint32_t seed = 0x2545F491u;
+    for (uint32_t slot = 2; slot <= 5; ++slot)
+    {
+      uint32_t player = LoadU32(base, list + 4 * slot);
+      if (!player)
+      {
+        continue;
+      }
+      uint32_t id = LoadU32(base, player + 4), type = LoadU32(base, player + kType);
+      taken[id & 3] |= id < 4;
+      used[type <= kCharacters ? type : 0] = true;
+      seed = Mix(seed ^ (id * 0x9E3779B1u + type));
+    }
+    for (uint32_t id = 0; id < 4; ++id)
+    {
+      types[id] = 0;
+      if (taken[id])
+      {
+        continue;
+      }
+      uint32_t free[kCharacters], n = 0;
+      for (uint32_t c = 1; c <= kCharacters; ++c)
+      {
+        if (!used[c])
+        {
+          free[n++] = c;
+        }
+      }
+      if (!n)
+      {
+        continue;
+      }
+      types[id] = free[Mix(seed + id * 0x85EBCA77u) % n];
+      used[types[id]] = true;
+    }
+  }
+} // namespace
 
 extern "C" REX_FUNC(__imp__sub_82A02D50);
 extern "C" REX_FUNC(sub_82A02D50)
 {
-  uint32_t list = ctx.r3.u32;
+  uint32_t list = ctx.r3.u32, id = ctx.r4.u32;
   __imp__sub_82A02D50(ctx, base);
-  if (!g_filling || ctx.r3.u32 || !list)
+  if (!g_filling || ctx.r3.u32 || !list || id >= 4)
   {
     return;
   }
   // The slots' order differs between the machines: the player with the
-  // lowest id gives every machine the same URL.
+  // lowest id gives every machine the same copy.
   uint32_t first = 0;
   for (uint32_t slot = 2; slot <= 5; ++slot)
   {
@@ -185,17 +245,38 @@ extern "C" REX_FUNC(sub_82A02D50)
       first = player;
     }
   }
-  if (first)
+  if (!first)
+  {
+    return;
+  }
+  uint32_t types[4];
+  EmptyPlaceTypes(base, list, types);
+  if (!g_stand_ins || !types[id])
   {
     ctx.r3.u64 = first;
+    return;
   }
+  uint32_t stand_in = g_stand_ins + id * kStandInSize;
+  std::memcpy(base + stand_in, base + first, kStandInSize);
+  StoreU32(base, stand_in + 4, id);
+  StoreU32(base, stand_in + kType, types[id]);
+  REXLOG_INFO("versus_lobby: empty place {} plays character {}", id, types[id]);
+  ctx.r3.u64 = stand_in;
 }
 
+// The stand-ins live in this frame, above the stack the URL is built on.
 extern "C" REX_FUNC(__imp__sub_82A1A3E0);
 extern "C" REX_FUNC(sub_82A1A3E0)
 {
   g_filling = REXCVAR_GET(ao2_versus_min_players) > 0;
+  uint32_t sp = ctx.r1.u32;
+  uint32_t area = (sp - 4 * kStandInSize - 64) & ~15u;
+  ctx.r1.u64 = (area - 64) & ~15u;
+  StoreU32(base, ctx.r1.u32, sp); // back chain
+  g_stand_ins = area;
   __imp__sub_82A1A3E0(ctx, base);
+  ctx.r1.u64 = sp;
+  g_stand_ins = 0;
   g_filling = false;
 }
 

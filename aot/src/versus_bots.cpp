@@ -30,31 +30,55 @@
 // rotation, as UpdateLookingAction keeps it), the same on every machine, at
 // a limited rate.
 //
-// What a bot does (each frame, while its character lives):
-// - Target: the nearest enemy in range whose head or body a bullet trace
-//   (AActor::Trace with actors, TRACEFLAG_Bullet, as autopilot.cpp) reaches.
-//   Enemies: characters of the other team's players and AI soldiers whose
-//   TeamAI is not on the bot's team.
-// - With a target it aims (LT) at it, a little off at random, and shoots
-//   (RT) once it has had it in view for a moment and the aim is close; far
-//   away it walks closer, near it steps sideways. An empty magazine: X.
-//   Its ammo does not run out (ao2_versus_bots_infinite_ammo).
+// What a bot does (each frame, while its character lives), most urgent first:
+// - Its partner (AO2CharacterNative.Partner: the one a heal or a co-op move
+//   is with) lies: it goes to it and heals it (A), whatever it fights.
+// - Its partner waits to step jump or pull up (StepJump_PreCoop_Lifter /
+//   PullUp_PreCoop_Lifter): it goes to the join position (by it; under the
+//   ledge for a pull up), lets LT go and presses A; in the move it leaves
+//   the stick alone while it is lifted and pushes it up once it is at the
+//   top (the jumper climbs over).
+// - Lifted up a wall while its partner, a player, is still below: it waits
+//   by the ledge ~8 s pressing A (where a pull up can be done that makes it
+//   the lifter) to pull the partner up after it, then goes on.
+// - A player's partner keeps near the player (follow), fighting what comes;
+//   the objectives below are for bots whose partner is a bot.
+// - The objectives its team is shown (the HUD's markers, AO2MPTeamInfo.
+//   MPTeamObjectiveLocators): the nearest. A hostage: A by it (dragging
+//   it, the bot aims at any enemy it sees); a depot to destroy: shot at
+//   from where the bot sees it; a character to kill: hunted as a target;
+//   a place to hold or defend:
+//   kept near, fighting what comes; a place to go to (extraction): gone to.
+// - No objective (deathmatch): the nearest enemy.
+// - Target: the objective's enemy in sight, else the nearest enemy in range
+//   whose body or head a bullet trace (AActor::Trace with actors,
+//   TRACEFLAG_Bullet, as autopilot.cpp) reaches. Enemies: characters of the
+//   other team's players and AI soldiers whose TeamAI is not on the bot's
+//   team; hostages (AO2AICivilianController, an AI of a team too) never,
+//   nor a shot that passes one.
+// - With a target it aims at its body (its head when only that shows), a
+//   few degrees off, wandering slowly (ao2_versus_bots_miss), and fires in
+//   bursts once it has had it in view for a moment; LT when it is near or
+//   the bot stands (farther on the way, from the hip). Hunting: far away it
+//   walks closer, near it steps sideways (not into a wall). The magazine
+//   empties: X (also with a part-empty one and no target); the reserve does
+//   not run out (ao2_versus_bots_infinite_ammo).
 // - Lying (versus "dead": unconscious) it does nothing until its partner
-//   heals it or it gets up on its own - no respawn for money. A partner
-//   that lies is gone to and healed (A) when there is no target; enemies
-//   that lie (invulnerable) are not shot at.
-// - Without one it walks to the nearest enemy along the level's navigation
-//   network (A* over the navigation points and the cover nodes, see below;
-//   with no way there, to the point nearest to it it can reach), round what
-//   a trace finds in the way, and looks where it goes. Walking is
-//   checked with a box traced against the collision characters walk
-//   against (invisible walls too), not a bullet's line. Not moving: Y
-//   (vault, with LT let go: aiming it dodges) and B (out of cover) by
-//   turns; Y too in a vaulting volume and held on a vault link (one through
-//   a vaulting volume: nothing else can be vaulted), walked straight.
-//   The way left along its path no shorter for a while: the link it
-//   walks is barred from its paths for 30 s, it backs off from the wall and
-//   goes another way.
+//   heals it or it gets up on its own - no respawn for money. Enemies that
+//   lie (invulnerable) are not shot at.
+// - It walks along the level's navigation network (A* over the navigation
+//   points and the cover nodes, see below; with no way there, to the point
+//   nearest to it it can reach), round what a probe finds in the way, and
+//   looks where it goes. Links are checked with a box traced against the
+//   collision characters walk against (invisible walls too), not a
+//   bullet's line; the way ahead with a box from the bot's middle. Not
+//   moving: Y (vault, with LT let go: aiming it dodges) and B (out of
+//   cover) by turns; Y too in a vaulting volume and held on a vault link
+//   (one through a vaulting volume: nothing else can be vaulted), walked
+//   straight. Held still with the stick pushed for a moment, or the way
+//   left along its path no shorter for a while: the link it walks is barred
+//   from its paths for 30 s, it backs off from the wall and goes another
+//   way.
 // - Dead: A now and then.
 //
 // Every machine must have the same ao2_versus_bots (and bot settings): a
@@ -84,12 +108,12 @@ REXCVAR_DEFINE_BOOL(ao2_versus_bots, true, "Online",
                     "Versus: bots play the empty places of a match started with fewer than 4 players. Every player "
                     "of the match needs the same setting.");
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_range, 4000.0, "Online", "Versus bots: farthest enemy they shoot at (world units)");
-REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_turn, 9.0, "Online", "Versus bots: fastest turn of the view (degrees per frame)");
-REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_miss, 1.5, "Online",
+REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_turn, 6.0, "Online", "Versus bots: fastest turn of the view (degrees per frame)");
+REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_miss, 2.5, "Online",
                       "Versus bots: how far off the aim wanders (degrees); 0 = they aim true");
 REXCVAR_DEFINE_BOOL(ao2_versus_bots_infinite_ammo, true, "Online",
                     "Versus bots: their weapons never run out of ammo (as the game's AI partner)");
-REXCVAR_DEFINE_INT32(ao2_versus_bots_reaction, 12, "Online",
+REXCVAR_DEFINE_INT32(ao2_versus_bots_reaction, 20, "Online",
                      "Versus bots: frames a target is in view before they shoot");
 
 // The replay of one record (mouse_aim.cpp hooks it).
@@ -127,6 +151,7 @@ namespace
   constexpr uint32_t kTraceFlagBlocking = 8; // blocking volumes too (invisible walls)
   constexpr float kWalkExtent = 15.0f;       // half size of the box traced for walking (a character: radius 46; narrow ways)
   constexpr float kWalkTrim = 45.0f;         // ... not this near the ends
+  constexpr float kLinkExtent = 28.0f;       // ... for the network's links (a gap too narrow is no way)
 
   constexpr float kUnitsPerRadian = 65536.0f / 6.2831853f;
   constexpr float kUnitsPerDegree = 65536.0f / 360.0f;
@@ -134,17 +159,51 @@ namespace
 
   // Timings in lockstep frames.
   constexpr uint32_t kScanFrames = 6;     // target choice
-  constexpr uint32_t kPathFrames = 90;    // path again
+  constexpr uint32_t kPathFrames = 90;    // path again (when due: see kPathMoved)
+  constexpr float kPathMoved = 150.0f;    // ... for a goal that moved this far
   constexpr uint32_t kStuckFrames = 30;   // stuck check
   constexpr float kStuckMove = 30.0f;     // moved less than this in kStuckFrames
+  constexpr float kAimRange = 2500.0f;    // a target this near is aimed at (LT) on the way too
   constexpr float kNearFight = 1800.0f;   // nearer: steps aside, farther: walks closer
   constexpr float kWaypoint = 110.0f;     // a path node counts as reached this close
-  constexpr float kHealRange = 3000.0f;   // a partner that lies this near is gone to and healed
-  constexpr float kHealReach = 110.0f;    // ... from this close
+  constexpr float kHealRange = 3500.0f;   // a partner that lies this near is gone to and healed (it has ~20 s)
+  constexpr float kHealReach = 110.0f;    // ... from this close (the game's heal: 120)
+  constexpr float kJoinRange = 2500.0f;   // a partner this near waiting to step jump / pull up is gone to
+  constexpr float kJoinReach = 105.0f;    // ... this close (the game's join position: 110)
+  constexpr float kUseReach = 130.0f;     // a hostage or a charge is used (A) this close
+  constexpr float kShootReach = 1000.0f;  // a depot to destroy is shot at from this near (in sight)
+  constexpr float kUseFar = 320.0f;       // ... or held against it this close
+  constexpr float kUseLeave = 350.0f;     // ... until this far
+  constexpr uint32_t kPressedFrames = 10; // held still so long with the stick pushed: against it
+  constexpr float kHoldReach = 350.0f;    // a place to hold or defend: kept this near
+  constexpr float kGoReach = 150.0f;      // a place to go to: there this near
+  constexpr float kHostageMargin = 70.0f; // no shot passes a hostage this near
+  constexpr float kProbeExtent = 25.0f;   // half size of the box the bot probes its way with
+  constexpr float kProbeLift = 15.0f;     // ... this much above its middle
+  constexpr float kStillMove = 0.6f;      // moved less in a frame: still (~57 frames a second; walking
+                                          // aiming is 1-2 a frame, against a wall ~0)
+  constexpr uint32_t kWallFrames = 24;    // held still so long with the stick pushed: a wall
+  constexpr uint32_t kHeldFrames = 90;    // ... a wall even rolling, vaulting or on a vault link
+  constexpr uint32_t kWanderFrames = 15;  // the aim wanders to a new point this often
+  constexpr uint32_t kBurstFrames = 60;   // fires 3/5 of this, then pauses
+  constexpr float kCoopRise = 60.0f;      // lifted this high: up (the jumper climbs over at the top)
+  constexpr uint32_t kCoopTop = 15;       // ... and no higher for this long
+  constexpr float kOffLevel = 150.0f;     // a goal this much higher or lower is on another level
+  constexpr float kFollowReach = 200.0f;  // a player's partner keeps this near it
+  constexpr float kFollowLead = 350.0f;   // ... or ahead of it, this far, when it runs
+  constexpr float kFollowMoving = 100.0f; // ... faster than this
+  constexpr float kFollowRadius = 2000.0f; // a partner nearer is followed
+  constexpr float kLadderReach = 150.0f;   // A for a ladder this near its end
+  constexpr float kFollowLeave = 2800.0f;  // ... one farther is not (the bot goes for the objectives)
+  constexpr uint32_t kActorVelocity = 252;
+  constexpr float kOfferBelow = 80.0f;    // a partner this far below: offered a pull up
+  constexpr uint32_t kOfferFrames = 460;  // ... for so long (~8 s)
+  constexpr uint32_t kCoopMoveFrames = 2400; // a step jump / pull up taking longer is left (B; ~57 frames a second)
   constexpr float kWallProbe = 250.0f;    // how far ahead the way must be clear
   constexpr uint32_t kProbeFrames = 3;    // the way ahead is probed this often
   constexpr uint32_t kProgressFrames = 150; // no nearer to its path point for this long: stuck
   constexpr float kProgressStep = 60.0f;    // ... nearer by this much
+  constexpr float kDetour = 200.0f;         // a path found again this much longer: a way round
   constexpr uint32_t kBarFrames = 1800;     // a point it could not get to is left out of its paths so long
   constexpr uint32_t kEscapeFrames = 50;    // then it walks away from the wall so long
 
@@ -323,7 +382,8 @@ namespace
   // is not hit (as autopilot.cpp TraceHit). By default a bullet's: a line,
   // the meshes' own triangles.
   uint32_t TraceHit(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
-                    float extent = 0.0f, uint32_t flags = kTraceFlagBullet)
+                    float extent = 0.0f, uint32_t flags = kTraceFlagBullet, Vec *hit_at = nullptr,
+                    Vec *hit_normal = nullptr)
   {
     PPCContext saved = ctx;
     uint32_t sp = (ctx.r1.u32 - 1024) & ~15u;
@@ -345,6 +405,14 @@ namespace
     ctx.r10.u64 = 0;
     rex::runtime::ResolveIndirectFunction(kActorTrace)(ctx, base);
     uint32_t hit = ctx.r3.u32;
+    if (hit_at)
+    {
+      *hit_at = LoadVec(base, args); // HitLocation
+    }
+    if (hit_normal)
+    {
+      *hit_normal = LoadVec(base, args + 12);
+    }
     ctx = saved;
     return hit;
   }
@@ -355,13 +423,14 @@ namespace
   {
     kIsCharacter = 1, // AO2CharacterNative
     kIsAI = 2,        // AO2AIBaseNative
+    kIsCivilian = 4,  // AO2AICivilianController (a hostage)
   };
 
   // Per class, cached (classes stay while the game runs).
   uint8_t ClassFlags(const uint8_t *base, uint32_t cls)
   {
     static std::unordered_map<uint32_t, uint8_t> cache;
-    static uint32_t character = 0, ai = 0;
+    static uint32_t character = 0, ai = 0, civilian = 0;
     if (!cls)
     {
       return 0;
@@ -373,6 +442,7 @@ namespace
     }
     character = character ? character : ao2::ue3::FindClass(base, "AO2CharacterNative");
     ai = ai ? ai : ao2::ue3::FindClass(base, "AO2AIBaseNative");
+    civilian = civilian ? civilian : ao2::ue3::FindClass(base, "AO2AICivilianController");
     if (!character || !ai)
     {
       return 0;
@@ -380,7 +450,7 @@ namespace
     uint8_t flags = 0;
     for (uint32_t c = cls, depth = 0; c && depth < 40; c = LoadU32(base, c + 60), ++depth)
     {
-      flags |= c == character ? kIsCharacter : c == ai ? kIsAI : 0;
+      flags |= c == character ? kIsCharacter : c == ai ? kIsAI : c == civilian && civilian ? kIsCivilian : 0;
     }
     cache.emplace(cls, flags);
     return flags;
@@ -394,6 +464,12 @@ namespace
   bool IsAI(const uint8_t *base, uint32_t object)
   {
     return object && (ClassFlags(base, LoadU32(base, object + 52)) & kIsAI);
+  }
+
+  // A hostage's controller (an AI of a team too: shot at like a soldier).
+  bool IsCivilian(const uint8_t *base, uint32_t object)
+  {
+    return object && (ClassFlags(base, LoadU32(base, object + 52)) & kIsCivilian);
   }
 
   // A living character in play: its controller's pawn is it (a destroyed
@@ -474,6 +550,7 @@ namespace
     bool ai;
     Vec at;
     uint8_t down; // DownState
+    bool civilian;
   };
   std::vector<Character> g_characters;
 
@@ -500,7 +577,7 @@ namespace
       }
       uint32_t c = LoadU32(base, o + kPawnController);
       g_characters.push_back(
-          {o, c, TeamOf(base, c), IsAI(base, c), LoadVec(base, o + kActorLocation), DownState(base, o)});
+          {o, c, TeamOf(base, c), IsAI(base, c), LoadVec(base, o + kActorLocation), DownState(base, o), IsCivilian(base, c)});
     }
     std::sort(g_characters.begin(), g_characters.end(), [](const Character &a, const Character &b) {
       if (a.at.x != b.at.x)
@@ -517,9 +594,9 @@ namespace
 
   bool Enemy(const Character &bot, const Character &other)
   {
-    if (other.pawn == bot.pawn || !other.team || other.down == 2)
+    if (other.pawn == bot.pawn || !other.team || other.down == 2 || other.civilian)
     {
-      return false; // civilians, anybody with no team and the "dead" are left alone
+      return false; // hostages, anybody with no team and the "dead" are left alone
     }
     return other.team != bot.team;
   }
@@ -531,9 +608,10 @@ namespace
   // (AO2CoverNode, ~1200 in Iraq, all over the map). The network: the
   // navigation points with their ReachSpecs, the cover nodes, and a link
   // between two points near each other wherever a trace at body height
-  // between them is clear - checked kLinksPerFrame at a time, the same on
-  // every machine (the points ordered by position, not by where they are in
-  // memory).
+  // between them is clear (one that climbs: and the floor along it has no
+  // ledge on the way up; down a ledge it is walked one way) - checked
+  // kLinksPerFrame at a time, the same on every machine (the points ordered
+  // by position, not by where they are in memory).
 
   struct Node
   {
@@ -543,6 +621,36 @@ namespace
   std::vector<Node> g_nodes;
   std::vector<std::pair<int, int>> g_links; // pairs to check
   size_t g_links_checked = 0;
+  // Floor points: a grid over the floors near the level's points (traced
+  // down, every floor of a column), so stairs and ramps between levels -
+  // where the level has no points - are walked too.
+  struct Grid
+  {
+    std::vector<std::pair<int, int>> columns; // cells, by kGridStep
+    size_t done = 0;
+    float top = 0, bottom = 0;
+    float body = 0; // a character's middle above its floor (0: not measured yet)
+    std::vector<Vec> found;
+    bool merged = false;
+  };
+  Grid g_grid;
+  size_t g_ledge_links = 0; // links walked one way only (down a ledge) or not at all
+  std::vector<int> g_part;  // the part of the network of each point (points linked to each other)
+  std::unordered_map<uint64_t, uint8_t> g_link_fails; // links found not walkable (LinkFailed)
+  std::unordered_map<int, uint8_t> g_point_fails;
+  uint32_t g_last_block = 0; // what the last ClearLine that was not clear hit
+  struct FailedLink
+  {
+    int a, b;
+    uint32_t hit; // 0: a ledge
+  };
+  std::vector<FailedLink> g_failed; // for versus_nav.log
+
+  FILE *NavLog()
+  {
+    static FILE *f = ao2::OpenLogFile("versus_nav.log");
+    return f;
+  }
   bool g_nav_ready = false;
   uint32_t g_nav_world = 0; // the WorldInfo the network is from
   uint32_t g_nav_first = 0;
@@ -550,6 +658,11 @@ namespace
   // (AO2GameplayMechanicsVolume, its brush's bounds) is - elsewhere nothing
   // can be vaulted, not even a low wall.
   std::unordered_set<uint64_t> g_vault_links;
+  std::unordered_map<uint64_t, Vec> g_via; // links walked round a corner: the point beside them
+  // Ladders (AO2GameplayModifier_ClimbLadder: its bottom and top): a link
+  // between their ends, climbed (A at an end, then the stick up or down).
+  std::vector<std::pair<Vec, Vec>> g_ladder_ends;
+  std::unordered_set<uint64_t> g_ladder_links;
   struct Box
   {
     Vec lo, hi;
@@ -598,8 +711,25 @@ namespace
   constexpr float kTerrainLift = 50.0f;  // a slope: the line this much higher is clear
   constexpr float kTerrainSlope = 0.6f;  // ... no steeper than this
   constexpr float kVaultCost = 1.5f;     // a link over one costs this much more
+  constexpr float kViaMax = 450.0f;      // a link this short blocked: tried round a corner
+  constexpr float kViaNear = 100.0f;     // ... by a point this far beside its middle
+  constexpr float kViaFar = 180.0f;      // ... or this far
+  constexpr float kStepCheck = 40.0f;    // a link climbing more: its floor is checked
+  constexpr float kGroundStep = 30.0f;   // ... this often (a ledge from a stair's steps)
+  constexpr float kGroundDepth = 400.0f; // ... this far down
+  constexpr float kStepUp = 55.0f;       // a step a character walks up (stairs, a slope)
+  constexpr float kDropMax = 450.0f;     // a drop it jumps down
   constexpr size_t kLinksPerPoint = 14;  // nearest points tried per point
-  constexpr size_t kLinksPerFrame = 600; // traces per frame while the network is built
+  constexpr size_t kLinksPerFrame = 150; // links checked per frame while the network is built
+  constexpr float kGridStep = 150.0f;    // floor points this far apart
+  constexpr float kGridNear = 300.0f;    // ... no farther from the level's points
+  constexpr float kGridMargin = 400.0f;  // columns traced from this above the highest point to below the lowest
+  constexpr float kFloorNormal = 0.6f;   // a floor: its normal this near up
+  constexpr float kFloorPass = 30.0f;    // the next floor down traced from this below one
+  constexpr int kFloorsPerColumn = 8;
+  constexpr float kFloorClear = 40.0f;
+  constexpr float kLadderCost = 2.0f;    // a ladder's link costs this much per unit climbed   // ... this far from any wall
+  constexpr size_t kColumnsPerFrame = 40;
 
   uint32_t FindWorldInfo(const uint8_t *base)
   {
@@ -635,7 +765,8 @@ namespace
   // hits nothing but characters. Not a bullet's line: that goes through
   // invisible walls (blocking volumes block boxes only) and gaps the meshes'
   // simple collision, which characters walk against, has not.
-  bool ClearLine(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to)
+  bool ClearLine(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
+                 float extent = kWalkExtent)
   {
     // A line the whole way; the box only between points kWalkTrim from the
     // ends: a cover node stands closer than the box's size to its wall, and
@@ -643,6 +774,7 @@ namespace
     uint32_t hit = TraceHit(ctx, base, source, from, to, 0.0f, kTraceFlagBlocking);
     if (hit && !IsCharacter(base, hit))
     {
+      g_last_block = hit;
       return false;
     }
     Vec d{to.x - from.x, to.y - from.y, to.z - from.z};
@@ -653,7 +785,8 @@ namespace
     }
     float k = kWalkTrim / len;
     Vec a{from.x + d.x * k, from.y + d.y * k, from.z + d.z * k}, b{to.x - d.x * k, to.y - d.y * k, to.z - d.z * k};
-    hit = TraceHit(ctx, base, source, a, b, kWalkExtent, kTraceFlagBlocking);
+    hit = TraceHit(ctx, base, source, a, b, extent, kTraceFlagBlocking);
+    g_last_block = hit;
     return !hit || IsCharacter(base, hit);
   }
 
@@ -688,8 +821,16 @@ namespace
     g_nodes.clear();
     g_links.clear();
     g_vault_links.clear();
+    g_via.clear();
     g_vault_boxes.clear();
+    g_ladder_ends.clear();
+    g_ladder_links.clear();
     g_links_checked = 0;
+    g_ledge_links = 0;
+    g_part.clear();
+    g_link_fails.clear();
+    g_point_fails.clear();
+    g_failed.clear();
     g_nav_ready = false;
 
     // The points, by position.
@@ -748,6 +889,31 @@ namespace
         g_vault_boxes.push_back({{c.x - e.x, c.y - e.y, c.z - e.z}, {c.x + e.x, c.y + e.y, c.z + e.z}});
       }
     }
+    static int32_t ladder_bottom_off = -2, ladder_top_off;
+    if (ladder_bottom_off == -2)
+    {
+      ladder_bottom_off = ao2::ue3::PropertyOffset(base, "AO2GameplayModifier_ClimbLadder", "LadderBottomLoc");
+      ladder_top_off = ao2::ue3::PropertyOffset(base, "AO2GameplayModifier_ClimbLadder", "LadderTopLoc");
+    }
+    uint32_t ladder_class = ao2::ue3::FindClass(base, "AO2GameplayModifier_ClimbLadder");
+    for (uint32_t i = 0; ladder_class && ladder_bottom_off >= 0 && ladder_top_off >= 0 && i < count; ++i)
+    {
+      uint32_t o = ao2::ue3::ObjectAt(base, i);
+      if (!o || !ao2::ue3::IsA(base, o, ladder_class) ||
+          ao2::ue3::ObjectName(base, o).rfind("Default__", 0) == 0)
+      {
+        continue;
+      }
+      Vec lo = LoadVec(base, o + ladder_bottom_off), hi = LoadVec(base, o + ladder_top_off);
+      Logf("ladder %s: bottom %.0f %.0f %.0f, top %.0f %.0f %.0f\n", ao2::ue3::ObjectName(base, o).c_str(), lo.x,
+           lo.y, lo.z, hi.x, hi.y, hi.z);
+      if (hi.z - lo.z > kStepUp && (lo.x != 0 || lo.y != 0))
+      {
+        g_ladder_ends.push_back({lo, hi});
+      }
+    }
+    std::sort(g_ladder_ends.begin(), g_ladder_ends.end(),
+              [](const auto &a, const auto &b) { return Before(a.first, b.first); });
     std::sort(g_vault_boxes.begin(), g_vault_boxes.end(),
               [](const Box &a, const Box &b) { return Before(a.lo, b.lo); });
     std::unordered_map<uint32_t, int> index;
@@ -782,8 +948,38 @@ namespace
       }
     }
 
-    // Links to check: each point's nearest ones in reach (the points are
-    // sorted by x, so only a window of them is looked at).
+    // The floor points' columns: cells near the points.
+    g_grid = {};
+    float lo = INFINITY, hi = -INFINITY;
+    for (const Node &n : g_nodes)
+    {
+      lo = std::min(lo, n.at.z), hi = std::max(hi, n.at.z);
+      int r = int(std::ceil(kGridNear / kGridStep));
+      int cx = int(std::floor(n.at.x / kGridStep)), cy = int(std::floor(n.at.y / kGridStep));
+      for (int dx = -r; dx <= r; ++dx)
+      {
+        for (int dy = -r; dy <= r; ++dy)
+        {
+          float x = (float(cx + dx) + 0.5f) * kGridStep, y = (float(cy + dy) + 0.5f) * kGridStep;
+          if (std::hypot(x - n.at.x, y - n.at.y) <= kGridNear)
+          {
+            g_grid.columns.push_back({cx + dx, cy + dy});
+          }
+        }
+      }
+    }
+    std::sort(g_grid.columns.begin(), g_grid.columns.end());
+    g_grid.columns.erase(std::unique(g_grid.columns.begin(), g_grid.columns.end()), g_grid.columns.end());
+    g_grid.top = hi + kGridMargin, g_grid.bottom = lo - kGridMargin;
+    Logf("navigation: %zu points (%zu navigation points, %zu of their paths), %zu floor columns, %zu vaulting "
+         "volumes\n",
+         g_nodes.size(), navs, specs, g_grid.columns.size(), g_vault_boxes.size());
+  }
+
+  // Links to check: each point's nearest ones in reach (the points are
+  // sorted by x, so only a window of them is looked at).
+  void LinkCandidates()
+  {
     for (size_t i = 0; i < g_nodes.size(); ++i)
     {
       const Vec &a = g_nodes[i].at;
@@ -810,9 +1006,183 @@ namespace
     }
     std::sort(g_links.begin(), g_links.end());
     g_links.erase(std::unique(g_links.begin(), g_links.end()), g_links.end());
-    Logf("navigation: %zu points (%zu navigation points, %zu of their paths), %zu links to check, %zu vaulting "
-         "volumes\n",
-         g_nodes.size(), navs, specs, g_links.size(), g_vault_boxes.size());
+  }
+
+  // The floor's height under (x, y), traced down from z (NAN: none near).
+  float GroundZ(PPCContext &ctx, uint8_t *base, uint32_t source, float x, float y, float z)
+  {
+    Vec at;
+    uint32_t hit = TraceHit(ctx, base, source, {x, y, z}, {x, y, z - kGroundDepth}, 0.0f, kTraceFlagBlocking, &at);
+    return hit && !IsCharacter(base, hit) ? at.z : NAN;
+  }
+
+  // A link that climbs or falls: the floor along it, every kGroundStep.
+  // A rise of more than kStepUp between two of them is a ledge (the line at
+  // body height passes over its edge, the feet do not): not walked up. A
+  // drop is jumped down, up to kDropMax.
+  void GroundSteps(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &a, const Vec &b, bool &ab, bool &ba)
+  {
+    int n = std::max(2, int(std::ceil(Dist2D(a, b) / kGroundStep)));
+    float prev = NAN, rise = 0, drop = 0; // walking from a to b
+    for (int i = 0; i <= n; ++i)
+    {
+      float k = float(i) / float(n);
+      float z = GroundZ(ctx, base, source, a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, a.z + (b.z - a.z) * k + 50.0f);
+      if (std::isnan(z))
+      {
+        continue;
+      }
+      if (!std::isnan(prev))
+      {
+        rise = std::max(rise, z - prev);
+        drop = std::max(drop, prev - z);
+      }
+      prev = z;
+    }
+    ab = rise <= kStepUp && drop <= kDropMax;
+    ba = drop <= kStepUp && rise <= kDropMax;
+  }
+
+  // The floor points, kColumnsPerFrame columns at a time; then they join
+  // the level's points (all sorted by position again) and the links to
+  // check are chosen.
+  void FloorPoints(PPCContext &ctx, uint8_t *base, uint32_t source)
+  {
+    if (g_grid.body == 0)
+    {
+      // A character's middle above its floor: as the level's points stand.
+      std::vector<float> heights;
+      for (size_t i = 0; i < g_nodes.size() && heights.size() < 64; i += std::max<size_t>(1, g_nodes.size() / 64))
+      {
+        const Vec &at = g_nodes[i].at;
+        float z = GroundZ(ctx, base, source, at.x, at.y, at.z);
+        if (!std::isnan(z) && at.z - z > 20.0f && at.z - z < 150.0f)
+        {
+          heights.push_back(at.z - z);
+        }
+      }
+      std::sort(heights.begin(), heights.end());
+      g_grid.body = heights.empty() ? 50.0f : heights[heights.size() / 2];
+    }
+    size_t end = std::min(g_grid.columns.size(), g_grid.done + kColumnsPerFrame);
+    for (; g_grid.done < end; ++g_grid.done)
+    {
+      auto [cx, cy] = g_grid.columns[g_grid.done];
+      float x = (float(cx) + 0.5f) * kGridStep, y = (float(cy) + 0.5f) * kGridStep;
+      float z = g_grid.top;
+      for (int floor = 0; floor < kFloorsPerColumn && z > g_grid.bottom; ++floor)
+      {
+        Vec at, normal;
+        uint32_t hit =
+            TraceHit(ctx, base, source, {x, y, z}, {x, y, g_grid.bottom}, 0.0f, kTraceFlagBlocking, &at, &normal);
+        if (!hit)
+        {
+          break;
+        }
+        if (at.z >= z - 1.0f)
+        {
+          z -= kFloorPass; // started inside something
+          continue;
+        }
+        // Up enough to stand on, a character's height clear above it.
+        float head = at.z + 2.0f * g_grid.body;
+        // Off a wall: moved away from walls nearer than kFloorClear (a
+        // character standing against one is pushed off it, the links from it
+        // would start in it) - a narrow stair keeps its point in its middle.
+        bool room = !IsCharacter(base, hit) && normal.z >= kFloorNormal &&
+                    !TraceHit(ctx, base, source, {x, y, at.z + 5.0f}, {x, y, head}, 0.0f, kTraceFlagBlocking);
+        Vec mid{x, y, at.z + g_grid.body};
+        float push_x = 0, push_y = 0;
+        for (int side = 0; side < 4 && room; ++side)
+        {
+          float a = float(side) * 1.5707963f;
+          Vec wall;
+          if (TraceHit(ctx, base, source, mid, {x + std::cos(a) * kFloorClear, y + std::sin(a) * kFloorClear, mid.z},
+                       0.0f, kTraceFlagBlocking, &wall))
+          {
+            float d = std::hypot(wall.x - x, wall.y - y);
+            push_x -= std::cos(a) * (kFloorClear - d), push_y -= std::sin(a) * (kFloorClear - d);
+          }
+        }
+        if (room && (push_x != 0 || push_y != 0))
+        {
+          Vec moved{x + push_x, y + push_y, mid.z};
+          float ground = TraceHit(ctx, base, source, mid, moved, 0.0f, kTraceFlagBlocking)
+                             ? NAN
+                             : GroundZ(ctx, base, source, moved.x, moved.y, mid.z);
+          room = !std::isnan(ground) && std::fabs(ground - at.z) < kStepUp;
+          mid = {moved.x, moved.y, ground + g_grid.body};
+        }
+        if (room)
+        {
+          g_grid.found.push_back(mid);
+        }
+        z = at.z - kFloorPass;
+      }
+    }
+    if (g_grid.done < g_grid.columns.size())
+    {
+      return;
+    }
+    // In with the level's points; their paths (the only links yet) follow.
+    std::vector<Node> all = std::move(g_nodes);
+    for (const Vec &v : g_grid.found)
+    {
+      all.push_back({v, {}});
+    }
+    // A ladder's ends at a character's middle: on the floor by it (the
+    // top's floor may be off the ladder's line: over the drop it is far down).
+    std::vector<std::pair<int, int>> ladders;
+    for (const auto &[lo, hi] : g_ladder_ends)
+    {
+      Vec ends[2] = {lo, hi};
+      for (Vec &e : ends)
+      {
+        float z = GroundZ(ctx, base, source, e.x, e.y, e.z + 50.0f);
+        e.z = !std::isnan(z) && e.z + 50.0f - z < 150.0f ? z + g_grid.body : e.z + g_grid.body;
+      }
+      ladders.push_back({int(all.size()), int(all.size()) + 1});
+      all.push_back({ends[0], {}});
+      all.push_back({ends[1], {}});
+    }
+    std::vector<int> order(all.size());
+    for (size_t i = 0; i < order.size(); ++i)
+    {
+      order[i] = int(i);
+    }
+    std::sort(order.begin(), order.end(), [&](int a, int b) {
+      return Before(all[a].at, all[b].at) || (!Before(all[b].at, all[a].at) && a < b);
+    });
+    std::vector<int> moved(all.size());
+    for (size_t i = 0; i < order.size(); ++i)
+    {
+      moved[order[i]] = int(i);
+    }
+    g_nodes.assign(all.size(), {});
+    for (size_t i = 0; i < all.size(); ++i)
+    {
+      Node &n = g_nodes[moved[i]];
+      n.at = all[i].at;
+      for (auto [to, c] : all[i].next)
+      {
+        n.next.push_back({moved[to], c});
+      }
+    }
+    for (auto [lo, hi] : ladders)
+    {
+      int a = moved[lo], b = moved[hi];
+      float cost = kLadderCost * (g_nodes[b].at.z - g_nodes[a].at.z) + kLadderCost * 100.0f;
+      AddLink(a, b, cost);
+      AddLink(b, a, cost);
+      g_ladder_links.insert(LinkKey(a, b));
+      g_ladder_links.insert(LinkKey(b, a));
+    }
+    g_grid.merged = true;
+    LinkCandidates();
+    Logf("navigation: %zu floor points (a character's middle %.0f above its floor), %zu points, %zu links to "
+         "check\n",
+         g_grid.found.size(), g_grid.body, g_nodes.size(), g_links.size());
+    Logf("navigation: %zu ladders\n", ladders.size());
   }
 
   void BuildNavigation(PPCContext &ctx, uint8_t *base, uint32_t source)
@@ -834,13 +1204,18 @@ namespace
     {
       return;
     }
+    if (!g_grid.merged)
+    {
+      FloorPoints(ctx, base, source);
+      return;
+    }
     size_t end = std::min(g_links.size(), g_links_checked + kLinksPerFrame);
     for (; g_links_checked < end; ++g_links_checked)
     {
       auto [a, b] = g_links[g_links_checked];
       const Vec &pa = g_nodes[a].at, &pb = g_nodes[b].at;
       float cost = Dist3D(pa, pb);
-      bool clear = ClearLine(ctx, base, source, pa, pb);
+      bool clear = ClearLine(ctx, base, source, pa, pb, kLinkExtent);
       if (!clear && std::fabs(pa.z - pb.z) < kTerrainSlope * Dist2D(pa, pb))
       {
         // Over the bulge of a slope: the line hits the terrain only, one
@@ -849,7 +1224,30 @@ namespace
         terrain_class = terrain_class ? terrain_class : ao2::ue3::FindClass(base, "Terrain");
         uint32_t hit = TraceHit(ctx, base, source, pa, pb, 0.0f, kTraceFlagBlocking);
         clear = hit && terrain_class && ao2::ue3::IsA(base, hit, terrain_class) &&
-                ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kTerrainLift}, {pb.x, pb.y, pb.z + kTerrainLift});
+                ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kTerrainLift}, {pb.x, pb.y, pb.z + kTerrainLift},
+                          kLinkExtent);
+      }
+      if (!clear && Dist2D(pa, pb) < kViaMax && std::fabs(pa.z - pb.z) < kStepCheck)
+      {
+        // Round a corner: cover points sit against a wall, and the line
+        // from one to the next past the wall's end grazes the end. Walked by
+        // a point beside the line's middle (g_via) when both halves are clear.
+        Vec d{pb.x - pa.x, pb.y - pa.y, 0.0f};
+        float len = std::max(1.0f, std::hypot(d.x, d.y));
+        Vec side{-d.y / len, d.x / len, 0.0f};
+        Vec mid{(pa.x + pb.x) * 0.5f, (pa.y + pb.y) * 0.5f, (pa.z + pb.z) * 0.5f};
+        for (float off : {kViaNear, -kViaNear, kViaFar, -kViaFar})
+        {
+          Vec v{mid.x + side.x * off, mid.y + side.y * off, mid.z};
+          if (ClearLine(ctx, base, source, pa, v, kLinkExtent) && ClearLine(ctx, base, source, v, pb, kLinkExtent))
+          {
+            clear = true;
+            cost = Dist3D(pa, v) + Dist3D(v, pb);
+            g_via[LinkKey(a, b)] = v;
+            g_via[LinkKey(b, a)] = v;
+            break;
+          }
+        }
       }
       bool vault = false;
       for (size_t k = 0; !clear && k < g_vault_boxes.size() && !vault; ++k)
@@ -864,10 +1262,30 @@ namespace
         g_vault_links.insert(LinkKey(a, b));
         g_vault_links.insert(LinkKey(b, a));
       }
+      if (!clear && NavLog())
+      {
+        g_failed.push_back({a, b, g_last_block});
+      }
       if (clear)
       {
-        AddLink(a, b, cost);
-        AddLink(b, a, cost);
+        bool ab = true, ba = true;
+        if (!vault && std::fabs(pa.z - pb.z) > kStepCheck)
+        {
+          GroundSteps(ctx, base, source, pa, pb, ab, ba);
+          g_ledge_links += !ab || !ba;
+          if ((!ab || !ba) && NavLog())
+          {
+            g_failed.push_back({ab ? b : a, ab ? a : b, 0}); // the way up
+          }
+        }
+        if (ab)
+        {
+          AddLink(a, b, cost);
+        }
+        if (ba)
+        {
+          AddLink(b, a, cost);
+        }
       }
     }
     if (g_links_checked >= g_links.size())
@@ -906,9 +1324,36 @@ namespace
         }
         sizes.push_back(n);
       }
+      g_part = part;
+      if (FILE *f = NavLog())
+      {
+        // The network for offline study: points (with their part and links),
+        // the links found not walkable and what blocked them.
+        std::fprintf(f, "map %s: %zu points\n", ao2::ue3::ObjectName(base, g_nav_world).c_str(), g_nodes.size());
+        for (size_t i = 0; i < g_nodes.size(); ++i)
+        {
+          const Vec &v = g_nodes[i].at;
+          std::fprintf(f, "point %zu %.0f %.0f %.0f part %d links", i, v.x, v.y, v.z, part[i]);
+          for (auto [to, c] : g_nodes[i].next)
+          {
+            std::fprintf(f, " %d", to);
+          }
+          std::fprintf(f, "\n");
+        }
+        for (const FailedLink &l : g_failed)
+        {
+          std::fprintf(f, "blocked %d %d %s (%s)\n", l.a, l.b,
+                       l.hit ? ao2::ue3::ObjectName(base, l.hit).c_str() : "ledge",
+                       l.hit ? ao2::ue3::ObjectName(base, LoadU32(base, l.hit + 52)).c_str() : "up");
+        }
+        std::fflush(f);
+        g_failed.clear();
+      }
       std::sort(sizes.rbegin(), sizes.rend());
-      Logf("navigation ready: %zu points, %zu links (%zu vaults), %zu parts (largest %zu %zu %zu)\n", g_nodes.size(),
-           links, g_vault_links.size(), sizes.size(), sizes.size() > 0 ? sizes[0] : 0, sizes.size() > 1 ? sizes[1] : 0,
+      Logf("navigation ready: %zu points, %zu links (%zu vaults, %zu round a corner, %zu over a ledge: one way or "
+           "none), %zu parts "
+           "(largest %zu %zu %zu)\n",
+           g_nodes.size(), links, g_vault_links.size(), g_via.size() / 2, g_ledge_links, sizes.size(), sizes.size() > 0 ? sizes[0] : 0, sizes.size() > 1 ? sizes[1] : 0,
            sizes.size() > 2 ? sizes[2] : 0);
     }
   }
@@ -921,6 +1366,24 @@ namespace
     uint32_t until;
   };
 
+  // Links the bots found not walkable, for all of them (the same on every
+  // machine: the bots think in the same order): one that failed kLinkFails
+  // times is out of the network, a point kPointFails links from which
+  // failed is not walked through (a pocket by a wall).
+  constexpr uint8_t kLinkFails = 2;
+  constexpr uint8_t kPointFails = 3;
+
+  void LinkFailed(int from, int to)
+  {
+    if (from >= 0 && to >= 0)
+    {
+      uint8_t &n = g_link_fails[LinkKey(from, to)];
+      n = uint8_t(std::min(255, n + 1));
+      uint8_t &p = g_point_fails[from];
+      p = uint8_t(std::min(255, p + 1));
+    }
+  }
+
   bool Barred(const std::vector<Bar> &barred, int from, int to)
   {
     for (const Bar &b : barred)
@@ -931,6 +1394,29 @@ namespace
       }
     }
     return false;
+  }
+
+  // The point nearest to `at` (height counted three times), -1: none.
+  int NearestPoint(const Vec &at)
+  {
+    int best = -1;
+    float best_d = INFINITY;
+    for (size_t i = 0; i < g_nodes.size(); ++i)
+    {
+      const Vec &n = g_nodes[i].at;
+      float dz = (n.z - at.z) * 3.0f;
+      float d = (n.x - at.x) * (n.x - at.x) + (n.y - at.y) * (n.y - at.y) + dz * dz;
+      if (d < best_d)
+      {
+        best = int(i), best_d = d;
+      }
+    }
+    return best;
+  }
+
+  int PartOf(int point)
+  {
+    return point >= 0 && size_t(point) < g_part.size() ? g_part[point] : -1;
   }
 
   // Of the few points nearest to `at` (not barred as a first point), the
@@ -964,8 +1450,12 @@ namespace
   // A* from the node nearest to `from` to the one nearest to `to`, round
   // the barred links (ones the bot found it could not walk).
   std::vector<int> FindPath(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
-                            const std::vector<Bar> &barred)
+                            const std::vector<Bar> &barred, bool *partial = nullptr)
   {
+    if (partial)
+    {
+      *partial = false;
+    }
     if (!g_nav_ready)
     {
       return {};
@@ -1005,7 +1495,14 @@ namespace
         {
           continue;
         }
-        float n = cost[i] + c;
+        auto lf = g_link_fails.find(LinkKey(i, j));
+        uint8_t fails = lf == g_link_fails.end() ? 0 : lf->second;
+        auto pf = j == goal ? g_point_fails.end() : g_point_fails.find(j);
+        if (fails >= kLinkFails || (pf != g_point_fails.end() && pf->second >= kPointFails))
+        {
+          continue;
+        }
+        float n = cost[i] + c * (1.0f + 2.0f * float(fails));
         if (n < cost[j])
         {
           cost[j] = n, came[j] = i;
@@ -1039,6 +1536,10 @@ namespace
         return {};
       }
       goal = nearest;
+      if (partial)
+      {
+        *partial = true;
+      }
     }
     std::vector<int> path;
     for (int i = goal; i >= 0; i = i == start ? -1 : came[i])
@@ -1074,6 +1575,7 @@ namespace
     bool progress = false;   // counting
     float progress_left = 0; // the least way left to its goal along its path so far
     Vec progress_goal;       // where the goal was then
+    Vec progress_at;         // ... and where the bot was
     uint32_t progress_until = 0;
     std::vector<Bar> barred;
     uint32_t escape_until = 0;
@@ -1086,6 +1588,30 @@ namespace
     uint32_t next_log = 0;
     Vec last_at;             // where it was the frame before
     uint32_t still = 0;      // frames it has not moved with the stick pushed
+    uint32_t next_strafe = 0;
+    int strafe_side = 0;     // sideways: -1 left, 1 right, 0 both ways walled
+    int strafe_flip = 1;     // the side its noise picks, flipped by a wall
+    uint32_t objective = 0;  // the objective's actor (logged when it changes)
+    uint32_t join_partner = 0, join_since = 0; // a partner waiting to lift or pull it, since
+    uint32_t coop_since = 0; // frame its step jump / pull up began (0: none)
+    std::vector<int> reached; // path points got to since it last got nearer (a new one is progress)
+    bool partner_logged = false;
+    bool offer_pending = false;                // out of a move it was lifted in: offer a pull up
+    uint32_t offer_since = 0, offer_until = 0; // offering its partner a pull up
+    uint32_t used = 0;       // a hostage it stands against and uses
+    uint32_t objective_seen = 0; // a depot to destroy it sees from where it stands
+    std::string coop_state;  // its state in the move (logged when it changes)
+    float coop_z0 = 0, coop_zmax = 0; // its height when the move began, the highest since
+    uint32_t coop_rose_at = 0;        // frame it last rose
+    bool force_path = false; // the path is found again when next due
+    bool path_partial = false; // the path ends at the point nearest the goal (no way there)
+    bool holding = false;      // ... and it holds there
+    bool following = true;     // a player's partner near it
+    bool on_ladder = false;
+    bool ladder_up = false;    // the ladder it takes: climbed up
+    bool detour_ok = false;  // a longer path found again is a way round (once after a bar)
+    uint64_t via_link = 0;   // the link it walks (LinkKey)
+    bool via_passed = true;  // ... past its point round a corner (g_via) or none
   };
   std::array<Bot, 4> g_bots;
 
@@ -1122,17 +1648,12 @@ namespace
     {
       StoreU32(base, manager + flag, LoadU32(base, manager + flag) | mask);
     }
-    // That keeps the reserve; the magazine still empties and wants a
-    // reload. It stays full too (as the autopilot's infinite ammo).
+    // That keeps the reserve (kept full here too); the magazine empties
+    // and the bot reloads as a player does.
     uint32_t weapon = LoadU32(base, pawn + kPawnWeapon);
     if (weapon && weapon_class && ao2::ue3::IsA(base, weapon, weapon_class))
     {
-      int32_t max = int32_t(LoadU32(base, weapon + kWeaponMaxAmmo));
       int32_t max_reserve = int32_t(LoadU32(base, weapon + kWeaponMaxReserve));
-      if (max > 0 && max < 10000)
-      {
-        StoreU32(base, weapon + kWeaponAmmo, uint32_t(max));
-      }
       if (max_reserve > 0 && max_reserve < 100000)
       {
         StoreU32(base, weapon + kWeaponReserve, uint32_t(max_reserve));
@@ -1166,7 +1687,31 @@ namespace
     in.lx = std::sin(rel) * speed;
   }
 
-  // The way towards `to`: straight on when a trace kWallProbe ahead is
+  // A short walk from where the bot stands is clear: a line, and a box
+  // nearly a character's width from its middle on. Not ClearLine: that
+  // leaves out the box's first kWalkTrim, and pressed against a wall the box
+  // then starts past the wall's face and finds the way clear.
+  bool ProbeClear(PPCContext &ctx, uint8_t *base, uint32_t pawn, const Vec &at, const Vec &to)
+  {
+    uint32_t hit = TraceHit(ctx, base, pawn, at, to, 0.0f, kTraceFlagBlocking);
+    if (hit && !IsCharacter(base, hit))
+    {
+      return false;
+    }
+    Vec a{at.x, at.y, at.z + kProbeLift}, b{to.x, to.y, to.z + kProbeLift};
+    hit = TraceHit(ctx, base, pawn, a, b, kProbeExtent, kTraceFlagBlocking);
+    return !hit || IsCharacter(base, hit);
+  }
+
+  // A point `dist` from `at` in direction `a` (radians), rising or falling
+  // as the way to `to` does (a probe level with the bot hits a slope up).
+  Vec ProbeEnd(const Vec &at, const Vec &to, float a, float dist)
+  {
+    float climb = (to.z - at.z) * std::min(1.0f, dist / std::max(1.0f, Dist2D(at, to)));
+    return {at.x + std::cos(a) * dist, at.y + std::sin(a) * dist, at.z + climb};
+  }
+
+  // The way towards `to`: straight on when a probe kWallProbe ahead is
   // clear, else the clear direction nearest to it, turning to the bot's
   // side first. Probed every kProbeFrames frames; returns a point that way.
   Vec WalkTarget(PPCContext &ctx, uint8_t *base, uint32_t pawn, const Vec &at, const Vec &to, Bot &bot,
@@ -1184,8 +1729,7 @@ namespace
         for (int side : {bot.side, -bot.side})
         {
           float a = want + float(side * step) * (30.0f / 57.29578f);
-          Vec end{at.x + std::cos(a) * probe, at.y + std::sin(a) * probe, at.z};
-          if (ClearLine(ctx, base, pawn, at, end))
+          if (ProbeClear(ctx, base, pawn, at, ProbeEnd(at, to, a, probe)))
           {
             bot.walk_dir = a;
             found = true;
@@ -1210,7 +1754,7 @@ namespace
       for (int s : {side, -side})
       {
         float a = want + float(s) * turn / 57.29578f;
-        if (ClearLine(ctx, base, pawn, at, {at.x + std::cos(a) * 200.0f, at.y + std::sin(a) * 200.0f, at.z}))
+        if (ProbeClear(ctx, base, pawn, at, {at.x + std::cos(a) * 200.0f, at.y + std::sin(a) * 200.0f, at.z}))
         {
           return a;
         }
@@ -1219,31 +1763,54 @@ namespace
     return want + 3.1415927f;
   }
 
-  // The character rolls or vaults (its state: the state frame's +4). Y
-  // then starts a vault inside the roll, and the roll waits for its
-  // animation to end for good (Suppression_Rolling_InRoll, AnimJustEnded).
-  bool Maneuvering(const uint8_t *base, uint32_t pawn, std::string *state_name = nullptr)
+  // The state a character is in (its state frame's +4: the innermost state
+  // of the character's state machine, e.g. Suppression_Rolling_InRoll),
+  // "" when none.
+  std::string StateName(const uint8_t *base, uint32_t pawn)
   {
     uint32_t frame = LoadU32(base, pawn + 24);
     uint32_t state = frame ? LoadU32(base, frame + 4) : 0;
-    if (!state)
-    {
-      return false;
-    }
-    std::string name = ao2::ue3::ObjectName(base, state);
-    if (state_name)
-    {
-      *state_name = name;
-    }
-    return name.find("Rolling") != std::string::npos || name.find("Vault") != std::string::npos;
+    return state ? ao2::ue3::ObjectName(base, state) : std::string();
   }
 
+  // The character rolls or vaults. Y then starts a vault inside the roll,
+  // and the roll waits for its animation to end for good
+  // (Suppression_Rolling_InRoll, AnimJustEnded).
+  bool Maneuvering(const std::string &state)
+  {
+    return state.find("Rolling") != std::string::npos || state.find("Vault") != std::string::npos;
+  }
+
+  // A co-op move with the partner: a step jump (one lifts the other up a
+  // wall) or a pull up (one pulls the other up a ledge).
+  bool CoopMove(const std::string &state)
+  {
+    return state.rfind("StepJump", 0) == 0 || state.rfind("PullUp", 0) == 0;
+  }
+
+  // Where a character is shot at: its middle a little up, its head when
+  // only that shows.
+  Vec Body(const uint8_t *base, uint32_t pawn)
+  {
+    Vec v = LoadVec(base, pawn + kActorLocation);
+    return {v.x, v.y, v.z + 15.0f};
+  }
+
+  // Where a depot to destroy is shot at: a little above its origin (often
+  // at its foot).
+  Vec ObjectiveAim(const uint8_t *base, uint32_t actor)
+  {
+    Vec v = LoadVec(base, actor + kActorLocation);
+    return {v.x, v.y, v.z + 40.0f};
+  }
+
+  // The body first: a head shot every time was a cheat's aim.
   bool InSight(PPCContext &ctx, uint8_t *base, uint32_t pawn, uint32_t target, bool &body)
   {
     Vec eye = Head(base, pawn);
-    for (bool b : {false, true})
+    for (bool b : {true, false})
     {
-      Vec to = b ? LoadVec(base, target + kActorLocation) : Head(base, target);
+      Vec to = b ? Body(base, target) : Head(base, target);
       uint32_t hit = TraceHit(ctx, base, pawn, eye, to);
       if (!hit || hit == target)
       {
@@ -1252,6 +1819,174 @@ namespace
       }
     }
     return false;
+  }
+
+  float SegmentDistance(const Vec &p, const Vec &a, const Vec &b)
+  {
+    Vec d{b.x - a.x, b.y - a.y, b.z - a.z};
+    float len2 = d.x * d.x + d.y * d.y + d.z * d.z;
+    float t = len2 > 0 ? std::clamp(((p.x - a.x) * d.x + (p.y - a.y) * d.y + (p.z - a.z) * d.z) / len2, 0.0f, 1.0f)
+                       : 0.0f;
+    return Dist3D(p, {a.x + d.x * t, a.y + d.y * t, a.z + d.z * t});
+  }
+
+  // No hostage near the line of fire (the aim wanders, a hostage dragged
+  // by an enemy is at its side).
+  bool ClearShot(const Vec &eye, const Vec &at, uint32_t carried = 0)
+  {
+    for (const Character &c : g_characters)
+    {
+      if (c.civilian && c.pawn != carried && (SegmentDistance(c.at, eye, at) < kHostageMargin ||
+                         SegmentDistance({c.at.x, c.at.y, c.at.z + 60.0f}, eye, at) < kHostageMargin))
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Character and objective properties, looked up once.
+  struct Props
+  {
+    int32_t partner = -1, drag = -1, wall_height = -1, vaulting = -1;
+    int32_t locators = -1, current = -1, target = -1, type = -1;
+    uint32_t team_class = 0;
+  };
+  const Props &Properties(const uint8_t *base)
+  {
+    static Props p;
+    static bool looked = false;
+    if (!looked)
+    {
+      looked = true;
+      p.partner = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "Partner");
+      p.drag = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "DragPartnerOtherCharacter");
+      p.wall_height = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "PullUpWallHeight");
+      p.vaulting = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
+      p.locators = ao2::ue3::PropertyOffset(base, "AO2MPTeamInfo", "MPTeamObjectiveLocators");
+      p.current = ao2::ue3::PropertyOffset(base, "AO2MPObjectiveLocatorList", "CurrentMPObjectiveLocators");
+      p.target = ao2::ue3::PropertyOffset(base, "AO2HudMPObjectiveLocator", "ObjectiveTarget");
+      p.type = ao2::ue3::PropertyOffset(base, "AO2HudMPObjectiveLocator", "eObjectiveType");
+      p.team_class = ao2::ue3::FindClass(base, "AO2MPTeamInfo");
+      Logf("properties: Partner +%d, DragPartnerOtherCharacter +%d, PullUpWallHeight +%d, ActiveVaultingVolume +%d, "
+           "MPTeamObjectiveLocators +%d, CurrentMPObjectiveLocators +%d, ObjectiveTarget +%d, eObjectiveType +%d, "
+           "AO2MPTeamInfo %08X\n",
+           p.partner, p.drag, p.wall_height, p.vaulting, p.locators, p.current, p.target, p.type, p.team_class);
+    }
+    return p;
+  }
+
+  // Who carries (drags) a hostage: 0 for none.
+  uint32_t CarrierOf(const uint8_t *base, uint32_t hostage)
+  {
+    int32_t drag = Properties(base).drag;
+    for (const Character &c : g_characters)
+    {
+      if (!c.civilian && drag >= 0 && LoadU32(base, c.pawn + drag) == hostage)
+      {
+        return c.pawn;
+      }
+    }
+    return 0;
+  }
+
+  // The objectives a team is shown (the HUD's markers: AO2MPSeqAct_
+  // AttachObjectiveLocator adds an AO2HudMPObjectiveLocator to the team's
+  // AO2MPTeamInfo.MPTeamObjectiveLocators; its ObjectiveTarget is the actor
+  // marked, eObjectiveType an AO2MPObjectiveIconType.EObjectiveIconType).
+  enum ObjectiveType : uint8_t
+  {
+    kObjAssassinate, // a character to kill (or, of the bot's own team, to guard)
+    kObjHostage,     // a hostage to take (A by it; it is then dragged along)
+    kObjDetonate,    // a depot or cache to destroy (shot at)
+    kObjControl,     // a place to hold
+    kObjBuyZone,
+    kObjEnemyTeam,   // an enemy shown on the map
+    kObjExtraction,  // where a hostage is taken
+    kObjDefend,
+    kObjWaypoint,
+  };
+  struct Objective
+  {
+    uint32_t actor;
+    uint8_t type;
+    Vec at;
+  };
+
+  std::vector<Objective> TeamObjectives(const uint8_t *base, uint32_t team)
+  {
+    const Props &p = Properties(base);
+    std::vector<Objective> list;
+    if (!team || p.locators < 0 || p.current < 0 || p.target < 0 || p.type < 0 || !p.team_class ||
+        !ao2::ue3::IsA(base, team, p.team_class))
+    {
+      return list;
+    }
+    uint32_t locators = LoadU32(base, team + p.locators);
+    uint32_t data = locators ? LoadU32(base, locators + p.current) : 0;
+    uint32_t n = locators ? LoadU32(base, locators + p.current + 4) : 0;
+    for (uint32_t i = 0; data && i < n && i < 32; ++i)
+    {
+      uint32_t locator = LoadU32(base, data + i * 4);
+      uint32_t actor = locator ? LoadU32(base, locator + p.target) : 0;
+      if (!actor)
+      {
+        continue;
+      }
+      uint8_t type = base[locator + p.type];
+      if (type == kObjBuyZone || type > kObjWaypoint)
+      {
+        continue;
+      }
+      if (IsCharacter(base, actor) && !Alive(base, actor))
+      {
+        continue; // killed
+      }
+      list.push_back({actor, type, LoadVec(base, actor + kActorLocation)});
+    }
+    return list;
+  }
+
+  bool IsBotController(uint32_t controller)
+  {
+    for (uint32_t id = 0; id < 4; ++id)
+    {
+      if ((g_places & (1u << id)) && g_bots[id].controller == controller)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const Character *FindCharacter(uint32_t pawn)
+  {
+    for (const Character &c : g_characters)
+    {
+      if (c.pawn == pawn)
+      {
+        return &c;
+      }
+    }
+    return nullptr;
+  }
+
+  // What the bot is about, most urgent first.
+  enum class Task
+  {
+    kHeal,      // its partner lies: to it, A by it
+    kJoin,      // its partner waits for it to step jump / pull up: to it, A by it
+    kFollow,    // its partner is a player: kept near it
+    kObjective, // to the objective, A by it (a hostage), shoot it (a depot), or hold it
+    kHunt,      // no objective: the nearest enemy
+  };
+  const char *TaskName(Task t)
+  {
+    return t == Task::kHeal        ? "heal"
+           : t == Task::kJoin      ? "join"
+           : t == Task::kFollow    ? "follow"
+           : t == Task::kObjective ? "objective"
+                                   : "hunt";
   }
 
   Input Think(PPCContext &ctx, uint8_t *base, uint32_t id, Bot &bot, uint32_t frame)
@@ -1272,7 +2007,7 @@ namespace
       return in;
     }
     Character me{pawn, controller, TeamOf(base, controller), false, LoadVec(base, pawn + kActorLocation),
-                 DownState(base, pawn)};
+                 DownState(base, pawn), false};
     if (me.down == 2)
     {
       // Lies still until healed or up again; no paid respawn (the team's money is its score).
@@ -1282,9 +2017,10 @@ namespace
       bot.stuck_check = 0;
       return in;
     }
+    const Props &props = Properties(base);
     std::erase_if(bot.barred, [&](const Bar &b) { return frame >= b.until; });
-    std::string state;
-    bool maneuvering = Maneuvering(base, pawn, &state);
+    std::string state = StateName(base, pawn);
+    bool maneuvering = Maneuvering(state);
     if (!maneuvering)
     {
       bot.maneuver_since = 0;
@@ -1297,14 +2033,341 @@ namespace
     {
       Logf("frame %u: bot %u in %s for 300 frames\n", frame, id, state.c_str());
     }
-    float view_yaw = LoadF32(base, holder + kLookRotation + 4);
-    Vec eye = Head(base, pawn);
     if (REXCVAR_GET(ao2_versus_bots_infinite_ammo))
     {
       InfiniteAmmo(base, pawn);
     }
 
-    // Target.
+    // On a ladder: the stick up or down (the way it took the ladder) until
+    // it is off at the other end.
+    if (state.rfind("ClimbLadder", 0) == 0)
+    {
+      if (!bot.on_ladder)
+      {
+        bot.on_ladder = true;
+        Logf("frame %u: bot %u on a ladder at %.0f %.0f %.0f, %s\n", frame, id, me.at.x, me.at.y, me.at.z,
+             bot.ladder_up ? "up" : "down");
+      }
+      bot.target = 0;
+      bot.still = 0;
+      bot.stuck_check = 0;
+      bot.progress = false;
+      bot.last_at = me.at;
+      in.ly = bot.ladder_up ? 1.0f : -1.0f;
+      return in;
+    }
+    if (bot.on_ladder)
+    {
+      bot.on_ladder = false;
+      Logf("frame %u: bot %u off the ladder at %.0f %.0f %.0f\n", frame, id, me.at.x, me.at.y, me.at.z);
+    }
+
+    // In a step jump or a pull up with its partner: the stick let go while
+    // the partner lifts it (held at the bottom, it reads as down: the move
+    // is left), pushed up now and again once it is up and no longer rising
+    // (at the top the jumper climbs over); B (out of it) only if it takes
+    // very long.
+    if (CoopMove(state))
+    {
+      if (!bot.coop_since)
+      {
+        bot.coop_since = frame;
+        bot.coop_z0 = bot.coop_zmax = me.at.z;
+        bot.coop_rose_at = frame;
+      }
+      if (me.at.z > bot.coop_zmax + 2.0f)
+      {
+        bot.coop_zmax = me.at.z;
+        bot.coop_rose_at = frame;
+      }
+      if (state != bot.coop_state)
+      {
+        bot.coop_state = state;
+        Logf("frame %u: bot %u in %s (%u frames into the move, %.0f up)\n", frame, id, state.c_str(),
+             frame - bot.coop_since, me.at.z - bot.coop_z0);
+      }
+      bot.target = 0;
+      bot.path.clear();
+      bot.still = 0;
+      bot.stuck_check = 0;
+      bot.last_at = me.at;
+      // The bot as the lifter (its offer to pull its partner up, below):
+      // waiting at the ledge until the offer runs out, then the stick
+      // pushed (that calls the wait off); in the move it pulls (stick up).
+      bool lifter = state.find("Lifter") != std::string::npos;
+      if (lifter && state.find("PreCoop") != std::string::npos)
+      {
+        in.ly = frame >= bot.offer_until ? 1.0f : 0.0f;
+        return in;
+      }
+      bool up = lifter || (bot.coop_zmax - bot.coop_z0 > kCoopRise && frame - bot.coop_rose_at > kCoopTop);
+      if (up && state.find("_Coop") != std::string::npos && frame % 40 < 20)
+      {
+        in.ly = 1.0f;
+      }
+      if (frame - bot.coop_since > kCoopMoveFrames && frame % 30 < 2)
+      {
+        in.buttons |= kB;
+      }
+      return in;
+    }
+    if (bot.coop_since)
+    {
+      Logf("frame %u: bot %u out of the move after %u frames (%.0f up), now %s\n", frame, id,
+           frame - bot.coop_since, me.at.z - bot.coop_z0, state.c_str());
+      // Lifted up a wall: it offers to pull its partner up after it.
+      bot.offer_pending = me.at.z - bot.coop_z0 > kCoopRise;
+    }
+    bot.coop_since = 0;
+    bot.coop_state.clear();
+    float view_yaw = LoadF32(base, holder + kLookRotation + 4);
+    Vec eye = Head(base, pawn);
+
+    // The partner: the character's own (AO2CharacterNative.Partner, the one
+    // it heals and does co-op moves with), else the nearest player of its team.
+    uint32_t partner_pawn = props.partner >= 0 ? LoadU32(base, pawn + props.partner) : 0;
+    const Character *partner = partner_pawn ? FindCharacter(partner_pawn) : nullptr;
+    if (partner && partner->team != me.team && !bot.partner_logged)
+    {
+      bot.partner_logged = true;
+      Logf("frame %u: bot %u: its partner %08X is of another team (%08X, its own %08X)\n", frame, id,
+           partner->pawn, partner->team, me.team);
+    }
+    if (!partner || partner->team != me.team)
+    {
+      partner = nullptr;
+      for (const Character &c : g_characters)
+      {
+        if (c.pawn != pawn && c.team && c.team == me.team && !c.ai &&
+            (!partner || Dist2D(me.at, c.at) < Dist2D(me.at, partner->at)))
+        {
+          partner = &c;
+        }
+      }
+    }
+
+    // The task, and where it takes the bot.
+    Task task = Task::kHunt;
+    Vec goal_at;
+    bool have_goal = false;
+    float arrive = 0;        // there this near (2D)
+    float arrive_z = 150.0f; // ... and this near in height
+    uint32_t goal_actor = 0; // faced when there
+    uint8_t objective_type = 0;
+    if (partner && partner->down && Dist2D(me.at, partner->at) < kHealRange)
+    {
+      task = Task::kHeal;
+      goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
+      arrive = kHealReach;
+    }
+    if (!have_goal && partner && Dist2D(me.at, partner->at) < kJoinRange)
+    {
+      std::string partner_state = StateName(base, partner->pawn);
+      if (partner_state.find("PreCoop_Lifter") != std::string::npos)
+      {
+        task = Task::kJoin;
+        goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
+        arrive = kJoinReach;
+        arrive_z = 45.0f;
+        if (partner_state.rfind("PullUp", 0) == 0 && props.wall_height >= 0)
+        {
+          goal_at.z -= LoadF32(base, partner->pawn + props.wall_height); // below the ledge it pulls from
+          arrive_z = 90.0f;
+        }
+        if (bot.join_partner != partner->pawn)
+        {
+          bot.join_partner = partner->pawn;
+          bot.join_since = frame;
+          Logf("frame %u: bot %u joins %08X (%s) at %.0f\n", frame, id, partner->pawn, partner_state.c_str(),
+               Dist2D(me.at, partner->at));
+        }
+      }
+    }
+    if (task != Task::kJoin)
+    {
+      bot.join_partner = 0;
+    }
+
+    // A player's partner: after it was lifted up a wall and its partner is
+    // still below, it waits by the ledge a while and offers to pull it up
+    // (A: the context action makes it the lifter where a pull up can be
+    // done); then it goes on. Else it keeps near its partner while that is
+    // near: fights by it, heals it, joins its moves.
+    bool player_partner = partner && partner->team == me.team && !IsBotController(partner->controller);
+    if (bot.offer_pending)
+    {
+      bot.offer_pending = false;
+      if (player_partner && partner->at.z < me.at.z - kOfferBelow)
+      {
+        bot.offer_since = frame;
+        bot.offer_until = frame + kOfferFrames;
+        Logf("frame %u: bot %u offers its partner a pull up (%.0f below)\n", frame, id, me.at.z - partner->at.z);
+      }
+    }
+    if (frame < bot.offer_until && !have_goal)
+    {
+      if (!player_partner || std::fabs(partner->at.z - me.at.z) < kOfferBelow)
+      {
+        bot.offer_until = 0; // up too (or gone)
+      }
+      else
+      {
+        TurnTowards(base, holder, std::atan2(partner->at.y - me.at.y, partner->at.x - me.at.x) * kUnitsPerRadian,
+                    -30.0f * kUnitsPerDegree, 0.0f);
+        uint32_t since = frame - bot.offer_since;
+        in.buttons |= since >= 10 && since % 60 < 3 ? kA : 0;
+        bot.still = 0;
+        bot.stuck_check = 0;
+        bot.progress = false;
+        bot.last_at = me.at;
+        return in;
+      }
+    }
+    // A hostage no one carries yet, or one the bot carries: the bot's own
+    // job (picked up, carried to the extraction), not following.
+    bool hostage_job = props.drag >= 0 && LoadU32(base, pawn + props.drag);
+    if (player_partner && !have_goal && !hostage_job)
+    {
+      for (const Objective &o : TeamObjectives(base, me.team))
+      {
+        hostage_job |= o.type == kObjHostage && !CarrierOf(base, o.actor);
+      }
+    }
+    // Following only while its partner is near: one gone far off (out of
+    // kFollowLeave) leaves the bot to the objectives until it is back in
+    // kFollowRadius.
+    if (player_partner)
+    {
+      float d = Dist3D(me.at, partner->at);
+      if (bot.following ? d > kFollowLeave : d < kFollowRadius)
+      {
+        bot.following = !bot.following;
+        Logf("frame %u: bot %u %s its partner, %.0f away\n", frame, id, bot.following ? "follows" : "leaves", d);
+      }
+    }
+    if (!have_goal && player_partner && bot.following && !hostage_job)
+    {
+      // Ahead of it where it runs (as far as a wall lets): the bot runs
+      // with it, at most kFollowLead + kFollowReach in front.
+      task = Task::kFollow;
+      goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
+      arrive = kFollowReach;
+      float vx = LoadF32(base, partner->pawn + kActorVelocity), vy = LoadF32(base, partner->pawn + kActorVelocity + 4);
+      float speed = std::hypot(vx, vy);
+      if (speed > kFollowMoving)
+      {
+        for (float lead : {kFollowLead, kFollowLead * 0.5f})
+        {
+          Vec ahead{partner->at.x + vx / speed * lead, partner->at.y + vy / speed * lead, partner->at.z};
+          if (ProbeClear(ctx, base, pawn, partner->at, ahead))
+          {
+            goal_at = ahead;
+            break;
+          }
+        }
+      }
+    }
+    uint32_t objective_target = 0; // an enemy the objective is to kill
+    if (!have_goal)
+    {
+      uint32_t dragging = props.drag >= 0 ? LoadU32(base, pawn + props.drag) : 0;
+      const Objective *best = nullptr;
+      std::vector<Objective> objectives = TeamObjectives(base, me.team);
+      for (const Objective &o : objectives)
+      {
+        const Character *c = IsCharacter(base, o.actor) ? FindCharacter(o.actor) : nullptr;
+        if (o.type == kObjHostage)
+        {
+          // Taken already: by this bot, or by one of its side. Carried by
+          // an enemy: the carrier is fought (below).
+          uint32_t carrier = CarrierOf(base, o.actor);
+          const Character *by = carrier ? FindCharacter(carrier) : nullptr;
+          if (dragging || (c && props.drag >= 0 && LoadU32(base, o.actor + props.drag)) ||
+              (carrier && (!by || !Enemy(me, *by))))
+          {
+            continue;
+          }
+        }
+        if ((o.type == kObjAssassinate || o.type == kObjEnemyTeam) && (!c || c->down == 2))
+        {
+          continue;
+        }
+        if (o.type == kObjEnemyTeam && c && !Enemy(me, *c))
+        {
+          continue;
+        }
+        if (!best || Dist3D(me.at, o.at) < Dist3D(me.at, best->at))
+        {
+          best = &o;
+        }
+      }
+      if (best)
+      {
+        task = Task::kObjective;
+        goal_at = best->at, have_goal = true, goal_actor = best->actor;
+        objective_type = best->type;
+        const Character *c = IsCharacter(base, best->actor) ? FindCharacter(best->actor) : nullptr;
+        switch (best->type)
+        {
+        case kObjHostage:
+          if (uint32_t carrier = CarrierOf(base, best->actor))
+          {
+            // An enemy carries it off: not picked up (A by the carrier was a
+            // blow that cannot be struck), the carrier is shot.
+            objective_target = carrier;
+            goal_at = LoadVec(base, carrier + kActorLocation), goal_actor = carrier;
+            objective_type = kObjAssassinate;
+            arrive = bot.target == carrier ? kNearFight : 0.0f;
+          }
+          else
+          {
+            arrive = kUseReach;
+          }
+          break;
+        case kObjDetonate:
+          // A cache or a depot: destroyed by fire, shot at from where the
+          // bot sees it (bot.objective_seen, looked at with the scan).
+          arrive = bot.objective_seen == best->actor ? kShootReach : 0.0f;
+          break;
+        case kObjAssassinate:
+        case kObjEnemyTeam:
+          if (c && Enemy(me, *c))
+          {
+            objective_target = c->pawn;
+            arrive = bot.target == c->pawn ? kNearFight : 0.0f; // near it in sight: fought as a target
+          }
+          else
+          {
+            arrive = kHoldReach; // one of its own: guarded
+          }
+          break;
+        case kObjControl:
+        case kObjDefend:
+          arrive = kHoldReach;
+          break;
+        default:
+          arrive = kGoReach;
+          break;
+        }
+        if (bot.objective != best->actor)
+        {
+          bot.objective = best->actor;
+          int its = NearestPoint(best->at), mine = NearestPoint(me.at);
+          Logf("frame %u: bot %u objective %u %08X (%s) at %.0f %.0f %.0f, %.0f away (%zu shown); network point %d "
+               "part %d, the bot's %d part %d\n",
+               frame, id, best->type, best->actor, ao2::ue3::ObjectName(base, best->actor).c_str(), best->at.x,
+               best->at.y, best->at.z, Dist2D(me.at, best->at), objectives.size(), its, PartOf(its), mine,
+               PartOf(mine));
+        }
+      }
+      else
+      {
+        bot.objective = 0;
+      }
+    }
+
+    // Target: the objective's enemy when it is in sight, else the nearest
+    // enemy in range in sight.
     if (frame >= bot.next_scan)
     {
       bot.next_scan = frame + kScanFrames;
@@ -1324,7 +2387,11 @@ namespace
       }
       std::stable_sort(near.begin(), near.end(),
                        [](const auto &a, const auto &b) { return a.first < b.first; });
-      if (keep && InSight(ctx, base, pawn, bot.target, body))
+      if (objective_target && InSight(ctx, base, pawn, objective_target, body))
+      {
+        found = objective_target;
+      }
+      if (!found && keep && InSight(ctx, base, pawn, bot.target, body))
       {
         found = bot.target;
       }
@@ -1334,6 +2401,15 @@ namespace
         {
           found = near[i].second->pawn;
         }
+      }
+      // A depot to destroy: in sight from here (a bullet's line reaches it).
+      bot.objective_seen = 0;
+      if (task == Task::kObjective && objective_type == kObjDetonate &&
+          Dist2D(me.at, goal_at) < kShootReach * 1.2f)
+      {
+        Vec at = ObjectiveAim(base, goal_actor);
+        uint32_t hit = TraceHit(ctx, base, pawn, eye, at);
+        bot.objective_seen = !hit || hit == goal_actor ? goal_actor : 0;
       }
       if (found != bot.target)
       {
@@ -1352,96 +2428,194 @@ namespace
       bot.target = 0;
     }
 
-    // Where to go: towards the target; else to a partner that lies (to
-    // heal it), else the nearest enemy anywhere.
-    const Character *goal = nullptr;
-    float goal_d = INFINITY;
-    for (const Character &c : g_characters)
+    // Hunting: towards the target, else the nearest enemy anywhere.
+    if (!have_goal)
     {
-      float d = Dist2D(me.at, c.at);
-      if (bot.target ? c.pawn == bot.target : Enemy(me, c) && d < goal_d)
+      const Character *enemy = nullptr;
+      for (const Character &c : g_characters)
       {
-        goal = &c, goal_d = d;
+        if (bot.target ? c.pawn == bot.target : Enemy(me, c) && (!enemy || Dist2D(me.at, c.at) < Dist2D(me.at, enemy->at)))
+        {
+          enemy = &c;
+        }
+      }
+      if (enemy)
+      {
+        goal_at = enemy->at, have_goal = true;
+        arrive = bot.target ? kNearFight : 0.0f;
       }
     }
-    const Character *partner = nullptr;
-    for (const Character &c : g_characters)
+    float goal_d = have_goal ? Dist2D(me.at, goal_at) : 0.0f;
+    bool there = have_goal && goal_d < arrive && std::fabs(me.at.z - goal_at.z) < arrive_z;
+    // A charge (a solid mesh) or a hostage is used from its side: its middle
+    // may be farther than kUseReach. Held still against it near enough, the
+    // bot is there until it walks off (not a wall to back off from).
+    bool use_goal = task == Task::kObjective && objective_type == kObjHostage;
+    if (use_goal && goal_actor == bot.used && goal_d < kUseLeave)
     {
-      float d = Dist2D(me.at, c.at);
-      if (!bot.target && !me.down && c.pawn != pawn && c.team && c.team == me.team && !c.ai && c.down &&
-          d < kHealRange && (!partner || d < Dist2D(me.at, partner->at)))
-      {
-        partner = &c;
-      }
+      there = true;
     }
-    if (partner)
+    else if (use_goal && goal_d < kUseFar && bot.still >= kPressedFrames)
     {
-      goal = partner, goal_d = Dist2D(me.at, partner->at);
-      if (goal_d < kHealReach && std::fabs(me.at.z - partner->at.z) < 150.0f)
-      {
-        // At its side: face it and press A (now and again: the heal starts
-        // with a press, and its mini game takes presses).
-        TurnTowards(base, holder, std::atan2(partner->at.y - me.at.y, partner->at.x - me.at.x) * kUnitsPerRadian,
-                    -20.0f * kUnitsPerDegree, 0.0f);
-        if (frame % 12 < 6)
-        {
-          in.buttons |= kA;
-        }
-        if (frame >= bot.next_log)
-        {
-          bot.next_log = frame + 150;
-          Logf("frame %u: bot %u heals %08X (%s, down %u)\n", frame, id, partner->pawn,
-               ao2::ue3::ObjectName(base, partner->pawn).c_str(), partner->down);
-        }
-        bot.still = 0;
-        bot.stuck_check = 0;
-        return in;
-      }
+      there = true;
+      bot.used = goal_actor;
+      Logf("frame %u: bot %u stands against %08X (%s), %.0f from its middle: uses it from there\n", frame, id,
+           goal_actor, ao2::ue3::ObjectName(base, goal_actor).c_str(), goal_d);
+    }
+    if (bot.used && (!use_goal || goal_actor != bot.used || goal_d >= kUseLeave))
+    {
+      bot.used = 0;
     }
 
-    bool walking = false;
-    float speed = 1.0f;
-    if (bot.target)
+    // There: A by a partner that lies (now and again: the heal starts with a
+    // press, its mini game takes presses), by a partner waiting to lift or
+    // pull it (a moment after it stands by it, without aiming: the partner
+    // is ready only for a character that is not), by a hostage. Facing it,
+    // LT let go.
+    // No way to the goal (up a wall, down a drop too high): at the point
+    // nearest to it the bot can reach it holds - fights from there, walks
+    // into no wall - until the goal moves.
+    bool hold = have_goal && !there && bot.path_partial && !bot.path.empty() &&
+                Dist2D(bot.path_goal, goal_at) <= kPathMoved &&
+                Dist2D(me.at, g_nodes[bot.path.back()].at) < kWaypoint * 1.5f &&
+                std::fabs(me.at.z - g_nodes[bot.path.back()].at.z) < 150.0f;
+    if (hold && !bot.holding)
     {
-      Vec at = bot.target_body ? LoadVec(base, bot.target + kActorLocation) : Head(base, bot.target);
-      float miss = float(REXCVAR_GET(ao2_versus_bots_miss)) * kUnitsPerDegree;
-      float dx = at.x - eye.x, dy = at.y - eye.y, dz = at.z - eye.z;
-      float want_yaw = std::atan2(dy, dx) * kUnitsPerRadian + miss * Noise(frame / 20, id * 2);
-      float want_pitch = std::atan2(dz, std::hypot(dx, dy)) * kUnitsPerRadian + miss * Noise(frame / 20, id * 2 + 1);
-      float tolerance = std::max(2.5f * kUnitsPerDegree, std::atan2(30.0f, std::hypot(dx, dy)) * kUnitsPerRadian);
-      bool on = TurnTowards(base, holder, want_yaw, want_pitch, tolerance);
-      in.buttons |= kLT;
-      if (on && frame - bot.target_since >= uint32_t(std::max(0, REXCVAR_GET(ao2_versus_bots_reaction))) &&
-          frame % 9 < 6)
+      Logf("frame %u: bot %u holds at %.0f %.0f %.0f: no way to its goal %.0f %.0f %.0f\n", frame, id, me.at.x,
+           me.at.y, me.at.z, goal_at.x, goal_at.y, goal_at.z);
+    }
+    bot.holding = hold;
+    bool use = there && (task == Task::kHeal || task == Task::kJoin || use_goal);
+    if (use)
+    {
+      Vec a = goal_actor ? LoadVec(base, goal_actor + kActorLocation) : goal_at;
+      TurnTowards(base, holder, std::atan2(a.y - me.at.y, a.x - me.at.x) * kUnitsPerRadian,
+                  task == Task::kHeal ? -20.0f * kUnitsPerDegree : 0.0f, 0.0f);
+      if (task == Task::kJoin)
       {
-        in.buttons |= kRT; // pulled 6 frames of 9: single shot weapons fire again too
-      }
-      float d = Dist2D(me.at, LoadVec(base, bot.target + kActorLocation));
-      if (d > kNearFight)
-      {
-        walking = true;
-        speed = 0.6f;
+        in.buttons |= frame - bot.join_since > 30 && frame % 40 < 3 ? kA : 0;
       }
       else
       {
-        // Sideways, now this way, now that.
-        float side = Noise(frame / 50, id + 17) < 0 ? -0.7f : 0.7f;
-        in.lx = side;
+        in.buttons |= frame % 12 < 6 ? kA : 0;
       }
-    }
-    else if (goal)
-    {
-      walking = true;
+      if (frame >= bot.next_log)
+      {
+        bot.next_log = frame + 150;
+        Logf("frame %u: bot %u %s by %08X (%s)%s\n", frame, id, TaskName(task), goal_actor,
+             ao2::ue3::ObjectName(base, goal_actor).c_str(),
+             task == Task::kHeal ? (partner->down == 2 ? ", it lies" : ", it is wounded") : "");
+      }
+      bot.still = 0;
+      bot.stuck_check = 0;
+      bot.progress = false;
+      bot.last_at = me.at;
+      return in;
     }
 
-    if (walking && goal)
+    // Aim and fire at the target: LT once it is near or the bot stands
+    // (aiming, a character walks slowly; farther on the way it fires from
+    // the hip). The aim wanders a few degrees, slowly; it fires in bursts,
+    // after a moment's look, and not with a hostage in the way.
+    // With no enemy in sight, a depot to destroy in sight is the target.
+    // Dragging a hostage it aims (LT) at any target: it fires with its free
+    // hand.
+    float target_d = bot.target ? Dist2D(me.at, LoadVec(base, bot.target + kActorLocation)) : 0.0f;
+    bool shoot_objective = !bot.target && there && task == Task::kObjective && objective_type == kObjDetonate &&
+                           bot.objective_seen == goal_actor;
+    bool dragging = props.drag >= 0 && LoadU32(base, pawn + props.drag);
+    if (bot.target || shoot_objective)
     {
-      if (bot.path.empty() || frame >= bot.next_path || Dist2D(bot.path_goal, goal->at) > 600.0f)
+      // A target carrying a hostage is shot in the head, over the hostage.
+      uint32_t carried = bot.target && props.drag >= 0 ? LoadU32(base, bot.target + props.drag) : 0;
+      Vec at = shoot_objective                ? ObjectiveAim(base, goal_actor)
+               : bot.target_body && !carried ? Body(base, bot.target)
+                                              : Head(base, bot.target);
+      if (shoot_objective)
       {
+        target_d = goal_d;
+        if (frame >= bot.next_log)
+        {
+          bot.next_log = frame + 150;
+          Logf("frame %u: bot %u shoots at %08X (%s) %.0f away\n", frame, id, goal_actor,
+               ao2::ue3::ObjectName(base, goal_actor).c_str(), goal_d);
+        }
+      }
+      float miss = float(REXCVAR_GET(ao2_versus_bots_miss)) * kUnitsPerDegree;
+      uint32_t step = frame / kWanderFrames;
+      float k = float(frame % kWanderFrames) / float(kWanderFrames);
+      auto wander = [&](uint32_t seed) {
+        return Noise(step, seed) * (1.0f - k) + Noise(step + 1, seed) * k;
+      };
+      float dx = at.x - eye.x, dy = at.y - eye.y, dz = at.z - eye.z;
+      float want_yaw = std::atan2(dy, dx) * kUnitsPerRadian + miss * wander(id * 2);
+      float want_pitch = std::atan2(dz, std::hypot(dx, dy)) * kUnitsPerRadian + miss * wander(id * 2 + 1);
+      float tolerance = std::max(3.0f * kUnitsPerDegree, std::atan2(30.0f, std::hypot(dx, dy)) * kUnitsPerRadian);
+      bool on = TurnTowards(base, holder, want_yaw, want_pitch, tolerance);
+      bool moving_on = have_goal && !there && task != Task::kHunt;
+      // Aiming slows the walk: not while catching up with its partner.
+      bool catching_up = moving_on && task == Task::kFollow;
+      if (!catching_up && (!moving_on || target_d < kAimRange || dragging))
+      {
+        in.buttons |= kLT;
+      }
+      bool burst = (frame + id * 13) % kBurstFrames < kBurstFrames * 3 / 5;
+      bool looked = shoot_objective ||
+                    frame - bot.target_since >= uint32_t(std::max(0, REXCVAR_GET(ao2_versus_bots_reaction)));
+      if (on && burst && looked && frame % 9 < 6 && ClearShot(eye, at, carried))
+      {
+        in.buttons |= kRT; // pulled 6 frames of 9: single shot weapons fire again too
+      }
+    }
+
+    // Moving: along a path to the goal while not there; there (or hunting
+    // near the target) sideways, now this way, now that, round the goal and
+    // not into a wall.
+    bool walking = have_goal && !there && !hold;
+    float speed = bot.target && task == Task::kHunt ? 0.6f : 1.0f;
+    if (!walking && bot.target)
+    {
+      if (frame >= bot.next_strafe)
+      {
+        bot.next_strafe = frame + kProbeFrames;
+        int side = (Noise(frame / 50, id + 17) < 0 ? -1 : 1) * bot.strafe_flip;
+        float yaw = view_yaw / kUnitsPerRadian;
+        bot.strafe_side = 0;
+        for (int s : {side, -side})
+        {
+          float a = yaw + float(s) * 1.5707964f;
+          if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * 150.0f, me.at.y + std::sin(a) * 150.0f, me.at.z}))
+          {
+            bot.strafe_side = s;
+            break;
+          }
+        }
+      }
+      in.lx = 0.7f * float(bot.strafe_side);
+      if (have_goal && arrive > 0 && goal_d > arrive * 0.8f && task != Task::kHunt)
+      {
+        Steer(me.at, goal_at, view_yaw, 0.7f, in); // back towards what it holds
+      }
+      bot.stuck_check = 0;
+      bot.progress = false;
+    }
+
+    if (walking)
+    {
+      bool repathed = false;
+      // The path is kept while it leads to the goal: found again now and
+      // then only for a goal that moved (from where the bot stands another
+      // first point may be nearest, and a path from each in turn walks it to
+      // and fro), after it backed off a wall, or for a goal moved far.
+      bool due = frame >= bot.next_path && (bot.force_path || Dist2D(bot.path_goal, goal_at) > kPathMoved);
+      if (bot.path.empty() || due || Dist2D(bot.path_goal, goal_at) > 600.0f)
+      {
+        bot.force_path = false;
         bot.next_path = frame + kPathFrames;
-        bot.path = FindPath(ctx, base, pawn, me.at, goal->at, bot.barred);
+        bot.path = FindPath(ctx, base, pawn, me.at, goal_at, bot.barred, &bot.path_partial);
         bot.path_at = 0;
-        bot.path_goal = goal->at;
+        bot.path_goal = goal_at;
+        repathed = true;
       }
       // Past a node already when the next is nearer than the node is to it.
       while (bot.path_at + 1 < bot.path.size())
@@ -1453,13 +2627,53 @@ namespace
           break;
         }
         ++bot.path_at;
+        int got = bot.path[bot.path_at - 1];
+        if (std::find(bot.reached.begin(), bot.reached.end(), got) == bot.reached.end())
+        {
+          // Somewhere new: counted afresh. Not one it got to before (to and
+          // fro between two points, each the last, is no progress).
+          bot.reached.push_back(got);
+          bot.progress = false;
+        }
       }
-      bool on_path = bot.path_at < bot.path.size() && Dist2D(me.at, goal->at) > 400.0f;
-      Vec to = on_path ? g_nodes[bot.path[bot.path_at]].at : goal->at;
+      // Straight at the goal only near it on its level (not under a roof it is on).
+      bool on_path =
+          bot.path_at < bot.path.size() && (goal_d > 400.0f || std::fabs(me.at.z - goal_at.z) > kOffLevel);
+      Vec to = on_path ? g_nodes[bot.path[bot.path_at]].at : goal_at;
       int from_node = on_path && bot.path_at > 0 ? bot.path[bot.path_at - 1] : -1;
+      // A link round a corner: to its point beside the line first.
+      if (from_node >= 0)
+      {
+        uint64_t key = LinkKey(from_node, bot.path[bot.path_at]);
+        auto via = g_via.find(key);
+        if (bot.via_link != key)
+        {
+          bot.via_link = key;
+          bot.via_passed = via == g_via.end();
+        }
+        if (!bot.via_passed && Dist2D(me.at, via->second) < kWaypoint)
+        {
+          bot.via_passed = true;
+        }
+        if (!bot.via_passed)
+        {
+          to = via->second;
+        }
+      }
       bool vault_link = on_path && from_node >= 0 && g_vault_links.count(LinkKey(from_node, bot.path[bot.path_at]));
+      // A ladder: at its end, facing it, A (the context action takes it).
+      bool ladder_link =
+          on_path && from_node >= 0 && g_ladder_links.count(LinkKey(from_node, bot.path[bot.path_at]));
+      if (ladder_link && Dist2D(me.at, g_nodes[from_node].at) < kLadderReach && frame % 30 < 3 &&
+          frame >= bot.escape_until)
+      {
+        bot.ladder_up = to.z > me.at.z;
+        bot.unaim_until = frame + 20;
+        bot.press_at = frame + 1;
+        bot.press = kA;
+      }
       // A vault: straight at the wall, not round it.
-      Vec way = vault_link ? to : WalkTarget(ctx, base, pawn, me.at, to, bot, frame);
+      Vec way = vault_link || ladder_link ? to : WalkTarget(ctx, base, pawn, me.at, to, bot, frame);
       if (frame < bot.escape_until)
       {
         way = {me.at.x + std::cos(bot.escape_dir) * 500.0f, me.at.y + std::sin(bot.escape_dir) * 500.0f, me.at.z};
@@ -1470,9 +2684,8 @@ namespace
       // in a vaulting volume, or on a vault link once the wall holds it (on
       // open ground Y rolls); LT let go (aiming, Y dodges). Walking to and
       // fro it would not stand still long enough for the stuck check's Y.
-      static int32_t vaulting = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
-      bool in_volume = vaulting >= 0 && LoadU32(base, pawn + vaulting);
-      bool held = Dist2D(me.at, bot.last_at) < 3.0f;
+      bool in_volume = props.vaulting >= 0 && LoadU32(base, pawn + props.vaulting);
+      bool held = Dist2D(me.at, bot.last_at) < kStillMove;
       if ((in_volume || (vault_link && held)) && frame >= bot.next_vault && frame >= bot.escape_until)
       {
         bot.next_vault = frame + 90;
@@ -1509,7 +2722,8 @@ namespace
       // The way left to the goal along the path no shorter for
       // kProgressFrames (against a wall, or to and fro by a link it cannot
       // walk, back to the path's first point each time the path is found
-      // again): the link it walks is barred from its paths for a while, it
+      // again), or held still with the stick pushed for kWallFrames (into a
+      // wall): the link it walks is barred from its paths for a while, it
       // walks away from the wall and finds another way.
       int node = on_path ? bot.path[bot.path_at] : -1;
       float left = Dist2D(me.at, to);
@@ -1519,57 +2733,82 @@ namespace
         {
           left += Dist3D(g_nodes[bot.path[k]].at, g_nodes[bot.path[k + 1]].at);
         }
-        left += Dist2D(g_nodes[bot.path.back()].at, goal->at);
+        left += Dist2D(g_nodes[bot.path.back()].at, goal_at);
       }
-      if (!bot.progress || left < bot.progress_left - kProgressStep ||
-          Dist2D(bot.progress_goal, goal->at) > 300.0f)
+      // A path found again round a barred link is longer: counted afresh
+      // too (else each bar makes the way longer and bars the next link).
+      // A goal that moved (an enemy hunted) counts afresh only for a bot
+      // that moved too: one held by a wall is not let off each time.
+      bool goal_moved = Dist2D(bot.progress_goal, goal_at) > 300.0f && Dist2D(bot.progress_at, me.at) > 100.0f;
+      if (!bot.progress || left < bot.progress_left - kProgressStep || goal_moved ||
+          (repathed && bot.detour_ok && left > bot.progress_left + kDetour))
       {
+        bot.detour_ok = false;
         bot.progress = true;
         bot.progress_until = frame + kProgressFrames;
         bot.progress_left = left;
-        bot.progress_goal = goal->at;
+        if (goal_moved || Dist2D(bot.progress_goal, goal_at) > 300.0f)
+        {
+          bot.reached.clear();
+        }
+        bot.progress_goal = goal_at;
+        bot.progress_at = me.at;
       }
       bot.progress_left = std::min(bot.progress_left, left);
-      if (frame >= bot.progress_until && frame >= bot.escape_until)
+      // Held still a moment: a wall, unless it rolls or vaults (or Y over
+      // a vault link is still to come); held long, a wall all the same (a
+      // roll it is stuck in, a vault that does not go).
+      bool walled = bot.still >= kWallFrames &&
+                    ((!maneuvering && !in_volume && !vault_link && !ladder_link) || bot.still >= kHeldFrames);
+      if ((frame >= bot.progress_until || walled) && frame >= bot.escape_until)
       {
         float want = std::atan2(to.y - me.at.y, to.x - me.at.x);
-        int from = on_path && bot.path_at > 0 ? bot.path[bot.path_at - 1] : -1;
         if (node >= 0)
         {
-          bot.barred.push_back({from, node, frame + kBarFrames});
+          bot.barred.push_back({from_node, node, frame + kBarFrames});
+          LinkFailed(from_node, node);
         }
         bot.side = -bot.side;
         bot.escape_dir = EscapeDir(ctx, base, pawn, me.at, want, bot.side);
         bot.escape_until = frame + kEscapeFrames;
         bot.next_path = bot.escape_until;
+        bot.force_path = true; // round the barred link
+        bot.detour_ok = true;  // ... which may be longer once
         bot.next_probe = 0;
         bot.progress = false;
-        Logf("frame %u: bot %u gets no nearer: link %d -> %d (%.0f %.0f %.0f) from %.0f %.0f %.0f barred (%zu), "
+        bot.still = 0;
+        bot.reached.clear();
+        Logf("frame %u: bot %u %s: link %d -> %d (%.0f %.0f %.0f) from %.0f %.0f %.0f barred (%zu), "
              "backs off %.0f degrees\n",
-             frame, id, from, node, to.x, to.y, to.z, me.at.x, me.at.y, me.at.z, bot.barred.size(),
-             std::remainder(bot.escape_dir - want, 6.2831853f) * 57.29578f);
+             frame, id, walled ? "walks into a wall" : "gets no nearer", from_node, node, to.x, to.y, to.z, me.at.x,
+             me.at.y, me.at.z, bot.barred.size(), std::remainder(bot.escape_dir - want, 6.2831853f) * 57.29578f);
       }
     }
-    else
+    else if (!bot.target)
     {
       bot.stuck_check = 0;
       bot.progress = false;
     }
 
-    // Debug: what holds a bot that does not move with the stick pushed.
+    // Held still with the stick pushed: counted (a wall), and what holds it logged.
     {
       bool pushed = std::hypot(in.lx, in.ly) > 0.5f;
-      bool moved = Dist2D(me.at, bot.last_at) > 2.0f;
+      bool moved = Dist2D(me.at, bot.last_at) > kStillMove;
       bot.last_at = me.at;
       bot.still = pushed && !moved ? bot.still + 1 : 0;
+      if (!walking && bot.still >= kWallFrames)
+      {
+        bot.next_strafe = 0; // sideways into a wall: the other way
+        bot.strafe_flip = -bot.strafe_flip;
+        bot.still = 0;
+      }
       if (bot.still == 60 || (bot.still && bot.still % 300 == 0))
       {
-        static int32_t cover_node = -2, cover_ratio, vault_volume;
+        static int32_t cover_node = -2, cover_ratio;
         if (cover_node == -2)
         {
           cover_node = ao2::ue3::PropertyOffset(base, "AO2PlayerControllerNative", "CoverEntry_CurrentCoverNode");
           cover_ratio = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "CoverRatio");
-          vault_volume = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
         }
         float yaw = view_yaw / kUnitsPerRadian;
         float dir = std::atan2(in.lx, in.ly) + yaw; // where the stick pushes, in the world
@@ -1577,11 +2816,13 @@ namespace
         uint32_t hit = TraceHit(ctx, base, pawn, me.at, ahead);
         uint32_t node = cover_node >= 0 ? LoadU32(base, controller + cover_node) : 0;
         Logf("frame %u: bot %u still %u frames at %.0f %.0f %.0f: stick %.2f %.2f, buttons %X, physics %u, cover "
-             "node %08X ratio %.2f, vault volume %08X, ahead %s (%s), path %zu/%zu\n",
+             "node %08X ratio %.2f, vault volume %08X, ahead %s (%s), path %zu/%zu, state %s\n",
              frame, id, bot.still, me.at.x, me.at.y, me.at.z, in.lx, in.ly, in.buttons, base[pawn + 88], node,
              cover_ratio >= 0 ? LoadF32(base, pawn + cover_ratio) : -1.0f,
-             vault_volume >= 0 ? LoadU32(base, pawn + vault_volume) : 0, hit ? ao2::ue3::ObjectName(base, hit).c_str() : "-",
-             hit ? ao2::ue3::ObjectName(base, LoadU32(base, hit + 52)).c_str() : "-", bot.path_at, bot.path.size());
+             props.vaulting >= 0 ? LoadU32(base, pawn + props.vaulting) : 0,
+             hit ? ao2::ue3::ObjectName(base, hit).c_str() : "-",
+             hit ? ao2::ue3::ObjectName(base, LoadU32(base, hit + 52)).c_str() : "-", bot.path_at, bot.path.size(),
+             state.c_str());
       }
     }
 
@@ -1594,9 +2835,12 @@ namespace
       in.buttons |= bot.press;
     }
 
-    // Reload an empty magazine.
+    // Reload: an empty magazine; a part-empty one with no target.
     uint32_t weapon = LoadU32(base, pawn + kPawnWeapon);
-    if (weapon && int32_t(LoadU32(base, weapon + kWeaponAmmo)) <= 0 && frame >= bot.next_reload)
+    int32_t ammo = weapon ? int32_t(LoadU32(base, weapon + kWeaponAmmo)) : -1;
+    int32_t max_ammo = weapon ? int32_t(LoadU32(base, weapon + kWeaponMaxAmmo)) : 0;
+    bool reload = weapon && (ammo <= 0 || (!bot.target && max_ammo > 0 && max_ammo < 10000 && ammo < max_ammo / 3));
+    if (reload && frame >= bot.next_reload)
     {
       bot.reload_until = frame + 5;
       bot.next_reload = frame + 90;
@@ -1609,11 +2853,10 @@ namespace
     if (frame >= bot.next_log)
     {
       bot.next_log = frame + 150;
-      Logf("frame %u: bot %u at %.0f %.0f %.0f team %08X, target %08X, goal %08X %.0f, path %zu/%zu, "
-           "stick %.2f %.2f, buttons %X, ammo %d\n",
-           frame, id, me.at.x, me.at.y, me.at.z, me.team, bot.target, goal ? goal->pawn : 0,
-           goal ? goal_d : 0.0f, bot.path_at, bot.path.size(), in.lx, in.ly, in.buttons,
-           weapon ? int32_t(LoadU32(base, weapon + kWeaponAmmo)) : -1);
+      Logf("frame %u: bot %u at %.0f %.0f %.0f team %08X, %s, target %08X, goal %.0f %.0f %.0f %.0f away%s, path "
+           "%zu/%zu, stick %.2f %.2f, buttons %X, ammo %d\n",
+           frame, id, me.at.x, me.at.y, me.at.z, me.team, TaskName(task), bot.target, goal_at.x, goal_at.y, goal_at.z,
+           goal_d, there ? " (there)" : "", bot.path_at, bot.path.size(), in.lx, in.ly, in.buttons, ammo);
     }
     return in;
   }
@@ -1740,7 +2983,14 @@ namespace ao2::versus
     g_nodes.clear();
     g_links.clear();
     g_vault_links.clear();
+    g_via.clear();
     g_vault_boxes.clear();
+    g_ladder_ends.clear();
+    g_ladder_links.clear();
+    g_part.clear();
+    g_grid = {};
+    g_link_fails.clear();
+    g_point_fails.clear();
     g_nav_ready = false;
     if (mask)
     {
