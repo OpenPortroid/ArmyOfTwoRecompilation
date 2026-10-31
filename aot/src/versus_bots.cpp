@@ -63,6 +63,25 @@
 //   walks closer, near it steps sideways (not into a wall). The magazine
 //   empties: X (also with a part-empty one and no target); the reserve does
 //   not run out (ao2_versus_bots_infinite_ammo).
+// - Under fire (hit lately, badly hurt) or in a fight at long range, with
+//   no partner to heal or join and no hostage to take: cover. Of the cover
+//   nodes near it, the nearest (not towards the enemy, not another bot's)
+//   where a crouching character is out of the enemy's sight and one rising
+//   or leaning out sees it (traces). It runs there (from the hip), pushes
+//   against it a moment (the character takes it), then ducks (no LT, L3:
+//   crouched - it does not crouch of itself) and rises to fire (LT) by turns - down at once when hit up, reloading down;
+//   left when the enemy is gone, after 10-15 s once well, when the enemy
+//   sees it ducked (another is looked for), or when its partner, a player,
+//   goes on (B). Badly hurt with no cover: back to its partner.
+// - Hit in the open: now and then a dodge aside (Y aiming).
+// - A grenade (LB + D-pad down, LT, RT let go; then its weapon again) at an
+//   enemy that hides or at enemies close together, 500-1600 away, none of
+//   its own team (nor a hostage) there, the curve clear: aimed from the
+//   grenade's InitialProjSpeed / InitialPitchOffset and the world's gravity
+//   at 0.88 of the way (it rolls on).
+// - The weapon for the enemy's distance (LB + D-pad): the slot whose
+//   aiMinGoodRange - aiMaxGoodRange it is in, the primary first, the pistol
+//   last.
 // - Lying (versus "dead": unconscious) it does nothing until its partner
 //   heals it or it gets up on its own - no respawn for money. Enemies that
 //   lie (invulnerable) are not shot at.
@@ -215,11 +234,23 @@ namespace
     kY = 8,
     kLT = 16,
     kRT = 32,
-    kButtonCount = 6,
+    kUp = 64,     // D-pad: the weapons (EIWC_Primary)
+    kLeft = 128,  // ... EIWC_Secondary
+    kRight = 256, // ... EIWC_Special
+    kDown = 512,  // ... EIWC_Explosives (grenades)
+    kLB = 1024,   // held: the D-pad picks a weapon (else it gives co-op commands)
+    kL3 = 2048,   // crouch (on / off)
+    kButtonCount = 12,
   };
   // Key names per button, then the axes.
-  constexpr const char *kButtonKeys[kButtonCount] = {"XboxTypeS_A", "XboxTypeS_B", "XboxTypeS_X",
-                                                     "XboxTypeS_Y", "XboxTypeS_LeftTrigger", "XboxTypeS_RightTrigger"};
+  constexpr const char *kButtonKeys[kButtonCount] = {
+      "XboxTypeS_A",           "XboxTypeS_B",          "XboxTypeS_X",         "XboxTypeS_Y",
+      "XboxTypeS_LeftTrigger", "XboxTypeS_RightTrigger", "XboxTypeS_DPad_Up",  "XboxTypeS_DPad_Left",
+      "XboxTypeS_DPad_Right",  "XboxTypeS_DPad_Down",  "XboxTypeS_LeftShoulder", "XboxTypeS_LeftThumbstick"};
+  // The D-pad button that selects an inventory slot (AO2InventoryManager.
+  // ActiveAO2Weapons, by EInventoryWeaponClass).
+  constexpr uint32_t kSlotButtons[4] = {kUp, kLeft, kRight, kDown};
+  constexpr int kSlotGrenade = 3;
   enum Axis
   {
     kLeftX,
@@ -617,6 +648,7 @@ namespace
   {
     Vec at;                                  // at body height
     std::vector<std::pair<int, float>> next; // node, cost
+    uint32_t cover = 0;                      // its AO2CoverNode (0: another point)
   };
   std::vector<Node> g_nodes;
   std::vector<std::pair<int, int>> g_links; // pairs to check
@@ -921,6 +953,7 @@ namespace
     for (size_t i = 0; i < points.size(); ++i)
     {
       g_nodes[i].at = points[i].at;
+      g_nodes[i].cover = points[i].nav ? 0 : points[i].actor;
       index[points[i].actor] = int(i);
     }
 
@@ -1163,6 +1196,7 @@ namespace
     {
       Node &n = g_nodes[moved[i]];
       n.at = all[i].at;
+      n.cover = all[i].cover;
       for (auto [to, c] : all[i].next)
       {
         n.next.push_back({moved[to], c});
@@ -1612,6 +1646,47 @@ namespace
     bool detour_ok = false;  // a longer path found again is a way round (once after a bar)
     uint64_t via_link = 0;   // the link it walks (LinkKey)
     bool via_passed = true;  // ... past its point round a corner (g_via) or none
+    // Fire it takes, the enemy it fights.
+    int32_t last_health = 0;
+    int32_t health_top = 0;        // the most health its character had (its full health)
+    uint32_t health_pawn = 0;      // ... that character
+    uint32_t next_cover_log = 0;
+    uint32_t hurt_at = 0;          // frame its health last fell (0: not yet)
+    uint32_t threat = 0;           // the enemy it last had in sight
+    uint32_t threat_seen = 0;      // ... frame
+    Vec threat_at;                 // ... where
+    // Cover (a cover node the threat does not see it at, from where it
+    // sees the threat when it rises or leans out: LT).
+    int cover = -1;                // its node (-1: none)
+    uint32_t cover_since = 0;      // frame it set off for it
+    uint32_t cover_arrived = 0;    // ... got there (0: on its way)
+    uint32_t cover_until = 0;      // stays at most so long
+    uint32_t next_cover = 0;       // looked for again from this frame
+    uint32_t hide_until = 0, peek_until = 0; // ducked down, then up (aiming) by turns
+    uint32_t hide_since = 0;
+    uint32_t next_crouch = 0;      // L3 pressed again no sooner
+    int exposed = 0;               // checks in a row the threat saw it hidden
+    int bad_cover = -1;            // a node the threat saw it at (left out ...)
+    uint32_t bad_until = 0;        // ... until
+    uint32_t next_expose_check = 0;
+    // A dodge (Y aiming) aside when hit in the open.
+    uint32_t dodge_at = 0, next_dodge = 0;
+    int dodge_side = 1;
+    // A grenade: selected (D-pad down), aimed (LT), thrown (RT let go),
+    // then the weapon taken again.
+    int nade_step = 0;             // 0 none, 1 selecting, 2 aiming, 3 throwing, 4 done
+    uint32_t nade_at = 0;          // frame the step began
+    uint32_t next_nade = 600;
+    Vec nade_to;
+    float nade_pitch = 0;          // rotation units
+    // The weapon for the target's distance (by its aiMinGoodRange /
+    // aiMaxGoodRange): a slot of the inventory.
+    int slot_want = 0;
+    uint32_t slot_want_since = 0, next_switch = 0;
+    uint32_t inventory_logged = 0; // the character whose inventory was logged
+    uint32_t dpad = 0, dpad_at = 0; // a weapon picked: LB held, this D-pad button pressed
+    uint32_t nade_projectile = 0, nade_watch_until = 0; // a thrown grenade, logged where it goes
+    Vec nade_last;
   };
   std::array<Bot, 4> g_bots;
 
@@ -1971,6 +2046,242 @@ namespace
     return nullptr;
   }
 
+  // ---- Combat: cover, grenades, the weapon for the distance.
+
+  constexpr uint32_t kHurtFrames = 120;      // hit this long ago: under fire
+  constexpr uint32_t kThreatFrames = 600;    // an enemy out of sight so long is no threat
+  constexpr float kCoverSearch = 1000.0f;    // cover nodes this near are looked at
+  constexpr float kCoverClimb = 120.0f;      // ... no higher or lower than this
+  constexpr float kCoverFromThreat = 450.0f; // ... not this near the threat
+  constexpr size_t kCoverTries = 6;          // ... the nearest so many checked with traces
+  constexpr float kCoverFight = 1400.0f;     // a target in sight this far: fought from cover too
+  constexpr float kCoverReach = 25.0f;       // there this near (farther off it the cover hides less)
+  constexpr uint32_t kCoverWalkFrames = 360; // not there by then: left
+  constexpr uint32_t kCoverRest = 300;       // left: none looked for so long (its task first)
+  constexpr float kRetreatHealth = 0.35f;    // hurt this badly with no cover: back to its partner
+  constexpr float kNadeMin = 500.0f;         // grenades thrown this far...
+  constexpr float kNadeMax = 1600.0f;        // ... to this far
+  constexpr float kNadeFriend = 500.0f;      // not with one of its team this near where it lands
+  constexpr float kNadeRoll = 0.88f;         // it lands short and rolls on (AO2Grenade.FLIGHT_TO_ROLL_RATIO)
+  constexpr float kNadeGroup = 400.0f;       // enemies this near each other: a grenade for them
+  constexpr uint32_t kNadeApart = 180;       // the bots' grenades this many frames apart at least
+  uint32_t g_last_nade = 0;                  // frame a bot last threw one
+
+  struct CombatProps
+  {
+    int32_t health_max = -1, inventory = -1, slots = -1, good_min = -1, good_max = -1;
+    int32_t nade_speed = -1, nade_pitch = -1, nade_projectile = -1;
+    int32_t gravity = -1, default_gravity = -1, gravity_scale = -1;
+    uint32_t weapon_class = 0, grenade_class = 0;
+  };
+  const CombatProps &Combat(const uint8_t *base)
+  {
+    static CombatProps p;
+    static bool looked = false;
+    if (!looked)
+    {
+      looked = true;
+      p.health_max = ao2::ue3::PropertyOffset(base, "Pawn", "HealthMax");
+      p.inventory = ao2::ue3::PropertyOffset(base, "Pawn", "InvManager");
+      p.slots = ao2::ue3::PropertyOffset(base, "AO2InventoryManager", "ActiveAO2Weapons");
+      p.good_min = ao2::ue3::PropertyOffset(base, "AO2Weapon", "aiMinGoodRange");
+      p.good_max = ao2::ue3::PropertyOffset(base, "AO2Weapon", "aiMaxGoodRange");
+      p.nade_speed = ao2::ue3::PropertyOffset(base, "AO2Grenade", "InitialProjSpeed");
+      p.nade_pitch = ao2::ue3::PropertyOffset(base, "AO2Grenade", "InitialPitchOffset");
+      p.nade_projectile = ao2::ue3::PropertyOffset(base, "AO2Grenade", "GrenadeSpawnedProjectile");
+      p.gravity = ao2::ue3::PropertyOffset(base, "WorldInfo", "WorldGravityZ");
+      p.default_gravity = ao2::ue3::PropertyOffset(base, "WorldInfo", "DefaultGravityZ");
+      p.gravity_scale = ao2::ue3::PropertyOffset(base, "WorldInfo", "RBPhysicsGravityScaling");
+      p.weapon_class = ao2::ue3::FindClass(base, "AO2Weapon");
+      p.grenade_class = ao2::ue3::FindClass(base, "AO2Grenade");
+      Logf("combat: Pawn.HealthMax +%d, InvManager +%d, AO2InventoryManager.ActiveAO2Weapons +%d, AO2Weapon "
+           "aiMinGoodRange +%d aiMaxGoodRange +%d, AO2Grenade InitialProjSpeed +%d InitialPitchOffset +%d "
+           "GrenadeSpawnedProjectile +%d, WorldInfo WorldGravityZ +%d DefaultGravityZ +%d RBPhysicsGravityScaling "
+           "+%d, AO2Weapon %08X, AO2Grenade %08X\n",
+           p.health_max, p.inventory, p.slots, p.good_min, p.good_max, p.nade_speed, p.nade_pitch,
+           p.nade_projectile, p.gravity, p.default_gravity, p.gravity_scale, p.weapon_class, p.grenade_class);
+    }
+    return p;
+  }
+
+  // The character's inventory slots (AO2InventoryManager.ActiveAO2Weapons, by
+  // EInventoryWeaponClass: primary, secondary, special, explosives, a
+  // temporary one) and the slot of the weapon in its hands (-1: none of
+  // them, a switch going on).
+  struct Inventory
+  {
+    uint32_t slot[5] = {};
+    int current = -1;
+  };
+  Inventory InventoryOf(const uint8_t *base, uint32_t pawn)
+  {
+    const CombatProps &p = Combat(base);
+    Inventory inv;
+    uint32_t manager = p.inventory >= 0 ? LoadU32(base, pawn + p.inventory) : 0;
+    if (!manager || p.slots < 0 || !p.weapon_class)
+    {
+      return inv;
+    }
+    uint32_t held = LoadU32(base, pawn + kPawnWeapon);
+    for (int i = 0; i < 5; ++i)
+    {
+      uint32_t w = LoadU32(base, manager + p.slots + i * 4);
+      inv.slot[i] = w && ao2::ue3::IsA(base, w, p.weapon_class) ? w : 0;
+      inv.current = inv.slot[i] && inv.slot[i] == held ? i : inv.current;
+    }
+    return inv;
+  }
+
+  bool Crouched(const uint8_t *base, uint32_t pawn)
+  {
+    static int32_t offset = -2;
+    static uint32_t mask = 0;
+    if (offset == -2 && !ao2::ue3::BoolProperty(base, "Pawn", "bIsCrouched", offset, mask))
+    {
+      offset = -1;
+    }
+    return offset >= 0 && (LoadU32(base, pawn + offset) & mask);
+  }
+
+  bool HoldsGrenade(const uint8_t *base, uint32_t pawn)
+  {
+    uint32_t held = LoadU32(base, pawn + kPawnWeapon);
+    return held && Combat(base).grenade_class && ao2::ue3::IsA(base, held, Combat(base).grenade_class);
+  }
+
+  // The slot for a target `d` away: the weapon whose good range (the AI's
+  // aiMinGoodRange - aiMaxGoodRange) it is in, or is nearest to; the
+  // primary first, the pistol only with nothing else.
+  int SlotFor(const uint8_t *base, const Inventory &inv, float d)
+  {
+    const CombatProps &p = Combat(base);
+    int best = -1;
+    float best_cost = 0;
+    for (int s : {0, 2, 1})
+    {
+      uint32_t w = inv.slot[s];
+      if (!w)
+      {
+        continue;
+      }
+      float lo = p.good_min >= 0 ? LoadF32(base, w + p.good_min) : 0.0f;
+      float hi = p.good_max >= 0 ? LoadF32(base, w + p.good_max) : 0.0f;
+      float cost = hi > lo && hi < 100000.0f ? std::max({0.0f, lo - d, d - hi}) : 1000.0f;
+      cost += s == 1 ? 5000.0f : 0.0f; // a rifle near beats a pistol
+      if (best < 0 || cost < best_cost - 50.0f)
+      {
+        best = s, best_cost = cost;
+      }
+    }
+    return best;
+  }
+
+  // The world's gravity for a grenade (AO2Grenade.GetRigidBodyGravityVector:
+  // RBPhysicsGravityScaling * GetGravityZ()), as a positive number.
+  float Gravity(const uint8_t *base)
+  {
+    const CombatProps &p = Combat(base);
+    uint32_t world = FindWorldInfo(base);
+    float g = world && p.gravity >= 0 ? LoadF32(base, world + p.gravity) : 0.0f;
+    if (g == 0 && world && p.default_gravity >= 0)
+    {
+      g = LoadF32(base, world + p.default_gravity);
+    }
+    float scale = world && p.gravity_scale >= 0 ? LoadF32(base, world + p.gravity_scale) : 1.0f;
+    g = std::fabs(g * (scale > 0 && scale < 10 ? scale : 1.0f));
+    return g > 50 && g < 5000 ? g : 520.0f;
+  }
+
+  // The pitch of the aim (rotation units) that throws a grenade from `from`
+  // to `to`: thrown at `speed` that much above the aim (InitialPitchOffset,
+  // degrees), the lower of the two curves. False when it cannot reach.
+  bool ThrowPitch(float speed, float offset, float g, const Vec &from, const Vec &to, float &pitch)
+  {
+    float r = Dist2D(from, to), h = to.z - from.z;
+    float v2 = speed * speed;
+    float disc = v2 * v2 - g * (g * r * r + 2.0f * h * v2);
+    if (r < 1.0f || disc < 0)
+    {
+      return false;
+    }
+    float theta = std::atan((v2 - std::sqrt(disc)) / (g * r));
+    pitch = (theta * 57.29578f - offset) * kUnitsPerDegree;
+    return true;
+  }
+
+  // A world surface (not a character) between two points.
+  bool Blocked(PPCContext &ctx, uint8_t *base, uint32_t pawn, const Vec &a, const Vec &b, uint32_t target = 0)
+  {
+    uint32_t hit = TraceHit(ctx, base, pawn, a, b);
+    return hit && hit != target && !IsCharacter(base, hit);
+  }
+
+  // Cover from `threat` (its eye at `eye`): of the cover nodes near the bot
+  // (and near `near_to`, its partner, when it keeps by one), on its level,
+  // not too near the threat, nor another bot's, the nearest (one towards
+  // the threat costs more) where a crouching character's eyes (~35 above
+  // its middle crouched, its middle ~30 lower) are out of the threat's
+  // sight and one rising or leaning out (left or right) sees it.
+  // -1 for none.
+  struct CoverSearch
+  {
+    int near = 0, seen = 0, blind = 0; // nodes near, of the checked: seen crouching, no shot from
+  };
+  int FindCover(PPCContext &ctx, uint8_t *base, uint32_t pawn, uint32_t id, const Bot &bot, const Vec &at,
+                uint32_t threat, const Vec &eye, const Vec *near_to, uint32_t frame, CoverSearch &why)
+  {
+    std::vector<std::pair<float, int>> candidates;
+    float threat_d = Dist2D(at, eye);
+    for (int i = 0; i < int(g_nodes.size()); ++i)
+    {
+      const Node &n = g_nodes[i];
+      float d = Dist2D(at, n.at);
+      if (!n.cover || d > kCoverSearch || std::fabs(n.at.z - at.z) > kCoverClimb ||
+          Dist2D(eye, n.at) < kCoverFromThreat || (near_to && Dist2D(*near_to, n.at) > kCoverSearch) ||
+          (i == bot.bad_cover && frame < bot.bad_until))
+      {
+        continue;
+      }
+      bool taken = false;
+      for (uint32_t o = 0; o < 4; ++o)
+      {
+        taken |= o != id && (g_places & (1u << o)) && g_bots[o].cover >= 0 &&
+                 Dist2D(g_nodes[g_bots[o].cover].at, n.at) < 100.0f;
+      }
+      if (!taken)
+      {
+        ++why.near;
+        candidates.push_back({d + (Dist2D(eye, n.at) < threat_d - 200.0f ? 300.0f : 0.0f), i});
+      }
+    }
+    std::sort(candidates.begin(), candidates.end());
+    for (size_t k = 0; k < candidates.size() && k < kCoverTries; ++k)
+    {
+      const Vec &c = g_nodes[candidates[k].second].at;
+      Vec body{eye.x, eye.y, eye.z - 45.0f};
+      if (!Blocked(ctx, base, pawn, {c.x, c.y, c.z + 10.0f}, eye, threat))
+      {
+        ++why.seen;
+        continue; // seen crouching
+      }
+      float a = std::atan2(eye.y - c.y, eye.x - c.x);
+      float sx = -std::sin(a) * 70.0f, sy = std::cos(a) * 70.0f;
+      Vec up{c.x, c.y, c.z + 55.0f}, mid{c.x, c.y, c.z + 35.0f};
+      bool fires = !Blocked(ctx, base, pawn, up, body, threat);
+      for (float s : {1.0f, -1.0f})
+      {
+        Vec side{c.x + sx * s, c.y + sy * s, c.z + 35.0f};
+        fires = fires || (!Blocked(ctx, base, pawn, mid, side) && !Blocked(ctx, base, pawn, side, body, threat));
+      }
+      if (fires)
+      {
+        return candidates[k].second;
+      }
+      ++why.blind;
+    }
+    return -1;
+  }
+
   // What the bot is about, most urgent first.
   enum class Task
   {
@@ -1979,6 +2290,8 @@ namespace
     kFollow,    // its partner is a player: kept near it
     kObjective, // to the objective, A by it (a hostage), shoot it (a depot), or hold it
     kHunt,      // no objective: the nearest enemy
+    kCover,     // under fire: to a cover node, fights from there
+    kRetreat,   // badly hurt with no cover: back to its partner
   };
   const char *TaskName(Task t)
   {
@@ -1986,6 +2299,8 @@ namespace
            : t == Task::kJoin      ? "join"
            : t == Task::kFollow    ? "follow"
            : t == Task::kObjective ? "objective"
+           : t == Task::kCover     ? "cover"
+           : t == Task::kRetreat   ? "retreat"
                                    : "hunt";
   }
 
@@ -1999,6 +2314,8 @@ namespace
     {
       bot.target = 0;
       bot.path.clear();
+      bot.cover = -1;
+      bot.nade_step = 0;
       if (frame >= bot.next_respawn)
       {
         bot.next_respawn = frame + 45;
@@ -2013,11 +2330,52 @@ namespace
       // Lies still until healed or up again; no paid respawn (the team's money is its score).
       bot.target = 0;
       bot.path.clear();
+      bot.cover = -1;
+      bot.nade_step = 0;
       bot.still = 0;
       bot.stuck_check = 0;
       return in;
     }
     const Props &props = Properties(base);
+    // Hit: its health fell.
+    const CombatProps &combat = Combat(base);
+    int32_t health = int32_t(LoadU32(base, pawn + kPawnHealth));
+    if (bot.health_pawn != pawn)
+    {
+      bot.health_pawn = pawn;
+      bot.health_top = 0;
+      bot.last_health = health;
+    }
+    if (health < bot.last_health)
+    {
+      bot.hurt_at = frame;
+    }
+    bot.last_health = health;
+    // Pawn.HealthMax is not in the reflection: full health is the most it had.
+    bot.health_top = std::max(bot.health_top, health);
+    int32_t health_max =
+        combat.health_max >= 0 ? int32_t(LoadU32(base, pawn + combat.health_max)) : bot.health_top;
+    float health_part = health_max > 0 ? std::clamp(float(health) / float(health_max), 0.0f, 1.0f) : 1.0f;
+    bool hurt = bot.hurt_at && frame - bot.hurt_at < kHurtFrames;
+    Inventory inventory = InventoryOf(base, pawn);
+    if (bot.inventory_logged != pawn)
+    {
+      bot.inventory_logged = pawn;
+      std::string list;
+      for (int i = 0; i < 5; ++i)
+      {
+        uint32_t w = inventory.slot[i];
+        char range[64] = "";
+        if (w && combat.good_min >= 0 && combat.good_max >= 0)
+        {
+          std::snprintf(range, sizeof(range), " (%.0f-%.0f)", LoadF32(base, w + combat.good_min),
+                        LoadF32(base, w + combat.good_max));
+        }
+        list += " " + std::to_string(i) + "=" + (w ? ao2::ue3::ObjectName(base, w) : std::string("-")) + range;
+      }
+      Logf("frame %u: bot %u health %d/%d, inventory:%s, holds slot %d\n", frame, id, health, health_max,
+           list.c_str(), inventory.current);
+    }
     std::erase_if(bot.barred, [&](const Bar &b) { return frame >= b.until; });
     std::string state = StateName(base, pawn);
     bool maneuvering = Maneuvering(state);
@@ -2427,6 +2785,37 @@ namespace
     {
       bot.target = 0;
     }
+    // The threat: the target while in sight, kept a while after (where it was last seen).
+    if (bot.target)
+    {
+      bot.threat = bot.target;
+      bot.threat_seen = frame;
+      bot.threat_at = LoadVec(base, bot.target + kActorLocation);
+    }
+    if (bot.threat && (!Alive(base, bot.threat) || DownState(base, bot.threat) == 2 ||
+                       frame - bot.threat_seen > kThreatFrames))
+    {
+      bot.threat = 0;
+    }
+    if (!bot.threat && bot.hurt_at == frame)
+    {
+      // Hit by one it does not see: the nearest enemy in range.
+      const Character *by = nullptr;
+      for (const Character &c : g_characters)
+      {
+        if (Enemy(me, c) && Dist2D(me.at, c.at) < float(REXCVAR_GET(ao2_versus_bots_range)) &&
+            (!by || Dist2D(me.at, c.at) < Dist2D(me.at, by->at)))
+        {
+          by = &c;
+        }
+      }
+      if (by)
+      {
+        bot.threat = by->pawn;
+        bot.threat_seen = frame;
+        bot.threat_at = by->at;
+      }
+    }
 
     // Hunting: towards the target, else the nearest enemy anywhere.
     if (!have_goal)
@@ -2444,6 +2833,105 @@ namespace
         goal_at = enemy->at, have_goal = true;
         arrive = bot.target ? kNearFight : 0.0f;
       }
+    }
+    // Cover: under fire (hit lately or badly hurt) with an enemy about, or
+    // in a fight at long range - not on its way to heal or join its
+    // partner, nor with a hostage to take or carry off unless badly hurt.
+    // It goes to cover the enemy does not see it at, and fights from there
+    // (below). Left when the enemy is gone, after a while once it is well,
+    // when the enemy sees it there (another is looked for), or when its
+    // partner, a player, goes on.
+    bool carrying = props.drag >= 0 && LoadU32(base, pawn + props.drag);
+    bool can_cover = task != Task::kHeal && task != Task::kJoin && !carrying &&
+                     !(task == Task::kObjective && (objective_type == kObjHostage || objective_type == kObjExtraction) &&
+                       health_part > kRetreatHealth);
+    Vec threat_eye = bot.threat ? Head(base, bot.threat) : Vec{};
+    bool want_cover = can_cover && bot.threat &&
+                      (hurt || health_part < 0.6f || (bot.target && Dist2D(me.at, bot.threat_at) > kCoverFight));
+    if (bot.cover >= 0)
+    {
+      const char *why = nullptr;
+      if (!can_cover)
+      {
+        why = "it has to go";
+      }
+      else if (!bot.threat && !hurt)
+      {
+        why = "no enemy about";
+      }
+      else if (bot.cover_arrived && frame >= bot.cover_until && health_part > 0.7f)
+      {
+        why = "it stayed long enough";
+      }
+      else if (!bot.cover_arrived && frame - bot.cover_since > kCoverWalkFrames)
+      {
+        why = "it did not get there";
+      }
+      else if (bot.exposed >= 2)
+      {
+        why = "the enemy sees it there";
+        bot.bad_cover = bot.cover;
+        bot.bad_until = frame + 900;
+      }
+      else if (player_partner && bot.following && Dist2D(partner->at, g_nodes[bot.cover].at) > kFollowLeave)
+      {
+        why = "its partner goes on";
+      }
+      if (why)
+      {
+        Logf("frame %u: bot %u leaves cover %d: %s\n", frame, id, bot.cover, why);
+        if (bot.cover_arrived)
+        {
+          bot.press_at = frame + 1;
+          bot.press = kB; // out of cover
+        }
+        bot.next_cover = frame + (bot.exposed >= 2 ? 0 : kCoverRest);
+        bot.cover = -1;
+        bot.exposed = 0;
+        bot.path.clear();
+        bot.progress = false;
+      }
+    }
+    if (bot.cover < 0 && want_cover && frame >= bot.next_cover)
+    {
+      bot.next_cover = frame + 30;
+      Vec partner_at = player_partner && bot.following ? partner->at : Vec{};
+      CoverSearch why;
+      int c = FindCover(ctx, base, pawn, id, bot, me.at, bot.threat, threat_eye,
+                        player_partner && bot.following ? &partner_at : nullptr, frame, why);
+      if (c < 0 && frame >= bot.next_cover_log)
+      {
+        bot.next_cover_log = frame + 300;
+        Logf("frame %u: bot %u finds no cover from %08X %.0f away: %d nodes near, %d checked seen crouching, %d "
+             "with no shot\n",
+             frame, id, bot.threat, Dist2D(me.at, threat_eye), why.near, why.seen, why.blind);
+      }
+      if (c >= 0)
+      {
+        bot.cover = c;
+        bot.cover_since = frame;
+        bot.cover_arrived = 0;
+        bot.exposed = 0;
+        bot.path.clear();
+        bot.progress = false;
+        Logf("frame %u: bot %u takes cover at %d (%.0f %.0f %.0f), %.0f away, from %08X %.0f away (health %.0f%%%s)\n",
+             frame, id, c, g_nodes[c].at.x, g_nodes[c].at.y, g_nodes[c].at.z, Dist2D(me.at, g_nodes[c].at),
+             bot.threat, Dist2D(me.at, threat_eye), health_part * 100.0f, hurt ? ", hit" : "");
+      }
+    }
+    if (bot.cover >= 0)
+    {
+      task = Task::kCover;
+      goal_at = g_nodes[bot.cover].at, have_goal = true, goal_actor = 0;
+      arrive = kCoverReach;
+      arrive_z = 80.0f;
+    }
+    else if (want_cover && health_part < kRetreatHealth && partner && !partner->down &&
+             Dist2D(me.at, partner->at) > 500.0f)
+    {
+      task = Task::kRetreat; // badly hurt, no cover: back to its partner
+      goal_at = partner->at, have_goal = true, goal_actor = 0;
+      arrive = 300.0f;
     }
     float goal_d = have_goal ? Dist2D(me.at, goal_at) : 0.0f;
     bool there = have_goal && goal_d < arrive && std::fabs(me.at.z - goal_at.z) < arrive_z;
@@ -2513,6 +3001,67 @@ namespace
       return in;
     }
 
+    // In cover: ducked down (no LT: the character crouches behind it) and up
+    // (LT: it rises or leans out and aims) by turns; down at once when hit
+    // while up. Down, it checks the threat does not see it (or hit it).
+    bool in_cover = task == Task::kCover && there;
+    if (task == Task::kCover && !there && bot.cover_arrived && goal_d > 150.0f)
+    {
+      bot.cover_arrived = 0; // pushed off it: back
+    }
+    bool hiding = false;
+    if (in_cover)
+    {
+      if (!bot.cover_arrived)
+      {
+        bot.cover_arrived = frame;
+        bot.cover_until = frame + 600 + uint32_t((Noise(frame, id + 29) + 1.0f) * 150.0f);
+        bot.peek_until = 0;
+        Logf("frame %u: bot %u in cover %d after %u frames\n", frame, id, bot.cover, frame - bot.cover_since);
+      }
+      auto cycle = [&](uint32_t hide) {
+        bot.hide_since = frame;
+        bot.hide_until = frame + hide;
+        bot.peek_until = bot.hide_until + 60 + uint32_t((Noise(frame, id + 37) + 1.0f) * 40.0f);
+      };
+      if (frame >= bot.peek_until)
+      {
+        cycle(45 + uint32_t((Noise(frame, id + 31) + 1.0f) * 30.0f));
+      }
+      else if (frame >= bot.hide_until + 15 && bot.hurt_at == frame)
+      {
+        cycle(60);
+      }
+      hiding = frame < bot.hide_until;
+      if (hiding && bot.threat && frame - bot.hide_since >= 25 &&
+          (Crouched(base, pawn) || frame - bot.hide_since >= 60))
+      {
+        if (bot.hurt_at == frame)
+        {
+          ++bot.exposed;
+        }
+        else if (frame >= bot.next_expose_check)
+        {
+          bot.next_expose_check = frame + 20;
+          bot.exposed = Blocked(ctx, base, pawn, eye, threat_eye, bot.threat) ? 0 : bot.exposed + 1;
+          if (bot.exposed)
+          {
+            static int32_t cover_ratio = -2, crouch_ratio;
+            if (cover_ratio == -2)
+            {
+              cover_ratio = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "CoverRatio");
+              crouch_ratio = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "AnimStandToCrouchRatio");
+            }
+            Logf("frame %u: bot %u seen in cover %d (%u frames down): state %s, cover ratio %.2f, crouch %.2f, eye "
+                 "%.0f above it, %.0f from the node\n",
+                 frame, id, bot.cover, frame - bot.hide_since, state.c_str(),
+                 cover_ratio >= 0 ? LoadF32(base, pawn + cover_ratio) : -1.0f,
+                 crouch_ratio >= 0 ? LoadF32(base, pawn + crouch_ratio) : -1.0f, eye.z - me.at.z, goal_d);
+          }
+        }
+      }
+    }
+
     // Aim and fire at the target: LT once it is near or the bot stands
     // (aiming, a character walks slowly; farther on the way it fires from
     // the hip). The aim wanders a few degrees, slowly; it fires in bursts,
@@ -2524,7 +3073,7 @@ namespace
     bool shoot_objective = !bot.target && there && task == Task::kObjective && objective_type == kObjDetonate &&
                            bot.objective_seen == goal_actor;
     bool dragging = props.drag >= 0 && LoadU32(base, pawn + props.drag);
-    if (bot.target || shoot_objective)
+    if ((bot.target || shoot_objective) && !bot.nade_step)
     {
       // A target carrying a hostage is shot in the head, over the hostage.
       uint32_t carried = bot.target && props.drag >= 0 ? LoadU32(base, bot.target + props.drag) : 0;
@@ -2554,7 +3103,9 @@ namespace
       bool on = TurnTowards(base, holder, want_yaw, want_pitch, tolerance);
       bool moving_on = have_goal && !there && task != Task::kHunt;
       // Aiming slows the walk: not while catching up with its partner.
-      bool catching_up = moving_on && task == Task::kFollow;
+      // Nor running to cover or back to it.
+      bool catching_up =
+          moving_on && (task == Task::kFollow || task == Task::kCover || task == Task::kRetreat);
       if (!catching_up && (!moving_on || target_d < kAimRange || dragging))
       {
         in.buttons |= kLT;
@@ -2567,13 +3118,37 @@ namespace
         in.buttons |= kRT; // pulled 6 frames of 9: single shot weapons fire again too
       }
     }
+    if (in_cover && bot.threat && !bot.target && !bot.nade_step)
+    {
+      // The enemy out of sight: aimed where it was last seen, up or down.
+      Vec at{bot.threat_at.x, bot.threat_at.y, bot.threat_at.z + 40.0f};
+      float dx = at.x - eye.x, dy = at.y - eye.y;
+      TurnTowards(base, holder, std::atan2(dy, dx) * kUnitsPerRadian,
+                  std::atan2(at.z - eye.z, std::hypot(dx, dy)) * kUnitsPerRadian, 0.0f);
+      in.buttons |= kLT;
+    }
+    if (hiding)
+    {
+      in.buttons &= ~(kLT | kRT);
+    }
 
     // Moving: along a path to the goal while not there; there (or hunting
     // near the target) sideways, now this way, now that, round the goal and
     // not into a wall.
     bool walking = have_goal && !there && !hold;
     float speed = bot.target && task == Task::kHunt ? 0.6f : 1.0f;
-    if (!walking && bot.target)
+    if (in_cover)
+    {
+      // Against it a moment (towards the threat: the cover is between):
+      // the character takes it; then still.
+      if (bot.threat && frame - bot.cover_arrived < 20)
+      {
+        Steer(me.at, bot.threat_at, view_yaw, 0.5f, in);
+      }
+      bot.stuck_check = 0;
+      bot.progress = false;
+    }
+    else if (!walking && bot.target)
     {
       if (frame >= bot.next_strafe)
       {
@@ -2693,7 +3268,7 @@ namespace
         bot.press_at = frame + 6;
         bot.press = kY;
       }
-      if (!bot.target)
+      if (!bot.target && !bot.nade_step)
       {
         // Look where it goes.
         float want_yaw = std::atan2(way.y - me.at.y, way.x - me.at.x) * kUnitsPerRadian;
@@ -2826,20 +3401,276 @@ namespace
       }
     }
 
-    if (frame < bot.unaim_until)
+    // Hit in the open with a target in sight: now and then a dodge aside
+    // (Y aiming), where the way is clear.
+    if (bot.hurt_at == frame && bot.target && task != Task::kCover && frame >= bot.next_dodge && !maneuvering &&
+        !carrying && !bot.nade_step && Noise(frame, id + 41) > -0.2f)
+    {
+      bot.next_dodge = frame + 200 + uint32_t((Noise(frame, id + 47) + 1.0f) * 60.0f);
+      float yaw = view_yaw / kUnitsPerRadian;
+      int first = Noise(frame, id + 43) < 0 ? -1 : 1;
+      for (int s : {first, -first})
+      {
+        float a = yaw + float(s) * 1.5707964f;
+        if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * 250.0f, me.at.y + std::sin(a) * 250.0f, me.at.z}))
+        {
+          bot.dodge_at = frame + 1;
+          bot.dodge_side = s;
+          Logf("frame %u: bot %u hit (health %.0f%%): dodges %s\n", frame, id, health_part * 100.0f,
+               s > 0 ? "right" : "left");
+          break;
+        }
+      }
+    }
+    if (bot.dodge_at && frame >= bot.dodge_at && frame < bot.dodge_at + 15)
+    {
+      in.lx = float(bot.dodge_side);
+      in.ly = 0;
+      in.buttons |= kLT;
+      in.buttons |= frame < bot.dodge_at + 2 ? kY : 0;
+    }
+
+    // A grenade: at an enemy that hides (out of sight a moment ago, or only
+    // its head shows) or at enemies close together, kNadeMin - kNadeMax
+    // away, where none of its own team (nor a hostage) is, along a curve
+    // nothing is in the way of; from cover too. Aimed short (it rolls on).
+    uint32_t grenade = inventory.slot[kSlotGrenade];
+    float nade_speed = grenade && combat.nade_speed >= 0 ? LoadF32(base, grenade + combat.nade_speed) : 0.0f;
+    float nade_offset = grenade && combat.nade_pitch >= 0 ? LoadF32(base, grenade + combat.nade_pitch) : 0.0f;
+    if (!bot.nade_step && frame >= bot.next_nade && bot.threat && grenade && nade_speed > 100.0f &&
+        nade_speed < 10000.0f && std::fabs(nade_offset) < 60.0f && !carrying && !maneuvering &&
+        (task != Task::kCover || in_cover) && task != Task::kRetreat && task != Task::kHeal && task != Task::kJoin &&
+        frame >= bot.reload_until && Noise(frame / 20, id + 53) > 0.0f)
+    {
+      bot.next_nade = frame + 20;
+      float body = g_grid.body > 0 ? g_grid.body : 45.0f;
+      Vec to{bot.threat_at.x, bot.threat_at.y, bot.threat_at.z - body};
+      float d = Dist2D(me.at, to);
+      bool hides = (!bot.target && frame - bot.threat_seen >= 20 && frame - bot.threat_seen < 300) ||
+                   (bot.target && !bot.target_body);
+      int group = 0;
+      bool friend_near = false;
+      for (const Character &c : g_characters)
+      {
+        group += Enemy(me, c) && Dist2D(c.at, bot.threat_at) < kNadeGroup ? 1 : 0;
+        friend_near |= (c.civilian || (c.team && c.team == me.team)) && Dist3D(c.at, to) < kNadeFriend;
+      }
+      Vec aim_to{me.at.x + (to.x - me.at.x) * kNadeRoll, me.at.y + (to.y - me.at.y) * kNadeRoll, to.z};
+      float g = Gravity(base), pitch = 0;
+      if (d >= kNadeMin && d <= kNadeMax && std::fabs(to.z - me.at.z) < 400.0f && (hides || group >= 2) &&
+          !friend_near && ThrowPitch(nade_speed, nade_offset, g, eye, aim_to, pitch))
+      {
+        // The curve's top half way: clear from the hand to it and from it down.
+        float theta = (pitch / kUnitsPerDegree + nade_offset) / 57.29578f;
+        float x = Dist2D(eye, aim_to) * 0.5f;
+        float c = std::cos(theta);
+        float y = x * std::tan(theta) - g * x * x / (2.0f * nade_speed * nade_speed * c * c);
+        Vec top{(eye.x + aim_to.x) * 0.5f, (eye.y + aim_to.y) * 0.5f, eye.z + y};
+        if ((!g_last_nade || frame - g_last_nade >= kNadeApart) && !Blocked(ctx, base, pawn, eye, top) &&
+            !Blocked(ctx, base, pawn, top, {to.x, to.y, to.z + 80.0f}))
+        {
+          g_last_nade = frame;
+          bot.nade_step = 1;
+          bot.nade_at = frame;
+          bot.nade_to = aim_to;
+          bot.nade_pitch = pitch;
+          Logf("frame %u: bot %u throws a grenade at %08X (%s), %.0f away, to %.0f %.0f %.0f: speed %.0f, pitch "
+               "%.1f + %.1f, gravity %.0f, %d enemies there\n",
+               frame, id, bot.threat, hides ? "it hides" : "a group", d, aim_to.x, aim_to.y, aim_to.z, nade_speed,
+               pitch / kUnitsPerDegree, nade_offset, g, group);
+        }
+      }
+    }
+    if (bot.nade_step)
+    {
+      // Selected (LB + D-pad down), aimed (LT), thrown (RT pulled and let
+      // go), then the weapon taken again. Standing still meanwhile.
+      uint32_t t = frame - bot.nade_at;
+      bool holds = HoldsGrenade(base, pawn);
+      in.buttons = 0;
+      in.lx = in.ly = 0;
+      auto next = [&](int step) {
+        bot.nade_step = step;
+        bot.nade_at = frame;
+      };
+      auto end = [&](const char *why, uint32_t again) {
+        Logf("frame %u: bot %u grenade: %s\n", frame, id, why);
+        bot.nade_step = 0;
+        bot.next_nade = frame + again;
+        if (bot.slot_want >= 0)
+        {
+          bot.dpad = kSlotButtons[bot.slot_want];
+          bot.dpad_at = frame + 1;
+          bot.next_switch = frame + 60;
+        }
+      };
+      if (bot.nade_step >= 2)
+      {
+        TurnTowards(base, holder,
+                    std::atan2(bot.nade_to.y - eye.y, bot.nade_to.x - eye.x) * kUnitsPerRadian, bot.nade_pitch,
+                    0.0f);
+      }
+      float yaw = LoadF32(base, holder + kLookRotation + 4), pitch = LoadF32(base, holder + kLookRotation);
+      float want = std::atan2(bot.nade_to.y - eye.y, bot.nade_to.x - eye.x) * kUnitsPerRadian;
+      bool on = std::fabs(std::remainder(want - yaw, 65536.0f)) < kUnitsPerDegree &&
+                std::fabs(std::remainder(bot.nade_pitch - pitch, 65536.0f)) < kUnitsPerDegree;
+      switch (bot.nade_step)
+      {
+      case 1:
+        if (t == 0)
+        {
+          bot.dpad = kDown;
+          bot.dpad_at = frame;
+        }
+        if (holds && t >= 12)
+        {
+          next(2);
+        }
+        else if (t > 90)
+        {
+          end("none in its hand (none left?)", 3600);
+        }
+        break;
+      case 2:
+        in.buttons |= kLT;
+        if (!holds)
+        {
+          end("not in its hand any more", 600);
+        }
+        else if (t >= 25 && on)
+        {
+          next(3);
+        }
+        else if (t > 120)
+        {
+          end("could not aim", 300);
+        }
+        break;
+      case 3:
+        in.buttons |= kLT | kRT;
+        if (t >= 10)
+        {
+          next(4);
+        }
+        break;
+      default:
+        in.buttons |= t < 6 ? kLT : 0;
+        if (t == 20)
+        {
+          // The grenade in flight (for the log only): the one nearest the
+          // bot (a scan of every object, once a throw).
+          static uint32_t proj_class = 0, phys_class = 0;
+          proj_class = proj_class ? proj_class : ao2::ue3::FindClass(base, "AO2Proj_Grenade");
+          phys_class = phys_class ? phys_class : ao2::ue3::FindClass(base, "AO2PhysProj_Grenade");
+          bot.nade_projectile = 0;
+          float best = 800.0f;
+          uint32_t count = ao2::ue3::ObjectCount(base);
+          for (uint32_t i = 0; i < count; ++i)
+          {
+            uint32_t o = ao2::ue3::ObjectAt(base, i);
+            if (!o || !((proj_class && ao2::ue3::IsA(base, o, proj_class)) ||
+                        (phys_class && ao2::ue3::IsA(base, o, phys_class))))
+            {
+              continue;
+            }
+            float d = Dist3D(LoadVec(base, o + kActorLocation), eye);
+            if (d < best)
+            {
+              best = d;
+              bot.nade_projectile = o;
+            }
+          }
+          bot.nade_watch_until = frame + 240;
+          Logf("frame %u: bot %u grenade in flight: %08X %.0f away\n", frame, id, bot.nade_projectile, best);
+        }
+        if (t >= 50)
+        {
+          end("thrown", 900 + uint32_t((Noise(frame, id + 59) + 1.0f) * 150.0f));
+        }
+        break;
+      }
+    }
+    // Where a thrown grenade goes (to see the aim is right).
+    if (bot.nade_projectile && frame < bot.nade_watch_until && frame % 15 == 0)
+    {
+      uint32_t cls = LoadU32(base, bot.nade_projectile + 52);
+      static uint32_t actor_class = 0;
+      actor_class = actor_class ? actor_class : ao2::ue3::FindClass(base, "Actor");
+      if (cls && actor_class && ao2::ue3::IsA(base, bot.nade_projectile, actor_class))
+      {
+        Vec at = LoadVec(base, bot.nade_projectile + kActorLocation);
+        if (Dist3D(at, bot.nade_last) < 1.0f)
+        {
+          bot.nade_projectile = 0; // still: it went off (or lies)
+        }
+        bot.nade_last = at;
+        Logf("frame %u: bot %u grenade at %.0f %.0f %.0f, %.0f from where it was aimed\n", frame, id, at.x, at.y,
+             at.z, Dist2D(at, bot.nade_to));
+      }
+      else
+      {
+        bot.nade_projectile = 0;
+      }
+    }
+
+    // The weapon for the threat's distance (the primary with none); not
+    // while it throws or reloads, nor over a weapon picked up (slot 4).
+    if (!bot.nade_step && frame >= bot.reload_until && !maneuvering)
+    {
+      int want = bot.threat ? SlotFor(base, inventory, Dist2D(me.at, bot.threat_at))
+                 : inventory.slot[0] ? 0
+                                     : SlotFor(base, inventory, 1000.0f);
+      if (want != bot.slot_want)
+      {
+        bot.slot_want = want;
+        bot.slot_want_since = frame;
+      }
+      if (want >= 0 && inventory.current >= 0 && inventory.current != 4 && inventory.current != want &&
+          frame - bot.slot_want_since >= 30 && frame >= bot.next_switch)
+      {
+        bot.dpad = kSlotButtons[want];
+        bot.dpad_at = frame;
+        bot.next_switch = frame + 150;
+        Logf("frame %u: bot %u takes slot %d (%s) for %.0f\n", frame, id, want,
+             ao2::ue3::ObjectName(base, inventory.slot[want]).c_str(),
+             bot.threat ? Dist2D(me.at, bot.threat_at) : 0.0f);
+      }
+    }
+    // Down in cover it crouches (L3: the character does not of itself),
+    // up and out of cover it stands; L3 a moment after the last press, the
+    // state read back (Pawn.bIsCrouched).
+    {
+      bool want = in_cover && hiding && frame - bot.hide_since >= 3;
+      if (Crouched(base, pawn) != want && frame >= bot.next_crouch && !maneuvering && !bot.nade_step)
+      {
+        bot.next_crouch = frame + 30;
+        in.buttons |= kL3;
+      }
+    }
+
+    // A weapon picked: LB held a moment, the D-pad pressed meanwhile.
+    if (bot.dpad && frame >= bot.dpad_at && frame < bot.dpad_at + 10)
+    {
+      in.buttons |= kLB | (frame >= bot.dpad_at + 3 && frame < bot.dpad_at + 6 ? bot.dpad : 0);
+    }
+
+    if (frame < bot.unaim_until && !bot.nade_step)
     {
       in.buttons &= ~(kLT | kRT);
     }
-    if (frame >= bot.press_at && frame < bot.press_at + 2 && !(bot.press == kY && maneuvering))
+    if (frame >= bot.press_at && frame < bot.press_at + 2 && !(bot.press == kY && maneuvering) && !bot.nade_step)
     {
       in.buttons |= bot.press;
     }
 
-    // Reload: an empty magazine; a part-empty one with no target.
+    // Reload: an empty magazine; a part-empty one with no target, or ducked
+    // in cover; not with a grenade in its hand.
     uint32_t weapon = LoadU32(base, pawn + kPawnWeapon);
     int32_t ammo = weapon ? int32_t(LoadU32(base, weapon + kWeaponAmmo)) : -1;
     int32_t max_ammo = weapon ? int32_t(LoadU32(base, weapon + kWeaponMaxAmmo)) : 0;
-    bool reload = weapon && (ammo <= 0 || (!bot.target && max_ammo > 0 && max_ammo < 10000 && ammo < max_ammo / 3));
+    bool part = max_ammo > 0 && max_ammo < 10000;
+    bool reload = weapon && !bot.nade_step && !HoldsGrenade(base, pawn) &&
+                  (ammo <= 0 || (!bot.target && part && ammo < max_ammo / 3) || (hiding && part && ammo < max_ammo / 2));
     if (reload && frame >= bot.next_reload)
     {
       bot.reload_until = frame + 5;
