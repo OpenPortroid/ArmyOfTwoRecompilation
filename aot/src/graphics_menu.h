@@ -24,6 +24,20 @@ namespace ao2::gfxmenu
   // waits for the keys to go up): the menus' mouse and keys keep off.
   bool Capturing();
 
+  // The Graphics page's settings, for the F1 debug menu (UI thread). Labels
+  // and choice names are English (ui_text.h Tr). Section 0 display, 1 effects.
+  int SettingCount();
+  int SettingSection(int setting);
+  const char *SettingLabel(int setting);
+  int ChoiceCount(int setting);
+  const char *ChoiceName(int setting, int choice);
+  int Chosen(int setting);
+  // The pick is saved, but only a restart applies it.
+  bool WaitsForRestart(int setting);
+  // Picks a choice, applied and saved as the page does; the render
+  // resolution switches at once (the page waits for its Accept).
+  void Pick(int setting, int choice);
+
   // The pause menu's Options row "Graphics and controls": an option button
   // that acts as a plain button (A opens the Graphics page).
   bool IsOpenButton(const uint8_t *base, uint32_t widget);

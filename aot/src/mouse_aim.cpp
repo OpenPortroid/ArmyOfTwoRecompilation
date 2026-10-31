@@ -19,7 +19,8 @@
 // Zooming narrows the camera's field of view (on foot 70 deg, precision 40,
 // back-to-back 60/30, sniper scope down to ~22). The mouse turn is scaled by
 // tan(fov / 2) / tan(70 / 2), so the picture moves under the mouse at the
-// same rate at the screen center whatever the zoom. The FOV is read from the
+// same rate at the screen center whatever the zoom (the FOV as drawn, with
+// ao2_fov / ao2_fov_aim: fov.cpp). The FOV is read from the
 // player's camera actor: [controller+832] (an AAO2CameraActor, +460 = FOV in
 // degrees; AAO2CameraActor::GetVerticalFOVAngle reads it the same way).
 //
@@ -51,6 +52,7 @@
 #include "coop_cmd.h"
 #include "cutscene_skip.h"
 #include "decouple.h"
+#include "fov.h"
 #include "mouse_aim.h"
 #include "versus_bots.h"
 #include "cyrillic_fonts.h"
@@ -204,7 +206,8 @@ namespace
     return 0.0f;
   }
 
-  // Mouse sensitivity factor for the current zoom.
+  // Mouse sensitivity factor for the current zoom, as drawn (ao2_fov,
+  // ao2_fov_aim: fov.cpp); on foot 1 whatever ao2_fov.
   double ZoomScale(float fov)
   {
     if (!(fov > 1.0f && fov < 170.0f))
@@ -212,7 +215,8 @@ namespace
       return 1.0;
     }
     constexpr double kHalfDegree = 3.14159265358979323846 / 360.0;
-    double scale = std::tan(fov * kHalfDegree) / std::tan(kBaseFov * kHalfDegree);
+    double scale = std::tan(ao2::fov::Drawn(fov) * kHalfDegree) /
+                   std::tan(ao2::fov::Drawn(float(kBaseFov)) * kHalfDegree);
     if (fov < kBaseFov)
     {
       scale *= REXCVAR_GET(ao2_mouse_zoom_sensitivity);

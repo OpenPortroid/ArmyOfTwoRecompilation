@@ -50,6 +50,7 @@
 #include <rex/ppc.h>
 
 #include "decouple.h"
+#include "fov.h"
 #include "mouse_aim.h"
 #include "ue3_reflect.h"
 #include "log_files.h"
@@ -72,6 +73,9 @@ namespace
   constexpr float kMaxMove = 1500.0f;          // world units
   constexpr float kMaxTurn = 65536.0f / 6.0f;  // rotator units (60 degrees)
   constexpr float kMaxFovChange = 40.0f;       // degrees
+  // PlayerController +808: set while an in-engine cutscene plays.
+  constexpr uint32_t kControllerFlags = 808;
+  constexpr uint32_t kCinematicMode = 0x00020000;
   // The camera is this close to the pawn when it orbits it.
   // (on foot ~200, at the wheel of the hovercraft ~810).
   constexpr float kMaxOrbitRadius = 1500.0f;   // world units
@@ -630,27 +634,36 @@ extern "C" REX_FUNC(sub_82384248)
 }
 
 // The view's field of view (controller) -> f1, degrees. Only CalcSceneView
-// calls it.
+// calls it. Interpolated between steps, then the player's FOV settings
+// (fov.cpp) - not in cutscenes or the front end.
 extern "C" REX_FUNC(__imp__sub_823E06D8);
 extern "C" REX_FUNC(sub_823E06D8)
 {
+  uint32_t controller = ctx.r3.u32;
   __imp__sub_823E06D8(ctx, base);
-  if (!t_view_player || !On())
+  if (!t_view_player)
   {
     return;
   }
-  PlayerViews &p = Views(t_view_player);
-  NextStep(p);
-  if (!p.cur.has_fov)
+  if (On())
   {
-    p.cur.fov = float(ctx.f1.f64);
-    p.cur.has_fov = true;
+    PlayerViews &p = Views(t_view_player);
+    NextStep(p);
+    if (!p.cur.has_fov)
+    {
+      p.cur.fov = float(ctx.f1.f64);
+      p.cur.has_fov = true;
+    }
+    if (!p.cut && p.prev.has_fov && std::fabs(p.cur.fov - p.prev.fov) <= kMaxFovChange)
+    {
+      ctx.f1.f64 = p.prev.fov + (p.cur.fov - p.prev.fov) * float(ao2::decouple::Alpha());
+    }
   }
-  if (p.cut || !p.prev.has_fov || std::fabs(p.cur.fov - p.prev.fov) > kMaxFovChange)
+  if (controller && !(LoadU32(base, controller + kControllerFlags) & kCinematicMode) &&
+      !ao2::mouse::InFrontEnd())
   {
-    return;
+    ctx.f1.f64 = ao2::fov::Drawn(float(ctx.f1.f64));
   }
-  ctx.f1.f64 = p.prev.fov + (p.cur.fov - p.prev.fov) * float(ao2::decouple::Alpha());
 }
 
 // USceneCapture2DComponent::UpdateTransform (component): the game moved a

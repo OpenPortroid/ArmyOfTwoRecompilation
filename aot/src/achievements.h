@@ -4,6 +4,8 @@
 
 #include <filesystem>
 
+#include <imgui.h>
+
 namespace ao2::ach
 {
   // After the game's language is set (OnPostSetup, after lang::Install): the
@@ -14,4 +16,9 @@ namespace ao2::ach
   // Any thread (ao2_achievements_key, F7): opens the achievements menu, or
   // closes it when it is open.
   void ToggleMenu();
+
+  // UI thread, inside an ImGui window (the F1 debug menu's tab): the menu's
+  // counts and list in [min, max]; `appearing` starts it over (its fade-in,
+  // the scroll at the top).
+  void DrawTab(ImVec2 min, ImVec2 max, bool appearing);
 } // namespace ao2::ach

@@ -72,6 +72,7 @@
 #include <ctime>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <random>
 #include <string>
@@ -1316,10 +1317,15 @@ namespace
       }
     }
 
-    bool Draw()
+    // `origin` (top left) and `embed_width`: drawn there inside the current
+    // window (the F1 debug menu's tab, a scrolling child): no backdrop,
+    // panel or Close, Esc left to that window; false once it would close
+    // (an invite accepted).
+    bool Draw(const ImVec2 *origin = nullptr, float embed_width = 0.0f)
     {
       namespace ui = ao2::ui;
       using ui::FontKind;
+      const bool embedded = origin != nullptr;
       auto &st = state();
       double now = ImGui::GetTime();
       if (opened < 0.0)
@@ -1328,6 +1334,10 @@ namespace
       }
       float since = float(now - opened);
       float a = ui::EaseOutCubic(since / kOpenTime);
+      if (embedded && closing >= 0.0)
+      {
+        return false;
+      }
       if (closing >= 0.0)
       {
         float c = float(now - closing) / kCloseTime;
@@ -1360,17 +1370,20 @@ namespace
       std::sort(peers.begin(), peers.end(), [](const Peer &x, const Peer &y) { return x.name < y.name; });
 
       const ImGuiViewport *vp = ImGui::GetMainViewport();
-      ImGui::SetNextWindowPos(vp->Pos);
-      ImGui::SetNextWindowSize(vp->Size);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-      ImGui::Begin("##players", nullptr,
-                   ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
-                       ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
-      ImGui::PopStyleVar(2);
-      if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || close_requested))
+      if (!embedded)
       {
-        BeginClose();
+        ImGui::SetNextWindowPos(vp->Pos);
+        ImGui::SetNextWindowSize(vp->Size);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::Begin("##players", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+        ImGui::PopStyleVar(2);
+        if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || close_requested))
+        {
+          BeginClose();
+        }
       }
 
       // The content goes on top (channel 1); the panel behind it (channel 0)
@@ -1379,11 +1392,11 @@ namespace
       dl->ChannelsSplit(2);
       dl->ChannelsSetCurrent(1);
 
-      const float width = std::min(800.0f * s, vp->Size.x - 40.0f * s);
-      const float pad = 32.0f * s;
+      const float width = embedded ? embed_width : std::min(800.0f * s, vp->Size.x - 40.0f * s);
+      const float pad = embedded ? 0.0f : 32.0f * s;
       ImVec2 center = vp->GetCenter();
-      float x0 = center.x - width * 0.5f - (1.0f - a) * 40.0f * s;
-      float y0 = center.y - panel_h * 0.5f;
+      float x0 = (embedded ? origin->x : center.x - width * 0.5f) - (1.0f - a) * 40.0f * s;
+      float y0 = embedded ? origin->y : center.y - panel_h * 0.5f;
       float x1 = x0 + width;
       float cx0 = x0 + pad, cx1 = x1 - pad;
       float y = y0 + pad;
@@ -1805,6 +1818,14 @@ namespace
       std::snprintf(port, sizeof(port), Tr("UDP %u must be open on both PCs (firewall)"), unsigned(Port()));
       float kh = 24.0f * s;
       ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y + 4.0f * s), ui::Fade(ui::kMuted, a), port);
+      if (embedded)
+      {
+        dl->ChannelsMerge();
+        // The child window scrolls over everything drawn.
+        ImGui::SetCursorScreenPos(ImVec2(x0, y));
+        ImGui::Dummy(ImVec2(1.0f, kh + 8.0f * s));
+        return closing < 0.0;
+      }
       {
         const char *label = Tr("CLOSE");
         float label_w = ui::CapsSize(FontKind::kLabel, label).x;
@@ -1943,6 +1964,27 @@ namespace ao2::invite
       g_players_window = window;
     }
     ao2::menu::OpenWindow("players", [window]() { return window->Draw(); }, /*own_escape=*/true);
+  }
+
+  bool DrawTab(ImVec2 origin, float width, bool appearing)
+  {
+    static std::unique_ptr<PlayersWindow> tab;
+    if (!g_started)
+    {
+      return true;
+    }
+    if (appearing || !tab)
+    {
+      tab = std::make_unique<PlayersWindow>();
+      std::lock_guard lock(state().mutex);
+      state().next_beacon = Clock::now(); // look for players now
+    }
+    return tab->Draw(&origin, width);
+  }
+
+  bool Running()
+  {
+    return g_started;
   }
 
   void TogglePlayers()

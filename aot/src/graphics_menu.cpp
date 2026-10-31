@@ -1745,6 +1745,61 @@ namespace ao2::gfxmenu
 
   bool Capturing() { return g_capture.button || g_capture.swallowing; }
 
+  int SettingCount() { return static_cast<int>(Settings().size()); }
+
+  int SettingSection(int i)
+  {
+    for (int section = 0; section < 2; ++section)
+    {
+      if (std::find(std::begin(kGraphicsSections[section]), std::end(kGraphicsSections[section]), i) !=
+          std::end(kGraphicsSections[section]))
+      {
+        return section;
+      }
+    }
+    return 0;
+  }
+
+  const char *SettingLabel(int i) { return Settings()[i].label; }
+  int ChoiceCount(int i) { return static_cast<int>(Settings()[i].choices.size()); }
+  const char *ChoiceName(int i, int c) { return Settings()[i].choices[c].name; }
+
+  int Chosen(int i)
+  {
+    InitSettings();
+    return Settings()[i].chosen;
+  }
+
+  bool WaitsForRestart(int i)
+  {
+    const Setting &s = Settings()[i];
+    return s.restart || (s.when == When::kRestart && s.chosen != s.running);
+  }
+
+  void Pick(int i, int c)
+  {
+    InitSettings();
+    Setting &s = Settings()[i];
+    if (c < 0 || c >= static_cast<int>(s.choices.size()) || c == s.chosen)
+    {
+      return;
+    }
+    s.chosen = c;
+    Logf("debug menu: %s -> %s\n", s.cvar, s.choices[c].value);
+    switch (s.when)
+    {
+    case When::kNow:
+      Apply(s);
+      break;
+    case When::kAccept:
+      Accept(s); // the menu has no Accept: the render resolution switches at once
+      break;
+    case When::kRestart:
+      Save(s);
+      break;
+    }
+  }
+
   bool IsOpenButton(const uint8_t *base, uint32_t widget)
   {
     const Row *row = RowOf(base, widget);

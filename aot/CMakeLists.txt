@@ -80,6 +80,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/versus_bots.cpp
     src/versus_lobby.cpp
     src/debug_menu.cpp
+    src/quick_settings.cpp
     src/dlc_folder.cpp
     src/perf_overlay.cpp
     src/autopilot.cpp
@@ -90,6 +91,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/frame_time.cpp
     src/decouple.cpp
     src/interp_camera.cpp
+    src/fov.cpp
     src/interp_objects.cpp
     src/render_fence.cpp
     src/render_idle.cpp

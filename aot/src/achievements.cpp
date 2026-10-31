@@ -812,14 +812,20 @@ namespace
       }
     }
 
-    bool Draw()
+    // `area` (min, max): drawn in it inside the current window (the F1 debug
+    // menu's tab): no backdrop, panel or footer, Esc left to that window.
+    bool Draw(const ImVec2 *area = nullptr)
     {
       namespace ui = ao2::ui;
       using ui::FontKind;
+      const bool embedded = area != nullptr;
       auto *ks = rex::system::kernel_state();
       if (!ks)
       {
-        g_menu_open = false;
+        if (!embedded)
+        {
+          g_menu_open = false;
+        }
         return false;
       }
       auto &am = ks->achievements();
@@ -859,39 +865,54 @@ namespace
       }
 
       const ImGuiViewport *vp = ImGui::GetMainViewport();
-      ImGui::SetNextWindowPos(vp->Pos);
-      ImGui::SetNextWindowSize(vp->Size);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-      ImGui::Begin("##achievements", nullptr,
-                   ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
-                       ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
-      ImGui::PopStyleVar(2);
-      if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || g_menu_close.exchange(false)))
+      if (!embedded)
       {
-        closing = now;
-        live = false;
+        ImGui::SetNextWindowPos(vp->Pos);
+        ImGui::SetNextWindowSize(vp->Size);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::Begin("##achievements", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
+        ImGui::PopStyleVar(2);
+        if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || g_menu_close.exchange(false)))
+        {
+          closing = now;
+          live = false;
+        }
       }
       ImDrawList *dl = ImGui::GetWindowDrawList();
 
       // --- Backdrop and panel ---
-      const float pad = 32.0f * s;
-      const float pw = std::min(880.0f * s, vp->Size.x - 40.0f * s);
-      const float ph = std::min(940.0f * s, vp->Size.y - 60.0f * s);
-      ImVec2 center = vp->GetCenter();
-      float x0 = center.x - pw * 0.5f - (1.0f - a) * 40.0f * s;
-      float y0 = center.y - ph * 0.5f;
-      float x1 = x0 + pw, y1 = y0 + ph;
+      const float pad = embedded ? 0.0f : 32.0f * s;
+      float x0, y0, x1, y1;
+      if (embedded)
+      {
+        x0 = area[0].x, y0 = area[0].y, x1 = area[1].x, y1 = area[1].y;
+      }
+      else
+      {
+        const float pw = std::min(880.0f * s, vp->Size.x - 40.0f * s);
+        const float ph = std::min(940.0f * s, vp->Size.y - 60.0f * s);
+        ImVec2 center = vp->GetCenter();
+        x0 = center.x - pw * 0.5f - (1.0f - a) * 40.0f * s;
+        y0 = center.y - ph * 0.5f;
+        x1 = x0 + pw, y1 = y0 + ph;
+        dl->AddRectFilled(vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y),
+                          ui::Fade(ui::kInk, 0.78f * a));
+        dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.96f * a));
+        dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), 0.0f, ImDrawFlags_None,
+                    1.0f * s);
+      }
       float cx0 = x0 + pad, cx1 = x1 - pad;
-      dl->AddRectFilled(vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y),
-                        ui::Fade(ui::kInk, 0.78f * a));
-      dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.96f * a));
-      dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
 
       // --- Header: kicker, title, the counts, the progress ---
       float y = y0 + pad;
-      ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), "ARMY OF TWO");
-      y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
+      if (!embedded)
+      {
+        ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), "ARMY OF TWO");
+        y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
+      }
       const char *title = ao2::text::Tr("ACHIEVEMENTS");
       ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title);
       ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title);
@@ -918,7 +939,7 @@ namespace
       const float kh = 24.0f * s;
       const float list_top = y;
       const float footer_y = y1 - pad - kh;
-      const float list_bottom = footer_y - 16.0f * s;
+      const float list_bottom = embedded ? y1 : footer_y - 16.0f * s;
       const float list_h = list_bottom - list_top;
       const float row_h = 76.0f * s, gap = 8.0f * s;
       const float head_h = ui::FontSize(FontKind::kLabel) + 14.0f * s;
@@ -928,7 +949,7 @@ namespace
         content_h += head_h + float(g.items.size()) * (row_h + gap) + 14.0f * s;
       }
       float max_scroll = std::max(0.0f, content_h - list_h);
-      if (live)
+      if (live && (!embedded || ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)))
       {
         const ImGuiIO &io = ImGui::GetIO();
         scroll_target -= io.MouseWheel * 90.0f * s;
@@ -1003,6 +1024,11 @@ namespace
         float thumb_y = list_top + (list_h - thumb_h) * (scroll / max_scroll);
         dl->AddRectFilled(ImVec2(tx, list_top), ImVec2(tx + sb_w, list_bottom), ui::Fade(ui::kWhite, 0.06f * a));
         dl->AddRectFilled(ImVec2(tx, thumb_y), ImVec2(tx + sb_w, thumb_y + thumb_h), ui::Fade(ui::kAccent, 0.7f * a));
+      }
+
+      if (embedded)
+      {
+        return true;
       }
 
       // --- Footer ---
@@ -1165,5 +1191,21 @@ namespace ao2::ach
     g_menu_close = false;
     auto menu = std::make_shared<AchievementsMenu>(ks->achievements().ListAchievements());
     ao2::menu::OpenWindow("achievements", [menu]() { return menu->Draw(); }, /*own_escape=*/true);
+  }
+
+  void DrawTab(ImVec2 min, ImVec2 max, bool appearing)
+  {
+    static std::unique_ptr<AchievementsMenu> tab;
+    auto *ks = rex::system::kernel_state();
+    if (!ks)
+    {
+      return;
+    }
+    if (appearing || !tab)
+    {
+      tab = std::make_unique<AchievementsMenu>(ks->achievements().ListAchievements());
+    }
+    ImVec2 area[2] = {min, max};
+    tab->Draw(area);
   }
 } // namespace ao2::ach

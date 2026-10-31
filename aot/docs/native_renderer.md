@@ -140,6 +140,16 @@ wider than 16:9 the half angle becomes atan(tan(half) x aspect / (16/9)), the 16
 (1152x720) and 21:9 (1280x544) menus, loading screen (letterboxed 16:9 art, by the game), gameplay and HUD.
 Untested: movies (sub_8257BE38 computes their quad from 1280x720).
 
+## Field of view (2026-10-30)
+`ao2_fov` (on foot, default 70 = the game's) and `ao2_fov_aim` (how much aiming narrows the view, 1 = the game's
+40 deg precision aim, 0 = not at all), src/fov.cpp. Only the drawn view: the FOV CalcSceneView takes from
+sub_823E06D8 is changed in interp_camera.cpp after its interpolation; the camera actor's FOV (+460, in the lockstep
+checksum) stays the game's, and the render's own effects on the world (LOD, LastRenderTime) are made alike in co-op
+by coop_lod.cpp, as for different aspect ratios. Every FOV is scaled in tangent space by tan(ao2_fov/2) / tan(35),
+the zoom first moved towards 70 by `ao2_fov_aim`. FOVs under `ao2_fov_scope` (25 deg: the sniper scope, its overlay
+drawn for the game's angle), cutscenes (PlayerController +808 bit 0x20000) and the front end keep the game's.
+Mouse aiming scales the turn by the drawn FOV, so on foot `ao2_mouse_sensitivity` keeps its meaning.
+
 ## Fractional resolution scale (2026-10-11)
 `ao2_native_gpu_resolution_scale` is a number in steps of 0.25: 1.5 renders the game's 1280x720 commands as
 1920x1080, a Full HD monitor's pixels one for one. Inside the renderer scales are in quarters (`scale4`: 4 = 1x,

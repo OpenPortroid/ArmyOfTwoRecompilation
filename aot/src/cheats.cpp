@@ -30,6 +30,11 @@
 // 9999999). The game writes the profile to the save itself, at its next save.
 // The money is topped up to the maximum while the option is on. Not in a
 // network game (the profile is the same data both machines show).
+//
+// Infinite ammo (ao2_infinite_ammo): the local player's weapon (Pawn.Weapon,
+// an AO2Weapon) keeps its magazine and reserve full (UTWeapon.AmmoCount /
+// MaxAmmoCount, AO2Weapon.ReserveAmmoCount / MaxReserveAmmoCount), as the
+// autopilot's. Not in a network game (one machine's ammo only would desync it).
 #include "cheats.h"
 
 #include "coop.h"
@@ -39,6 +44,7 @@
 #include <bit>
 #include <cstring>
 #include <iterator>
+#include <utility>
 
 #include <rex/cvar.h>
 
@@ -49,6 +55,8 @@ REXCVAR_DEFINE_BOOL(ao2_coop_god_mode, false, "Cheats",
 REXCVAR_DEFINE_BOOL(ao2_unlock_all, false, "Cheats",
                     "Cheat: the Professional difficulty and 9,999,999 money in the player's profile (not in network "
                     "games)");
+REXCVAR_DEFINE_BOOL(ao2_infinite_ammo, false, "Cheats",
+                    "Cheat: the player's weapon never runs out of ammo (not in network games)");
 REXCVAR_DEFINE_BOOL(ao2_unlock_bonus_weapons, true, "General",
                     "The BST-V1 and SAL-86 bonus weapons are always unlocked in the player's profile (not in network "
                     "games)");
@@ -58,6 +66,12 @@ namespace
   constexpr uint32_t kEngine = 0x831EFCBC;          // GEngine
   constexpr uint32_t kControllerFlags = 468;        // AController bitfield word
   constexpr uint32_t kGodModeBit = 0x40000000;      // bGodMode
+  constexpr uint32_t kControllerPawn = 452;         // Controller.Pawn
+  constexpr uint32_t kPawnWeapon = 924;             // Pawn.Weapon
+  constexpr uint32_t kWeaponAmmo = 692;             // UTWeapon.AmmoCount (the magazine)
+  constexpr uint32_t kWeaponMaxAmmo = 700;          // UTWeapon.MaxAmmoCount
+  constexpr uint32_t kWeaponReserve = 1980;         // AO2Weapon.ReserveAmmoCount
+  constexpr uint32_t kWeaponMaxReserve = 1984;      // AO2Weapon.MaxReserveAmmoCount
 
   uint32_t LoadU32(const uint8_t *base, uint32_t addr)
   {
@@ -171,6 +185,27 @@ namespace
     return changed;
   }
 
+  // Fills the magazine and the reserve of the local player's weapon.
+  void FillAmmo(PPCContext &ctx, uint8_t *base)
+  {
+    uint32_t controller = LocalController(ctx, base);
+    uint32_t pawn = controller ? LoadU32(base, controller + kControllerPawn) : 0;
+    uint32_t weapon = pawn ? LoadU32(base, pawn + kPawnWeapon) : 0;
+    uint32_t weapon_class = ao2::ue3::FindClass(base, "AO2Weapon");
+    if (!weapon || !weapon_class || !ao2::ue3::IsA(base, weapon, weapon_class))
+    {
+      return;
+    }
+    for (auto [have, max] : {std::pair{kWeaponAmmo, kWeaponMaxAmmo}, std::pair{kWeaponReserve, kWeaponMaxReserve}})
+    {
+      uint32_t full = LoadU32(base, weapon + max);
+      if (int32_t(full) > 0 && int32_t(full) < 100000 && LoadU32(base, weapon + have) != full)
+      {
+        StoreU32(base, weapon + have, full);
+      }
+    }
+  }
+
   // Online co-op god mode per controller id (coop_cmd.cpp; game thread).
   bool g_player_god[4] = {};
 
@@ -204,6 +239,10 @@ namespace ao2::cheats
       {
         ApplyUnlocks(ctx, base, all);
       }
+    }
+    if (REXCVAR_GET(ao2_infinite_ammo) && !ao2::coop::InNetworkGame(base))
+    {
+      FillAmmo(ctx, base);
     }
     auto god = [&](uint32_t controller) { SetGodFlag(base, controller, true); };
     if (!ao2::coop::InNetworkGame(base))
