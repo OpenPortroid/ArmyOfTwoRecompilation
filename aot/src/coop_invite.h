@@ -13,9 +13,6 @@ namespace ao2::invite
   // invites) - what the game's "Invite friend" / friends list buttons open.
   void ShowPlayers();
 
-  // Any thread: the players key - closes the open players window, else opens it.
-  void TogglePlayers();
-
   // Any thread: there is an invite to answer / accept the newest one.
   bool HasPendingInvite();
   void AcceptPendingInvite();

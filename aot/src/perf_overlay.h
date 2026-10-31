@@ -26,6 +26,10 @@ namespace ao2::perf
   // Native renderer, GPU thread: a frame went to the swap chain.
   void OnPresent();
 
+  // UI thread: the last second's frame rate, average frame time (ms) and
+  // 1% low (FPS); zeros when nothing was presented.
+  void FrameRate(float &fps, float &average_ms, float &low);
+
   // UI thread, inside an ImGui frame: the overlay window (nothing when off).
   void Draw();
 

@@ -573,6 +573,15 @@ namespace ao2::perf
     S().luid_set.store(true, std::memory_order_release);
   }
 
+  void FrameRate(float &fps, float &average_ms, float &low)
+  {
+    UpdateFrameStats(NowNs());
+    const FrameStats &f = S().shown;
+    fps = f.fps;
+    average_ms = f.average_ms;
+    low = f.low;
+  }
+
   void OnPresent()
   {
     int64_t now = NowNs();

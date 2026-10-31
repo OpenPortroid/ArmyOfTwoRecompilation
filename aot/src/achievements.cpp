@@ -24,9 +24,9 @@
 // synthesized here and played with PlaySound beside the game's audio.
 // ao2_achievement_notices off (the launcher's switch): neither.
 //
-// The menu (ao2_achievements_key, F7): every achievement by section with its
-// icon, score and unlock date, in a window of the menu's drawer (debug_menu.h
-// OpenWindow); the texts are the game's, in its language.
+// The F1 debug menu's Achievements tab (DrawTab): every achievement by
+// section with its icon, score and unlock date; the texts are the game's, in
+// its language.
 #include "achievements.h"
 
 #include <algorithm>
@@ -73,8 +73,6 @@
 
 REXCVAR_DEFINE_BOOL(ao2_achievement_notices, true, "General",
                     "Show the achievement unlock notice (and its sound); off: achievements still unlock, silently");
-REXCVAR_DEFINE_STRING(ao2_achievements_key, "F7", "General",
-                      "Key that opens the achievements menu; empty = none");
 REXCVAR_DEFINE_DOUBLE(ao2_achievement_sound, 0.4, "General",
                       "Volume of the achievement unlock sound, 0..1; 0 = no sound");
 
@@ -738,9 +736,6 @@ namespace
 
   // --- The achievements menu ---
 
-  std::atomic<bool> g_menu_open = false;
-  std::atomic<bool> g_menu_close = false; // the menu key, from any thread
-
   const char *SectionTitle(int section)
   {
     static const char *const kNames[] = {"STORY", "CAMPAIGN", "GEAR AND CO-OP", "WEAPONS",
@@ -767,15 +762,13 @@ namespace
     return text;
   }
 
-  // The menu (UI thread, inside an ImGui frame): a full screen overlay in the
-  // look of the players window (coop_invite.cpp). The achievements by
-  // section, the unlocked ones with their icon, score and date, the locked
-  // ones dimmed (a secret one hides its name and icon). The wheel, the arrows,
-  // Page Up / Down, Home and End scroll; Esc, the key and Close play it out.
+  // The list (UI thread, inside the debug menu's window): the achievements
+  // by section, the unlocked ones with their icon, score and date, the locked
+  // ones dimmed (a secret one hides its name and icon). The wheel (over it),
+  // the arrows, Page Up / Down, Home and End scroll.
   struct AchievementsMenu
   {
     static constexpr float kOpenTime = 0.35f;
-    static constexpr float kCloseTime = 0.2f;
 
     struct Group
     {
@@ -785,7 +778,6 @@ namespace
 
     std::vector<Group> groups;
     double opened = -1.0;
-    double closing = -1.0;
     float scroll = 0.0f, scroll_target = 0.0f;
 
     explicit AchievementsMenu(const std::vector<rex::system::AchievementInfo> &list)
@@ -812,21 +804,15 @@ namespace
       }
     }
 
-    // `area` (min, max): drawn in it inside the current window (the F1 debug
-    // menu's tab): no backdrop, panel or footer, Esc left to that window.
-    bool Draw(const ImVec2 *area = nullptr)
+    // Drawn in [mn, mx] of the current window.
+    void Draw(ImVec2 mn, ImVec2 mx)
     {
       namespace ui = ao2::ui;
       using ui::FontKind;
-      const bool embedded = area != nullptr;
       auto *ks = rex::system::kernel_state();
       if (!ks)
       {
-        if (!embedded)
-        {
-          g_menu_open = false;
-        }
-        return false;
+        return;
       }
       auto &am = ks->achievements();
       double now = ImGui::GetTime();
@@ -835,17 +821,6 @@ namespace
         opened = now;
       }
       float a = ui::EaseOutCubic(float(now - opened) / kOpenTime);
-      if (closing >= 0.0)
-      {
-        float c = float(now - closing) / kCloseTime;
-        if (c >= 1.0f)
-        {
-          g_menu_open = false;
-          return false;
-        }
-        a *= 1.0f - ui::EaseOutCubic(c);
-      }
-      bool live = closing < 0.0;
       float s = ui::Scale();
 
       int total = 0, got = 0;
@@ -864,55 +839,12 @@ namespace
         }
       }
 
-      const ImGuiViewport *vp = ImGui::GetMainViewport();
-      if (!embedded)
-      {
-        ImGui::SetNextWindowPos(vp->Pos);
-        ImGui::SetNextWindowSize(vp->Size);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-        ImGui::Begin("##achievements", nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
-        ImGui::PopStyleVar(2);
-        if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || g_menu_close.exchange(false)))
-        {
-          closing = now;
-          live = false;
-        }
-      }
       ImDrawList *dl = ImGui::GetWindowDrawList();
-
-      // --- Backdrop and panel ---
-      const float pad = embedded ? 0.0f : 32.0f * s;
-      float x0, y0, x1, y1;
-      if (embedded)
-      {
-        x0 = area[0].x, y0 = area[0].y, x1 = area[1].x, y1 = area[1].y;
-      }
-      else
-      {
-        const float pw = std::min(880.0f * s, vp->Size.x - 40.0f * s);
-        const float ph = std::min(940.0f * s, vp->Size.y - 60.0f * s);
-        ImVec2 center = vp->GetCenter();
-        x0 = center.x - pw * 0.5f - (1.0f - a) * 40.0f * s;
-        y0 = center.y - ph * 0.5f;
-        x1 = x0 + pw, y1 = y0 + ph;
-        dl->AddRectFilled(vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y),
-                          ui::Fade(ui::kInk, 0.78f * a));
-        dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.96f * a));
-        dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), 0.0f, ImDrawFlags_None,
-                    1.0f * s);
-      }
-      float cx0 = x0 + pad, cx1 = x1 - pad;
+      const float x0 = mn.x, y0 = mn.y, x1 = mx.x, y1 = mx.y;
+      const float cx0 = x0, cx1 = x1;
 
       // --- Header: kicker, title, the counts, the progress ---
-      float y = y0 + pad;
-      if (!embedded)
-      {
-        ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), "ARMY OF TWO");
-        y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
-      }
+      float y = y0;
       const char *title = ao2::text::Tr("ACHIEVEMENTS");
       ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title);
       ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title);
@@ -935,11 +867,9 @@ namespace
                         ui::Fade(kGold, a));
       y += bar_h + 22.0f * s;
 
-      // --- The list's area, and the footer under it ---
-      const float kh = 24.0f * s;
+      // --- The list's area ---
       const float list_top = y;
-      const float footer_y = y1 - pad - kh;
-      const float list_bottom = embedded ? y1 : footer_y - 16.0f * s;
+      const float list_bottom = y1;
       const float list_h = list_bottom - list_top;
       const float row_h = 76.0f * s, gap = 8.0f * s;
       const float head_h = ui::FontSize(FontKind::kLabel) + 14.0f * s;
@@ -949,7 +879,7 @@ namespace
         content_h += head_h + float(g.items.size()) * (row_h + gap) + 14.0f * s;
       }
       float max_scroll = std::max(0.0f, content_h - list_h);
-      if (live && (!embedded || ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)))
+      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
       {
         const ImGuiIO &io = ImGui::GetIO();
         scroll_target -= io.MouseWheel * 90.0f * s;
@@ -1026,37 +956,6 @@ namespace
         dl->AddRectFilled(ImVec2(tx, thumb_y), ImVec2(tx + sb_w, thumb_y + thumb_h), ui::Fade(ui::kAccent, 0.7f * a));
       }
 
-      if (embedded)
-      {
-        return true;
-      }
-
-      // --- Footer ---
-      dl->AddLine(ImVec2(cx0, footer_y - 8.0f * s), ImVec2(cx1, footer_y - 8.0f * s), ui::Fade(ui::kWhite, 0.08f * a),
-                  1.0f * s);
-      {
-        const char *label = ao2::text::Tr("CLOSE");
-        float label_w = ui::CapsSize(FontKind::kLabel, label).x;
-        float key_w = std::max(kh, ui::CapsSize(FontKind::kLabel, "ESC").x + kh * 0.8f); // as ui::KeyCap
-        float total_w = key_w + 8.0f * s + label_w;
-        ImVec2 pos(cx1 - total_w, footer_y);
-        ImGui::SetCursorScreenPos(pos);
-        if (ImGui::InvisibleButton("##close", ImVec2(total_w, kh)) && live)
-        {
-          closing = now;
-        }
-        bool hovered = ImGui::IsItemHovered();
-        if (hovered)
-        {
-          ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-        }
-        ui::KeyCap(dl, pos, kh, "ESC", a);
-        ui::Caps(dl, FontKind::kLabel,
-                 ImVec2(pos.x + key_w + 8.0f * s, footer_y + (kh - ui::FontSize(FontKind::kLabel)) * 0.5f - 1.0f * s),
-                 ui::Fade(hovered ? ui::kAccentLight : ui::kText, a), label);
-      }
-      ImGui::End();
-      return true;
     }
 
     // One row in [mn, mx]; `a` is the menu's fade.
@@ -1176,21 +1075,20 @@ namespace ao2::ach
     }
   }
 
-  void ToggleMenu()
+  void Progress(int &got, int &total)
   {
+    got = total = 0;
     auto *ks = rex::system::kernel_state();
     if (!ks)
     {
       return;
     }
-    if (g_menu_open.exchange(true))
+    auto &am = ks->achievements();
+    for (const auto &info : am.ListAchievements())
     {
-      g_menu_close = true; // open: the next frame plays it out
-      return;
+      ++total;
+      got += am.IsUnlocked(info.id) ? 1 : 0;
     }
-    g_menu_close = false;
-    auto menu = std::make_shared<AchievementsMenu>(ks->achievements().ListAchievements());
-    ao2::menu::OpenWindow("achievements", [menu]() { return menu->Draw(); }, /*own_escape=*/true);
   }
 
   void DrawTab(ImVec2 min, ImVec2 max, bool appearing)
@@ -1205,7 +1103,6 @@ namespace ao2::ach
     {
       tab = std::make_unique<AchievementsMenu>(ks->achievements().ListAchievements());
     }
-    ImVec2 area[2] = {min, max};
-    tab->Draw(area);
+    tab->Draw(min, max);
   }
 } // namespace ao2::ach

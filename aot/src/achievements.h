@@ -13,12 +13,11 @@ namespace ao2::ach
   // and the icons written to <cache_root>\achievements for the launcher.
   void Setup(const std::filesystem::path &cache_root);
 
-  // Any thread (ao2_achievements_key, F7): opens the achievements menu, or
-  // closes it when it is open.
-  void ToggleMenu();
+  // Any thread: how many achievements are unlocked, of how many.
+  void Progress(int &got, int &total);
 
-  // UI thread, inside an ImGui window (the F1 debug menu's tab): the menu's
-  // counts and list in [min, max]; `appearing` starts it over (its fade-in,
+  // UI thread, inside an ImGui window (the F1 debug menu's tab): the
+  // achievements' counts and list in [min, max]; `appearing` starts it over (its fade-in,
   // the scroll at the top).
   void DrawTab(ImVec2 min, ImVec2 max, bool appearing);
 } // namespace ao2::ach

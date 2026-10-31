@@ -80,7 +80,6 @@ set(ARMYOFTWORECOMP_SOURCES
     src/versus_bots.cpp
     src/versus_lobby.cpp
     src/debug_menu.cpp
-    src/quick_settings.cpp
     src/dlc_folder.cpp
     src/perf_overlay.cpp
     src/autopilot.cpp

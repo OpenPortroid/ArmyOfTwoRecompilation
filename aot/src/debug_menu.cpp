@@ -16,10 +16,14 @@
 // A full screen overlay in the launcher's look (ui_theme.h) with five tabs:
 // - Graphics: the Options screen's Graphics page settings (graphics_menu.h),
 //   applied at once and saved as the page saves them (the render resolution
-//   too: the page waits for its Accept), and the quick settings' field of
-//   view and mouse sensitivity (until the game is closed).
-// - Achievements: the achievements menu's list (achievements.h).
-// - Invites: the players window's content (coop_invite.h).
+//   too: the page waits for its Accept), and the field of view and mouse
+//   sensitivity (until the game is closed); a column beside them tells what
+//   the hovered row does, with the frame rate (perf_overlay.h).
+// - The tabs carry badges: achievements unlocked, an invite waiting, the
+//   cheats on.
+// - Achievements: every achievement with its unlock (achievements.h).
+// - Invites: the players window's content (coop_invite.h); the menu opens on
+//   it while an invite waits for an answer.
 // - Cheats: god mode, infinite ammo, Unlock All, the bonus weapons (cheats.cpp).
 // - Checkpoints: the files in AO2Game/Checkpoints and in the extracted DLC
 //   packages (Kiev 09_*, Miami alternate ending 10_*; the name of each,
@@ -27,9 +31,6 @@
 //   (console_cmd.cpp). The loaded checkpoint becomes the profile's current
 //   one when the game saves it.
 // - F2 (ao2_fps_overlay_key): the frame rate overlay's mode (perf_overlay.h).
-// - F3 (ao2_quick_settings_key): field of view and mouse sensitivity
-//   (quick_settings.h); it takes the SDK's own F3 overlay's key.
-// - F7 (ao2_achievements_key): the achievements menu (achievements.h).
 //
 // Online co-op is a lockstep simulation (coop.h): there both go through the
 // lockstep input to both machines (coop_cmd.cpp) - god mode for this
@@ -49,12 +50,12 @@
 #include "gpu/native/overlay.h"
 #include "graphics_menu.h"
 #include "perf_overlay.h"
-#include "quick_settings.h"
 #include "ui_text.h"
 #include "ui_theme.h"
 
 #include <algorithm>
 #include <cctype>
+#include <cfloat>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -83,13 +84,12 @@ REXCVAR_DECLARE(bool, ao2_god_mode);
 REXCVAR_DECLARE(bool, ao2_infinite_ammo);
 REXCVAR_DECLARE(bool, ao2_unlock_all);
 REXCVAR_DECLARE(bool, ao2_unlock_bonus_weapons);
+REXCVAR_DECLARE(int32_t, ao2_fps_target);
 REXCVAR_DECLARE(double, ao2_fov);
 REXCVAR_DECLARE(double, ao2_fov_aim);
 REXCVAR_DECLARE(double, ao2_mouse_sensitivity);
 REXCVAR_DECLARE(double, ao2_mouse_zoom_sensitivity);
 REXCVAR_DECLARE(int32_t, ao2_start_difficulty);
-REXCVAR_DECLARE(std::string, ao2_players_key);
-REXCVAR_DECLARE(std::string, ao2_achievements_key);
 REXCVAR_DECLARE(std::string, ao2_invite_accept_key);
 
 REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
@@ -474,6 +474,65 @@ namespace
   constexpr const char *kTabNames[kTabCount] = {"Graphics", "Achievements", "Invites", "Cheats", "Checkpoints"};
   int g_last_tab = kTabGraphics; // the tab the menu opens on (the last one shown)
 
+  constexpr ImU32 kBadgeGold = IM_COL32(227, 185, 90, 255);
+  constexpr ImU32 kPending = IM_COL32(255, 190, 80, 255); // "after restart"
+
+  // The Graphics tab's field of view and mouse rows (fov.cpp, mouse_aim.cpp):
+  // until the game is closed.
+  struct SliderRow
+  {
+    const char *label;
+    double lo, hi;
+    const char *format;
+    double (*get)();
+    void (*set)(double);
+  };
+  const SliderRow kSliders[] = {
+      {"Field of view", 40.0, 130.0, "%.0f\xC2\xB0", [] { return REXCVAR_GET(ao2_fov); },
+       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }},
+      {"Aiming zoom", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_fov_aim); },
+       [](double v) { REXCVAR_SET(ao2_fov_aim, std::round(v * 100.0) / 100.0); }},
+      {"Sensitivity", 0.1, 10.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_sensitivity); },
+       [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, std::round(v * 100.0) / 100.0); }},
+      {"Zoomed sensitivity", 0.1, 3.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_zoom_sensitivity); },
+       [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, std::round(v * 100.0) / 100.0); }},
+  };
+  constexpr int kSliderInfo = 100; // info_ of the first slider row
+
+  // What a Graphics tab row does (English, through Tr), by its label.
+  const char *RowHelp(const char *label)
+  {
+    static const std::map<std::string, const char *> kHelp = {
+        {"Display mode", "Fullscreen or a window."},
+        {"Render resolution", "The game's 1280x720 picture drawn at this size. Switches at once."},
+        {"Aspect ratio", "The picture's shape. The game needs a restart for it."},
+        {"FPS limit", "The highest frame rate the game runs at."},
+        {"Vertical sync", "Frames wait for the monitor: no tearing, a little more input lag."},
+        {"FPS counter", "The frame rate in the corner; Detailed adds the GPU, CPU and memory."},
+        {"Anisotropic filtering", "Sharper textures on surfaces seen at an angle."},
+        {"Anti-aliasing", "Smooths jagged edges. SMAA is sharper, FXAA cheaper."},
+        {"Ambient occlusion", "Soft shadows in corners and under objects. GTAO looks best, SSAO costs least."},
+        {"Motion blur", "Blur of the camera's own movement."},
+        {"Depth of field", "Blurs what is out of focus."},
+        {"Shadow resolution", "Sharper shadow edges for more GPU time. Auto is the game's own."},
+        {"Field of view", "How wide the view is on foot. The game's is 70\xC2\xB0."},
+        {"Aiming zoom", "How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope."},
+        {"Sensitivity", "How fast the mouse turns the camera."},
+        {"Zoomed sensitivity", "How fast the mouse turns while aiming, against the normal speed."},
+    };
+    auto it = kHelp.find(label);
+    return it != kHelp.end() ? Tr(it->second) : "";
+  }
+
+  // `text` wrapped to `width` at `pos`; returns the y under it.
+  float Wrapped(ImDrawList *dl, FontKind kind, ImVec2 pos, float width, ImU32 col, const char *text)
+  {
+    ImFont *font = ui::Font(kind);
+    float size = ui::FontSize(kind);
+    dl->AddText(font, size, ImVec2(std::floor(pos.x), std::floor(pos.y)), col, text, nullptr, width);
+    return pos.y + font->CalcTextSizeA(size, FLT_MAX, width, text).y;
+  }
+
   const char *kDifficulties[] = {"Recruit", "Contractor", "Professional"};
 
   // The menu: a full screen overlay in the launcher's look (ui_theme.h), as
@@ -490,7 +549,8 @@ namespace
     {
       missions_ = ScanCheckpoints(g_checkpoint_dir, g_content_dir);
       difficulty_ = std::clamp(REXCVAR_GET(ao2_start_difficulty), 0, 2);
-      tab_ = g_last_tab;
+      // An invite waiting for an answer (its notice says the menu key lists it).
+      tab_ = ao2::invite::HasPendingInvite() ? kTabInvites : g_last_tab;
     }
 
     // Any time on the UI thread (the menu key): plays the menu out.
@@ -603,6 +663,18 @@ namespace
           SetTab((tab_ + (io.KeyShift ? kTabCount - 1 : 1)) % kTabCount, now);
         }
       }
+      // Badges: the achievements unlocked, an invite waiting, the cheats on.
+      if (now >= badges_time_)
+      {
+        badges_time_ = now + 1.0;
+        ao2::ach::Progress(ach_got_, ach_total_);
+      }
+      int cheats_on = 0;
+      for (bool on : {REXCVAR_GET(ao2_god_mode), REXCVAR_GET(ao2_infinite_ammo), REXCVAR_GET(ao2_unlock_all),
+                      REXCVAR_GET(ao2_unlock_bonus_weapons)})
+      {
+        cheats_on += on ? 1 : 0;
+      }
       float tab_h = ui::FontSize(FontKind::kLabel) + 24.0f * s;
       float tx = cx0;
       for (int i = 0; i < kTabCount; ++i)
@@ -612,7 +684,25 @@ namespace
         std::string label = Upper(Tr(kTabNames[i]));
         float nw = ui::CapsSize(FontKind::kLabel, number).x;
         float lw = ui::CapsSize(FontKind::kLabel, label.c_str()).x;
-        float w = nw + 10.0f * s + lw + 36.0f * s;
+        std::string badge;
+        ImU32 badge_col = ui::kAccent;
+        bool dot = false;
+        if (i == kTabAchievements && ach_total_ > 0)
+        {
+          badge = std::to_string(ach_got_) + "/" + std::to_string(ach_total_);
+          badge_col = kBadgeGold;
+        }
+        else if (i == kTabInvites)
+        {
+          dot = ao2::invite::HasPendingInvite();
+        }
+        else if (i == kTabCheats && cheats_on > 0)
+        {
+          badge = std::to_string(cheats_on) + " " + Upper(Tr("On"));
+          badge_col = ui::kGreen;
+        }
+        float bw = !badge.empty() ? ui::TextSize(FontKind::kSmall, badge.c_str()).x + 12.0f * s : dot ? 7.0f * s : 0.0f;
+        float w = nw + 10.0f * s + lw + 36.0f * s + (bw > 0.0f ? bw + 10.0f * s : 0.0f);
         ImVec2 mn(tx, y), mx(tx + w, y + tab_h);
         ImGui::PushID(i);
         ImGui::SetCursorScreenPos(mn);
@@ -637,6 +727,21 @@ namespace
                  ui::Fade(active ? ui::kAccent : ui::kMuted, (active ? 1.0f : 0.6f) * a), number);
         ui::Caps(dl, FontKind::kLabel, ImVec2(tx + 18.0f * s + nw + 10.0f * s, ty),
                  ui::Fade(active ? ui::kAccentLight : ui::Mix(ui::kMuted, ui::kText, h), a), label.c_str());
+        float bx = tx + 18.0f * s + nw + 10.0f * s + lw + 10.0f * s, by = y + tab_h * 0.5f;
+        if (!badge.empty())
+        {
+          ImVec2 bs = ui::TextSize(FontKind::kSmall, badge.c_str());
+          ImVec2 bmn(bx, by - bs.y * 0.5f - 1.0f * s), bmx(bx + bw, by + bs.y * 0.5f + 1.0f * s);
+          dl->AddRect(bmn, bmx, ui::Fade(badge_col, 0.45f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+          ui::Text(dl, FontKind::kSmall, ImVec2(bx + 6.0f * s, bmn.y + 1.0f * s), ui::Fade(badge_col, a), badge.c_str());
+        }
+        else if (dot)
+        {
+          float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
+          dl->AddCircleFilled(ImVec2(bx + 3.5f * s, by), 3.5f * s, ui::Fade(ui::kAccent, a));
+          dl->AddCircle(ImVec2(bx + 3.5f * s, by), (3.5f + 4.0f * pulse) * s, ui::Fade(ui::kAccent, (1.0f - pulse) * a),
+                        16, 1.0f * s);
+        }
         if (active)
         {
           tab_x_target_ = tx;
@@ -701,7 +806,12 @@ namespace
       switch (tab_)
       {
       case kTabGraphics:
-        Scrolling("graphics", cmn, cmx, fresh_, [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
+      {
+        const float info_w = std::min(300.0f * s, (cmx.x - cmn.x) * 0.3f), info_gap = 28.0f * s;
+        Scrolling("graphics", cmn, ImVec2(cmx.x - info_w - info_gap, cmx.y), fresh_,
+                  [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
+        DrawInfo(ImVec2(cmx.x - info_w, cmn.y), cmx, ca);
+      }
         break;
       case kTabAchievements:
         ao2::ach::DrawTab(cmn, cmx, fresh_);
@@ -791,16 +901,27 @@ namespace
       ImDrawList *dl = ImGui::GetWindowDrawList();
       float x0 = o.x, x1 = o.x + w, y = o.y;
       const float row_h = 52.0f * s, chip_h = 32.0f * s, gap = 6.0f * s;
-      const float label_w = 320.0f * s;
-      auto row = [&](const char *id, const char *label, const char *note, float &yy) {
+      const float label_w = 260.0f * s;
+      // A row's back, label and note; the hovered one is the info column's.
+      auto row = [&](const char *id, int info, const char *label, const char *note, float &yy) {
         ImVec2 mn(x0, yy), mx(x1, yy + row_h);
-        RowBack(dl, mn, mx, Eased(id, Hovering(mn, mx, live)), a);
+        bool hovered = Hovering(mn, mx, live);
+        if (hovered)
+        {
+          info_ = info;
+        }
+        float h = Eased(id, hovered);
+        ImGui::PushID(id);
+        float sel = Eased("sel", info_ == info, 16.0f);
+        ImGui::PopID();
+        RowBack(dl, mn, mx, std::max(h, sel), a);
+        dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.03f * sel * a));
         float ty = mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
         if (note)
         {
           ty -= ui::FontSize(FontKind::kSmall) * 0.5f;
           ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, ty + ui::FontSize(FontKind::kBody) + 1.0f * s),
-                   ui::Fade(IM_COL32(255, 190, 80, 255), a), note);
+                   ui::Fade(kPending, a), note);
         }
         ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 20.0f * s, ty), ui::Fade(ui::kText, a), label);
       };
@@ -816,7 +937,7 @@ namespace
           }
           std::string id = "setting" + std::to_string(i);
           bool restart = ao2::gfxmenu::WaitsForRestart(i);
-          row(id.c_str(), Tr(ao2::gfxmenu::SettingLabel(i)), restart ? Tr("After restart") : nullptr, y);
+          row(id.c_str(), i, Tr(ao2::gfxmenu::SettingLabel(i)), restart ? Tr("After restart") : nullptr, y);
           // The choices, right aligned; narrowed to fit when there are many.
           int n = ao2::gfxmenu::ChoiceCount(i), chosen = ao2::gfxmenu::Chosen(i);
           std::vector<float> widths(n);
@@ -850,29 +971,12 @@ namespace
         y += 18.0f * s;
       }
 
-      // Field of view and mouse (quick_settings.cpp): until the game is closed.
+      // Field of view (fov.cpp) and mouse (mouse_aim.cpp): until the game is closed.
       y = Section(dl, x0, x1, y, Tr("View and mouse"), a);
-      struct SliderRow
+      for (int k = 0; k < int(std::size(kSliders)); ++k)
       {
-        const char *label;
-        double lo, hi;
-        const char *format;
-        double (*get)();
-        void (*set)(double);
-      };
-      static const SliderRow kSliders[] = {
-          {"Field of view", 40.0, 130.0, "%.0f\xC2\xB0", [] { return REXCVAR_GET(ao2_fov); },
-           [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }},
-          {"Aiming zoom", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_fov_aim); },
-           [](double v) { REXCVAR_SET(ao2_fov_aim, std::round(v * 100.0) / 100.0); }},
-          {"Sensitivity", 0.1, 10.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_sensitivity); },
-           [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, std::round(v * 100.0) / 100.0); }},
-          {"Zoomed sensitivity", 0.1, 3.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_zoom_sensitivity); },
-           [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, std::round(v * 100.0) / 100.0); }},
-      };
-      for (const SliderRow &sr : kSliders)
-      {
-        row(sr.label, Tr(sr.label), nullptr, y);
+        const SliderRow &sr = kSliders[k];
+        row(sr.label, kSliderInfo + k, Tr(sr.label), nullptr, y);
         double v = sr.get();
         char text[32];
         std::snprintf(text, sizeof(text), sr.format, v);
@@ -897,9 +1001,79 @@ namespace
         REXCVAR_SET(ao2_fov, 70.0);
         REXCVAR_SET(ao2_fov_aim, 1.0);
       }
-      ui::Text(dl, FontKind::kSmall, ImVec2(x0 + bw + 18.0f * s, y + 9.0f * s), ui::Fade(ui::kMuted, a),
-               Tr("Field of view and mouse last until the game is closed; the rest is saved."));
       return y + 36.0f * s + 8.0f * s;
+    }
+
+    // The Graphics tab's info column: the hovered (or last hovered) row's
+    // name, value and what it does; the frame rate and frame time under it.
+    void DrawInfo(ImVec2 mn, ImVec2 mx, float a)
+    {
+      float s = ui::Scale();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      dl->AddLine(ImVec2(mn.x - 14.0f * s, mn.y), ImVec2(mn.x - 14.0f * s, mx.y), ui::Fade(ui::kWhite, 0.08f * a),
+                  1.0f * s);
+      const char *label = nullptr;
+      std::string value;
+      bool restart = false;
+      if (info_ >= kSliderInfo && info_ < kSliderInfo + int(std::size(kSliders)))
+      {
+        const SliderRow &sr = kSliders[info_ - kSliderInfo];
+        label = sr.label;
+        char text[32];
+        std::snprintf(text, sizeof(text), sr.format, sr.get());
+        value = text;
+      }
+      else if (info_ >= 0 && info_ < ao2::gfxmenu::SettingCount())
+      {
+        label = ao2::gfxmenu::SettingLabel(info_);
+        value = Tr(ao2::gfxmenu::ChoiceName(info_, ao2::gfxmenu::Chosen(info_)));
+        restart = ao2::gfxmenu::WaitsForRestart(info_);
+      }
+      float y = mn.y, w = mx.x - mn.x;
+      if (label)
+      {
+        std::string caps = Upper(Tr(label));
+        ui::Caps(dl, FontKind::kLabel, ImVec2(mn.x, y), ui::Fade(ui::kMuted, a), caps.c_str());
+        y += ui::FontSize(FontKind::kLabel) + 10.0f * s;
+        ui::Text(dl, FontKind::kTitle, ImVec2(mn.x, y), ui::Fade(ui::kAccentLight, a), value.c_str());
+        y += ui::FontSize(FontKind::kTitle) + 10.0f * s;
+        if (restart)
+        {
+          ui::Text(dl, FontKind::kSmall, ImVec2(mn.x, y), ui::Fade(kPending, a), Tr("After restart"));
+          y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
+        }
+        y = Wrapped(dl, FontKind::kSmall, ImVec2(mn.x, y), w, ui::Fade(ui::kText, 0.8f * a), RowHelp(label));
+        y += 28.0f * s;
+      }
+
+      // The frame rate against the limit, and the frame time.
+      float fps = 0.0f, ms = 0.0f, low = 0.0f;
+      ao2::perf::FrameRate(fps, ms, low);
+      int32_t limit = REXCVAR_GET(ao2_fps_target);
+      float top = float(limit > 0 ? limit : 240);
+      auto meter = [&](const char *name, const std::string &text, float frac, ImU32 col) {
+        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x, y), ui::Fade(ui::kMuted, a), name);
+        ImVec2 ts = ui::TextSize(FontKind::kSmall, text.c_str());
+        ui::Text(dl, FontKind::kSmall, ImVec2(mx.x - ts.x, y), ui::Fade(ui::kText, a), text.c_str());
+        y += ui::FontSize(FontKind::kSmall) + 6.0f * s;
+        float &shown = *ImGui::GetStateStorage()->GetFloatRef(ImGui::GetID(name), 0.0f);
+        shown = ui::Approach(shown, ui::Clamp01(frac), 8.0f);
+        dl->AddRectFilled(ImVec2(mn.x, y), ImVec2(mx.x, y + 4.0f * s), ui::Fade(ui::kWhite, 0.08f * a));
+        dl->AddRectFilled(ImVec2(mn.x, y), ImVec2(mn.x + w * shown, y + 4.0f * s), ui::Fade(col, a));
+        y += 4.0f * s + 14.0f * s;
+      };
+      if (fps > 0.0f)
+      {
+        char text[48];
+        std::snprintf(text, sizeof(text), "%.0f FPS", fps);
+        meter(Tr("Frame rate"), text, fps / top, ui::kGreen);
+        std::snprintf(text, sizeof(text), "%.1f ms", ms);
+        meter(Tr("Frame time"), text, ms / 33.3f, ui::kAccent);
+        std::snprintf(text, sizeof(text), "%.0f FPS", low);
+        meter(Tr("1% low"), text, low / top, ui::Mix(ui::kGreen, ui::kAccent, 0.5f));
+      }
+      Wrapped(dl, FontKind::kSmall, ImVec2(mn.x, std::max(y + 6.0f * s, mx.y - 3.0f * ui::FontSize(FontKind::kSmall))),
+              w, ui::Fade(ui::kMuted, a), Tr("Field of view and mouse last until the game is closed; the rest is saved."));
     }
 
     // --- Cheats: cards with a switch each.
@@ -1195,6 +1369,9 @@ namespace
     float tab_x_ = 0.0f, tab_w_ = 0.0f, tab_x_target_ = 0.0f, tab_w_target_ = 0.0f;
     bool network_ = false, ready_ = false;
     bool close_requested_ = false;
+    double badges_time_ = 0.0;
+    int ach_got_ = 0, ach_total_ = 0;
+    int info_ = 0; // the Graphics tab's row the info column tells about (kSliderInfo + n: a slider)
   };
 
   void Toggle()
@@ -1412,30 +1589,6 @@ namespace
         if (!e.prev_state())
         {
           ao2::perf::CycleMode();
-        }
-      }
-      else if (IsKey(e, ao2::quick::Key()))
-      {
-        e.set_handled(true);
-        if (!e.prev_state())
-        {
-          ao2::quick::Toggle();
-        }
-      }
-      else if (IsKey(e, REXCVAR_GET(ao2_achievements_key)))
-      {
-        e.set_handled(true);
-        if (!e.prev_state())
-        {
-          ao2::ach::ToggleMenu();
-        }
-      }
-      else if (IsKey(e, REXCVAR_GET(ao2_players_key)))
-      {
-        e.set_handled(true);
-        if (!e.prev_state())
-        {
-          ao2::invite::TogglePlayers();
         }
       }
       else if (IsKey(e, REXCVAR_GET(ao2_invite_accept_key)) && ao2::invite::HasPendingInvite())

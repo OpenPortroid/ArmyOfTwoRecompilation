@@ -96,9 +96,8 @@ REXCVAR_DEFINE_STRING(ao2_friends, "", "Online",
                       "Players to look for besides the local networks: IP addresses (or ip:port), comma "
                       "separated - e.g. a friend's Radmin VPN / public address.");
 REXCVAR_DEFINE_STRING(ao2_invite_accept_key, "F6", "Online", "Key that accepts the invite on the screen.");
-REXCVAR_DEFINE_STRING(ao2_players_key, "F8", "Online",
-                      "Key that opens the players window (invites); empty = none.");
 
+REXCVAR_DECLARE(std::string, ao2_debug_menu_key);
 REXCVAR_DECLARE(bool, ao2_coop_server);
 REXCVAR_DECLARE(std::string, ao2_coop_host);
 
@@ -1223,7 +1222,7 @@ namespace
         kx += ui::CapsSize(FontKind::kLabel, text).x + 22.0f * s;
       };
       hint(REXCVAR_GET(ao2_invite_accept_key), Tr("ACCEPT"));
-      hint(REXCVAR_GET(ao2_players_key), Tr("LIST / DECLINE"));
+      hint(REXCVAR_GET(ao2_debug_menu_key), Tr("LIST / DECLINE")); // the debug menu opens on its Invites tab
 
       float frac = ui::Clamp01(left / lifetime);
       ImVec2 bar(mn.x + 2.0f * s, mx.y - 2.0f * s);
@@ -1307,7 +1306,6 @@ namespace
     std::map<std::string, double> row_shown; // when each player's row came in
     std::map<std::string, double> row_flash; // when that player was invited
     double mismatch_shown = -1.0;            // when the other version warning came in
-    std::atomic<bool> close_requested = false; // the players key, from any thread
 
     void BeginClose()
     {
@@ -1380,7 +1378,7 @@ namespace
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
         ImGui::PopStyleVar(2);
-        if (live && (ImGui::IsKeyPressed(ImGuiKey_Escape, false) || close_requested))
+        if (live && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
         {
           BeginClose();
         }
@@ -1629,26 +1627,43 @@ namespace
       section(Tr("PLAYERS ONLINE"), int(peers.size()));
       if (peers.empty())
       {
-        // Radar: rings, a turning sweep with a fading trail.
+        // Uplink: probes run out from this PC (the centre) along links to
+        // the nodes around it, one after another; a node flashes as its
+        // probe arrives. The whole net drifts slowly round.
         float rh = 112.0f * s;
         ImVec2 rc(cx0 + 56.0f * s, y + rh * 0.5f);
         float r = 46.0f * s;
-        for (float k : {1.0f, 0.66f, 0.33f})
+        constexpr float kNodes[6][2] = {{0.15f, 1.0f}, {1.2f, 0.7f}, {2.05f, 0.95f},
+                                        {3.1f, 0.78f}, {4.15f, 1.0f}, {5.25f, 0.68f}}; // angle, radius
+        constexpr float kCycle = 2.7f, kStagger = 0.45f, kTravel = 0.9f, kFlash = 0.8f; // seconds
+        float spin = float(now) * 0.15f;
+        for (int i = 0; i < 6; ++i)
         {
-          dl->AddCircle(rc, r * k, ui::Fade(ui::kWhite, 0.09f * a), 40, 1.0f * s);
+          float ang = kNodes[i][0] + spin, nr = r * kNodes[i][1];
+          ImVec2 p(rc.x + std::cos(ang) * nr, rc.y + std::sin(ang) * nr);
+          dl->AddLine(rc, p, ui::Fade(ui::kWhite, 0.10f * a), 1.0f * s);
+          float t = std::fmod(float(now) + kStagger * float(5 - i), kCycle);
+          if (t < kTravel)
+          {
+            // The probe with a short fading trail.
+            float k = ui::EaseOutCubic(t / kTravel);
+            for (int j = 4; j >= 0; --j)
+            {
+              float kj = std::max(0.0f, k - 0.07f * float(j));
+              ImVec2 q(rc.x + (p.x - rc.x) * kj, rc.y + (p.y - rc.y) * kj);
+              dl->AddCircleFilled(q, (2.6f - 0.35f * float(j)) * s, ui::Fade(ui::kAccent, (1.0f - 0.18f * float(j)) * a));
+            }
+          }
+          float flash = t >= kTravel && t < kTravel + kFlash ? 1.0f - (t - kTravel) / kFlash : 0.0f;
+          dl->AddCircleFilled(p, 3.0f * s, ui::Fade(ui::Mix(ui::kMuted, ui::kAccentLight, flash), a));
+          if (flash > 0.0f)
+          {
+            dl->AddCircle(p, (3.0f + 9.0f * (1.0f - flash)) * s, ui::Fade(ui::kAccent, flash * a), 16, 1.5f * s);
+          }
         }
-        dl->AddLine(ImVec2(rc.x - r, rc.y), ImVec2(rc.x + r, rc.y), ui::Fade(ui::kWhite, 0.06f * a), 1.0f * s);
-        dl->AddLine(ImVec2(rc.x, rc.y - r), ImVec2(rc.x, rc.y + r), ui::Fade(ui::kWhite, 0.06f * a), 1.0f * s);
-        float ang = float(now) * 2.2f;
-        for (int i = 0; i < 8; ++i)
-        {
-          dl->PathLineTo(rc);
-          dl->PathArcTo(rc, r, ang - 0.1f * float(i + 1), ang - 0.1f * float(i), 4);
-          dl->PathFillConvex(ui::Fade(ui::kAccent, 0.22f * (1.0f - float(i) / 8.0f) * a));
-        }
-        dl->AddLine(rc, ImVec2(rc.x + std::cos(ang) * r, rc.y + std::sin(ang) * r), ui::Fade(ui::kAccent, a),
-                    2.0f * s);
-        dl->AddCircleFilled(rc, 3.0f * s, ui::Fade(ui::kAccent, a));
+        dl->AddCircle(rc, (6.0f + 3.0f * pulse) * s, ui::Fade(ui::kAccent, (0.25f + 0.35f * (1.0f - pulse)) * a), 20,
+                      1.0f * s);
+        dl->AddCircleFilled(rc, 4.5f * s, ui::Fade(ui::kAccent, a));
         float tx = cx0 + 130.0f * s;
         std::string searching = Tr("SEARCHING FOR PLAYERS") + std::string(size_t(int(now * 2.5) % 4), '.');
         ui::Text(dl, FontKind::kHeading, ImVec2(tx, y + 16.0f * s), ui::Fade(ui::kText, a), searching.c_str());
@@ -1868,10 +1883,6 @@ namespace
     }
   };
 
-  // The last players window opened (TogglePlayers).
-  std::mutex g_players_window_mutex;
-  std::weak_ptr<PlayersWindow> g_players_window;
-
   // -------------------------------------------------------------------------
   // Guest memory
   // -------------------------------------------------------------------------
@@ -1959,10 +1970,6 @@ namespace ao2::invite
       state().next_beacon = Clock::now();
     }
     auto window = std::make_shared<PlayersWindow>();
-    {
-      std::lock_guard lock(g_players_window_mutex);
-      g_players_window = window;
-    }
     ao2::menu::OpenWindow("players", [window]() { return window->Draw(); }, /*own_escape=*/true);
   }
 
@@ -1985,27 +1992,6 @@ namespace ao2::invite
   bool Running()
   {
     return g_started;
-  }
-
-  void TogglePlayers()
-  {
-    std::shared_ptr<PlayersWindow> window;
-    {
-      std::lock_guard lock(g_players_window_mutex);
-      window = g_players_window.lock();
-    }
-    bool open;
-    {
-      std::lock_guard lock(state().mutex);
-      open = state().window_open;
-    }
-    // A window already closing (Esc, Close, the key) opens again. The key
-    // comes on the UI thread, where the window draws (closing).
-    if (open && window && window->closing < 0.0 && !window->close_requested.exchange(true))
-    {
-      return;
-    }
-    ShowPlayers();
   }
 
   bool HasPendingInvite()
