@@ -570,6 +570,7 @@ extern "C" REX_FUNC(sub_8284BF18)
   t_view_player = ctx.r3.u32;
   __imp__sub_8284BF18(ctx, base);
   t_view_player = outer;
+  ao2::fov::ClearLensShift();
 }
 
 // eventGetPlayerViewPoint(controller, FVector *location, float rotation[3]).
@@ -662,7 +663,10 @@ extern "C" REX_FUNC(sub_823E06D8)
   if (controller && !(LoadU32(base, controller + kControllerFlags) & kCinematicMode) &&
       !ao2::mouse::InFrontEnd())
   {
-    ctx.f1.f64 = ao2::fov::Drawn(float(ctx.f1.f64));
+    float game = float(ctx.f1.f64);
+    float drawn = ao2::fov::Drawn(game);
+    ao2::fov::NoteView(base, controller, game, drawn);
+    ctx.f1.f64 = drawn;
   }
 }
 

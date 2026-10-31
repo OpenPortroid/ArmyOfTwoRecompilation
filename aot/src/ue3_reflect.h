@@ -24,11 +24,12 @@ namespace ao2::ue3
     return std::byteswap(v);
   }
 
-  // The UClass named `name`, 0 if none (looked up once, then cached).
+  // The UClass (or script struct) named `name`, 0 if none (looked up once,
+  // then cached).
   uint32_t FindClass(const uint8_t *base, const char *name);
 
-  // Offset of property `prop` declared by class `cls` (e.g. "Actor",
-  // "Location"), -1 if not found. Cached.
+  // Offset of property `prop` declared by class or script struct `cls` (e.g.
+  // "Actor", "Location"), -1 if not found. Cached.
   int32_t PropertyOffset(const uint8_t *base, const char *cls, const char *prop);
 
   // A bool property's word offset and bit (UBoolProperty +0x80); false if not

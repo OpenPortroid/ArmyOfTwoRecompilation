@@ -135,7 +135,7 @@ namespace ao2::ue3
         continue;
       }
       uint32_t cls = LoadU32(base, o + kClass);
-      if (Plausible(cls) && NameIs(base, cls, "Class"))
+      if (Plausible(cls) && (NameIs(base, cls, "Class") || NameIs(base, cls, "ScriptStruct")))
       {
         found = o;
       }

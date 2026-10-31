@@ -149,6 +149,12 @@ by coop_lod.cpp, as for different aspect ratios. Every FOV is scaled in tangent 
 the zoom first moved towards 70 by `ao2_fov_aim`. FOVs under `ao2_fov_scope` (25 deg: the sniper scope, its overlay
 drawn for the game's angle), cutscenes (PlayerController +808 bit 0x20000) and the front end keep the game's.
 Mouse aiming scales the turn by the drawn FOV, so on foot `ao2_mouse_sensitivity` keeps its meaning.
+Hip-fire crosshair (`ao2_fov_crosshair_fix`): out of the aim the crosshair is a viewport point above the centre
+(AO2PlayerControllerNative.HUDControlParameters: ReticulePosition 7, ReticuleViewportLocation, 0..1) and the shot goes
+through that point of the game's view, a fixed angle off the axis; a wider drawn view would show that direction nearer
+the centre. The player's projection gets a lens shift c x (1 - tan(game/2) / tan(drawn/2)) (c = the crosshair in clip
+space; M[2][0], M[2][1] of FPerspectiveMatrix), set by the FOV hook and taken by the next FPerspectiveMatrix in that
+CalcSceneView. Post effects rebuild positions from the full inverse view projection, so the off-centre frustum is fine.
 
 ## Fractional resolution scale (2026-10-11)
 `ao2_native_gpu_resolution_scale` is a number in steps of 0.25: 1.5 renders the game's 1280x720 commands as

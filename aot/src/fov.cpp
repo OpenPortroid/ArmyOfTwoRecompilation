@@ -20,9 +20,28 @@
 //
 // Cutscenes and the front end keep the game's FOV (interp_camera.cpp).
 // Mouse aiming follows the drawn FOV (mouse_aim.cpp ZoomScale).
+//
+// The crosshair: out of the aim (from the hip) it is not at the screen
+// centre but at a point of the viewport the character's camera attributes
+// give (AO2PlayerControllerNative.HUDControlParameters: ReticulePosition 7 =
+// viewport location, ReticuleViewportLocation; AO2PlayerController.PlayerTick
+// moves it towards the wanted one). The shot goes through that point of the
+// game's view (CalcCameraSpaceAimingRotation), at a fixed angle off the
+// camera's axis; a wider drawn view shows that direction nearer the centre,
+// under the crosshair would be a point above where the bullets go. So the
+// drawn projection is shifted (off-centre, like a lens shift) by
+// c x (1 - tan(game / 2) / tan(drawn / 2)) in clip space, c = the crosshair's
+// clip-space position: the direction of the shot is again under the
+// crosshair, whatever the drawn FOV. At the centre (the aim) nothing moves.
 #include "fov.h"
 
+#include "log_files.h"
+#include "ue3_reflect.h"
+
+#include <bit>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
 
 #include <rex/cvar.h>
 
@@ -38,6 +57,10 @@ REXCVAR_DEFINE_DOUBLE(ao2_fov_scope, 25.0, "Gameplay",
                       "The game's field of view under this many degrees is a scope: ao2_fov and ao2_fov_aim leave "
                       "it alone")
     .range(0.0, 70.0);
+REXCVAR_DEFINE_BOOL(ao2_fov_crosshair_fix, true, "Gameplay",
+                    "With a field of view other than the game's: shift the picture so that the hip-fire crosshair "
+                    "stays over where the shots go");
+REXCVAR_DEFINE_INT32(ao2_fov_debug, 0, "Debug", "Log this many views (crosshair, lens shift) to fov.log");
 
 namespace ao2::fov
 {
@@ -45,7 +68,88 @@ namespace ao2::fov
   {
     constexpr double kGameFov = 70.0;
     constexpr double kHalfDegree = 3.14159265358979323846 / 360.0;
+    constexpr uint8_t kReticleInViewport = 7; // CROSSHAIRPOSITION_ViewportLocation
+
+    struct Shift
+    {
+      bool on = false;
+      float x = 0.0f, y = 0.0f;
+    };
+    thread_local Shift t_shift;
+
+    float LoadF32(const uint8_t *base, uint32_t addr)
+    {
+      uint32_t v;
+      std::memcpy(&v, base + addr, 4);
+      return std::bit_cast<float>(std::byteswap(v));
+    }
+
+    void Debug(const char *fmt, double a, double b, double c, double d, double e, double f)
+    {
+      static int left = -1;
+      if (left < 0)
+      {
+        left = REXCVAR_GET(ao2_fov_debug);
+      }
+      if (left <= 0)
+      {
+        return;
+      }
+      static FILE *log = ao2::OpenLogFile("fov.log");
+      if (log)
+      {
+        std::fprintf(log, fmt, a, b, c, d, e, f);
+        if (--left % 64 == 0)
+        {
+          std::fflush(log);
+        }
+      }
+    }
   } // namespace
+
+  void NoteView(const uint8_t *base, uint32_t controller, float game, float drawn)
+  {
+    t_shift = Shift{};
+    if (!REXCVAR_GET(ao2_fov_crosshair_fix) || drawn == game || !(game > 1.0f && game < 170.0f))
+    {
+      return;
+    }
+    int32_t params = ao2::ue3::PropertyOffset(base, "AO2PlayerControllerNative", "HUDControlParameters");
+    int32_t position = ao2::ue3::PropertyOffset(base, "SHUDControlParameters", "ReticulePosition");
+    int32_t location = ao2::ue3::PropertyOffset(base, "SHUDControlParameters", "ReticuleViewportLocation");
+    if (params < 0 || position < 0 || location < 0 || base[controller + params + position] != kReticleInViewport)
+    {
+      return;
+    }
+    // Viewport fractions, 0..1 from the top left.
+    float u = LoadF32(base, controller + params + location);
+    float v = LoadF32(base, controller + params + location + 4);
+    bool fractions = u >= 0.0f && u <= 1.0f && v >= 0.0f && v <= 1.0f;
+    if (fractions)
+    {
+      double keep = std::tan(game * kHalfDegree) / std::tan(drawn * kHalfDegree);
+      double cx = u * 2.0 - 1.0, cy = 1.0 - v * 2.0;
+      t_shift = {true, float(cx * (1.0 - keep)), float(cy * (1.0 - keep))};
+    }
+    Debug("fov %.1f -> %.1f crosshair %.3f %.3f shift %.4f %.4f\n", game, drawn, u, v, t_shift.x, t_shift.y);
+  }
+
+  bool TakeLensShift(float &x, float &y)
+  {
+    if (!t_shift.on)
+    {
+      return false;
+    }
+    x = t_shift.x;
+    y = t_shift.y;
+    t_shift = Shift{};
+    return true;
+  }
+
+  void ClearLensShift()
+  {
+    t_shift = Shift{};
+  }
 
   float Drawn(float game_fov)
   {

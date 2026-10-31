@@ -42,6 +42,8 @@
 // when the window's aspect differs.
 #include "aspect_ratio.h"
 
+#include "fov.h"
+
 #include <algorithm>
 #include <atomic>
 #include <bit>
@@ -638,6 +640,8 @@ extern "C" REX_FUNC(sub_828FF430)
 // Not for the canvases' base transforms (sub_826EAC10, returning to
 // 0x826EAC64: the UI's and render targets'), which map canvas pixels onto
 // the target one to one whatever the field of view: a wider one shrank the UI.
+// The player's view also gets the lens shift of its field of view (fov.cpp):
+// clip x and y grow by depth x shift, i.e. M[2][0] and M[2][1].
 extern "C" REX_FUNC(__imp__sub_823E01D0);
 extern "C" REX_FUNC(sub_823E01D0)
 {
@@ -653,5 +657,18 @@ extern "C" REX_FUNC(sub_823E01D0)
       ctx.f1.f64 = std::atan(std::tan(ctx.f1.f64) * aspect / k16by9);
     }
   }
+  uint32_t matrix = ctx.r3.u32;
+  bool canvas = uint32_t(ctx.lr) == kCanvasTransform;
   __imp__sub_823E01D0(ctx, base);
+  float x, y;
+  if (!canvas && ao2::fov::TakeLensShift(x, y))
+  {
+    for (auto [at, add] : {std::pair{matrix + 32, x}, std::pair{matrix + 36, y}})
+    {
+      uint32_t v;
+      std::memcpy(&v, base + at, 4);
+      v = std::byteswap(std::bit_cast<uint32_t>(std::bit_cast<float>(std::byteswap(v)) + add));
+      std::memcpy(base + at, &v, 4);
+    }
+  }
 }
