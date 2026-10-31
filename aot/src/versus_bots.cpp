@@ -1633,6 +1633,8 @@ namespace
     bool offer_pending = false;                // out of a move it was lifted in: offer a pull up
     uint32_t offer_since = 0, offer_until = 0; // offering its partner a pull up
     uint32_t used = 0;       // a hostage it stands against and uses
+    uint32_t next_use = 0;   // ... A pressed for it again no sooner (a press takes it up)
+    uint32_t carried = 0;    // the hostage it carries (logged when that changes)
     uint32_t objective_seen = 0; // a depot to destroy it sees from where it stands
     std::string coop_state;  // its state in the move (logged when it changes)
     float coop_z0 = 0, coop_zmax = 0; // its height when the move began, the highest since
@@ -1906,12 +1908,13 @@ namespace
   }
 
   // No hostage near the line of fire (the aim wanders, a hostage dragged
-  // by an enemy is at its side).
-  bool ClearShot(const Vec &eye, const Vec &at, uint32_t carried = 0)
+  // by an enemy is at its side) - but the one the target carries (shot in
+  // the head over it) and the bot's own (on its shoulder, by its eyes).
+  bool ClearShot(const Vec &eye, const Vec &at, uint32_t carried = 0, uint32_t own = 0)
   {
     for (const Character &c : g_characters)
     {
-      if (c.civilian && c.pawn != carried && (SegmentDistance(c.at, eye, at) < kHostageMargin ||
+      if (c.civilian && c.pawn != carried && c.pawn != own && (SegmentDistance(c.at, eye, at) < kHostageMargin ||
                          SegmentDistance({c.at.x, c.at.y, c.at.z + 60.0f}, eye, at) < kHostageMargin))
       {
         return false;
@@ -1923,7 +1926,7 @@ namespace
   // Character and objective properties, looked up once.
   struct Props
   {
-    int32_t partner = -1, drag = -1, wall_height = -1, vaulting = -1;
+    int32_t partner = -1, drag = -1, carry = -1, wall_height = -1, vaulting = -1;
     int32_t locators = -1, current = -1, target = -1, type = -1;
     uint32_t team_class = 0;
   };
@@ -1936,6 +1939,11 @@ namespace
       looked = true;
       p.partner = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "Partner");
       p.drag = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "DragPartnerOtherCharacter");
+      // A hostage is carried on the shoulder: FiremanCarryGameplayInfo
+      // (SFiremanCarryGameplayInfo), +4 OtherCharacter - the hostage on the
+      // carrier, the carrier on the hostage.
+      p.carry = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "FiremanCarryGameplayInfo");
+      Logf("properties: FiremanCarryGameplayInfo +%d\n", p.carry);
       p.wall_height = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "PullUpWallHeight");
       p.vaulting = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
       p.locators = ao2::ue3::PropertyOffset(base, "AO2MPTeamInfo", "MPTeamObjectiveLocators");
@@ -1951,13 +1959,25 @@ namespace
     return p;
   }
 
+  // The character one carries on its shoulder (a hostage) or drags (a
+  // wounded partner) - on a hostage, who carries it; 0 for none.
+  uint32_t Carried(const uint8_t *base, uint32_t pawn)
+  {
+    const Props &p = Properties(base);
+    uint32_t other = p.carry >= 0 ? LoadU32(base, pawn + p.carry + 4) : 0;
+    if (!other && p.drag >= 0)
+    {
+      other = LoadU32(base, pawn + p.drag);
+    }
+    return other && IsCharacter(base, other) ? other : 0;
+  }
+
   // Who carries (drags) a hostage: 0 for none.
   uint32_t CarrierOf(const uint8_t *base, uint32_t hostage)
   {
-    int32_t drag = Properties(base).drag;
     for (const Character &c : g_characters)
     {
-      if (!c.civilian && drag >= 0 && LoadU32(base, c.pawn + drag) == hostage)
+      if (!c.civilian && Carried(base, c.pawn) == hostage)
       {
         return c.pawn;
       }
@@ -2512,13 +2532,16 @@ namespace
     float arrive_z = 150.0f; // ... and this near in height
     uint32_t goal_actor = 0; // faced when there
     uint8_t objective_type = 0;
-    if (partner && partner->down && Dist2D(me.at, partner->at) < kHealRange)
+    // A hostage on its shoulder: no heal, no co-op move (A puts it down),
+    // no B or Y when stuck (B too), no crouching.
+    bool carrying = Carried(base, pawn) != 0;
+    if (partner && partner->down && Dist2D(me.at, partner->at) < kHealRange && !carrying)
     {
       task = Task::kHeal;
       goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
       arrive = kHealReach;
     }
-    if (!have_goal && partner && Dist2D(me.at, partner->at) < kJoinRange)
+    if (!have_goal && partner && Dist2D(me.at, partner->at) < kJoinRange && !carrying)
     {
       std::string partner_state = StateName(base, partner->pawn);
       if (partner_state.find("PreCoop_Lifter") != std::string::npos)
@@ -2583,7 +2606,7 @@ namespace
     }
     // A hostage no one carries yet, or one the bot carries: the bot's own
     // job (picked up, carried to the extraction), not following.
-    bool hostage_job = props.drag >= 0 && LoadU32(base, pawn + props.drag);
+    bool hostage_job = Carried(base, pawn) != 0;
     if (player_partner && !have_goal && !hostage_job)
     {
       for (const Objective &o : TeamObjectives(base, me.team))
@@ -2628,7 +2651,7 @@ namespace
     uint32_t objective_target = 0; // an enemy the objective is to kill
     if (!have_goal)
     {
-      uint32_t dragging = props.drag >= 0 ? LoadU32(base, pawn + props.drag) : 0;
+      uint32_t dragging = Carried(base, pawn);
       const Objective *best = nullptr;
       std::vector<Objective> objectives = TeamObjectives(base, me.team);
       for (const Objective &o : objectives)
@@ -2640,7 +2663,7 @@ namespace
           // an enemy: the carrier is fought (below).
           uint32_t carrier = CarrierOf(base, o.actor);
           const Character *by = carrier ? FindCharacter(carrier) : nullptr;
-          if (dragging || (c && props.drag >= 0 && LoadU32(base, o.actor + props.drag)) ||
+          if (dragging || (c && Carried(base, o.actor)) ||
               (carrier && (!by || !Enemy(me, *by))))
           {
             continue;
@@ -2841,7 +2864,12 @@ namespace
     // (below). Left when the enemy is gone, after a while once it is well,
     // when the enemy sees it there (another is looked for), or when its
     // partner, a player, goes on.
-    bool carrying = props.drag >= 0 && LoadU32(base, pawn + props.drag);
+    if (uint32_t now = Carried(base, pawn); now != bot.carried)
+    {
+      Logf("frame %u: bot %u %s %08X, in %s\n", frame, id, now ? "carries" : "puts down", now ? now : bot.carried,
+           state.c_str());
+      bot.carried = now;
+    }
     bool can_cover = task != Task::kHeal && task != Task::kJoin && !carrying &&
                      !(task == Task::kObjective && (objective_type == kObjHostage || objective_type == kObjExtraction) &&
                        health_part > kRetreatHealth);
@@ -2983,6 +3011,18 @@ namespace
       {
         in.buttons |= frame - bot.join_since > 30 && frame % 40 < 3 ? kA : 0;
       }
+      else if (use_goal)
+      {
+        // A hostage: one press, then the time to take it up (another press
+        // meanwhile put it down again).
+        if (frame >= bot.next_use)
+        {
+          bot.next_use = frame + 150;
+          Logf("frame %u: bot %u takes up %08X (%s), %.0f away, in %s\n", frame, id, goal_actor,
+               ao2::ue3::ObjectName(base, goal_actor).c_str(), goal_d, state.c_str());
+        }
+        in.buttons |= frame - (bot.next_use - 150) < 3 ? kA : 0;
+      }
       else
       {
         in.buttons |= frame % 12 < 6 ? kA : 0;
@@ -3072,11 +3112,12 @@ namespace
     float target_d = bot.target ? Dist2D(me.at, LoadVec(base, bot.target + kActorLocation)) : 0.0f;
     bool shoot_objective = !bot.target && there && task == Task::kObjective && objective_type == kObjDetonate &&
                            bot.objective_seen == goal_actor;
-    bool dragging = props.drag >= 0 && LoadU32(base, pawn + props.drag);
+    bool dragging = carrying;
     if ((bot.target || shoot_objective) && !bot.nade_step)
     {
       // A target carrying a hostage is shot in the head, over the hostage.
-      uint32_t carried = bot.target && props.drag >= 0 ? LoadU32(base, bot.target + props.drag) : 0;
+      uint32_t carried = bot.target ? Carried(base, bot.target) : 0;
+      uint32_t own_hostage = Carried(base, pawn);
       Vec at = shoot_objective                ? ObjectiveAim(base, goal_actor)
                : bot.target_body && !carried ? Body(base, bot.target)
                                               : Head(base, bot.target);
@@ -3113,7 +3154,7 @@ namespace
       bool burst = (frame + id * 13) % kBurstFrames < kBurstFrames * 3 / 5;
       bool looked = shoot_objective ||
                     frame - bot.target_since >= uint32_t(std::max(0, REXCVAR_GET(ao2_versus_bots_reaction)));
-      if (on && burst && looked && frame % 9 < 6 && ClearShot(eye, at, carried))
+      if (on && burst && looked && frame % 9 < 6 && ClearShot(eye, at, carried, own_hostage))
       {
         in.buttons |= kRT; // pulled 6 frames of 9: single shot weapons fire again too
       }
@@ -3615,7 +3656,7 @@ namespace
 
     // The weapon for the threat's distance (the primary with none); not
     // while it throws or reloads, nor over a weapon picked up (slot 4).
-    if (!bot.nade_step && frame >= bot.reload_until && !maneuvering)
+    if (!bot.nade_step && frame >= bot.reload_until && !maneuvering && !carrying)
     {
       int want = bot.threat ? SlotFor(base, inventory, Dist2D(me.at, bot.threat_at))
                  : inventory.slot[0] ? 0
@@ -3641,7 +3682,7 @@ namespace
     // state read back (Pawn.bIsCrouched).
     {
       bool want = in_cover && hiding && frame - bot.hide_since >= 3;
-      if (Crouched(base, pawn) != want && frame >= bot.next_crouch && !maneuvering && !bot.nade_step)
+      if (Crouched(base, pawn) != want && frame >= bot.next_crouch && !maneuvering && !bot.nade_step && !carrying)
       {
         bot.next_crouch = frame + 30;
         in.buttons |= kL3;
@@ -3658,7 +3699,8 @@ namespace
     {
       in.buttons &= ~(kLT | kRT);
     }
-    if (frame >= bot.press_at && frame < bot.press_at + 2 && !(bot.press == kY && maneuvering) && !bot.nade_step)
+    if (frame >= bot.press_at && frame < bot.press_at + 2 && !(bot.press == kY && maneuvering) && !bot.nade_step &&
+        !carrying)
     {
       in.buttons |= bot.press;
     }
