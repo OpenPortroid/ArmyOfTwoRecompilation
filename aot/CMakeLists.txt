@@ -76,6 +76,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/mouse_aim.cpp
     src/cutscene_skip.cpp
     src/cheats.cpp
+    src/ui_blur.cpp
     src/aim_assist.cpp
     src/versus_bots.cpp
     src/versus_lobby.cpp

@@ -59,6 +59,7 @@
 #include "keyboard_prompts.h"
 #include "log_files.h"
 #include "ue3_reflect.h"
+#include "ui_blur.h"
 
 #include <windows.h>
 
@@ -1381,6 +1382,7 @@ extern "C" REX_FUNC(sub_82A95F70)
     return;
   }
   ao2::cheats::Tick(ctx, base);
+  ao2::ui_blur::Tick(ctx, base);
   ao2::coop::ForceLod(ctx, base);
   ao2::coop::BlockStreaming(ctx, base);
   ao2::skip::Poll(ctx, base);
