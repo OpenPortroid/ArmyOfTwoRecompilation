@@ -37,7 +37,11 @@
 // (ao2_interp_captures): their ViewMatrix (+160) is replaced and the
 // capture is put into the scene again, as UpdateTransform does. Captures
 // of other views (the partner's camera) do not match the player's view and
-// are left alone.
+// are left alone. Their ProjMatrix (+224, made from the game's FOV +132 by
+// sub_8289DC00 whenever the capture is put into the scene) gets the drawn
+// view's FOV and lens shift (fov.cpp Projection), or with ao2_fov the
+// highlighted objects were off the objects in the view. Done at the end of
+// CalcSceneView: the FOV is taken after the view point.
 #include <windows.h>
 
 #include <algorithm>
@@ -83,6 +87,7 @@ namespace
   constexpr uint32_t kCapture2DVtable = 0x820CC9E8; // USceneCapture2DComponent
   constexpr uint32_t kComponentScene = 72;
   constexpr uint32_t kCaptureViewMatrix = 160;
+  constexpr uint32_t kCaptureProjMatrix = 224;
   constexpr uint32_t kSceneAddCapture = 32;    // scene vtable: (scene, component)
   constexpr uint32_t kSceneRemoveCapture = 36; // scene vtable: (scene, component)
   // A capture the game has not moved for this many steps is forgotten.
@@ -138,10 +143,24 @@ namespace
     bool has_ours = false; // `ours` was written to it
     bool follows = false;  // it shows the player's view
     float ours[16] = {};
+    // The drawn projection against the game's (fov::Projection) that
+    // sub_8289DC00 gives it.
+    float keep = 1.0f, shift_x = 0.0f, shift_y = 0.0f;
   };
   Capture g_captures[8];
 
   thread_local uint32_t t_view_player = 0; // the local player in CalcSceneView
+
+  // The views GetPlayerViewPoint saw, for UpdateCaptures at the end of
+  // CalcSceneView.
+  struct CaptureViews
+  {
+    bool set = false;
+    bool moved = false;
+    bool has_prev = false;
+    float sim[16], prev[16], drawn[16];
+  };
+  thread_local CaptureViews t_capture_views;
 
   FILE *InterpLog()
   {
@@ -358,6 +377,16 @@ namespace
     std::fflush(f);
   }
 
+  void CaptureProjLog(const Capture &c)
+  {
+    if (REXCVAR_GET(ao2_interp_debug) == 0 || !InterpLog())
+    {
+      return;
+    }
+    std::fprintf(InterpLog(), "capture %08X keep %.4f shift %.4f %.4f\n", c.component, c.keep, c.shift_x,
+                 c.shift_y);
+  }
+
   // Puts the scene captures that show the player's view onto the drawn view.
   // `sim` / `sim_prev` = the view matrices of the step (and the one before,
   // or null), `drawn` = the drawn view, `moved` = it differs from the step's.
@@ -368,6 +397,8 @@ namespace
     {
       return;
     }
+    float keep, shift_x, shift_y;
+    ao2::fov::Projection(keep, shift_x, shift_y);
     static int32_t attached_offset = -1;
     static uint32_t attached_mask = 0;
     if (attached_offset < 0 &&
@@ -412,22 +443,24 @@ namespace
       {
         continue;
       }
-      // Nothing to change: the drawn view is the step's and the game's own
-      // matrix is in place.
-      if (!moved && !is_ours)
-      {
-        continue;
-      }
-      if (std::memcmp(m, drawn, sizeof(m)) == 0)
+      // The drawn view is the step's and the game's own matrix is in place:
+      // the view stays.
+      const float *view = !moved && !is_ours ? m : drawn;
+      bool same_proj = c.keep == keep && c.shift_x == shift_x && c.shift_y == shift_y;
+      if (std::memcmp(m, view, sizeof(m)) == 0 && same_proj)
       {
         continue;
       }
       for (int i = 0; i < 16; i++)
       {
-        StoreF32(base, c.component + kCaptureViewMatrix + 4 * i, drawn[i]);
+        StoreF32(base, c.component + kCaptureViewMatrix + 4 * i, view[i]);
       }
-      std::memcpy(c.ours, drawn, sizeof(c.ours));
+      std::memcpy(c.ours, view, sizeof(c.ours));
       c.has_ours = true;
+      c.keep = keep;
+      c.shift_x = shift_x;
+      c.shift_y = shift_y;
+      CaptureProjLog(c);
       // As UpdateTransform: out of the scene and in again, so the render
       // thread gets the new matrix and the capture is drawn this frame.
       CallScene(ctx, base, scene, kSceneRemoveCapture, c.component);
@@ -568,8 +601,15 @@ extern "C" REX_FUNC(sub_8284BF18)
 {
   uint32_t outer = t_view_player;
   t_view_player = ctx.r3.u32;
+  t_capture_views.set = false;
   __imp__sub_8284BF18(ctx, base);
   t_view_player = outer;
+  if (t_capture_views.set)
+  {
+    const CaptureViews &v = t_capture_views;
+    UpdateCaptures(ctx, base, v.sim, v.has_prev ? v.prev : nullptr, v.drawn, v.moved);
+    t_capture_views.set = false;
+  }
   ao2::fov::ClearLensShift();
 }
 
@@ -618,20 +658,21 @@ extern "C" REX_FUNC(sub_82384248)
     drawn_rotation[i] = LoadF32(base, rotation + 4 * i);
     moved = moved || drawn_location[i] != sim_location[i] || drawn_rotation[i] != sim_rotation[i];
   }
-  float sim_view[16], prev_view[16], drawn_view[16];
-  ViewMatrix(sim_location, sim_rotation, sim_view);
-  ViewMatrix(drawn_location, drawn_rotation, drawn_view);
-  const float *prev = nullptr;
+  CaptureViews &v = t_capture_views;
+  ViewMatrix(sim_location, sim_rotation, v.sim);
+  ViewMatrix(drawn_location, drawn_rotation, v.drawn);
+  v.has_prev = false;
   if (On())
   {
     const PlayerViews &p = Views(t_view_player);
     if (p.prev.has_location)
     {
-      ViewMatrix(p.prev.location, p.prev.rotation, prev_view);
-      prev = prev_view;
+      ViewMatrix(p.prev.location, p.prev.rotation, v.prev);
+      v.has_prev = true;
     }
   }
-  UpdateCaptures(ctx, base, sim_view, prev, drawn_view, moved);
+  v.moved = moved;
+  v.set = true;
 }
 
 // The view's field of view (controller) -> f1, degrees. Only CalcSceneView
@@ -680,5 +721,37 @@ extern "C" REX_FUNC(sub_82894AE8)
   if (component)
   {
     NoteCapture(component);
+  }
+}
+
+// USceneCapture2DComponent's projection (component): ProjMatrix from the
+// game's FieldOfView, on every AddCapture (the probe, sub_828B6118). A
+// capture of the player's view gets the drawn one: clip x and y scaled,
+// then the lens shift (row vectors: M[2][0] / M[2][1] add to clip x / y per
+// unit of depth, as aspect_ratio.cpp does for the player's view).
+extern "C" REX_FUNC(__imp__sub_8289DC00);
+extern "C" REX_FUNC(sub_8289DC00)
+{
+  uint32_t component = ctx.r3.u32;
+  __imp__sub_8289DC00(ctx, base);
+  if (!component || !REXCVAR_GET(ao2_interp_captures))
+  {
+    return;
+  }
+  for (const Capture &c : g_captures)
+  {
+    if (c.component != component)
+    {
+      continue;
+    }
+    if (c.follows && (c.keep != 1.0f || c.shift_x != 0.0f || c.shift_y != 0.0f))
+    {
+      uint32_t m = component + kCaptureProjMatrix;
+      StoreF32(base, m + 0, LoadF32(base, m + 0) * c.keep);
+      StoreF32(base, m + 20, LoadF32(base, m + 20) * c.keep);
+      StoreF32(base, m + 32, LoadF32(base, m + 32) + c.shift_x);
+      StoreF32(base, m + 36, LoadF32(base, m + 36) + c.shift_y);
+    }
+    return;
   }
 }

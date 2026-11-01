@@ -33,6 +33,10 @@
 // c x (1 - tan(game / 2) / tan(drawn / 2)) in clip space, c = the crosshair's
 // clip-space position: the direction of the shot is again under the
 // crosshair, whatever the drawn FOV. At the centre (the aim) nothing moves.
+//
+// The GPS overlay is a scene capture of the player's view with a projection
+// of its own, made from the game's FOV; interp_camera.cpp gives it the drawn
+// one (Projection()), or the highlighted objects are off theirs in the view.
 #include "fov.h"
 
 #include "log_files.h"
@@ -77,6 +81,13 @@ namespace ao2::fov
     };
     thread_local Shift t_shift;
 
+    struct DrawnProjection
+    {
+      float keep = 1.0f;
+      float x = 0.0f, y = 0.0f;
+    };
+    thread_local DrawnProjection t_projection;
+
     float LoadF32(const uint8_t *base, uint32_t addr)
     {
       uint32_t v;
@@ -110,7 +121,14 @@ namespace ao2::fov
   void NoteView(const uint8_t *base, uint32_t controller, float game, float drawn)
   {
     t_shift = Shift{};
-    if (!REXCVAR_GET(ao2_fov_crosshair_fix) || drawn == game || !(game > 1.0f && game < 170.0f))
+    t_projection = DrawnProjection{};
+    if (drawn == game || !(game > 1.0f && game < 170.0f))
+    {
+      return;
+    }
+    double keep = std::tan(game * kHalfDegree) / std::tan(drawn * kHalfDegree);
+    t_projection.keep = float(keep);
+    if (!REXCVAR_GET(ao2_fov_crosshair_fix))
     {
       return;
     }
@@ -127,9 +145,10 @@ namespace ao2::fov
     bool fractions = u >= 0.0f && u <= 1.0f && v >= 0.0f && v <= 1.0f;
     if (fractions)
     {
-      double keep = std::tan(game * kHalfDegree) / std::tan(drawn * kHalfDegree);
       double cx = u * 2.0 - 1.0, cy = 1.0 - v * 2.0;
       t_shift = {true, float(cx * (1.0 - keep)), float(cy * (1.0 - keep))};
+      t_projection.x = t_shift.x;
+      t_projection.y = t_shift.y;
     }
     Debug("fov %.1f -> %.1f crosshair %.3f %.3f shift %.4f %.4f\n", game, drawn, u, v, t_shift.x, t_shift.y);
   }
@@ -146,9 +165,17 @@ namespace ao2::fov
     return true;
   }
 
+  void Projection(float &keep, float &x, float &y)
+  {
+    keep = t_projection.keep;
+    x = t_projection.x;
+    y = t_projection.y;
+  }
+
   void ClearLensShift()
   {
     t_shift = Shift{};
+    t_projection = DrawnProjection{};
   }
 
   float Drawn(float game_fov)

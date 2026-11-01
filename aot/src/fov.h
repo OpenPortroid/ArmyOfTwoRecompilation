@@ -20,6 +20,11 @@ namespace ao2::fov
   // matrix being built (clip-space x and y per unit of depth), once; false
   // when there is none.
   bool TakeLensShift(float &x, float &y);
+  // The player's projection as drawn against the game's (for scene captures
+  // of the player's view, interp_camera.cpp): clip x and y scaled by `keep`,
+  // then the lens shift added. keep 1 and no shift for the game's view. Game
+  // thread, in CalcSceneView after the FOV was taken.
+  void Projection(float &keep, float &x, float &y);
   // End of CalcSceneView: a shift no projection took is dropped.
   void ClearLensShift();
 } // namespace ao2::fov
