@@ -41,7 +41,14 @@ $d3dc = "${env:ProgramFiles(x86)}\Windows Kits\10\Redist\D3D\x64\d3dcompiler_47.
 if (-not (Test-Path $d3dc)) { throw "Windows SDK D3DCompiler redist not found: $d3dc" }
 Copy-Item $d3dc "$Out\D3DCompiler_47.dll" -Force
 New-Item -ItemType Directory -Force "$Out\settings" | Out-Null
-Copy-Item "$repo\settings\*" "$Out\settings" -Force
+# The committed settings, not the working copies: the game saves to settings/ (the developer's own values).
+$tracked = git -C $root ls-files "aot/settings"
+if (-not $tracked) { throw "no tracked files in aot/settings" }
+foreach ($f in $tracked) {
+  $dest = "$Out\settings\$(Split-Path $f -Leaf)"
+  cmd /c "git -C `"$root`" show HEAD:$f > `"$dest`""
+  if ($LASTEXITCODE -ne 0) { throw "git show HEAD:$f failed" }
+}
 # The Russian text and the Tektur font (our own translation, not the game's files).
 robocopy "$repo\localization" "$Out\localization" /E /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy localization failed: $LASTEXITCODE" }
