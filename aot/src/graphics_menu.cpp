@@ -1887,6 +1887,24 @@ namespace ao2::gfxmenu
     }
     return false;
   }
+
+  void SaveValue(const char *cvar, const std::string &value, const char *file, const char *launcher_key)
+  {
+    try
+    {
+      SetFileKey(utils::SettingsDir() / file, cvar, value);
+      std::string launcher = REXCVAR_GET(ao2_launcher_settings);
+      if (launcher_key && !launcher.empty() &&
+          std::filesystem::exists(std::u8string(launcher.begin(), launcher.end())))
+      {
+        SetFileKey(std::filesystem::path(std::u8string(launcher.begin(), launcher.end())), launcher_key, value);
+      }
+    }
+    catch (const std::exception &e)
+    {
+      Logf("save %s: %s\n", cvar, e.what());
+    }
+  }
 } // namespace ao2::gfxmenu
 
 // OnlineSubsystemLive::ShowDeviceSelectionUI(this, user, size needed, force).

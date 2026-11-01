@@ -17,7 +17,7 @@
 // - Graphics: the Options screen's Graphics page settings (graphics_menu.h),
 //   applied at once and saved as the page saves them (the render resolution
 //   too: the page waits for its Accept), and the field of view and mouse
-//   sensitivity (until the game is closed); a column beside them tells what
+//   sensitivity (saved too); a column beside them tells what
 //   the hovered row does, with the frame rate (perf_overlay.h).
 // - The tabs carry badges: achievements unlocked, an invite waiting, the
 //   cheats on.
@@ -478,7 +478,9 @@ namespace
   constexpr ImU32 kPending = IM_COL32(255, 190, 80, 255); // "after restart"
 
   // The Graphics tab's field of view and mouse rows (fov.cpp, mouse_aim.cpp):
-  // until the game is closed.
+  // saved once let go, to settings/`file` and the launcher's `launcher_key`
+  // (the launcher passes the sensitivities at every start: unsaved there, they
+  // were back to its values in the next game).
   struct SliderRow
   {
     const char *label;
@@ -486,18 +488,31 @@ namespace
     const char *format;
     double (*get)();
     void (*set)(double);
+    const char *cvar;
+    const char *file;
+    const char *launcher_key;
   };
   const SliderRow kSliders[] = {
       {"Field of view", 40.0, 130.0, "%.0f\xC2\xB0", [] { return REXCVAR_GET(ao2_fov); },
-       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }},
+       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }, "ao2_fov", "hardware.toml", nullptr},
       {"Aiming zoom", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_fov_aim); },
-       [](double v) { REXCVAR_SET(ao2_fov_aim, std::round(v * 100.0) / 100.0); }},
+       [](double v) { REXCVAR_SET(ao2_fov_aim, std::round(v * 100.0) / 100.0); }, "ao2_fov_aim", "hardware.toml",
+       nullptr},
       {"Sensitivity", 0.1, 10.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_sensitivity); },
-       [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, std::round(v * 100.0) / 100.0); }},
+       [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, std::round(v * 100.0) / 100.0); }, "ao2_mouse_sensitivity",
+       "mapping.toml", "mouse_sens"},
       {"Zoomed sensitivity", 0.1, 3.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_zoom_sensitivity); },
-       [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, std::round(v * 100.0) / 100.0); }},
+       [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, std::round(v * 100.0) / 100.0); },
+       "ao2_mouse_zoom_sensitivity", "mapping.toml", "mouse_zoom"},
   };
   constexpr int kSliderInfo = 100; // info_ of the first slider row
+
+  void SaveSlider(const SliderRow &sr)
+  {
+    char value[32];
+    std::snprintf(value, sizeof(value), "%g", sr.get());
+    ao2::gfxmenu::SaveValue(sr.cvar, value, sr.file, sr.launcher_key);
+  }
 
   // What a Graphics tab row does (English, through Tr), by its label.
   const char *RowHelp(const char *label)
@@ -971,7 +986,8 @@ namespace
         y += 18.0f * s;
       }
 
-      // Field of view (fov.cpp) and mouse (mouse_aim.cpp): until the game is closed.
+      // Field of view (fov.cpp) and mouse (mouse_aim.cpp): saved once the
+      // slider is let go (not each frame of the drag).
       y = Section(dl, x0, x1, y, Tr("View and mouse"), a);
       for (int k = 0; k < int(std::size(kSliders)); ++k)
       {
@@ -986,6 +1002,12 @@ namespace
         if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live))
         {
           sr.set(v);
+          slider_dirty_[k] = true;
+        }
+        if (slider_dirty_[k] && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        {
+          slider_dirty_[k] = false;
+          SaveSlider(sr);
         }
         ImVec2 ts = ui::TextSize(FontKind::kBody, text);
         ui::Text(dl, FontKind::kBody, ImVec2(x1 - 12.0f * s - ts.x, y + (row_h - ts.y) * 0.5f - 1.0f * s),
@@ -1000,6 +1022,8 @@ namespace
       {
         REXCVAR_SET(ao2_fov, 70.0);
         REXCVAR_SET(ao2_fov_aim, 1.0);
+        SaveSlider(kSliders[0]);
+        SaveSlider(kSliders[1]);
       }
       return y + 36.0f * s + 8.0f * s;
     }
@@ -1073,7 +1097,7 @@ namespace
         meter(Tr("1% low"), text, low / top, ui::Mix(ui::kGreen, ui::kAccent, 0.5f));
       }
       Wrapped(dl, FontKind::kSmall, ImVec2(mn.x, std::max(y + 6.0f * s, mx.y - 3.0f * ui::FontSize(FontKind::kSmall))),
-              w, ui::Fade(ui::kMuted, a), Tr("Field of view and mouse last until the game is closed; the rest is saved."));
+              w, ui::Fade(ui::kMuted, a), Tr("Settings are saved as they are changed."));
     }
 
     // --- Cheats: cards with a switch each.
@@ -1372,6 +1396,7 @@ namespace
     double badges_time_ = 0.0;
     int ach_got_ = 0, ach_total_ = 0;
     int info_ = 0; // the Graphics tab's row the info column tells about (kSliderInfo + n: a slider)
+    bool slider_dirty_[4] = {}; // a slider moved and not yet saved (kSliders)
   };
 
   void Toggle()

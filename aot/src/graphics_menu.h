@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include <rex/ppc.h>
 
@@ -37,6 +38,12 @@ namespace ao2::gfxmenu
   // Picks a choice, applied and saved as the page does; the render
   // resolution switches at once (the page waits for its Accept).
   void Pick(int setting, int choice);
+
+  // `cvar = value` (as written in TOML) saved in settings/`file` and, with a
+  // `launcher_key` and the launcher's settings file (ao2_launcher_settings),
+  // there too: the launcher passes its value at every start. For the F1
+  // menu's sliders (field of view, sensitivity).
+  void SaveValue(const char *cvar, const std::string &value, const char *file, const char *launcher_key);
 
   // The pause menu's Options row "Graphics and controls": an option button
   // that acts as a plain button (A opens the Graphics page).
