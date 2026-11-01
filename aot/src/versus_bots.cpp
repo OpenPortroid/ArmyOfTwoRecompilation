@@ -230,6 +230,9 @@ namespace
   constexpr float kGiveReach = 140.0f;    // ... which presses A this near it in the volume
   constexpr uint32_t kGiveFrames = 900;   // ... and gives up after so long
   constexpr uint32_t kGiveWait = 600;     // ... waits at the wall so long for the player to join
+  constexpr uint32_t kLiftMemory = 1200;  // a partner that was the lifter in a volume: wants to lift there so long
+  constexpr uint32_t kPutDownBuy = 900;   // a hostage put down: no buying so long
+  constexpr uint32_t kCarryStart = 150;   // taking up a hostage the character stands: no stuck check so long
   constexpr float kClearRange = 1500.0f;  // in its partner's line of fire this near...
   constexpr float kClearWidth = 55.0f;    // ... this near the line: steps aside
   constexpr float kClearSlow = 250.0f;    // ... while the partner moves slower than this
@@ -244,6 +247,8 @@ namespace
   constexpr uint32_t kBurstFrames = 60;   // fires 3/5 of this, then pauses
   constexpr float kCoopRise = 60.0f;      // lifted this high: up (the jumper climbs over at the top)
   constexpr uint32_t kCoopTop = 15;       // ... and no higher for this long
+  constexpr float kDirectNear = 1500.0f;  // no way to a goal this near on its level: straight at it
+  constexpr uint32_t kDirectOff = 1800;   // ... that failed: held so long
   constexpr float kOffLevel = 150.0f;     // a goal this much higher or lower is on another level
   constexpr float kFollowReach = 200.0f;  // a player's partner keeps this near it
   constexpr float kFollowLead = 350.0f;   // ... or ahead of it, this far, when it runs
@@ -705,8 +710,19 @@ namespace
   Grid g_grid;
   size_t g_ledge_links = 0; // links walked one way only (down a ledge) or not at all
   std::vector<int> g_part;  // the part of the network of each point (points linked to each other)
-  std::unordered_map<uint64_t, uint8_t> g_link_fails; // links found not walkable (LinkFailed)
-  std::unordered_map<int, uint8_t> g_point_fails;
+  // Links found not walkable (LinkFailed), and points walked from to no
+  // avail: how often, and the frame of the last time. Forgotten after a
+  // while (kFailMemory): kept for the match, a bot's stumbles on stairs and
+  // at doors (and a stop to take up a hostage) barred more of the network
+  // with every minute, and paths went round the whole map.
+  struct Fails
+  {
+    uint8_t n = 0;
+    uint32_t at = 0;
+  };
+  std::unordered_map<uint64_t, Fails> g_link_fails;
+  std::unordered_map<int, Fails> g_point_fails;
+  uint32_t g_nav_now = 0; // the frame (for kFailMemory)
   uint32_t g_last_block = 0; // what the last ClearLine that was not clear hit
   struct FailedLink
   {
@@ -1483,18 +1499,25 @@ namespace
   // Links the bots found not walkable, for all of them (the same on every
   // machine: the bots think in the same order): one that failed kLinkFails
   // times is out of the network, a point kPointFails links from which
-  // failed is not walked through (a pocket by a wall).
+  // failed is not walked through (a pocket by a wall) - for kFailMemory.
   constexpr uint8_t kLinkFails = 2;
   constexpr uint8_t kPointFails = 3;
+  constexpr uint32_t kFailMemory = 3600; // frames (a minute) after the last fail: forgotten
+
+  uint8_t FailCount(const Fails &f)
+  {
+    return g_nav_now - f.at < kFailMemory ? f.n : 0;
+  }
 
   void LinkFailed(int from, int to)
   {
     if (from >= 0 && to >= 0)
     {
-      uint8_t &n = g_link_fails[LinkKey(from, to)];
-      n = uint8_t(std::min(255, n + 1));
-      uint8_t &p = g_point_fails[from];
-      p = uint8_t(std::min(255, p + 1));
+      for (Fails *f : {&g_link_fails[LinkKey(from, to)], &g_point_fails[from]})
+      {
+        f->n = uint8_t(std::min(255, FailCount(*f) + 1));
+        f->at = g_nav_now;
+      }
     }
   }
 
@@ -1567,6 +1590,7 @@ namespace
   // nearest with links in the start's part of the network a trace from `to`
   // reaches, else the nearest such; else the nearest point (NearestNode).
   constexpr float kGoalNear = 800.0f;
+  constexpr float kGoalFar = 300.0f; // a path's last point farther from its goal: it ends short (partial)
   int NearestGoal(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &to, int start)
   {
     int part = PartOf(start);
@@ -1601,8 +1625,13 @@ namespace
   // ~1000 units of walking). A way round longer than that: down the drop.
   constexpr float kCarryDrop = 100.0f;
   constexpr float kDropCost = 1000.0f;
+  // The links and points the bots failed on are left out (kLinkFails,
+  // kPointFails); with them no way there at all (a pocket whose way out they
+  // were: in Afghanistan two bots at a choke cut ~200 points off for every
+  // bot), found again with them in, dearer.
   std::vector<int> FindPath(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
-                            const std::vector<Bar> &barred, bool *partial = nullptr, bool no_drops = false)
+                            const std::vector<Bar> &barred, bool *partial = nullptr, bool no_drops = false,
+                            bool use_fails = true)
   {
     if (partial)
     {
@@ -1629,6 +1658,7 @@ namespace
     cost[start] = 0;
     open.push({h(start), start});
     size_t visited = 0;
+    bool skipped = false; // a failed link or point left out
     while (!open.empty() && visited < 20000)
     {
       auto [f, i] = open.top();
@@ -1649,11 +1679,16 @@ namespace
           continue;
         }
         auto lf = g_link_fails.find(LinkKey(i, j));
-        uint8_t fails = lf == g_link_fails.end() ? 0 : lf->second;
+        uint8_t fails = lf == g_link_fails.end() ? 0 : FailCount(lf->second);
         auto pf = j == goal ? g_point_fails.end() : g_point_fails.find(j);
-        if (fails >= kLinkFails || (pf != g_point_fails.end() && pf->second >= kPointFails))
+        if (fails >= kLinkFails || (pf != g_point_fails.end() && FailCount(pf->second) >= kPointFails))
         {
-          continue;
+          if (use_fails)
+          {
+            skipped = true;
+            continue;
+          }
+          fails = std::max(fails, kLinkFails);
         }
         float n = cost[i] + c * (1.0f + 2.0f * float(fails));
         if (no_drops && g_nodes[i].at.z - g_nodes[j].at.z > kCarryDrop)
@@ -1666,6 +1701,17 @@ namespace
           open.push({n + h(j), j});
         }
       }
+    }
+    // A goal point far from where the path is to end (no points near it: a
+    // hostage lying where the floor was not sampled, 1080 from the nearest
+    // in Kiev): the path ends short of it, as with no way there.
+    if (partial && Dist2D(g_nodes[goal].at, to) > kGoalFar)
+    {
+      *partial = true;
+    }
+    if (start != goal && came[goal] < 0 && skipped)
+    {
+      return FindPath(ctx, base, source, from, to, barred, partial, no_drops, false);
     }
     if (start != goal && came[goal] < 0)
     {
@@ -1750,6 +1796,8 @@ namespace
     int strafe_flip = 1;     // the side its noise picks, flipped by a wall
     uint32_t objective = 0;  // the objective's actor (logged when it changes)
     uint32_t join_partner = 0, join_since = 0; // a partner waiting to lift or pull it, since
+    uint32_t lift_volume = 0, lift_seen = 0;   // the step jump volume the partner was the lifter in, when
+    bool join_waiting = false;                 // ... and it waits by it to be lifted (logged once)
     uint32_t coop_since = 0; // frame its step jump / pull up began (0: none)
     std::vector<int> reached; // path points got to since it last got nearer (a new one is progress)
     bool partner_logged = false;
@@ -1758,6 +1806,8 @@ namespace
     uint32_t used = 0;       // a hostage it stands against and uses
     uint32_t next_use = 0;   // ... A pressed for it again no sooner (a press takes it up)
     uint32_t carried = 0;    // the hostage it carries (logged when that changes)
+    uint32_t carry_start = 0; // frame it took it up
+    uint32_t put_down_at = 0; // ... it put it down (not off to buy right after: it takes it up again)
     uint32_t extract_in_since = 0; // ... in the extraction's volume with it since (0: not in it)
     bool extract_leave = false;    // ... still carrying it there: out of the volume, then in again
     uint32_t extract_leave_at = 0, extract_out_since = 0;
@@ -1784,12 +1834,23 @@ namespace
     uint32_t menu_logged = 0;      // a menu it did not open (logged once a while)
     uint32_t kit_failed = 0;       // kits it could not take (bits): not tried again
     uint32_t objective_seen = 0; // a depot to destroy it sees from where it stands
+    // A depot out of its reach: the point it is shot at from (Vantage).
+    uint32_t vantage_for = 0;      // the depot
+    int vantage = -1;              // the point (-1: none found yet)
+    std::vector<int> vantage_list; // points to look from, nearest the bot first
+    size_t vantage_next_i = 0;     // ... the next one looked from
+    uint32_t vantage_next = 0;     // looked again no sooner
+    uint32_t vantage_at = 0;       // frame it stood there not seeing it since (0: not)
+    std::vector<int> vantage_bad;  // points it was not seen from after all
+    int vantage_logged = -1;
     std::string coop_state;  // its state in the move (logged when it changes)
     float coop_z0 = 0, coop_zmax = 0; // its height when the move began, the highest since
     uint32_t coop_rose_at = 0;        // frame it last rose
     bool force_path = false; // the path is found again when next due
     bool path_partial = false; // the path ends at the point nearest the goal (no way there)
     bool holding = false;      // ... and it holds there
+    bool direct = false;       // ... or walks straight at the goal from there (kDirectNear)
+    uint32_t direct_off_until = 0; // straight on failed: held till then
     bool following = true;     // a player's partner near it
     bool on_ladder = false;
     bool ladder_up = false;    // the ladder it takes: climbed up
@@ -2027,6 +2088,79 @@ namespace
   {
     Vec v = LoadVec(base, actor + kActorLocation);
     return {v.x, v.y, v.z + 40.0f};
+  }
+
+  // A depot the bot does not reach (on a roof, a floor up: the bots stood
+  // under it seeing only the ceiling) is shot at from a point of the bot's
+  // part of the network kShootReach of it a trace from it reaches it.
+  // A few traces a step; the list again (the depot may move) when looked
+  // through. -1 while none is found.
+  constexpr int kVantageTraces = 6;
+  constexpr uint32_t kVantageStep = 15;
+  constexpr uint32_t kVantageAgain = 120;
+  constexpr uint32_t kVantageBlind = 90; // there not seeing it this long: another point
+  template <typename Bot>
+  int Vantage(PPCContext &ctx, uint8_t *base, uint32_t pawn, Bot &bot, uint32_t actor, const Vec &me, uint32_t frame)
+  {
+    if (bot.vantage_for != actor)
+    {
+      bot.vantage_for = actor;
+      bot.vantage = -1;
+      bot.vantage_list.clear();
+      bot.vantage_bad.clear();
+      bot.vantage_next = 0;
+      bot.vantage_at = 0;
+    }
+    if (bot.vantage >= 0 || frame < bot.vantage_next)
+    {
+      return bot.vantage;
+    }
+    bot.vantage_next = frame + kVantageStep;
+    Vec aim = ObjectiveAim(base, actor);
+    if (bot.vantage_next_i >= bot.vantage_list.size())
+    {
+      bot.vantage_list.clear();
+      bot.vantage_next_i = 0;
+      int part = PartOf(NearestPoint(me));
+      std::vector<std::pair<float, int>> near;
+      for (size_t i = 0; part >= 0 && i < g_nodes.size(); ++i)
+      {
+        const Vec &n = g_nodes[i].at;
+        if (g_nodes[i].next.empty() || PartOf(int(i)) != part || Dist3D(n, aim) > kShootReach * 0.9f ||
+            std::find(bot.vantage_bad.begin(), bot.vantage_bad.end(), int(i)) != bot.vantage_bad.end())
+        {
+          continue;
+        }
+        near.push_back({Dist2D(n, me), int(i)});
+      }
+      std::sort(near.begin(), near.end());
+      for (auto &[d, i] : near)
+      {
+        bot.vantage_list.push_back(i);
+      }
+      if (bot.vantage_list.empty())
+      {
+        bot.vantage_next = frame + kVantageAgain;
+        return -1;
+      }
+    }
+    for (int k = 0; k < kVantageTraces && bot.vantage_next_i < bot.vantage_list.size(); ++k)
+    {
+      int i = bot.vantage_list[bot.vantage_next_i++];
+      Vec from = g_nodes[i].at;
+      from.z += 50.0f;
+      uint32_t hit = TraceHit(ctx, base, pawn, from, aim);
+      if (!hit || hit == actor)
+      {
+        bot.vantage = i;
+        return i;
+      }
+    }
+    if (bot.vantage_next_i >= bot.vantage_list.size())
+    {
+      bot.vantage_next = frame + kVantageAgain; // none: the list again later
+    }
+    return -1;
   }
 
   // The body first: a head shot every time was a cheat's aim.
@@ -3167,6 +3301,7 @@ namespace
     }
     bool target_near = bot.target && Dist2D(me.at, LoadVec(base, bot.target + kActorLocation)) < kBuyFightNear;
     if (REXCVAR_GET(ao2_versus_bots_buy) && CanBuy(buy) && frame >= bot.next_buy && !Carried(base, pawn) &&
+        (!bot.put_down_at || frame - bot.put_down_at > kPutDownBuy) &&
         !maneuvering && !target_near && (!bot.hurt_at || frame - bot.hurt_at > kHurtFrames))
     {
       int32_t cash = Cash(base, buy, controller);
@@ -3287,6 +3422,14 @@ namespace
       std::string partner_state = StateName(base, partner->pawn);
       if (partner_state.find("PreCoop_Lifter") != std::string::npos)
       {
+        if (props.step_volume >= 0)
+        {
+          if (uint32_t volume = LoadU32(base, partner->pawn + props.step_volume))
+          {
+            bot.lift_volume = volume;
+            bot.lift_seen = frame;
+          }
+        }
         task = Task::kJoin;
         goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
         arrive = kJoinReach;
@@ -3351,12 +3494,38 @@ namespace
     // SendingCommunication), so the bot goes to it and presses A in the
     // volume, then waits at the wall for it to join (the move, above). The
     // partner leaving the volume calls it off.
+    // A partner that was the lifter in that volume a moment ago (its lift
+    // ran out before the bot came: the bot was far) waits to lift again: the
+    // bot comes and stands by it without A (pressed first, the bot was the
+    // lifter and the player went up instead), and joins once it lifts.
+    bool join_wait = false;
     if (player_partner && !have_goal && !carrying && props.step_volume >= 0 && !partner->down)
     {
       uint32_t volume = LoadU32(base, partner->pawn + props.step_volume);
       float speed = std::hypot(LoadF32(base, partner->pawn + kActorVelocity),
                                LoadF32(base, partner->pawn + kActorVelocity + 4));
-      bool waits = volume && speed < 20.0f && !CoopMove(StateName(base, partner->pawn)) &&
+      bool lifter = volume && volume == bot.lift_volume && frame - bot.lift_seen < kLiftMemory;
+      if (lifter && Dist3D(me.at, partner->at) < kGiveRange)
+      {
+        if (bot.give_until)
+        {
+          bot.give_until = 0;
+          bot.next_give = frame + kGiveWait;
+        }
+        if (!bot.join_waiting)
+        {
+          bot.join_waiting = true;
+          Logf("frame %u: bot %u waits by its partner %08X to be lifted (it was the lifter in %s)\n", frame, id,
+               partner->pawn, ao2::ue3::ObjectName(base, volume).c_str());
+        }
+        task = Task::kJoin;
+        goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
+        arrive = kJoinReach;
+        arrive_z = 45.0f;
+        join_wait = true;
+      }
+      bot.join_waiting = join_wait;
+      bool waits = volume && !lifter && speed < 20.0f && !CoopMove(StateName(base, partner->pawn)) &&
                    Dist3D(me.at, partner->at) < kGiveRange;
       bot.give_since = waits ? (bot.give_since ? bot.give_since : frame) : 0;
       if (waits && !bot.give_until && frame >= bot.next_give && frame - bot.give_since >= kGiveAsk)
@@ -3522,8 +3691,47 @@ namespace
           break;
         case kObjDetonate:
           // A cache or a depot: destroyed by fire, shot at from where the
-          // bot sees it (bot.objective_seen, looked at with the scan).
-          arrive = bot.objective_seen == best->actor ? kShootReach : 0.0f;
+          // bot sees it (bot.objective_seen, looked at with the scan), in
+          // height too (one a floor up is seen from below at a distance).
+          // Not seen: gone to a point it is seen from (Vantage), else to
+          // it.
+          if (bot.objective_seen == best->actor)
+          {
+            arrive = kShootReach;
+            arrive_z = kShootReach;
+            bot.vantage_at = 0;
+          }
+          else if (int v = Vantage(ctx, base, pawn, bot, best->actor, me.at, frame); v >= 0)
+          {
+            if (bot.vantage_logged != v)
+            {
+              bot.vantage_logged = v;
+              Logf("frame %u: bot %u shoots at %08X from point %d (%.0f %.0f %.0f), %.0f from it\n", frame, id,
+                   best->actor, v, g_nodes[v].at.x, g_nodes[v].at.y, g_nodes[v].at.z,
+                   Dist3D(g_nodes[v].at, best->at));
+            }
+            goal_at = g_nodes[v].at;
+            if (Dist2D(me.at, goal_at) < 80.0f)
+            {
+              // There and not seeing it after all: another point.
+              bot.vantage_at = bot.vantage_at ? bot.vantage_at : frame;
+              if (frame - bot.vantage_at > kVantageBlind)
+              {
+                bot.vantage_bad.push_back(v);
+                bot.vantage = -1;
+                bot.vantage_at = 0;
+              }
+            }
+            else
+            {
+              bot.vantage_at = 0;
+            }
+            arrive = 0.0f; // walked to the point, stopping when it sees the depot
+          }
+          else
+          {
+            arrive = 0.0f;
+          }
           break;
         case kObjAssassinate:
         case kObjEnemyTeam:
@@ -3616,6 +3824,12 @@ namespace
               }
             }
             goal_at = bot.extract_leave ? bot.extract_out : mid;
+            if (cylinder && !bot.extract_leave)
+            {
+              // Its middle is up in the air (half its height): the goal is
+              // at the bot's height within it, on its level.
+              goal_at.z = std::clamp(me.at.z, mid.z - height, mid.z + height);
+            }
             goal_actor = 0;
             arrive = bot.extract_leave ? 80.0f : 60.0f;
           }
@@ -3680,7 +3894,7 @@ namespace
       // A depot to destroy: in sight from here (a bullet's line reaches it).
       bot.objective_seen = 0;
       if (task == Task::kObjective && objective_type == kObjDetonate &&
-          Dist2D(me.at, goal_at) < kShootReach * 1.2f)
+          Dist3D(me.at, LoadVec(base, goal_actor + kActorLocation)) < kShootReach * 1.2f)
       {
         Vec at = ObjectiveAim(base, goal_actor);
         uint32_t hit = TraceHit(ctx, base, pawn, eye, at);
@@ -3797,7 +4011,23 @@ namespace
     {
       Logf("frame %u: bot %u %s %08X, in %s\n", frame, id, now ? "carries" : "puts down", now ? now : bot.carried,
            state.c_str());
+      if (!now)
+      {
+        bot.put_down_at = frame;
+        Logf("frame %u: bot %u put it down with health %d, buttons held %X, task %s, %.0f from its goal\n", frame, id,
+             int32_t(LoadU32(base, pawn + kPawnHealth)), bot.held, TaskName(task), have_goal ? Dist2D(me.at, goal_at) : -1.0f);
+      }
       bot.carried = now;
+      bot.carry_start = now ? frame : 0;
+    }
+    // Taking it up the character stands a moment (GetIntoPosition, the
+    // weapon holstered): not stuck. Counted, the link it was to walk was
+    // barred at every take up, and the way to the extraction went round.
+    if (carrying && frame - bot.carry_start < kCarryStart)
+    {
+      bot.progress = false;
+      bot.still = 0;
+      bot.stuck_check = 0;
     }
     bool can_cover = task != Task::kHeal && task != Task::kJoin && task != Task::kGive && !carrying &&
                      !(task == Task::kObjective && (objective_type == kObjHostage || objective_type == kObjExtraction) &&
@@ -3933,6 +4163,23 @@ namespace
                 Dist2D(bot.path_goal, goal_at) <= kPathMoved &&
                 Dist2D(me.at, g_nodes[bot.path.back()].at) < kWaypoint * (bot.holding ? 2.5f : 1.5f) &&
                 std::fabs(me.at.z - g_nodes[bot.path.back()].at.z) < 150.0f;
+    // ... unless the goal is near on its level: the network may just not
+    // reach it (no floor points by an extraction in Afghanistan: the bot
+    // held 580 short of it with the hostage). Then straight at it, walking
+    // round walls by probes, till that makes no progress (held after all).
+    if (bot.direct && (!have_goal || there || !bot.path_partial || Dist2D(bot.path_goal, goal_at) > kPathMoved ||
+                       goal_d > kDirectNear * 1.3f))
+    {
+      bot.direct = false;
+    }
+    if (hold && !bot.direct && frame >= bot.direct_off_until && goal_d < kDirectNear &&
+        std::fabs(me.at.z - goal_at.z) < kOffLevel)
+    {
+      bot.direct = true;
+      Logf("frame %u: bot %u no way to its goal %.0f %.0f %.0f, %.0f away: straight at it\n", frame, id,
+           goal_at.x, goal_at.y, goal_at.z, goal_d);
+    }
+    hold = hold && !bot.direct;
     if (hold && !bot.holding)
     {
       Logf("frame %u: bot %u holds at %.0f %.0f %.0f: no way to its goal %.0f %.0f %.0f\n", frame, id, me.at.x,
@@ -3947,7 +4194,7 @@ namespace
                   task == Task::kHeal ? -20.0f * kUnitsPerDegree : 0.0f, 0.0f);
       if (task == Task::kJoin)
       {
-        in.buttons |= frame - bot.join_since > 30 && frame % 40 < 3 ? kA : 0;
+        in.buttons |= !join_wait && frame - bot.join_since > 30 && frame % 40 < 3 ? kA : 0;
       }
       else if (task == Task::kGive)
       {
@@ -4202,8 +4449,8 @@ namespace
         }
       }
       // Straight at the goal only near it on its level (not under a roof it is on).
-      bool on_path =
-          bot.path_at < bot.path.size() && (goal_d > 400.0f || std::fabs(me.at.z - goal_at.z) > kOffLevel);
+      bool on_path = !bot.direct && bot.path_at < bot.path.size() &&
+                     (goal_d > 400.0f || std::fabs(me.at.z - goal_at.z) > kOffLevel);
       Vec to = on_path ? g_nodes[bot.path[bot.path_at]].at : goal_at;
       int from_node = on_path && bot.path_at > 0 ? bot.path[bot.path_at - 1] : -1;
       // A link round a corner: to its point beside the line first.
@@ -4325,6 +4572,14 @@ namespace
       // roll it is stuck in, a vault that does not go).
       bool walled = bot.still >= kWallFrames &&
                     ((!maneuvering && !in_volume && !vault_link && !ladder_link) || bot.still >= kHeldFrames);
+      if ((frame >= bot.progress_until || walled) && frame >= bot.escape_until && bot.direct)
+      {
+        bot.direct = false;
+        bot.direct_off_until = frame + kDirectOff;
+        bot.progress = false;
+        bot.still = 0;
+        Logf("frame %u: bot %u gets no nearer straight at its goal, %.0f away: holds\n", frame, id, goal_d);
+      }
       if ((frame >= bot.progress_until || walled) && frame >= bot.escape_until)
       {
         float want = std::atan2(to.y - me.at.y, to.x - me.at.x);
@@ -4847,6 +5102,7 @@ namespace
       return;
     }
     uint32_t frame = ao2::coop::SyncFrame(base);
+    g_nav_now = frame;
     bool any = false;
     for (uint32_t id = 0; id < 4; ++id)
     {
