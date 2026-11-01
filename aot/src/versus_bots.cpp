@@ -41,6 +41,11 @@
 // - Lifted up a wall while its partner, a player, is still below: it waits
 //   by the ledge ~8 s pressing A (where a pull up can be done that makes it
 //   the lifter) to pull the partner up after it, then goes on.
+// - Its partner, a player, stands still a moment in a step jump volume (by
+//   a wall) without lifting: the bot goes to it and presses A there (the
+//   first to press is the lifter), waits at the wall for it to join, and
+//   lifts it with the stick held up all the way (it sets the height).
+//   Going to join or lift its partner, it does not aim or fire.
 // - A player's partner keeps near the player (follow), fighting what comes;
 //   the objectives below are for bots whose partner is a bot.
 // - The objectives its team is shown (the HUD's markers, AO2MPTeamInfo.
@@ -48,7 +53,11 @@
 //   it, the bot aims at any enemy it sees); a depot to destroy: shot at
 //   from where the bot sees it; a character to kill: hunted as a target;
 //   a place to hold or defend:
-//   kept near, fighting what comes; a place to go to (extraction): gone to.
+//   kept near, fighting what comes; a place to go to: gone to. Carrying a
+//   hostage, the extraction only: into the middle of its volume
+//   (AO2MPPlayerOccupiedTriggerVolume, whose event fires when a player steps
+//   into it empty); still carrying it there after ~4 s, out and in again.
+//   Not carrying one, the extraction only while one of its side carries one.
 // - No objective (deathmatch): the nearest enemy.
 // - Target: the objective's enemy in sight, else the nearest enemy in range
 //   whose body or head a bullet trace (AActor::Trace with actors,
@@ -73,7 +82,14 @@
 //   left when the enemy is gone, after 10-15 s once well, when the enemy
 //   sees it ducked (another is looked for), or when its partner, a player,
 //   goes on (B). Badly hurt with no cover: back to its partner.
-// - Hit in the open: now and then a dodge aside (Y aiming).
+// - Hit in the open: now and then a dodge aside (Y aiming). Hit by one it
+//   sees (Pawn.LastHitBy), that one is its target at once; unseen, its
+//   threat (cover from it).
+// - A grenade on the ground whose blast reaches it (bounced, or slow: as
+//   the game's AI, AO2DangerousEntity_Grenade): it runs away from it (out of
+//   cover first), the way clear.
+// - In its partner's line of fire (a player standing or walking slowly,
+//   where it looks): a step aside.
 // - A grenade (LB + D-pad down, LT, RT let go; then its weapon again) at an
 //   enemy that hides or at enemies close together, 500-1600 away, none of
 //   its own team (nor a hostage) there, the curve clear: aimed from the
@@ -82,6 +98,12 @@
 // - The weapon for the enemy's distance (LB + D-pad): the slot whose
 //   aiMinGoodRange - aiMaxGoodRange it is in, the primary first, the pistol
 //   last.
+// - Buying (ao2_versus_bots_buy): out of a fight, with cash for a dearer
+//   kit (or armor) within ao2_versus_bots_buy_share of its cash, by a buy
+//   zone its team is shown (one within 3000 is gone to) or, with none shown,
+//   near a spawn: it opens the buy menu (bMPBuyingWeapons, as the station's
+//   A does) and buys with the menu's input - the game takes the cash and
+//   gives the kit. A menu it did not open is closed (B).
 // - Lying (versus "dead": unconscious) it does nothing until its partner
 //   heals it or it gets up on its own - no respawn for money. Enemies that
 //   lie (invulnerable) are not shot at.
@@ -130,6 +152,10 @@ REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_range, 4000.0, "Online", "Versus bots: far
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_turn, 6.0, "Online", "Versus bots: fastest turn of the view (degrees per frame)");
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_miss, 2.5, "Online",
                       "Versus bots: how far off the aim wanders (degrees); 0 = they aim true");
+REXCVAR_DEFINE_BOOL(ao2_versus_bots_buy, true, "Online",
+                    "Versus bots: buy weapon kits and armor with their cash, at a buy zone or near a spawn");
+REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_buy_share, 0.5, "Online",
+                      "Versus bots: the most of their cash a purchase may take (the cash is the team's score)");
 REXCVAR_DEFINE_BOOL(ao2_versus_bots_infinite_ammo, true, "Online",
                     "Versus bots: their weapons never run out of ammo (as the game's AI partner)");
 REXCVAR_DEFINE_INT32(ao2_versus_bots_reaction, 20, "Online",
@@ -196,6 +222,17 @@ namespace
   constexpr uint32_t kPressedFrames = 10; // held still so long with the stick pushed: against it
   constexpr float kHoldReach = 350.0f;    // a place to hold or defend: kept this near
   constexpr float kGoReach = 150.0f;      // a place to go to: there this near
+  constexpr uint32_t kExtractWait = 240;  // in the extraction so long still carrying the hostage: out and in again
+  constexpr uint32_t kExtractOut = 45;    // ... out of it so long
+  constexpr uint32_t kExtractLeaveFrames = 400; // ... at most so long on the way out
+  constexpr uint32_t kGiveAsk = 70;       // a player standing still so long in a step jump volume: lifted
+  constexpr float kGiveRange = 1200.0f;   // ... by its bot partner this near
+  constexpr float kGiveReach = 140.0f;    // ... which presses A this near it in the volume
+  constexpr uint32_t kGiveFrames = 900;   // ... and gives up after so long
+  constexpr uint32_t kGiveWait = 600;     // ... waits at the wall so long for the player to join
+  constexpr float kClearRange = 1500.0f;  // in its partner's line of fire this near...
+  constexpr float kClearWidth = 55.0f;    // ... this near the line: steps aside
+  constexpr float kClearSlow = 250.0f;    // ... while the partner moves slower than this
   constexpr float kHostageMargin = 70.0f; // no shot passes a hostage this near
   constexpr float kProbeExtent = 25.0f;   // half size of the box the bot probes its way with
   constexpr float kProbeLift = 15.0f;     // ... this much above its middle
@@ -700,6 +737,16 @@ namespace
     Vec lo, hi;
   };
   std::vector<Box> g_vault_boxes;
+  // The volumes a hostage is taken to (AO2MPPlayerOccupiedTriggerVolume: its
+  // level script's event fires when a player steps into it empty, and the
+  // extraction's checks whether the player carries a hostage).
+  struct Volume
+  {
+    uint32_t actor;
+    Box box;
+  };
+  std::vector<Volume> g_occupied_volumes;
+  std::vector<Vec> g_player_starts; // the spawns (PlayerStart): a kit may be bought near one
 
   uint64_t LinkKey(int a, int b)
   {
@@ -921,6 +968,27 @@ namespace
         g_vault_boxes.push_back({{c.x - e.x, c.y - e.y, c.z - e.z}, {c.x + e.x, c.y + e.y, c.z + e.z}});
       }
     }
+    g_player_starts.clear();
+    g_occupied_volumes.clear();
+    uint32_t occupied_class = ao2::ue3::FindClass(base, "AO2MPPlayerOccupiedTriggerVolume");
+    for (uint32_t i = 0; occupied_class && brush_off >= 0 && bounds_off >= 0 && i < count; ++i)
+    {
+      uint32_t o = ao2::ue3::ObjectAt(base, i);
+      uint32_t brush = o && ao2::ue3::IsA(base, o, occupied_class) ? LoadU32(base, o + brush_off) : 0;
+      if (!brush)
+      {
+        continue;
+      }
+      Vec c = LoadVec(base, brush + bounds_off), e = LoadVec(base, brush + bounds_off + 12);
+      if (e.x > 0 && e.y > 0 && e.z > 0 && e.x < 5000 && e.y < 5000 && e.z < 5000)
+      {
+        g_occupied_volumes.push_back({o, {{c.x - e.x, c.y - e.y, c.z - e.z}, {c.x + e.x, c.y + e.y, c.z + e.z}}});
+        Logf("occupied volume %s: %.0f %.0f %.0f, half size %.0f %.0f %.0f\n", ao2::ue3::ObjectName(base, o).c_str(),
+             c.x, c.y, c.z, e.x, e.y, e.z);
+      }
+    }
+    std::sort(g_occupied_volumes.begin(), g_occupied_volumes.end(),
+              [](const Volume &a, const Volume &b) { return Before(a.box.lo, b.box.lo); });
     static int32_t ladder_bottom_off = -2, ladder_top_off;
     if (ladder_bottom_off == -2)
     {
@@ -954,6 +1022,12 @@ namespace
     {
       g_nodes[i].at = points[i].at;
       g_nodes[i].cover = points[i].nav ? 0 : points[i].actor;
+      static uint32_t start_class = 0;
+      start_class = start_class ? start_class : ao2::ue3::FindClass(base, "PlayerStart");
+      if (points[i].nav && start_class && ao2::ue3::IsA(base, points[i].actor, start_class))
+      {
+        g_player_starts.push_back(points[i].at);
+      }
       index[points[i].actor] = int(i);
     }
 
@@ -1252,14 +1326,20 @@ namespace
       bool clear = ClearLine(ctx, base, source, pa, pb, kLinkExtent);
       if (!clear && std::fabs(pa.z - pb.z) < kTerrainSlope * Dist2D(pa, pb))
       {
-        // Over the bulge of a slope: the line hits the terrain only, one
-        // kTerrainLift higher is clear.
+        // Over the bulge of a slope: the line hits the terrain only, or the
+        // mesh one of its ends stands on (a floor of meshes: in China one
+        // cut 823 level links and the network fell apart into 320 parts),
+        // and one kTerrainLift higher is clear.
         static uint32_t terrain_class = 0;
         terrain_class = terrain_class ? terrain_class : ao2::ue3::FindClass(base, "Terrain");
-        uint32_t hit = TraceHit(ctx, base, source, pa, pb, 0.0f, kTraceFlagBlocking);
-        clear = hit && terrain_class && ao2::ue3::IsA(base, hit, terrain_class) &&
-                ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kTerrainLift}, {pb.x, pb.y, pb.z + kTerrainLift},
-                          kLinkExtent);
+        uint32_t hit = TraceHit(ctx, base, source, pa, pb, kLinkExtent, kTraceFlagBlocking);
+        auto floor_of = [&](const Vec &p) {
+          return TraceHit(ctx, base, source, p, {p.x, p.y, p.z - g_grid.body - 60.0f}, 0.0f, kTraceFlagBlocking);
+        };
+        bool bulge = hit && ((terrain_class && ao2::ue3::IsA(base, hit, terrain_class)) || hit == floor_of(pa) ||
+                             hit == floor_of(pb));
+        clear = bulge && ClearLine(ctx, base, source, {pa.x, pa.y, pa.z + kTerrainLift},
+                                   {pb.x, pb.y, pb.z + kTerrainLift}, kLinkExtent);
       }
       if (!clear && Dist2D(pa, pb) < kViaMax && std::fabs(pa.z - pb.z) < kStepCheck)
       {
@@ -1453,15 +1533,17 @@ namespace
     return point >= 0 && size_t(point) < g_part.size() ? g_part[point] : -1;
   }
 
-  // Of the few points nearest to `at` (not barred as a first point), the
+  // Of the few points nearest to `at` (not barred as a first point; as a
+  // first point, not one with no links: a path from it was "no way"), the
   // nearest a trace from it reaches; else the nearest.
-  int NearestNode(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &at, const std::vector<Bar> &barred)
+  int NearestNode(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &at, const std::vector<Bar> &barred,
+                  bool start = false)
   {
     std::vector<std::pair<float, int>> near;
     near.reserve(g_nodes.size());
     for (size_t i = 0; i < g_nodes.size(); ++i)
     {
-      if (Barred(barred, -1, int(i)))
+      if (Barred(barred, -1, int(i)) || (start && g_nodes[i].next.empty()))
       {
         continue;
       }
@@ -1481,10 +1563,46 @@ namespace
     return k ? near[0].second : -1;
   }
 
+  // The point a path to `to` ends at: of the points near it (kGoalNear) the
+  // nearest with links in the start's part of the network a trace from `to`
+  // reaches, else the nearest such; else the nearest point (NearestNode).
+  constexpr float kGoalNear = 800.0f;
+  int NearestGoal(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &to, int start)
+  {
+    int part = PartOf(start);
+    std::vector<std::pair<float, int>> near;
+    for (size_t i = 0; part >= 0 && i < g_nodes.size(); ++i)
+    {
+      const Vec &n = g_nodes[i].at;
+      if (g_nodes[i].next.empty() || PartOf(int(i)) != part || Dist2D(n, to) > kGoalNear)
+      {
+        continue;
+      }
+      float dz = (n.z - to.z) * 3.0f;
+      near.push_back({(n.x - to.x) * (n.x - to.x) + (n.y - to.y) * (n.y - to.y) + dz * dz, int(i)});
+    }
+    size_t k = std::min<size_t>(near.size(), 6);
+    std::partial_sort(near.begin(), near.begin() + k, near.end());
+    for (size_t i = 0; i < k; ++i)
+    {
+      if (ClearLine(ctx, base, source, to, g_nodes[near[i].second].at))
+      {
+        return near[i].second;
+      }
+    }
+    return k ? near[0].second : NearestNode(ctx, base, source, to, {});
+  }
+
   // A* from the node nearest to `from` to the one nearest to `to`, round
   // the barred links (ones the bot found it could not walk).
+  // Carrying a hostage (`no_drops`), a link down a drop costs kDropCost more:
+  // falling, a character puts the hostage down (NormalFalling) and takes it
+  // up again below (~335 frames in Somalia, the walk back to it with them:
+  // ~1000 units of walking). A way round longer than that: down the drop.
+  constexpr float kCarryDrop = 100.0f;
+  constexpr float kDropCost = 1000.0f;
   std::vector<int> FindPath(PPCContext &ctx, uint8_t *base, uint32_t source, const Vec &from, const Vec &to,
-                            const std::vector<Bar> &barred, bool *partial = nullptr)
+                            const std::vector<Bar> &barred, bool *partial = nullptr, bool no_drops = false)
   {
     if (partial)
     {
@@ -1494,7 +1612,8 @@ namespace
     {
       return {};
     }
-    int start = NearestNode(ctx, base, source, from, barred), goal = NearestNode(ctx, base, source, to, {});
+    int start = NearestNode(ctx, base, source, from, barred, true);
+    int goal = start >= 0 ? NearestGoal(ctx, base, source, to, start) : -1;
     if (start < 0 || goal < 0)
     {
       return {};
@@ -1537,6 +1656,10 @@ namespace
           continue;
         }
         float n = cost[i] + c * (1.0f + 2.0f * float(fails));
+        if (no_drops && g_nodes[i].at.z - g_nodes[j].at.z > kCarryDrop)
+        {
+          n += kDropCost;
+        }
         if (n < cost[j])
         {
           cost[j] = n, came[j] = i;
@@ -1635,6 +1758,31 @@ namespace
     uint32_t used = 0;       // a hostage it stands against and uses
     uint32_t next_use = 0;   // ... A pressed for it again no sooner (a press takes it up)
     uint32_t carried = 0;    // the hostage it carries (logged when that changes)
+    uint32_t extract_in_since = 0; // ... in the extraction's volume with it since (0: not in it)
+    bool extract_leave = false;    // ... still carrying it there: out of the volume, then in again
+    uint32_t extract_leave_at = 0, extract_out_since = 0;
+    uint32_t extract_logged = 0;   // ... the extraction (logged when it changes)
+    Vec extract_out;               // ... the point out of it
+    // Its partner, a player, waits by a step jump wall: the bot lifts it.
+    uint32_t give_since = 0;       // the partner stood still in a step jump volume since (0: not)
+    uint32_t give_until = 0;       // ... the bot goes to it and lifts until then
+    uint32_t next_give = 0;        // ... not again before
+    bool coop_there = false;       // by its partner to join or lift (kept a little farther off)
+    uint32_t flee_from = 0, flee_until = 0; // a grenade on the ground it runs from, until
+    float flee_dir = 0;                     // ... which way (radians)
+    uint32_t clear_until = 0;      // stepping out of its partner's line of fire until
+    float clear_dir = 0;           // ... which way (radians)
+    // Buying: the menu opened (a step after it), the kit and armor bought.
+    int buy_step = 0;              // 0 none, 1 the kit, 2 armor
+    uint32_t buy_at = 0;           // frame the step began
+    int buy_kit = -1;              // the kit (-1: none, armor only)
+    bool buy_armor = false;
+    uint32_t next_buy = 300;       // looked at again no sooner
+    bool buy_going = false;        // on its way to a buy zone
+    uint32_t buy_going_until = 0;
+    Vec buy_zone;
+    uint32_t menu_logged = 0;      // a menu it did not open (logged once a while)
+    uint32_t kit_failed = 0;       // kits it could not take (bits): not tried again
     uint32_t objective_seen = 0; // a depot to destroy it sees from where it stands
     std::string coop_state;  // its state in the move (logged when it changes)
     float coop_z0 = 0, coop_zmax = 0; // its height when the move began, the highest since
@@ -1926,7 +2074,7 @@ namespace
   // Character and objective properties, looked up once.
   struct Props
   {
-    int32_t partner = -1, drag = -1, carry = -1, wall_height = -1, vaulting = -1;
+    int32_t partner = -1, drag = -1, carry = -1, wall_height = -1, vaulting = -1, step_volume = -1;
     int32_t locators = -1, current = -1, target = -1, type = -1;
     uint32_t team_class = 0;
   };
@@ -1946,6 +2094,8 @@ namespace
       Logf("properties: FiremanCarryGameplayInfo +%d\n", p.carry);
       p.wall_height = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "PullUpWallHeight");
       p.vaulting = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveVaultingVolume");
+      p.step_volume = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "ActiveStepJumpVolume");
+      Logf("properties: ActiveStepJumpVolume +%d\n", p.step_volume);
       p.locators = ao2::ue3::PropertyOffset(base, "AO2MPTeamInfo", "MPTeamObjectiveLocators");
       p.current = ao2::ue3::PropertyOffset(base, "AO2MPObjectiveLocatorList", "CurrentMPObjectiveLocators");
       p.target = ao2::ue3::PropertyOffset(base, "AO2HudMPObjectiveLocator", "ObjectiveTarget");
@@ -2008,7 +2158,8 @@ namespace
     Vec at;
   };
 
-  std::vector<Objective> TeamObjectives(const uint8_t *base, uint32_t team)
+  // The buy zones (kObjBuyZone) are left out, or only they are kept.
+  std::vector<Objective> TeamObjectives(const uint8_t *base, uint32_t team, bool buy_zones = false)
   {
     const Props &p = Properties(base);
     std::vector<Objective> list;
@@ -2029,7 +2180,7 @@ namespace
         continue;
       }
       uint8_t type = base[locator + p.type];
-      if (type == kObjBuyZone || type > kObjWaypoint)
+      if ((type == kObjBuyZone) != buy_zones || type > kObjWaypoint)
       {
         continue;
       }
@@ -2040,6 +2191,103 @@ namespace
       list.push_back({actor, type, LoadVec(base, actor + kActorLocation)});
     }
     return list;
+  }
+
+  // The extraction's volume: the occupied volume that is the marker; null
+  // for none (a Trigger: TriggerCylinder).
+  const Volume *ExtractionVolume(uint32_t marker_actor, const Vec &marker)
+  {
+    // Only the marker itself. Not one it is near or in: the occupied volumes
+    // are zones of other uses (in Afghanistan the extraction Trigger_14
+    // stands in one 4800 x 3900 wide, Trigger_9 on a roof above another).
+    for (const Volume &v : g_occupied_volumes)
+    {
+      if (v.actor == marker_actor)
+      {
+        return &v;
+      }
+    }
+    return nullptr;
+  }
+
+  // A Trigger's cylinder (Trigger.CylinderComponent: CollisionRadius,
+  // CollisionHeight); false for none.
+  bool TriggerCylinder(const uint8_t *base, uint32_t actor, float &radius, float &height)
+  {
+    static int32_t cylinder = -2, radius_off, height_off;
+    static uint32_t trigger_class = 0;
+    if (cylinder == -2)
+    {
+      cylinder = ao2::ue3::PropertyOffset(base, "Trigger", "CylinderComponent");
+      radius_off = ao2::ue3::PropertyOffset(base, "CylinderComponent", "CollisionRadius");
+      height_off = ao2::ue3::PropertyOffset(base, "CylinderComponent", "CollisionHeight");
+      trigger_class = ao2::ue3::FindClass(base, "Trigger");
+      Logf("Trigger.CylinderComponent +%d, CylinderComponent CollisionRadius +%d CollisionHeight +%d\n", cylinder,
+           radius_off, height_off);
+    }
+    uint32_t c = cylinder >= 0 && radius_off >= 0 && height_off >= 0 && trigger_class &&
+                         ao2::ue3::IsA(base, actor, trigger_class)
+                     ? LoadU32(base, actor + cylinder)
+                     : 0;
+    radius = c ? LoadF32(base, c + radius_off) : 0.0f;
+    height = c ? LoadF32(base, c + height_off) : 0.0f;
+    return radius > 1.0f && radius < 5000.0f && height > 1.0f && height < 5000.0f;
+  }
+
+  // The volume counts the controller in (AO2MPPlayerOccupiedTriggerVolume.
+  // arVolumeContains: the players in it, its event fires only for the first).
+  bool Occupies(const uint8_t *base, uint32_t volume, uint32_t controller)
+  {
+    static int32_t contains = -2;
+    if (contains == -2)
+    {
+      contains = ao2::ue3::PropertyOffset(base, "AO2MPPlayerOccupiedTriggerVolume", "arVolumeContains");
+      Logf("AO2MPPlayerOccupiedTriggerVolume.arVolumeContains +%d\n", contains);
+    }
+    uint32_t data = contains >= 0 ? LoadU32(base, volume + contains) : 0;
+    uint32_t n = data ? LoadU32(base, volume + contains + 4) : 0;
+    for (uint32_t i = 0; i < n && i < 8; ++i)
+    {
+      if (LoadU32(base, data + i * 4) == controller)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // `at` is in one of the extractions among `objectives` (its volume, its
+  // trigger's cylinder, or near its marker).
+  bool InExtraction(const uint8_t *base, const std::vector<Objective> &objectives, const Vec &at)
+  {
+    for (const Objective &e : objectives)
+    {
+      if (e.type != kObjExtraction)
+      {
+        continue;
+      }
+      float radius = 0, height = 0;
+      if (const Volume *v = ExtractionVolume(e.actor, e.at))
+      {
+        if (at.x > v->box.lo.x && at.x < v->box.hi.x && at.y > v->box.lo.y && at.y < v->box.hi.y &&
+            at.z > v->box.lo.z - 100.0f && at.z < v->box.hi.z + 100.0f)
+        {
+          return true;
+        }
+      }
+      else if (TriggerCylinder(base, e.actor, radius, height))
+      {
+        if (Dist2D(at, e.at) < radius + 80.0f && std::fabs(at.z - e.at.z) < height + 100.0f)
+        {
+          return true;
+        }
+      }
+      else if (Dist3D(at, e.at) < 200.0f)
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool IsBotController(uint32_t controller)
@@ -2302,11 +2550,346 @@ namespace
     return -1;
   }
 
+  // ---- Grenades on the ground: fled from.
+  //
+  // The game's AI flees a grenade once it has bounced and the character is
+  // in its damage radius (AO2DangerousEntity_Grenade.CanHurtPawn); the bots
+  // the same. The grenades are looked for among all objects every
+  // kGrenadeScan frames (a lockstep frame: alike on every machine), read
+  // each frame.
+  constexpr uint32_t kGrenadeScan = 10;
+  constexpr float kGrenadeMargin = 150.0f;   // fled this much beyond its damage radius
+  constexpr float kGrenadeRadius = 450.0f;   // ... the radius when none is read
+  constexpr float kGrenadeLanded = 250.0f;   // slower than this: on the ground (no bounce count read)
+  constexpr uint32_t kFleeFrames = 75;       // runs from it so long at least
+  constexpr uint32_t kGrenadeLife = 360;     // a grenade first seen longer ago does not go off
+  struct Grenades
+  {
+    std::vector<uint32_t> list;
+    uint32_t scanned = ~0u;
+    uint32_t world = 0;
+    uint32_t proj_class = 0, phys_class = 0;
+    int32_t bounces = -2, radius = -2;
+    std::unordered_map<uint32_t, bool> is_grenade; // by class: a grenade's (or a subclass)
+    // Frame each grenade object was first seen; 0: there at the map's first
+    // scan (lying on the level, it never goes off: in Somalia two such lay
+    // in the bots' way and they fled them again and again).
+    std::unordered_map<uint32_t, uint32_t> seen;
+    bool first_scan = true;
+    bool Is(const uint8_t *base, uint32_t object, uint32_t cls)
+    {
+      auto [it, added] = is_grenade.try_emplace(cls, false);
+      if (added)
+      {
+        it->second = (proj_class && ao2::ue3::IsA(base, object, proj_class)) ||
+                     (phys_class && ao2::ue3::IsA(base, object, phys_class));
+      }
+      return it->second;
+    }
+  };
+  Grenades g_grenades;
+
+  void ScanGrenades(const uint8_t *base, uint32_t frame)
+  {
+    Grenades &g = g_grenades;
+    if (g.bounces == -2)
+    {
+      g.proj_class = ao2::ue3::FindClass(base, "AO2Proj_Grenade");
+      g.phys_class = ao2::ue3::FindClass(base, "AO2PhysProj_Grenade");
+      g.bounces = ao2::ue3::PropertyOffset(base, "AO2Proj_Grenade", "BounceCount");
+      g.radius = ao2::ue3::PropertyOffset(base, "Projectile", "DamageRadius");
+      Logf("grenades: AO2Proj_Grenade %08X BounceCount +%d, AO2PhysProj_Grenade %08X, Projectile.DamageRadius +%d\n",
+           g.proj_class, g.bounces, g.phys_class, g.radius);
+    }
+    if (g.scanned != ~0u && frame - g.scanned < kGrenadeScan && g.world == g_nav_world)
+    {
+      return;
+    }
+    if (g.world != g_nav_world)
+    {
+      g.world = g_nav_world; // another map: its classes elsewhere
+      g.is_grenade.clear();
+      g.seen.clear();
+      g.first_scan = true;
+    }
+    g.scanned = frame;
+    g.list.clear();
+    // Only a grenade that appeared lately (thrown) is a danger: one that has
+    // lain longer than kGrenadeLife (a fuse is ~3 s) does not go off.
+    std::unordered_map<uint32_t, uint32_t> seen;
+    uint32_t count = ao2::ue3::ObjectCount(base);
+    for (uint32_t i = 0; i < count; ++i)
+    {
+      uint32_t o = ao2::ue3::ObjectAt(base, i);
+      uint32_t cls = o ? LoadU32(base, o + 52) : 0;
+      if (cls && g.Is(base, o, cls) && ao2::ue3::ObjectName(base, o).rfind("Default__", 0) != 0)
+      {
+        auto it = g.seen.find(o);
+        uint32_t first = it != g.seen.end() ? it->second : g.first_scan ? 0u : frame;
+        seen[o] = first;
+        if (first && frame - first <= kGrenadeLife && g.list.size() < 16)
+        {
+          g.list.push_back(o);
+        }
+      }
+    }
+    if (g.first_scan && !seen.empty())
+    {
+      Logf("grenades: %zu lie on the level (never fled from)\n", seen.size());
+    }
+    g.seen = std::move(seen);
+    g.first_scan = false;
+  }
+
+  // The grenade on the ground nearest `at` whose blast reaches it (0: none);
+  // where it is and how far its blast goes.
+  uint32_t GrenadeNear(const uint8_t *base, const Vec &at, Vec &where, float &reach)
+  {
+    Grenades &g = g_grenades;
+    uint32_t best = 0;
+    float best_d = 0;
+    for (uint32_t o : g.list)
+    {
+      uint32_t cls = LoadU32(base, o + 52);
+      if (!cls || !g.Is(base, o, cls))
+      {
+        continue; // gone off (its memory another object's now)
+      }
+      Vec p = LoadVec(base, o + kActorLocation);
+      float speed = std::hypot(LoadF32(base, o + kActorVelocity), LoadF32(base, o + kActorVelocity + 4),
+                               LoadF32(base, o + kActorVelocity + 8));
+      bool landed = (g.bounces >= 0 && cls == g.proj_class && int32_t(LoadU32(base, o + g.bounces)) > 0) ||
+                    speed < kGrenadeLanded;
+      float r = g.radius >= 0 ? LoadF32(base, o + g.radius) : 0.0f;
+      r = (r > 50.0f && r < 3000.0f ? r : kGrenadeRadius) + kGrenadeMargin;
+      float d = Dist3D(p, at);
+      if (landed && d < r && std::fabs(p.z - at.z) < 300.0f && (!best || d < best_d))
+      {
+        best = o, best_d = d, where = p, reach = r;
+      }
+    }
+    return best;
+  }
+
+  // ---- Buying (ao2_versus_bots_buy).
+  //
+  // A player buys at a buy station: A there (a context action) runs its
+  // AO2MPSeqAct_BuyWeapons, AO2MPPlayerController.OnBuyWeapons sets
+  // bMPBuyingWeapons (CurWeaponLoadoutIndex 0) and the controller's input
+  // goes to the buy menu (control mode MultiplayerBuyWeapons, HandleBuyingWeapons):
+  // the left stick picks one of the 8 kits (north 0, then clockwise to
+  // north-west 7), A buys it (ChangeCash(-Price) the first time, a kit bought
+  // once is taken again for nothing; EquipWeaponLoadout, MPReplenishWeapons;
+  // the menu closes), X buys the next armor level (AO2MPGame.
+  // MPArmorLevelPrice), Y ammo, B closes it. The bot opens the menu by
+  // setting the flag itself where a player could buy (by a buy zone its team
+  // is shown, or with none shown, near a spawn) and buys with the menu's own
+  // input: the game takes the cash and gives the kit, alike on every machine.
+  constexpr float kBuyReach = 350.0f;      // by a buy zone this near
+  constexpr float kBuyStart = 1024.0f;     // ... or a spawn (AO2MPPlayerController.NearPlayerStart)
+  constexpr float kBuyDetour = 3000.0f;    // a buy zone this near is gone to for a purchase
+  constexpr uint32_t kBuyDetourFrames = 1200; // ... given up after so long
+  constexpr uint32_t kBuyAgain = 900;      // looked at again after a purchase (or none) so long
+  constexpr float kBuyFightNear = 1500.0f; // not with an enemy in sight this near
+  struct BuyProps
+  {
+    int32_t loadouts = -1, bought = -1, equipped = -1, current = -1, stats = -1, cash = -1;
+    int32_t price = -1, stride = 0, armor = -1, armor_price = -1, game = -1, flag = -1;
+    uint32_t flag_mask = 0;
+  };
+  const BuyProps &Buying(const uint8_t *base)
+  {
+    static BuyProps p;
+    static bool looked = false;
+    if (!looked)
+    {
+      looked = true;
+      p.loadouts = ao2::ue3::PropertyOffset(base, "AO2MPPlayerController", "WeaponLoadouts");
+      p.bought = ao2::ue3::PropertyOffset(base, "AO2MPPlayerController", "WeaponLoadoutsBought");
+      p.equipped = ao2::ue3::PropertyOffset(base, "AO2MPPlayerController", "EquippedWeaponLoadoutIndex");
+      p.current = ao2::ue3::PropertyOffset(base, "AO2MPPlayerController", "CurWeaponLoadoutIndex");
+      p.stats = ao2::ue3::PropertyOffset(base, "AO2MPPlayerController", "MPStats");
+      p.cash = ao2::ue3::PropertyOffset(base, "MultiplayerStats", "MultiplayerCash");
+      p.price = ao2::ue3::PropertyOffset(base, "WeaponLoadout", "Price");
+      // The kits' stride: past the field that ends farthest (the order of
+      // the fields in memory is not the config's: FourthReserveSize is not
+      // the last). Strings take 12 bytes, the rest 4.
+      static const char *const kStrings[] = {"Name", "PrimaryWeapon", "SecondWeapon", "ThirdWeapon"};
+      static const char *const kWords[] = {
+          "Price",           "ReloadCost",       "DamagePrimary",     "DamageSecond",  "DamageThird",
+          "PrimaryClipSize", "PrimaryReserveSize", "SecondClipSize",  "SecondReserveSize", "ThirdClipSize",
+          "ThirdReserveSize", "FourthClipSize",  "FourthReserveSize", "StaticPrimary", "StaticSecondary",
+          "StaticThird"};
+      int32_t end = 0;
+      for (const char *f : kStrings)
+      {
+        int32_t o = ao2::ue3::PropertyOffset(base, "WeaponLoadout", f);
+        end = o >= 0 ? std::max(end, o + 12) : end;
+      }
+      for (const char *f : kWords)
+      {
+        int32_t o = ao2::ue3::PropertyOffset(base, "WeaponLoadout", f);
+        end = o >= 0 ? std::max(end, o + 4) : end;
+      }
+      p.stride = (end + 3) & ~3;
+      p.armor = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "MPArmorLevel");
+      p.armor_price = ao2::ue3::PropertyOffset(base, "AO2MPGame", "MPArmorLevelPrice");
+      p.game = ao2::ue3::PropertyOffset(base, "WorldInfo", "Game");
+      if (!ao2::ue3::BoolProperty(base, "AO2PlayerControllerNative", "bMPBuyingWeapons", p.flag, p.flag_mask))
+      {
+        p.flag = -1;
+      }
+      Logf("buying: AO2MPPlayerController WeaponLoadouts +%d WeaponLoadoutsBought +%d EquippedWeaponLoadoutIndex "
+           "+%d CurWeaponLoadoutIndex +%d MPStats +%d (MultiplayerCash +%d), WeaponLoadout Price +%d stride %d, "
+           "MPArmorLevel +%d, AO2MPGame.MPArmorLevelPrice +%d, WorldInfo.Game +%d, bMPBuyingWeapons +%d mask %08X\n",
+           p.loadouts, p.bought, p.equipped, p.current, p.stats, p.cash, p.price, p.stride, p.armor, p.armor_price,
+           p.game, p.flag, p.flag_mask);
+    }
+    return p;
+  }
+  bool CanBuy(const BuyProps &p)
+  {
+    return p.loadouts >= 0 && p.bought >= 0 && p.equipped >= 0 && p.current >= 0 && p.stats >= 0 && p.cash >= 0 &&
+           p.price >= 0 && p.flag >= 0;
+  }
+  bool BuyMenuOpen(const uint8_t *base, const BuyProps &p, uint32_t controller)
+  {
+    return p.flag >= 0 && (LoadU32(base, controller + p.flag) & p.flag_mask);
+  }
+  void SetBuyMenu(uint8_t *base, const BuyProps &p, uint32_t controller, bool open)
+  {
+    uint32_t v = LoadU32(base, controller + p.flag);
+    StoreU32(base, controller + p.flag, open ? v | p.flag_mask : v & ~p.flag_mask);
+    StoreU32(base, controller + p.current, open ? 0u : uint32_t(-1));
+  }
+  int32_t Cash(const uint8_t *base, const BuyProps &p, uint32_t controller)
+  {
+    return int32_t(LoadU32(base, controller + p.stats + p.cash));
+  }
+  // The kits' stride, found from their prices once (0: not yet, -1: none
+  // fits): the struct's size is not reflected and its fields' offsets did
+  // not give it (80, then 204: kit 3's price read 15). The stride at which
+  // the 8 prices are whole thousands, rising, kit 7's above 0 (the config's:
+  // 0, 0, 65000 ... 475000).
+  int32_t g_kit_stride = 0;
+  int32_t KitStride(const uint8_t *base, const BuyProps &p, uint32_t controller)
+  {
+    if (g_kit_stride)
+    {
+      return g_kit_stride;
+    }
+    uint32_t data = LoadU32(base, controller + p.loadouts);
+    uint32_t n = LoadU32(base, controller + p.loadouts + 4);
+    if (!data || n < 8)
+    {
+      return 0;
+    }
+    g_kit_stride = -1;
+    bool priced = false; // any price there yet (the kits are filled in after the controller is made)
+    for (int32_t s = p.price + 4; s <= 512 && g_kit_stride < 0; s += 4)
+    {
+      int32_t last = 0;
+      bool fits = true;
+      for (int k = 0; k < 8 && fits; ++k)
+      {
+        int32_t price = int32_t(LoadU32(base, data + k * s + p.price));
+        fits = price >= last && price < 100000000 && price % 1000 == 0;
+        last = price;
+        priced |= price > 0;
+      }
+      g_kit_stride = fits && last > 0 ? s : -1;
+    }
+    if (g_kit_stride < 0 && !priced)
+    {
+      g_kit_stride = 0; // no prices yet: looked at again (read too early it stayed -1 for good)
+      return 0;
+    }
+    Logf("buying: kit stride %d (from the fields: %d), prices", g_kit_stride, p.stride);
+    for (int k = 0; k < 8 && g_kit_stride > 0; ++k)
+    {
+      Logf(" %d", int32_t(LoadU32(base, data + k * g_kit_stride + p.price)));
+    }
+    Logf("\n");
+    return g_kit_stride;
+  }
+
+  // A kit's price, -1 for none.
+  int32_t KitPrice(const uint8_t *base, const BuyProps &p, uint32_t controller, int kit)
+  {
+    uint32_t data = LoadU32(base, controller + p.loadouts);
+    uint32_t n = LoadU32(base, controller + p.loadouts + 4);
+    int32_t stride = KitStride(base, p, controller);
+    if (!data || kit < 0 || kit >= 8 || uint32_t(kit) >= n || stride <= 0)
+    {
+      return -1;
+    }
+    int32_t price = int32_t(LoadU32(base, data + kit * stride + p.price));
+    return price >= 0 && price < 100000000 ? price : -1;
+  }
+  bool KitOwned(const uint8_t *base, const BuyProps &p, uint32_t controller, int kit)
+  {
+    return KitPrice(base, p, controller, kit) == 0 || LoadU32(base, controller + p.bought + kit * 4) != 0;
+  }
+  // The kit to take: of those it owns or may pay for (at most `budget`), the
+  // dearest (the dearer, the better its weapons); -1 for none.
+  int ChooseKit(const uint8_t *base, const BuyProps &p, uint32_t controller, int32_t budget, uint32_t failed)
+  {
+    // The prices read must look like prices (the config's are in thousands):
+    // read at a wrong stride kit 7 cost 13.
+    static bool bad_logged = false;
+    for (int k = 0; k < 8; ++k)
+    {
+      int32_t price = KitPrice(base, p, controller, k);
+      if (price < 0 || price % 1000 != 0)
+      {
+        if (!bad_logged)
+        {
+          bad_logged = true;
+          Logf("buying: kit %d's price reads %d (stride %d?): no buying\n", k, price, p.stride);
+        }
+        return -1;
+      }
+    }
+    int best = -1;
+    int32_t best_price = -1;
+    for (int k = 0; k < 8; ++k)
+    {
+      int32_t price = KitPrice(base, p, controller, k);
+      if (!(failed & (1u << k)) && (KitOwned(base, p, controller, k) || price <= budget) && price > best_price)
+      {
+        best = k, best_price = price;
+      }
+    }
+    return best;
+  }
+  // The next armor level's price for the character, -1 for none (at the top).
+  int32_t ArmorPrice(const uint8_t *base, const BuyProps &p, uint32_t pawn)
+  {
+    uint32_t world = FindWorldInfo(base);
+    uint32_t game = world && p.game >= 0 ? LoadU32(base, world + p.game) : 0;
+    int32_t level = p.armor >= 0 ? int32_t(LoadU32(base, pawn + p.armor)) : 2;
+    if (!game || p.armor_price < 0 || level < 0 || level >= 2)
+    {
+      return -1;
+    }
+    int32_t price = int32_t(LoadU32(base, game + p.armor_price + (level + 1) * 4));
+    return price > 0 && price < 100000000 ? price : -1;
+  }
+  // The left stick to pick kit k in the menu (north 0, clockwise).
+  void KitStick(int k, Input &in)
+  {
+    static const float dir[8][2] = {{0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}};
+    in.lx = dir[k & 7][0] * 0.95f;
+    in.ly = dir[k & 7][1] * 0.95f;
+  }
+
   // What the bot is about, most urgent first.
   enum class Task
   {
     kHeal,      // its partner lies: to it, A by it
     kJoin,      // its partner waits for it to step jump / pull up: to it, A by it
+    kGive,      // its partner, a player, waits by a step jump wall: to it, A by it (the bot lifts)
+    kBuy,       // a kit or armor to buy: to a buy zone
     kFollow,    // its partner is a player: kept near it
     kObjective, // to the objective, A by it (a hostage), shoot it (a depot), or hold it
     kHunt,      // no objective: the nearest enemy
@@ -2317,6 +2900,8 @@ namespace
   {
     return t == Task::kHeal        ? "heal"
            : t == Task::kJoin      ? "join"
+           : t == Task::kGive      ? "give"
+           : t == Task::kBuy       ? "buy"
            : t == Task::kFollow    ? "follow"
            : t == Task::kObjective ? "objective"
            : t == Task::kCover     ? "cover"
@@ -2473,13 +3058,23 @@ namespace
       // waiting at the ledge until the offer runs out, then the stick
       // pushed (that calls the wait off); in the move it pulls (stick up).
       bool lifter = state.find("Lifter") != std::string::npos;
+      if (lifter)
+      {
+        bot.give_until = 0;
+        bot.next_give = frame + kGiveWait;
+      }
       if (lifter && state.find("PreCoop") != std::string::npos)
       {
         in.ly = frame >= bot.offer_until ? 1.0f : 0.0f;
         return in;
       }
+      // Lifting, the stick sets how high (StepJumpLifter_DesiredHeightRatio,
+      // smoothed): held up all the way (let go by turns it lowered the
+      // jumper again and a high ledge was out of its reach). Lifted, the
+      // stick up climbs over: held, let go a moment now and then (pushed
+      // too early it may not take).
       bool up = lifter || (bot.coop_zmax - bot.coop_z0 > kCoopRise && frame - bot.coop_rose_at > kCoopTop);
-      if (up && state.find("_Coop") != std::string::npos && frame % 40 < 20)
+      if (up && state.find("_Coop") != std::string::npos && (lifter || frame % 60 < 50))
       {
         in.ly = 1.0f;
       }
@@ -2498,6 +3093,147 @@ namespace
     }
     bot.coop_since = 0;
     bot.coop_state.clear();
+
+    // Buying (see Buying): in the menu, nothing but its input - the stick
+    // to the kit, A; the menu again for armor, X, then B.
+    const BuyProps &buy = Buying(base);
+    bool menu = BuyMenuOpen(base, buy, controller);
+    if (bot.buy_step)
+    {
+      uint32_t t = frame - bot.buy_at;
+      if (bot.buy_step == 1)
+      {
+        KitStick(bot.buy_kit, in);
+        in.buttons |= t >= 10 && t < 12 ? kA : 0;
+        if (t >= 18)
+        {
+          int32_t equipped = int32_t(LoadU32(base, controller + buy.equipped));
+          Logf("frame %u: bot %u %s kit %d (%d), cash now %d\n", frame, id,
+               equipped == bot.buy_kit ? "took" : "could not take (not tried again)", bot.buy_kit,
+               KitPrice(base, buy, controller, bot.buy_kit), Cash(base, buy, controller));
+          if (equipped != bot.buy_kit && bot.buy_kit >= 0)
+          {
+            bot.kit_failed |= 1u << bot.buy_kit;
+          }
+          if (menu)
+          {
+            SetBuyMenu(base, buy, controller, false);
+          }
+          bot.buy_kit = -1;
+          bot.buy_step = bot.buy_armor ? 2 : 0;
+          bot.buy_at = frame;
+          if (bot.buy_armor)
+          {
+            SetBuyMenu(base, buy, controller, true);
+          }
+        }
+      }
+      else
+      {
+        int32_t level = buy.armor >= 0 ? int32_t(LoadU32(base, pawn + buy.armor)) : -1;
+        in.buttons |= t >= 6 && t < 8 ? kX : t >= 16 && t < 18 ? kB : 0;
+        if (t >= 24)
+        {
+          Logf("frame %u: bot %u armor level %d, cash now %d\n", frame, id, level, Cash(base, buy, controller));
+          if (BuyMenuOpen(base, buy, controller))
+          {
+            SetBuyMenu(base, buy, controller, false);
+          }
+          bot.buy_step = 0;
+          bot.buy_armor = false;
+        }
+      }
+      if (!bot.buy_step)
+      {
+        bot.next_buy = frame + kBuyAgain;
+        bot.buy_going = false;
+      }
+      bot.still = 0;
+      bot.stuck_check = 0;
+      bot.last_at = me.at;
+      return in;
+    }
+    if (menu)
+    {
+      // Opened by an A at a buy station on its way: closed (in it, X - its
+      // reload - buys armor and Y ammo).
+      if (frame >= bot.menu_logged)
+      {
+        bot.menu_logged = frame + 600;
+        Logf("frame %u: bot %u in a buy menu it did not open: closes it\n", frame, id);
+      }
+      in.buttons |= frame % 10 < 2 ? kB : 0;
+      return in;
+    }
+    bool target_near = bot.target && Dist2D(me.at, LoadVec(base, bot.target + kActorLocation)) < kBuyFightNear;
+    if (REXCVAR_GET(ao2_versus_bots_buy) && CanBuy(buy) && frame >= bot.next_buy && !Carried(base, pawn) &&
+        !maneuvering && !target_near && (!bot.hurt_at || frame - bot.hurt_at > kHurtFrames))
+    {
+      int32_t cash = Cash(base, buy, controller);
+      int32_t budget = int32_t(double(std::max(cash, 0)) * std::clamp(REXCVAR_GET(ao2_versus_bots_buy_share), 0.0, 1.0));
+      int equipped = int32_t(LoadU32(base, controller + buy.equipped));
+      int kit = ChooseKit(base, buy, controller, budget, bot.kit_failed);
+      int32_t kit_cost = kit >= 0 && !KitOwned(base, buy, controller, kit) ? KitPrice(base, buy, controller, kit) : 0;
+      bool want_kit = kit >= 0 && kit != equipped &&
+                      KitPrice(base, buy, controller, kit) > KitPrice(base, buy, controller, equipped);
+      int32_t armor_cost = ArmorPrice(base, buy, pawn);
+      bool want_armor = armor_cost > 0 && armor_cost <= budget - (want_kit ? kit_cost : 0);
+      if (!want_kit && !want_armor)
+      {
+        bot.next_buy = frame + kBuyAgain;
+        bot.buy_going = false;
+      }
+      else
+      {
+        // Where: by a buy zone its team is shown; with none shown, near a spawn.
+        std::vector<Objective> zones = TeamObjectives(base, me.team, true);
+        const Objective *zone = nullptr;
+        for (const Objective &z : zones)
+        {
+          if (!zone || Dist2D(me.at, z.at) < Dist2D(me.at, zone->at))
+          {
+            zone = &z;
+          }
+        }
+        bool by = zone ? Dist2D(me.at, zone->at) < kBuyReach && std::fabs(me.at.z - zone->at.z) < 200.0f : false;
+        for (const Vec &s : g_player_starts)
+        {
+          by |= !zone && Dist2D(me.at, s) < kBuyStart && std::fabs(me.at.z - s.z) < 200.0f;
+        }
+        if (by)
+        {
+          Logf("frame %u: bot %u buys %s%s%s (cash %d, budget %d, kit now %d)%s\n", frame, id,
+               want_kit ? "kit " : "", want_kit ? std::to_string(kit).c_str() : "",
+               want_armor ? (want_kit ? " and armor" : "armor") : "", cash, budget, equipped,
+               zone ? " at a buy zone" : " near a spawn");
+          bot.buy_kit = want_kit ? kit : -1;
+          bot.buy_armor = want_armor;
+          bot.buy_step = want_kit ? 1 : 2;
+          bot.buy_at = frame;
+          bot.buy_going = false;
+          SetBuyMenu(base, buy, controller, true);
+          bot.last_at = me.at;
+          return in;
+        }
+        if (zone && Dist2D(me.at, zone->at) < kBuyDetour && !bot.buy_going)
+        {
+          bot.buy_going = true;
+          bot.buy_going_until = frame + kBuyDetourFrames;
+          bot.buy_zone = zone->at;
+          Logf("frame %u: bot %u goes to a buy zone %.0f away (%s, cash %d)\n", frame, id, Dist2D(me.at, zone->at),
+               ao2::ue3::ObjectName(base, zone->actor).c_str(), cash);
+        }
+        else if (!bot.buy_going)
+        {
+          bot.next_buy = frame + kBuyAgain / 3; // none near: later, maybe after a respawn
+        }
+      }
+    }
+    if (bot.buy_going && frame >= bot.buy_going_until)
+    {
+      bot.buy_going = false;
+      bot.next_buy = frame + kBuyAgain;
+    }
     float view_yaw = LoadF32(base, holder + kLookRotation + 4);
     Vec eye = Head(base, pawn);
 
@@ -2535,6 +3271,11 @@ namespace
     // A hostage on its shoulder: no heal, no co-op move (A puts it down),
     // no B or Y when stuck (B too), no crouching.
     bool carrying = Carried(base, pawn) != 0;
+    if (!carrying)
+    {
+      bot.extract_in_since = 0;
+      bot.extract_leave = false;
+    }
     if (partner && partner->down && Dist2D(me.at, partner->at) < kHealRange && !carrying)
     {
       task = Task::kHeal;
@@ -2604,6 +3345,58 @@ namespace
         return in;
       }
     }
+    // Its partner, a player, stands still a moment in a step jump volume (by
+    // a wall it cannot climb alone) and does not lift itself: it waits to be
+    // lifted. The first to press A there is the lifter (AO2Character.
+    // SendingCommunication), so the bot goes to it and presses A in the
+    // volume, then waits at the wall for it to join (the move, above). The
+    // partner leaving the volume calls it off.
+    if (player_partner && !have_goal && !carrying && props.step_volume >= 0 && !partner->down)
+    {
+      uint32_t volume = LoadU32(base, partner->pawn + props.step_volume);
+      float speed = std::hypot(LoadF32(base, partner->pawn + kActorVelocity),
+                               LoadF32(base, partner->pawn + kActorVelocity + 4));
+      bool waits = volume && speed < 20.0f && !CoopMove(StateName(base, partner->pawn)) &&
+                   Dist3D(me.at, partner->at) < kGiveRange;
+      bot.give_since = waits ? (bot.give_since ? bot.give_since : frame) : 0;
+      if (waits && !bot.give_until && frame >= bot.next_give && frame - bot.give_since >= kGiveAsk)
+      {
+        bot.give_until = frame + kGiveFrames;
+        Logf("frame %u: bot %u lifts its partner %08X waiting in step jump volume %s, %.0f away\n", frame, id,
+             partner->pawn, ao2::ue3::ObjectName(base, volume).c_str(), Dist3D(me.at, partner->at));
+      }
+      if (bot.give_until && (!volume || frame >= bot.give_until))
+      {
+        Logf("frame %u: bot %u lifts its partner no more: %s\n", frame, id,
+             !volume ? "it left the volume" : "it took too long");
+        bot.give_until = 0;
+        bot.next_give = frame + kGiveWait;
+      }
+      if (bot.give_until)
+      {
+        task = Task::kGive;
+        goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
+        arrive = kGiveReach;
+        // There only in the volume itself (A elsewhere does nothing).
+        if (!LoadU32(base, pawn + props.step_volume))
+        {
+          arrive = 60.0f;
+        }
+      }
+    }
+    else
+    {
+      bot.give_since = 0;
+      bot.give_until = 0;
+    }
+    // A purchase it can afford with a buy zone near: there first (it buys
+    // once by it, see Buying).
+    if (!have_goal && bot.buy_going && !carrying)
+    {
+      task = Task::kBuy;
+      goal_at = bot.buy_zone, have_goal = true, goal_actor = 0;
+      arrive = kBuyReach * 0.6f;
+    }
     // A hostage no one carries yet, or one the bot carries: the bot's own
     // job (picked up, carried to the extraction), not following.
     bool hostage_job = Carried(base, pawn) != 0;
@@ -2654,9 +3447,31 @@ namespace
       uint32_t dragging = Carried(base, pawn);
       const Objective *best = nullptr;
       std::vector<Objective> objectives = TeamObjectives(base, me.team);
+      // Carrying a hostage: the extraction only (another objective nearer
+      // turned it away from it). Not carrying one: the extraction is gone to
+      // only with one of its side carrying one (kept by it).
+      bool to_extraction = false, side_carries = false;
       for (const Objective &o : objectives)
       {
+        to_extraction |= o.type == kObjExtraction;
+      }
+      for (const Character &c : g_characters)
+      {
+        const Character *h = c.pawn != pawn && !c.civilian && c.team == me.team ? FindCharacter(Carried(base, c.pawn))
+                                                                                  : nullptr;
+        side_carries |= h && h->civilian;
+      }
+      for (const Objective &o : objectives)
+      {
+        if (o.type == kObjExtraction ? !dragging && !side_carries : dragging && to_extraction)
+        {
+          continue;
+        }
         const Character *c = IsCharacter(base, o.actor) ? FindCharacter(o.actor) : nullptr;
+        if (o.type == kObjHostage && !CarrierOf(base, o.actor) && InExtraction(base, objectives, o.at))
+        {
+          continue; // delivered: left where it lies
+        }
         if (o.type == kObjHostage)
         {
           // Taken already: by this bot, or by one of its side. Carried by
@@ -2725,6 +3540,85 @@ namespace
         case kObjControl:
         case kObjDefend:
           arrive = kHoldReach;
+          break;
+        case kObjExtraction:
+          if (!dragging)
+          {
+            arrive = kHoldReach; // one of its side carries a hostage there: kept near
+            break;
+          }
+          {
+            // Into the middle of its volume (the marker may stand at its
+            // edge): the event fires as the bot steps in. Still carrying
+            // the hostage a while in it (stepped in before the extraction was
+            // open, or with another player in it already: no event), out of
+            // it and in again.
+            // The extraction is an occupied volume (in it: arVolumeContains)
+            // or a Trigger (in its cylinder), else the marker's point.
+            const Volume *v = ExtractionVolume(best->actor, best->at);
+            Vec mid = best->at;
+            float radius = 0, height = 0;
+            bool cylinder = !v && TriggerCylinder(base, best->actor, radius, height);
+            if (v)
+            {
+              mid = {(v->box.lo.x + v->box.hi.x) * 0.5f, (v->box.lo.y + v->box.hi.y) * 0.5f,
+                     std::clamp(best->at.z, v->box.lo.z, v->box.hi.z)};
+            }
+            bool inside = v          ? Occupies(base, v->actor, controller)
+                          : cylinder ? Dist2D(me.at, mid) < radius + 45.0f && std::fabs(me.at.z - mid.z) < height + 60.0f
+                                     : Dist2D(me.at, mid) < 100.0f;
+            if (bot.extract_logged != best->actor)
+            {
+              bot.extract_logged = best->actor;
+              Logf("frame %u: bot %u takes %08X to the extraction %s (%s) at %.0f %.0f %.0f%s\n", frame, id,
+                   dragging, ao2::ue3::ObjectName(base, best->actor).c_str(),
+                   v ? ao2::ue3::ObjectName(base, v->actor).c_str() : cylinder ? "trigger" : "a point", mid.x, mid.y,
+                   mid.z,
+                   cylinder ? (", radius " + std::to_string(int(radius)) + " height " + std::to_string(int(height))).c_str()
+                            : "");
+            }
+            if (inside && !bot.extract_in_since)
+            {
+              bot.extract_in_since = frame;
+              Logf("frame %u: bot %u in the extraction (%s) with %08X\n", frame, id,
+                   v ? ao2::ue3::ObjectName(base, v->actor).c_str() : "no volume", dragging);
+            }
+            else if (!inside)
+            {
+              bot.extract_in_since = 0;
+            }
+            if (inside && !bot.extract_leave && frame - bot.extract_in_since > kExtractWait)
+            {
+              bot.extract_leave = true;
+              bot.extract_leave_at = frame;
+              bot.extract_out_since = 0;
+              // Out just past its edge the way the bot is from its middle.
+              float a = std::atan2(me.at.y - mid.y, me.at.x - mid.x);
+              float cx = std::cos(a), cy = std::sin(a);
+              float edge = cylinder ? radius : 100.0f;
+              if (v)
+              {
+                float hx = (v->box.hi.x - v->box.lo.x) * 0.5f, hy = (v->box.hi.y - v->box.lo.y) * 0.5f;
+                edge = std::min(std::fabs(cx) > 0.01f ? hx / std::fabs(cx) : 1e9f,
+                                std::fabs(cy) > 0.01f ? hy / std::fabs(cy) : 1e9f);
+              }
+              bot.extract_out = {mid.x + cx * (edge + 250.0f), mid.y + cy * (edge + 250.0f), me.at.z};
+              Logf("frame %u: bot %u still carries %08X %u frames in the extraction: out of it and in again\n", frame,
+                   id, dragging, frame - bot.extract_in_since);
+            }
+            if (bot.extract_leave)
+            {
+              bot.extract_out_since = inside ? 0 : bot.extract_out_since ? bot.extract_out_since : frame;
+              if ((bot.extract_out_since && frame - bot.extract_out_since > kExtractOut) ||
+                  frame - bot.extract_leave_at > kExtractLeaveFrames)
+              {
+                bot.extract_leave = false;
+              }
+            }
+            goal_at = bot.extract_leave ? bot.extract_out : mid;
+            goal_actor = 0;
+            arrive = bot.extract_leave ? 80.0f : 60.0f;
+          }
           break;
         default:
           arrive = kGoReach;
@@ -2820,9 +3714,44 @@ namespace
     {
       bot.threat = 0;
     }
+    // Hit: by whom (Pawn.LastHitBy, the controller that last hurt it). The
+    // one shooting it, in sight, is fought at once (before the nearest);
+    // out of sight it is the threat (cover is taken from it).
+    const Character *shooter = nullptr;
+    if (bot.hurt_at == frame)
+    {
+      static int32_t hit_by = -2;
+      if (hit_by == -2)
+      {
+        hit_by = ao2::ue3::PropertyOffset(base, "Pawn", "LastHitBy");
+        Logf("Pawn.LastHitBy +%d\n", hit_by);
+      }
+      uint32_t by_controller = hit_by >= 0 ? LoadU32(base, pawn + hit_by) : 0;
+      uint32_t by_pawn = by_controller ? LoadU32(base, by_controller + kControllerPawn) : 0;
+      shooter = by_pawn ? FindCharacter(by_pawn) : nullptr;
+      shooter = shooter && Enemy(me, *shooter) ? shooter : nullptr;
+    }
+    if (shooter && shooter->pawn != bot.target)
+    {
+      bool body = false;
+      if (InSight(ctx, base, pawn, shooter->pawn, body))
+      {
+        Logf("frame %u: bot %u hit by %08X (%s) at %.0f: fights it\n", frame, id, shooter->pawn,
+             ao2::ue3::ObjectName(base, shooter->pawn).c_str(), Dist2D(me.at, shooter->at));
+        bot.target = shooter->pawn;
+        bot.target_since = frame;
+        bot.target_body = body;
+      }
+      if (!bot.target || bot.target == shooter->pawn)
+      {
+        bot.threat = shooter->pawn;
+        bot.threat_seen = frame;
+        bot.threat_at = shooter->at;
+      }
+    }
     if (!bot.threat && bot.hurt_at == frame)
     {
-      // Hit by one it does not see: the nearest enemy in range.
+      // Hit by one it does not know: the nearest enemy in range.
       const Character *by = nullptr;
       for (const Character &c : g_characters)
       {
@@ -2870,7 +3799,7 @@ namespace
            state.c_str());
       bot.carried = now;
     }
-    bool can_cover = task != Task::kHeal && task != Task::kJoin && !carrying &&
+    bool can_cover = task != Task::kHeal && task != Task::kJoin && task != Task::kGive && !carrying &&
                      !(task == Task::kObjective && (objective_type == kObjHostage || objective_type == kObjExtraction) &&
                        health_part > kRetreatHealth);
     Vec threat_eye = bot.threat ? Head(base, bot.threat) : Vec{};
@@ -2963,6 +3892,15 @@ namespace
     }
     float goal_d = have_goal ? Dist2D(me.at, goal_at) : 0.0f;
     bool there = have_goal && goal_d < arrive && std::fabs(me.at.z - goal_at.z) < arrive_z;
+    // By a partner to join or lift it stays there a little farther off too
+    // (at the edge, by turns there pressing A and away aiming, it did
+    // neither).
+    bool coop_task = task == Task::kJoin || task == Task::kGive;
+    if (coop_task && bot.coop_there && goal_d < arrive + 50.0f && std::fabs(me.at.z - goal_at.z) < arrive_z + 30.0f)
+    {
+      there = true;
+    }
+    bot.coop_there = coop_task && there;
     // A charge (a solid mesh) or a hostage is used from its side: its middle
     // may be farther than kUseReach. Held still against it near enough, the
     // bot is there until it walks off (not a wall to back off from).
@@ -2993,7 +3931,7 @@ namespace
     // into no wall - until the goal moves.
     bool hold = have_goal && !there && bot.path_partial && !bot.path.empty() &&
                 Dist2D(bot.path_goal, goal_at) <= kPathMoved &&
-                Dist2D(me.at, g_nodes[bot.path.back()].at) < kWaypoint * 1.5f &&
+                Dist2D(me.at, g_nodes[bot.path.back()].at) < kWaypoint * (bot.holding ? 2.5f : 1.5f) &&
                 std::fabs(me.at.z - g_nodes[bot.path.back()].at.z) < 150.0f;
     if (hold && !bot.holding)
     {
@@ -3001,7 +3939,7 @@ namespace
            me.at.y, me.at.z, goal_at.x, goal_at.y, goal_at.z);
     }
     bot.holding = hold;
-    bool use = there && (task == Task::kHeal || task == Task::kJoin || use_goal);
+    bool use = there && (task == Task::kHeal || coop_task || use_goal);
     if (use)
     {
       Vec a = goal_actor ? LoadVec(base, goal_actor + kActorLocation) : goal_at;
@@ -3010,6 +3948,15 @@ namespace
       if (task == Task::kJoin)
       {
         in.buttons |= frame - bot.join_since > 30 && frame % 40 < 3 ? kA : 0;
+      }
+      else if (task == Task::kGive)
+      {
+        // A (the bot is the lifter), then it waits at the wall (the move).
+        if (frame % 40 < 3)
+        {
+          in.buttons |= kA;
+          bot.offer_until = frame + kGiveWait;
+        }
       }
       else if (use_goal)
       {
@@ -3113,7 +4060,9 @@ namespace
     bool shoot_objective = !bot.target && there && task == Task::kObjective && objective_type == kObjDetonate &&
                            bot.objective_seen == goal_actor;
     bool dragging = carrying;
-    if ((bot.target || shoot_objective) && !bot.nade_step)
+    // Not on its way to join or lift its partner: aiming, the partner's
+    // move does not take it (and it stopped by turns to fire).
+    if ((bot.target || shoot_objective) && !bot.nade_step && !coop_task)
     {
       // A target carrying a hostage is shot in the head, over the hostage.
       uint32_t carried = bot.target ? Carried(base, bot.target) : 0;
@@ -3228,7 +4177,7 @@ namespace
       {
         bot.force_path = false;
         bot.next_path = frame + kPathFrames;
-        bot.path = FindPath(ctx, base, pawn, me.at, goal_at, bot.barred, &bot.path_partial);
+        bot.path = FindPath(ctx, base, pawn, me.at, goal_at, bot.barred, &bot.path_partial, carrying);
         bot.path_at = 0;
         bot.path_goal = goal_at;
         repathed = true;
@@ -3469,6 +4418,93 @@ namespace
       in.ly = 0;
       in.buttons |= kLT;
       in.buttons |= frame < bot.dodge_at + 2 ? kY : 0;
+    }
+
+    // In its partner's line of fire (a player standing or walking slowly:
+    // where it looks), near and in front of it: a step aside, out of it, to
+    // the side it is on already.
+    if (player_partner && !in_cover && !partner->down)
+    {
+      uint32_t look = LoadU32(base, partner->controller + kLookHolder);
+      float speed = std::hypot(LoadF32(base, partner->pawn + kActorVelocity),
+                               LoadF32(base, partner->pawn + kActorVelocity + 4));
+      if (look == partner->pawn && speed < kClearSlow && frame >= bot.clear_until + 15)
+      {
+        float pitch = LoadF32(base, look + kLookRotation) / kUnitsPerRadian;
+        float yaw = LoadF32(base, look + kLookRotation + 4) / kUnitsPerRadian;
+        Vec from = Head(base, partner->pawn);
+        Vec dir{std::cos(pitch) * std::cos(yaw), std::cos(pitch) * std::sin(yaw), std::sin(pitch)};
+        Vec mid = Body(base, pawn);
+        float along = (mid.x - from.x) * dir.x + (mid.y - from.y) * dir.y + (mid.z - from.z) * dir.z;
+        Vec far{from.x + dir.x * kClearRange, from.y + dir.y * kClearRange, from.z + dir.z * kClearRange};
+        if (along > 80.0f && along < kClearRange && SegmentDistance(mid, from, far) < kClearWidth)
+        {
+          float side = (mid.x - from.x) * -dir.y + (mid.y - from.y) * dir.x < 0 ? -1.0f : 1.0f;
+          for (float s : {side, -side})
+          {
+            float a = yaw + s * 1.5707964f;
+            if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * 200.0f, me.at.y + std::sin(a) * 200.0f, me.at.z}))
+            {
+              bot.clear_until = frame + 30;
+              bot.clear_dir = a;
+              Logf("frame %u: bot %u in its partner's line of fire %.0f in front: steps %s\n", frame, id, along,
+                   s > 0 ? "left" : "right");
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (frame < bot.clear_until)
+    {
+      Steer(me.at, {me.at.x + std::cos(bot.clear_dir) * 300.0f, me.at.y + std::sin(bot.clear_dir) * 300.0f, me.at.z},
+            view_yaw, 1.0f, in);
+    }
+
+    // A grenade on the ground near it: away from it, out of its blast (out
+    // of cover first: B), LT let go to run; nothing else meanwhile.
+    ScanGrenades(base, frame);
+    Vec nade_at;
+    float nade_reach = 0;
+    uint32_t danger = GrenadeNear(base, me.at, nade_at, nade_reach);
+    if (danger && frame >= bot.flee_until)
+    {
+      float d = Dist2D(me.at, nade_at);
+      float away = d > 10.0f ? std::atan2(me.at.y - nade_at.y, me.at.x - nade_at.x)
+                             : view_yaw / kUnitsPerRadian + 3.1415927f;
+      float run = std::max(250.0f, nade_reach - d + 100.0f);
+      bot.flee_dir = away;
+      for (float turn : {0.0f, 0.6f, -0.6f, 1.2f, -1.2f, 1.9f, -1.9f})
+      {
+        float a = away + turn;
+        if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * run, me.at.y + std::sin(a) * run, me.at.z}))
+        {
+          bot.flee_dir = a;
+          break;
+        }
+      }
+      bot.flee_from = danger;
+      bot.flee_until = frame + kFleeFrames;
+      if (bot.cover >= 0)
+      {
+        in.buttons |= bot.cover_arrived ? kB : 0;
+        bot.cover = -1;
+        bot.exposed = 0;
+        bot.next_cover = frame + kFleeFrames;
+        bot.path.clear();
+        bot.progress = false;
+      }
+      Logf("frame %u: bot %u flees grenade %08X (%s) %.0f away (blast %.0f), %.0f degrees off straight away\n", frame,
+           id, danger, ao2::ue3::ObjectName(base, danger).c_str(), d, nade_reach,
+           std::remainder(bot.flee_dir - away, 6.2831853f) * 57.29578f);
+    }
+    if (frame < bot.flee_until)
+    {
+      Steer(me.at, {me.at.x + std::cos(bot.flee_dir) * 500.0f, me.at.y + std::sin(bot.flee_dir) * 500.0f, me.at.z},
+            view_yaw, 1.0f, in);
+      in.buttons &= ~(kLT | kL3);
+      bot.stuck_check = 0;
+      bot.progress = false;
     }
 
     // A grenade: at an enemy that hides (out of sight a moment ago, or only
