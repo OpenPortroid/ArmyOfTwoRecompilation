@@ -8,13 +8,13 @@
 
 # Army of Two Recompilation
 
-Unofficial PC port of the Xbox 360 version of Army of Two (2008). The campaign can be played in online co-op, without EA servers.
+Unofficial PC port of the Xbox 360 version of Army of Two (2008). The campaign can be played in online co-op and
+versus online against other players and bots, all without EA servers.
 Graphics go through the port's own Direct3D 12 renderer, not GPU emulation.
 The game's PowerPC code is statically recompiled
 to C++ with the ReXGlue SDK and built as a Windows x64 executable.
 
-The whole game is finishable in solo or co-op without crashes. Tested on NVIDIA GeForce RTX 2060 and RTX 4060,
-stable 144 FPS.
+The whole game is finishable in solo or co-op without crashes. Tested on NVIDIA GeForce RTX 2060 and RTX 4060.
 
 The repository contains no game files. You need your own copy of the game.
 
@@ -23,6 +23,8 @@ Found a bug or have a suggestion? Please open an [issue](https://github.com/Open
 ## Requirements
 
 - Windows 10/11 x64 only, a GPU with Direct3D 12
+- A CPU with AVX2; for CPUs without it there is an AVX1 version (`avx1-version.aot` in each release, the launcher
+  installs it by itself)
 - About 6 GB of disk space, plus 1.3 GB for the DLC
 - Army of Two for Xbox 360 (European release), Title Update 2 and DLC (optional)
 
@@ -35,42 +37,50 @@ Found a bug or have a suggestion? Please open an [issue](https://github.com/Open
    `TU_12K222C_0000004000000.00000000000G1`. DLC packages are optional.
 4. Press Install. The files are copied to `assets\`.
 
-Saves: `Documents\armyoftworecomp_tu2`. To update, extract the new package over the old one.
+Saves: `Documents\armyoftworecomp_tu2`. The launcher offers new versions by itself; or extract the new package over
+the old one (settings and saves are kept).
 
 On the first runs shaders are compiled, so there are short stutters.
 
 ## What the port adds
 
-- Online coop mode without reliance on EA servers, supporting both Public and Private Co-op
+- Online co-op without EA servers, Public and Private Co-op
+- Online versus without EA servers, with private matches and invites; bots fill the empty slots
 - Split-screen on one PC with each player's devices chosen in the launcher
-- Graphics settings inside the game: Options → Graphics
-- Key and mouse rebinding inside the game: Options → Graphics → Controls
-- Render resolution above the console's 720p
-- Optimized performance with stable frame rates
+- Graphics settings inside the game (Options → Graphics or F1): render resolution above the console's 720p,
+  anti-aliasing, ambient occlusion, shadow resolution, anisotropic filtering, FPS cap and more
+- Field of view sliders for walking and for aiming
+- Widescreen and ultrawide aspect ratios
+- Achievements with on-screen notices
 - Keyboard and mouse support, including keyboard key glyphs in on-screen button prompts
-- Input remapping for both keyboard and gamepad, available in the launcher
+- Key and gamepad rebinding inside the game (Options → Graphics → Controls) and in the launcher
 - Skippable pre-rendered cutscenes using the Enter or Space key
-  
+- Frame rate overlay on F2 (off, simple, detailed)
+- The debug menu (F1): graphics, field of view and mouse settings, achievements, invites, cheats.
+
 ## Controls
 
-Action|Keyboard / mouse|Controller
--|-|-
-Move|W A S D|Left stick
-Camera / aim|Mouse|Right stick
-Fire|LMB|RT
-Precision aim|RMB|LT
-Reload|R|X
-Roll / cover / vault|Space|Y
-Use / confirm|E / Enter|A
-Back|Backspace / Q|B
-Crouch|Ctrl / C|L3
-Inventory (hold)|Z|LB
-Co-op commands (hold)|F|RB
-Weapons and grenades|1–4|LB + D-pad
-Partner orders|Arrows|D-pad
-R3|MMB|R3
-GPS|Tab|Back
-Pause|Esc|Start
+| Action                | Keyboard / mouse | Controller  |
+| --------------------- | ---------------- | ----------- |
+| Move                  | W A S D          | Left stick  |
+| Camera / aim          | Mouse            | Right stick |
+| Fire                  | LMB              | RT          |
+| Precision aim         | RMB              | LT          |
+| Reload                | R                | X           |
+| Roll / cover / vault  | Space            | Y           |
+| Use / confirm         | E / Enter        | A           |
+| Back                  | Backspace / Q    | B           |
+| Crouch                | Ctrl / C         | L3          |
+| Inventory (hold)      | Z                | LB          |
+| Co-op commands (hold) | F                | RB          |
+| Weapons and grenades  | 1–4              | LB + D-pad  |
+| Partner orders        | Arrows           | D-pad       |
+| R3                    | MMB              | R3          |
+| GPS                   | Tab              | Back        |
+| Pause                 | Esc              | Start       |
+| Port debug menu       | F1               |             |
+| Frame rate overlay    | F2               |             |
+| Accept an invite      | F6               |             |
 
 Bindings: in the game, Options → Graphics → Controls (Enter or a click on a row, then the key; left adds
 one more key); the launcher's Settings → Keyboard and Gamepad tabs (press the key or button to assign it, combinations
@@ -80,15 +90,25 @@ and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind
 
 - Works over LAN or a virtual network (Radmin VPN, ZeroTier, Tailscale).
 - Both players start the game from the launcher. The launcher looks for a host on the local network and picks the
-  role. Over the internet, enter the host's IP in the launcher's Settings → Network (or F8 in the game).
+  role. Over the internet, enter the host's IP in the launcher's Settings → Network.
 - Public Co-op: Campaign Mode → Public Co-op Game.
-- Private Co-op (recommended), with invites: the lobby's Invite button opens the Players window (also F8) with the
-  players found on the network; the partner accepts the invite with F6. Unlike Public Co-op, it keeps checkpoints,
-  so you can continue the game later.
-- Both players need the same build of the port, the same DLC and the same game language.
-- Run `Allow through firewall (run as administrator).bat` once on both PCs.
+- Private Co-op (recommended), with invites: the lobby's Invite button opens the Players window with the players
+  found on the network (also the F1 menu's Invites tab); the partner accepts the invite with F6. Unlike Public
+  Co-op, it keeps checkpoints, so you can continue the game later.
+- Both players need the same version of the port (both on the AVX1 version if one of them has no AVX2), the same
+  DLC and the same game language.
+- Allow the game through Windows Firewall once on both PCs: the launcher's Settings → Network → Windows Firewall.
 
 Details: [aot/docs/online_coop.md](aot/docs/online_coop.md).
+
+## Versus
+
+- Versus works over the same networks as co-op: choose Versus in the main menu. A Custom Match takes invites as
+  Private Co-op does.
+- A match can start with fewer than 4 players: bots fill the empty places. They carry hostages to the extraction,
+  destroy depots, buy weapons and armor, lift their partner up walls and take cover under fire.
+- Bot settings are in `settings\online.toml` (`ao2_versus_bots`, `ao2_versus_bots_buy` and the other
+  `ao2_versus_bots_*` keys). Every player of a match needs the same bot settings.
 
 ## Split-screen
 
@@ -104,13 +124,14 @@ Details: [aot/docs/online_coop.md](aot/docs/online_coop.md).
 
 ## Settings
 
-TOML files in `settings\`.
+TOML files in `settings\`. Most settings can also be changed in the game (Options → Graphics, the F1 menu) or in the
+launcher, and are saved there.
 
 File|Contents
 -|-
-`hardware.toml`|Window, fullscreen, render scale (`ao2_native_gpu_resolution_scale`), FPS cap (`ao2_fps_target`), anisotropic filtering, language (`ao2_game_language`)
+`hardware.toml`|Window, fullscreen, render scale (`ao2_native_gpu_resolution_scale`), FPS cap (`ao2_fps_target`), aspect ratio (`ao2_aspect_ratio`), graphics effects, field of view (`ao2_fov`, `ao2_fov_aim`), language (`ao2_game_language`)
 `mapping.toml`|Key and gamepad bindings, mouse sensitivity and inversion, split-screen players and devices
-`online.toml`|Co-op settings, gamertag
+`online.toml`|Co-op and versus settings, versus bots (`ao2_versus_bots*`), gamertag
 
 ## Building
 
@@ -138,10 +159,13 @@ Folder|Contents
    rexglue\win-amd64\bin\rexglue.exe codegen armyoftworecomp_manifest.toml
    ```
 
-3. Game build: `build.cmd` (release; other modes are listed at the top of the file). It also copies the modified
-   `rexruntime.dll` from `sdk\` next to the game.
+3. Game build: `build.cmd` (release; other modes are listed at the top of the file, among them `compat` for the
+   AVX1 version and the profile-guided optimization steps). It also copies the modified `rexruntime.dll` from `sdk\`
+   next to the game.
+4. Launcher: `launcher\build.cmd`.
 
-Release package: `aot\tools\make_release.ps1 [-Zip]`. Renderer notes: [aot/docs/native_renderer.md](aot/docs/native_renderer.md).
+Release package: `aot\tools\make_release.ps1 [-Zip]` (needs the release, `compat` and launcher builds).
+Renderer notes: [aot/docs/native_renderer.md](aot/docs/native_renderer.md).
 
 ## Special Thanks
 
