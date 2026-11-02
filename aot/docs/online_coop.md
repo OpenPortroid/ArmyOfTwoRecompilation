@@ -154,7 +154,7 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   `B-U-Mode` and build with the lowest ping is joined and its invite accepted
   (the list request is left unanswered, the game goes on through the invite);
   with none within ~15 s the list is answered empty and the game hosts.
-- **Play by code** (F1 → Online → Play by code), for players who met
+- **Join with code** (F1 → Online → Join with code), for players who met
   elsewhere and are not Steam friends: the code is the player's Steam account ID in Crockford base
   32 (7 characters, `ABC-DEFG`). Entering the host's code adds the host as a
   peer and sends `knock` on ISteamNetworkingMessages channel 1 every 2 s for

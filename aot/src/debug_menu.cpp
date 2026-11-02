@@ -565,7 +565,7 @@ namespace
     }
   }
 
-  constexpr const char *kTabNames[kTabCount] = {"Settings", "Online", "Play by code", "Servers",
+  constexpr const char *kTabNames[kTabCount] = {"Settings", "Online", "Join with code", "Servers",
                                                 "Versus",   "Debug",  "Achievements"};
   // The sidebar: the sections in order, their keys (0: none) and whether
   // they are Online's pages.
@@ -2338,7 +2338,7 @@ namespace
     float mark_h_ = -1.0f;                      // ... and its height (an Online page's is lower)
     // Online: the games list's refresh, the join under way.
     double servers_refreshed_ = -100.0;
-    char code_text_[24] = {};       // the host's code (Play by code)
+    char code_text_[24] = {};       // the host's code (Join with code)
     bool code_bad_ = false;         // ... was not a code
     bool code_wait_ = false;        // ... asked for here: closed once invited
     double code_copied_until_ = 0.0;
