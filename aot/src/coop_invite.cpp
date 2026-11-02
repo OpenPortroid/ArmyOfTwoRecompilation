@@ -533,6 +533,7 @@ namespace
     uint64_t session_id = 0;
     std::vector<uint8_t> xnaddr; // 36 bytes, addresses already the inviter's
     std::string server_ip;       // the inviter's EA server
+    bool server_here = false;    // ... runs on this PC (seen at its Steam address)
     std::string build;           // the inviter's BuildHash
     bool is_private = false;
     bool playgroup = false;      // a versus party: joined with the playgroup manager
@@ -555,6 +556,15 @@ namespace
     // (GAMEQ / GAME), when its own process runs none.
     ao2::ea::HostedGame remote_game;
     Clock::time_point remote_game_seen;
+    // The EA server before an accepted invite pointed the game at the
+    // inviter's: put back once the inviter hosts nothing and this game is in
+    // the menus (else a game hosted later goes to the inviter's server).
+    bool switched = false;
+    std::string own_server, own_host;
+    Address inviter;
+    std::string inviter_name;
+    bool inviter_hosted = false;     // seen hosting since the switch
+    Clock::time_point inviter_ended; // since when it hosts nothing (zero: it hosts)
   };
 
   State &state()
@@ -656,6 +666,52 @@ namespace
     ao2::steam::SetHosting(steam);
   }
 
+  // The inviter's game over (it hosts nothing for a while, or is gone) and
+  // this game back in the menus: the EA server it used before the invite.
+  void RestoreOwnServer()
+  {
+    auto &st = state();
+    auto now = Clock::now();
+    std::string server, host, name;
+    {
+      std::lock_guard lock(st.mutex);
+      if (!st.switched)
+      {
+        return;
+      }
+      auto it = st.peers.find(st.inviter);
+      bool hosting = it != st.peers.end() && it->second.hosting;
+      if (hosting)
+      {
+        st.inviter_hosted = true;
+        st.inviter_ended = {};
+        return;
+      }
+      if (!st.inviter_hosted)
+      {
+        return; // not seen hosting yet: its invite may still be on the way in
+      }
+      if (st.inviter_ended == Clock::time_point{})
+      {
+        st.inviter_ended = now;
+      }
+      // Some grace: a versus party between its matches, the game between
+      // its screens.
+      if (now - st.inviter_ended < std::chrono::seconds(10) || OwnState() != "menu")
+      {
+        return;
+      }
+      st.switched = false;
+      server = st.own_server;
+      host = st.own_host;
+      name = st.inviter_name;
+    }
+    std::string current = rex::cvar::GetFlagByName("net_title_server_ip");
+    rex::cvar::SetFlagByName("net_title_server_ip", server);
+    rex::cvar::SetFlagByName("ao2_coop_host", host);
+    Log("EA server: %s -> %s (%s hosts no game now)", current.c_str(), server.c_str(), name.c_str());
+  }
+
   void Beacon()
   {
     auto &st = state();
@@ -726,6 +782,13 @@ namespace
         std::lock_guard lock(st.mutex);
         Peer &p = st.peers[from];
         std::string build = Get(f, "build");
+        if (!p.name.empty() && p.build == BuildHash() && build != p.build && now - p.seen < kPeerTimeout)
+        {
+          // Another game behind the same address (a second copy on that PC,
+          // another build): the player of this build keeps the entry, its
+          // name and whether it hosts.
+          return;
+        }
         if (p.name.empty() || p.build != build)
         {
           Log("found %s at %s:%u, build %s%s", name.c_str(), IpString(from.ip).c_str(), from.port,
@@ -801,6 +864,7 @@ namespace
         server.ip = from.ip;
       }
       inv.server_ip = IpString(server.ip);
+      inv.server_here = server.ip == ao2::steam::SelfAddress() && server.ip != 0;
       inv.received = now;
       if (inv.xnaddr.size() != 36 || !inv.session_id)
       {
@@ -1043,6 +1107,7 @@ namespace
       {
         next_steam_hosting = now + std::chrono::seconds(1);
         UpdateSteamHosting();
+        RestoreOwnServer();
       }
       VersionBanner();
       for (const auto &[to, packet] : resend)
@@ -1129,6 +1194,8 @@ namespace
       std::erase_if(st.received, [&](const ReceivedInvite &r) { return r.from == inv.from && r.id == inv.id; });
       if (accept)
       {
+        // The same game's invite over another way (LAN and Steam) goes too.
+        std::erase_if(st.received, [&](const ReceivedInvite &r) { return r.session_id == inv.session_id; });
         st.accepted = inv;
         st.have_accepted = true;
       }
@@ -1140,12 +1207,42 @@ namespace
       return;
     }
     // The game must reach the inviter's EA server (Theater) to enter its game.
+    // One on this PC (the inviter's game was on it) is reached as before any
+    // invite, not through this PC's own Steam address.
     std::string current = rex::cvar::GetFlagByName("net_title_server_ip");
-    if (!inv.server_ip.empty() && current != inv.server_ip)
+    std::string server = inv.server_ip, host = inv.server_ip;
+    if (!server.empty())
     {
-      rex::cvar::SetFlagByName("net_title_server_ip", inv.server_ip);
-      rex::cvar::SetFlagByName("ao2_coop_host", inv.server_ip);
-      Log("EA server: %s -> %s", current.c_str(), inv.server_ip.c_str());
+      std::lock_guard lock(st.mutex);
+      if (inv.server_here)
+      {
+        server = st.switched ? st.own_server : current;
+        host = st.switched ? st.own_host : rex::cvar::GetFlagByName("ao2_coop_host");
+        st.switched = false;
+      }
+      else
+      {
+        if (!st.switched && current != server)
+        {
+          st.switched = true;
+          st.own_server = current;
+          st.own_host = rex::cvar::GetFlagByName("ao2_coop_host");
+        }
+        else if (st.switched && server == st.own_server)
+        {
+          st.switched = false; // back on this player's own server
+        }
+        st.inviter = inv.from;
+        st.inviter_name = inv.name;
+        st.inviter_hosted = false;
+        st.inviter_ended = {};
+      }
+    }
+    if (!server.empty() && current != server)
+    {
+      rex::cvar::SetFlagByName("net_title_server_ip", server);
+      rex::cvar::SetFlagByName("ao2_coop_host", host);
+      Log("EA server: %s -> %s", current.c_str(), server.c_str());
     }
     Log("accepted invite %u from %s: XN_LIVE_INVITE_ACCEPTED", inv.id, inv.name.c_str());
     if (auto *ks = rex::system::kernel_state())

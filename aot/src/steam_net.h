@@ -33,6 +33,9 @@ namespace ao2::steam
   // announcements.
   std::vector<uint32_t> PeerAddresses();
 
+  // This PC's own virtual address (0 without Steam).
+  uint32_t SelfAddress();
+
   // From the presence service (every announcement): the lobby game this
   // machine hosts, or none. A hosted game gets a Steam lobby (the server
   // list, friends' "Join game"); a player entering it is invited

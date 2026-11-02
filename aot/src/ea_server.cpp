@@ -86,6 +86,8 @@ namespace ao2::ea
     constexpr uint16_t kMessengerPort = 13505;
     constexpr uint16_t kDiscoveryPort = 18490;
     constexpr auto kKeepAlive = std::chrono::seconds(30);
+    // How long an entry is asked again while the host refuses with REASON=2.
+    constexpr auto kHostNotReadyWait = std::chrono::seconds(8);
 
     using Fields = std::vector<std::pair<std::string, std::string>>;
 
@@ -472,12 +474,20 @@ namespace ao2::ea
       uint32_t next_pid = 1;
     };
 
+    // A player entering a game, until the host answers its EGRQ.
+    struct Pending
+    {
+      std::weak_ptr<TheaterConn> joiner;
+      Fields request; // the EGRQ, asked again while the host is not hosting yet
+      std::chrono::steady_clock::time_point since;
+    };
+
     struct State
     {
       std::mutex mutex;
       std::map<uint32_t, Game> games;
       uint32_t next_gid = 1;
-      std::map<std::pair<uint32_t, uint32_t>, std::weak_ptr<TheaterConn>> pending; // (gid, pid) -> entering player
+      std::map<std::pair<uint32_t, uint32_t>, Pending> pending; // (gid, pid)
       std::map<uint64_t, std::string> names;                  // userId -> gamertag
       std::map<uint64_t, std::string> xuids;                  // userId -> XUID (decimal)
     };
@@ -866,6 +876,14 @@ namespace ao2::ea
         }
         else if (t == "ECNL")
         {
+          {
+            // An entry given up: not asked again.
+            std::lock_guard lock(st.mutex);
+            uint32_t gid = uint32_t(ToU64(Get(f, "GID", "0")));
+            std::erase_if(st.pending, [&](const auto &kv) {
+              return kv.first.first == gid && kv.second.joiner.lock().get() == this;
+            });
+          }
           Send("ECNL", 0, {{"TID", tid}, {"LID", Get(f, "LID", "1")}, {"GID", Get(f, "GID", "0")}});
         }
         else if (t == "PENT")
@@ -930,7 +948,7 @@ namespace ao2::ea
               it->second.xnaddr = Get(f, "R-XNADDR");
             }
             pid = it->second.next_pid++;
-            st.pending[{gid, pid}] = self();
+            st.pending[{gid, pid}] = {self(), {}, std::chrono::steady_clock::now()};
           }
           auto x = st.xuids.find(uid_);
           xuid = x != st.xuids.end() ? x->second : Get(f, "R-U-XUID", "0");
@@ -969,6 +987,14 @@ namespace ao2::ea
             req.emplace_back(k, v);
           }
         }
+        {
+          std::lock_guard lock(st.mutex);
+          auto p = st.pending.find({gid, pid});
+          if (p != st.pending.end())
+          {
+            p->second.request = req;
+          }
+        }
         host->Send("EGRQ", 0, req);
       }
 
@@ -980,16 +1006,32 @@ namespace ao2::ea
         std::shared_ptr<TheaterConn> joiner;
         Game game;
         bool have_game = false;
+        bool again = false;
+        Fields request;
+        uint32_t id = uint32_t(ToU64(Get(f, "GID", std::to_string(gid_))));
         {
           std::lock_guard lock(st.mutex);
-          uint32_t gid = uint32_t(ToU64(Get(f, "GID", std::to_string(gid_))));
-          auto p = st.pending.find({gid, pid});
+          auto p = st.pending.find({id, pid});
           if (p != st.pending.end())
           {
-            joiner = p->second.lock();
-            st.pending.erase(p);
+            joiner = p->second.joiner.lock();
+            // REASON=2: the host's game manager does not host until its own
+            // EGEG is in (online_coop.md); a versus party following its leader
+            // asks at once and gives up after three refusals. Asked again for
+            // a while instead of refused.
+            again = joiner && joiner.get() != this && !joiner->closed() && Get(f, "ALLOWED", "1") != "1" &&
+                    Get(f, "REASON", "0") == "2" && !p->second.request.empty() &&
+                    std::chrono::steady_clock::now() - p->second.since < kHostNotReadyWait;
+            if (again)
+            {
+              request = p->second.request;
+            }
+            else
+            {
+              st.pending.erase(p);
+            }
           }
-          auto it = st.games.find(gid);
+          auto it = st.games.find(id);
           if (it != st.games.end())
           {
             if (joiner && joiner.get() != this && Get(f, "ALLOWED", "1") == "1")
@@ -1001,6 +1043,40 @@ namespace ao2::ea
           }
         }
         Send("EGRS", 0, {{"TID", tid}});
+        if (again)
+        {
+          Log("host %s not hosting yet, asks again for %s", name_.c_str(), joiner->name().c_str());
+          std::weak_ptr<TheaterConn> host = self();
+          std::weak_ptr<TheaterConn> player = joiner;
+          std::thread([host, player, id, pid, request]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            auto h = host.lock();
+            {
+              std::lock_guard lock(state().mutex);
+              if (!state().pending.count({id, pid}))
+              {
+                return; // given up (ECNL)
+              }
+              auto it = state().games.find(id);
+              if (!h || h->closed() || it == state().games.end() || it->second.host != h)
+              {
+                state().pending.erase({id, pid});
+                h = nullptr;
+              }
+            }
+            if (!h)
+            {
+              // The game gone meanwhile: the refusal after all.
+              if (auto p = player.lock())
+              {
+                p->SendT("EGEG", {{"TID", "0"}, {"LID", "1"}, {"GID", std::to_string(id)}, {"REASON", "2"}}, "jden");
+              }
+              return;
+            }
+            h->Send("EGRQ", 0, request);
+          }).detach();
+          return;
+        }
         if (!joiner || !have_game)
         {
           return;

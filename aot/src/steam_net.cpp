@@ -295,6 +295,7 @@ namespace
   {
     std::mutex mutex;
     std::vector<uint32_t> peer_ips;
+    uint32_t self_ip = 0;
     ao2::steam::Hosting hosting;
     std::map<uint32_t, Clock::time_point> auto_accept; // host address -> until
     std::vector<ao2::steam::Lobby> lobbies;
@@ -367,6 +368,10 @@ namespace
     {
       self_ = SteamUser()->GetSteamID().ConvertToUint64();
       self_ip_ = VirtualIp(self_);
+      {
+        std::lock_guard lock(shared().mutex);
+        shared().self_ip = self_ip_;
+      }
       SteamNetworkingUtils()->InitRelayNetworkAccess();
       for (uint16_t port : kTcpPorts)
       {
@@ -1280,6 +1285,8 @@ namespace
     STEAM_CALLBACK(Session, OnJoinRequested, GameLobbyJoinRequested_t);
     STEAM_CALLBACK(Session, OnStatus, SteamNetConnectionStatusChangedCallback_t);
     STEAM_CALLBACK(Session, OnSessionRequest, SteamNetworkingMessagesSessionRequest_t);
+    // Messages to a player that could not get through (its UDP, knocks).
+    STEAM_CALLBACK(Session, OnSessionFailed, SteamNetworkingMessagesSessionFailed_t);
 
     uint64_t lobby_ = 0;
     bool own_lobby_ = false;
@@ -1341,6 +1348,14 @@ namespace
   {
     SteamNetworkingMessages()->AcceptSessionWithUser(e->m_identityRemote);
     bridge.AddPeer(e->m_identityRemote.GetSteamID64());
+  }
+
+  void Session::OnSessionFailed(SteamNetworkingMessagesSessionFailed_t *e)
+  {
+    uint64_t id = e->m_info.m_identityRemote.GetSteamID64();
+    Peer *p = bridge.AddPeer(id);
+    Log("messages with %s (%llu) failed (%d, %s)", p ? p->name.c_str() : "?", (unsigned long long)id,
+        e->m_info.m_eEndReason, e->m_info.m_szEndDebug);
   }
 
   void Loop()
@@ -1412,6 +1427,12 @@ namespace ao2::steam
   {
     std::lock_guard lock(shared().mutex);
     return shared().peer_ips;
+  }
+
+  uint32_t SelfAddress()
+  {
+    std::lock_guard lock(shared().mutex);
+    return shared().self_ip;
   }
 
   void SetHosting(const Hosting &hosting)
@@ -1550,6 +1571,7 @@ namespace ao2::steam
   bool Running() { return false; }
   std::string PersonaName() { return {}; }
   std::vector<uint32_t> PeerAddresses() { return {}; }
+  uint32_t SelfAddress() { return 0; }
   void SetHosting(const Hosting &) {}
   bool TakeAutoAccept(uint32_t) { return false; }
   void RefreshLobbies() {}

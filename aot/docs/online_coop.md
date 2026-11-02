@@ -76,7 +76,11 @@ What the game needs (found by tracing it, `--ao2_coop_debug=true`):
   `EGRQ` to the host → host answers `EGRS` (`ALLOWED`, `REASON`) → `EGEG` with
   the host's address to the player. The host's game manager only starts hosting
   after receiving *its own* `EGEG`; before that it refuses everybody with
-  `REASON=2` (state 0, `sub_822424D0`).
+  `REASON=2` (state 0, `sub_822424D0`). A versus party follows its leader into
+  the match at once and gives up after three refusals a second apart, so the
+  server holds such a refusal for an entry younger than 8 s and sends the
+  host the same `EGRQ` again every 0.5 s (`kHostNotReadyWait`; an `ECNL` of
+  the player ends it).
 - The host recognizes its own request by `EGRQ UID` = FESL `userId`, and
   registers the partner in its Xbox Live session with `EGRQ XUID` (else XUID 0).
 - A refusal is `EGEG` with status `jden` in the header; an `EGEG` without
@@ -125,6 +129,14 @@ Here a presence service in every game (UDP 18491, text packets
   accepting points `net_title_server_ip` at the inviter's server, then
   broadcasts the notification; `sub_82C41388` answers with the invite (the
   invitee XUID read through `sub_82B07E10(user, 5, &info)` as EA reads it).
+- The server before the invite comes back once the inviter has hosted
+  nothing for 10 s (its `HELLO` says so, or it is gone) and this game is in
+  the menus (`RestoreOwnServer`). Without that a game hosted later went to
+  the inviter's server: no Steam lobby, "nogame" to a knock, and a whole
+  party's matches over a relay to a PC that had left. An invite whose server
+  is this PC's own Steam address keeps this PC's own server.
+- A second game behind a player's address (a test copy, another build) does
+  not take over the entry of the player with this build.
 
 `invite.log` (with `log_to_files`) shows players found, invites and answers.
 
