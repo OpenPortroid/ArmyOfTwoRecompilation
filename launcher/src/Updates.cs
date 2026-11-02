@@ -96,7 +96,8 @@ namespace AO2Launcher
                 {
                     string p = parts[i];
                     string tag = p.Substring(0, Math.Max(0, p.IndexOf('"')));
-                    if (tag.Length == 0 || Regex.IsMatch(p, "\"draft\"\\s*:\\s*true"))
+                    // Drafts and pre-releases (the dev builds) are never offered.
+                    if (tag.Length == 0 || Regex.IsMatch(p, "\"(draft|prerelease)\"\\s*:\\s*true"))
                     {
                         continue;
                     }
