@@ -45,13 +45,20 @@
 //   a wall) without lifting: the bot goes to it and presses A there (the
 //   first to press is the lifter), waits at the wall for it to join, and
 //   lifts it with the stick held up all the way (it sets the height).
+//   A partner that was the lifter there a moment ago is waited by without
+//   A (it may lift again), but only ~3 s once the bot stands by it: then
+//   the bot lifts it. Joining, it stands within the game's join position
+//   (under 110 away, 50 in height: IsInStepJumpJoinPosition), following a
+//   lifter that walks to the wall.
 //   Going to join or lift its partner, it does not aim or fire.
 // - A player's partner keeps near the player (follow), fighting what comes;
 //   the objectives below are for bots whose partner is a bot.
 // - The objectives its team is shown (the HUD's markers, AO2MPTeamInfo.
 //   MPTeamObjectiveLocators): the nearest. A hostage: A by it (dragging
-//   it, the bot aims at any enemy it sees); a depot to destroy: shot at
-//   from where the bot sees it; a character to kill: hunted as a target;
+//   it, the bot aims at any enemy it sees); a depot to blow up: shot at
+//   from where a bullet's line reaches its mesh (the middle of its
+//   collision bounds, not its origin) with the weapon for its distance; a
+//   character to kill: hunted as a target;
 //   a place to hold or defend:
 //   kept near, fighting what comes; a place to go to: gone to. Carrying a
 //   hostage, the extraction only: into the middle of its volume
@@ -104,8 +111,12 @@
 //   near a spawn: it opens the buy menu (bMPBuyingWeapons, as the station's
 //   A does) and buys with the menu's input - the game takes the cash and
 //   gives the kit. A menu it did not open is closed (B).
-// - Lying (versus "dead": unconscious) it does nothing until its partner
-//   heals it or it gets up on its own - no respawn for money. Enemies that
+// - Lying (versus "dead": unconscious) it waits for its partner to heal
+//   it while that is up and near; else, once a respawn can be bought
+//   (Dead_Revive_Time after it fell), it buys one (A) when its cash covers
+//   the price (the host's, dearer each time with ao2_versus_respawn_step)
+//   and some left (ao2_versus_bots_buy: it spends the team's cash); or it
+//   gets up on its own after twice that. Enemies that
 //   lie (invulnerable) are not shot at.
 // - It walks along the level's navigation network (A* over the navigation
 //   points and the cover nodes, see below; with no way there, to the point
@@ -122,13 +133,21 @@
 //   way.
 // - Dead: A now and then.
 //
-// Every machine must have the same ao2_versus_bots (and bot settings): a
-// bot on one machine only desyncs the match.
+// The settings (ao2_versus_bots and the ao2_versus_bots_* cvars, the F1
+// menu's Versus tab) must be the same on every machine: a bot on one machine
+// only desyncs the match. So every machine sends its own through the
+// lockstep commands (coop_cmd.cpp: "vbots ...", whole numbers only: a
+// decimal point parsed in another locale would differ) once the match runs
+// and whenever they change, and all take them on the same frame. The bots
+// play by the host's (the lowest id that says it hosts, else the lowest id
+// that sent), and by the defaults until any came: the same everywhere.
 #include "versus_bots.h"
 
 #include "coop.h"
+#include "coop_cmd.h"
 #include "log_files.h"
 #include "ue3_reflect.h"
+#include "versus_rules.h"
 
 #include <algorithm>
 #include <array>
@@ -136,6 +155,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -153,13 +173,20 @@ REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_turn, 6.0, "Online", "Versus bots: fastest
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_miss, 2.5, "Online",
                       "Versus bots: how far off the aim wanders (degrees); 0 = they aim true");
 REXCVAR_DEFINE_BOOL(ao2_versus_bots_buy, true, "Online",
-                    "Versus bots: buy weapon kits and armor with their cash, at a buy zone or near a spawn");
+                    "Versus bots: buy weapon kits and armor with their cash (at a buy zone or near a spawn), and "
+                    "respawns when down");
 REXCVAR_DEFINE_DOUBLE(ao2_versus_bots_buy_share, 0.5, "Online",
                       "Versus bots: the most of their cash a purchase may take (the cash is the team's score)");
 REXCVAR_DEFINE_BOOL(ao2_versus_bots_infinite_ammo, true, "Online",
                     "Versus bots: their weapons never run out of ammo (as the game's AI partner)");
 REXCVAR_DEFINE_INT32(ao2_versus_bots_reaction, 20, "Online",
                      "Versus bots: frames a target is in view before they shoot");
+REXCVAR_DECLARE(bool, ao2_coop_server);
+REXCVAR_DECLARE(int32_t, ao2_versus_round_minutes);
+REXCVAR_DECLARE(int32_t, ao2_versus_cash_goal);
+REXCVAR_DECLARE(int32_t, ao2_versus_friendly_fire);
+REXCVAR_DECLARE(int32_t, ao2_versus_respawn_cost);
+REXCVAR_DECLARE(int32_t, ao2_versus_respawn_step);
 
 // The replay of one record (mouse_aim.cpp hooks it).
 extern "C" REX_FUNC(sub_82A0EEC8);
@@ -214,7 +241,7 @@ namespace
   constexpr float kHealRange = 3500.0f;   // a partner that lies this near is gone to and healed (it has ~20 s)
   constexpr float kHealReach = 110.0f;    // ... from this close (the game's heal: 120)
   constexpr float kJoinRange = 2500.0f;   // a partner this near waiting to step jump / pull up is gone to
-  constexpr float kJoinReach = 105.0f;    // ... this close (the game's join position: 110)
+  constexpr float kJoinReach = 80.0f;     // ... this close (the game's join position: 110, see kJoinNear)
   constexpr float kUseReach = 130.0f;     // a hostage or a charge is used (A) this close
   constexpr float kShootReach = 1000.0f;  // a depot to destroy is shot at from this near (in sight)
   constexpr float kUseFar = 320.0f;       // ... or held against it this close
@@ -231,7 +258,14 @@ namespace
   constexpr uint32_t kGiveFrames = 900;   // ... and gives up after so long
   constexpr uint32_t kGiveWait = 600;     // ... waits at the wall so long for the player to join
   constexpr uint32_t kLiftMemory = 1200;  // a partner that was the lifter in a volume: wants to lift there so long
+  constexpr uint32_t kReviveFrames = 880;   // AO2MPGame.Dead_Revive_Time (15 s) in lockstep frames, and a little
+  constexpr int32_t kGamePenalty = 10000;    // the game's respawn price (AO2MPGame.Score_Penalty_Respawn)
+  constexpr int32_t kRespawnReserve = 20000; // a respawn bought only with this much cash left after it
+  constexpr uint32_t kLiftPatience = 180; // ... unless it stands by the bot so long without lifting: it is lifted
+  constexpr float kJoinNear = 108.0f;     // by a partner to join: there up to this far (the game: under 110)
+  constexpr float kJoinNearZ = 48.0f;     // ... and this far in height (the game: under 50)
   constexpr uint32_t kPutDownBuy = 900;   // a hostage put down: no buying so long
+  constexpr uint32_t kTakeUpRetry = 50;   // a press to take up a hostage that did nothing: again after so long
   constexpr uint32_t kCarryStart = 150;   // taking up a hostage the character stands: no stuck check so long
   constexpr float kClearRange = 1500.0f;  // in its partner's line of fire this near...
   constexpr float kClearWidth = 55.0f;    // ... this near the line: steps aside
@@ -375,9 +409,42 @@ namespace
   bool g_have_template = false;
   bool g_in_frame = false; // a frame's records are being replayed
   bool g_bots_ran = false; // the bots' records of that frame went
+  bool g_rules_ran = false; // the match's rules were applied in that frame (versus_rules.cpp)
   bool g_injecting = false; // our own records are being replayed
   uint32_t g_stand_in = 0;  // the lobby player that stands in for the bot meanwhile (guest memory)
   int g_logged_records = 0;
+
+  // ---- The match's bot settings (see the top): what each id sent, and
+  // what the bots play by.
+  constexpr uint32_t kLobby = 0x831F3024;  // the Plasma lobby singleton
+  constexpr uint32_t kLobbyStarted = 4449; // byte: this machine's StartGame went through (the host's)
+  struct Sent
+  {
+    bool have = false;
+    bool host = false;
+    bool mine = false; // sent by this machine
+    ao2::versus::VersusSettings settings;
+  };
+  std::array<Sent, 4> g_sent_by{};
+  ao2::versus::VersusSettings g_settings; // what the bots play by
+  int g_settings_from = -1;            // the id whose settings they are; -1: the defaults
+  std::string g_sent_line;             // what this machine sent last in this match
+  std::mutex g_info_mutex;             // the menu's copy (UI thread)
+  ao2::versus::MatchSettingsInfo g_info;
+
+  void PublishInfo()
+  {
+    std::lock_guard lock(g_info_mutex);
+    g_info = {};
+    g_info.from = g_settings_from;
+    if (g_settings_from >= 0)
+    {
+      const Sent &s = g_sent_by[g_settings_from];
+      g_info.host = s.host;
+      g_info.mine = s.mine;
+      g_info.settings = s.settings;
+    }
+  }
 
   int g_button_keys[kButtonCount];
   int g_axis_keys[kAxisCount];
@@ -722,6 +789,10 @@ namespace
   };
   std::unordered_map<uint64_t, Fails> g_link_fails;
   std::unordered_map<int, Fails> g_point_fails;
+  // Links a bot carrying a hostage fell on (and put it down): drops the
+  // points' heights did not show (a ledge between two points of a slope,
+  // M01 Escort: four times in a row, ~1000 frames each). Kept for the match.
+  std::unordered_set<uint64_t> g_carry_falls;
   uint32_t g_nav_now = 0; // the frame (for kFailMemory)
   uint32_t g_last_block = 0; // what the last ClearLine that was not clear hit
   struct FailedLink
@@ -925,6 +996,7 @@ namespace
     g_part.clear();
     g_link_fails.clear();
     g_point_fails.clear();
+    g_carry_falls.clear();
     g_failed.clear();
     g_nav_ready = false;
 
@@ -1623,8 +1695,11 @@ namespace
   // falling, a character puts the hostage down (NormalFalling) and takes it
   // up again below (~335 frames in Somalia, the walk back to it with them:
   // ~1000 units of walking). A way round longer than that: down the drop.
-  constexpr float kCarryDrop = 100.0f;
+  // A fall of ~55 already puts it down (M01); a link a carrier fell on
+  // (g_carry_falls) costs kFellCost more: it is no way down, it leads back.
+  constexpr float kCarryDrop = 50.0f;
   constexpr float kDropCost = 1000.0f;
+  constexpr float kFellCost = 6000.0f;
   // The links and points the bots failed on are left out (kLinkFails,
   // kPointFails); with them no way there at all (a pocket whose way out they
   // were: in Afghanistan two bots at a choke cut ~200 points off for every
@@ -1694,6 +1769,10 @@ namespace
         if (no_drops && g_nodes[i].at.z - g_nodes[j].at.z > kCarryDrop)
         {
           n += kDropCost;
+        }
+        if (no_drops && g_carry_falls.count(LinkKey(i, j)))
+        {
+          n += kFellCost;
         }
         if (n < cost[j])
         {
@@ -1788,6 +1867,9 @@ namespace
     uint32_t next_probe = 0;
     uint32_t reload_until = 0, next_reload = 0;
     uint32_t next_respawn = 0;
+    uint32_t down_since = 0; // lying (versus "dead") since (0: up)
+    int respawns_paid = 0;   // respawns it bought in this match
+    int32_t cash_down = 0;   // its cash while up (to tell a bought respawn)
     uint32_t next_log = 0;
     Vec last_at;             // where it was the frame before
     uint32_t still = 0;      // frames it has not moved with the stick pushed
@@ -1798,6 +1880,7 @@ namespace
     uint32_t join_partner = 0, join_since = 0; // a partner waiting to lift or pull it, since
     uint32_t lift_volume = 0, lift_seen = 0;   // the step jump volume the partner was the lifter in, when
     bool join_waiting = false;                 // ... and it waits by it to be lifted (logged once)
+    uint32_t join_wait_since = 0;              // ... since (0: not)
     uint32_t coop_since = 0; // frame its step jump / pull up began (0: none)
     std::vector<int> reached; // path points got to since it last got nearer (a new one is progress)
     bool partner_logged = false;
@@ -1834,6 +1917,9 @@ namespace
     uint32_t menu_logged = 0;      // a menu it did not open (logged once a while)
     uint32_t kit_failed = 0;       // kits it could not take (bits): not tried again
     uint32_t objective_seen = 0; // a depot to destroy it sees from where it stands
+    Vec objective_aim;           // ... the point of it shot at
+    uint32_t depot_logged = 0;   // the depot whose aim was logged
+    bool depot_hits = false;     // ... and whether the line hit the depot itself
     // A depot out of its reach: the point it is shot at from (Vantage).
     uint32_t vantage_for = 0;      // the depot
     int vantage = -1;              // the point (-1: none found yet)
@@ -1956,7 +2042,7 @@ namespace
     float dyaw = std::remainder(want_yaw - yaw, 65536.0f);
     float dpitch = std::remainder(std::clamp(want_pitch, -kMaxPitch, kMaxPitch) - std::remainder(pitch, 65536.0f),
                                   65536.0f);
-    float step = float(REXCVAR_GET(ao2_versus_bots_turn)) * kUnitsPerDegree;
+    float step = float(g_settings.turn) * kUnitsPerDegree;
     float len = std::hypot(dyaw, dpitch);
     float k = len > step ? step / len : 1.0f;
     StoreF32(base, rotation + 4, yaw + dyaw * k);
@@ -2082,11 +2168,41 @@ namespace
     return {v.x, v.y, v.z + 15.0f};
   }
 
-  // Where a depot to destroy is shot at: a little above its origin (often
-  // at its foot).
-  Vec ObjectiveAim(const uint8_t *base, uint32_t actor)
+  // Where a depot to blow up is shot at: the middle of its collision
+  // component's bounds (PrimitiveComponent.Bounds: Origin, BoxExtent,
+  // SphereRadius) - an InterpActor's origin need not be on its mesh, and a
+  // line to it passed by touching nothing (taken for "in sight": the bots
+  // fired at the air). A little above the origin when there are none.
+  // `extent` (out): the bounds' half height (0: none).
+  Vec ObjectiveAim(const uint8_t *base, uint32_t actor, float *extent = nullptr)
   {
+    static int32_t collision = -2, bounds = -1;
+    if (collision == -2)
+    {
+      collision = ao2::ue3::PropertyOffset(base, "Actor", "CollisionComponent");
+      bounds = ao2::ue3::PropertyOffset(base, "PrimitiveComponent", "Bounds");
+      Logf("properties: Actor.CollisionComponent +%d, PrimitiveComponent.Bounds +%d\n", collision, bounds);
+    }
     Vec v = LoadVec(base, actor + kActorLocation);
+    uint32_t component = collision >= 0 ? LoadU32(base, actor + collision) : 0;
+    if (component && bounds >= 0)
+    {
+      Vec origin = LoadVec(base, component + bounds);
+      Vec box = LoadVec(base, component + bounds + 12);
+      float radius = LoadF32(base, component + bounds + 24);
+      if (radius > 1.0f && radius < 3000.0f && Dist3D(origin, v) < 3000.0f)
+      {
+        if (extent)
+        {
+          *extent = box.z;
+        }
+        return origin;
+      }
+    }
+    if (extent)
+    {
+      *extent = 0.0f;
+    }
     return {v.x, v.y, v.z + 40.0f};
   }
 
@@ -2277,7 +2393,7 @@ namespace
   {
     kObjAssassinate, // a character to kill (or, of the bot's own team, to guard)
     kObjHostage,     // a hostage to take (A by it; it is then dragged along)
-    kObjDetonate,    // a depot or cache to destroy (shot at)
+    kObjDetonate,    // a depot or cache to blow up (shot at)
     kObjControl,     // a place to hold
     kObjBuyZone,
     kObjEnemyTeam,   // an enemy shown on the map
@@ -3066,15 +3182,48 @@ namespace
                  DownState(base, pawn), false};
     if (me.down == 2)
     {
-      // Lies still until healed or up again; no paid respawn (the team's money is its score).
+      // Lies still until healed, up again, or a respawn bought: once one can
+      // be (kReviveFrames after it fell), with no partner up and near to
+      // heal it, and its cash covering the price and kRespawnReserve more.
       bot.target = 0;
       bot.path.clear();
       bot.cover = -1;
       bot.nade_step = 0;
       bot.still = 0;
       bot.stuck_check = 0;
+      bot.down_since = bot.down_since ? bot.down_since : frame;
+      const Props &lying = Properties(base);
+      uint32_t partner_pawn = lying.partner >= 0 ? LoadU32(base, pawn + lying.partner) : 0;
+      const Character *partner = partner_pawn ? FindCharacter(partner_pawn) : nullptr;
+      bool healer = partner && !partner->down && partner->team == me.team && Dist2D(partner->at, me.at) < kHealRange;
+      const ao2::versus::VersusSettings &rules = g_settings;
+      int32_t price = (rules.cost > 0 ? rules.cost : kGamePenalty) + rules.step * bot.respawns_paid;
+      int32_t cash = Cash(base, Buying(base), controller);
+      if (g_settings.buy && !healer && frame - bot.down_since > kReviveFrames && cash >= price + kRespawnReserve &&
+          frame >= bot.next_respawn)
+      {
+        bot.next_respawn = frame + 45;
+        in.buttons |= kA;
+        if (frame - bot.down_since < kReviveFrames + 50)
+        {
+          Logf("frame %u: bot %u buys a respawn for %d (cash %d, %s)\n", frame, id, price, cash,
+               !partner ? "no partner" : partner->down ? "its partner lies too" : "its partner is far");
+        }
+      }
       return in;
     }
+    if (bot.down_since)
+    {
+      // Up again: bought (the cash fell by the price) or healed / on its own.
+      int32_t price = (g_settings.cost > 0 ? g_settings.cost : kGamePenalty) + g_settings.step * bot.respawns_paid;
+      int32_t cash = Cash(base, Buying(base), controller);
+      if (bot.cash_down - cash >= price * 9 / 10)
+      {
+        ++bot.respawns_paid;
+      }
+      bot.down_since = 0;
+    }
+    bot.cash_down = Cash(base, Buying(base), controller);
     const Props &props = Properties(base);
     // Hit: its health fell.
     const CombatProps &combat = Combat(base);
@@ -3130,7 +3279,7 @@ namespace
     {
       Logf("frame %u: bot %u in %s for 300 frames\n", frame, id, state.c_str());
     }
-    if (REXCVAR_GET(ao2_versus_bots_infinite_ammo))
+    if (g_settings.ammo)
     {
       InfiniteAmmo(base, pawn);
     }
@@ -3300,12 +3449,12 @@ namespace
       return in;
     }
     bool target_near = bot.target && Dist2D(me.at, LoadVec(base, bot.target + kActorLocation)) < kBuyFightNear;
-    if (REXCVAR_GET(ao2_versus_bots_buy) && CanBuy(buy) && frame >= bot.next_buy && !Carried(base, pawn) &&
+    if (g_settings.buy && CanBuy(buy) && frame >= bot.next_buy && !Carried(base, pawn) &&
         (!bot.put_down_at || frame - bot.put_down_at > kPutDownBuy) &&
         !maneuvering && !target_near && (!bot.hurt_at || frame - bot.hurt_at > kHurtFrames))
     {
       int32_t cash = Cash(base, buy, controller);
-      int32_t budget = int32_t(double(std::max(cash, 0)) * std::clamp(REXCVAR_GET(ao2_versus_bots_buy_share), 0.0, 1.0));
+      int32_t budget = int32_t(double(std::max(cash, 0)) * g_settings.share);
       int equipped = int32_t(LoadU32(base, controller + buy.equipped));
       int kit = ChooseKit(base, buy, controller, budget, bot.kit_failed);
       int32_t kit_cost = kit >= 0 && !KitOwned(base, buy, controller, kit) ? KitPrice(base, buy, controller, kit) : 0;
@@ -3505,7 +3654,22 @@ namespace
       float speed = std::hypot(LoadF32(base, partner->pawn + kActorVelocity),
                                LoadF32(base, partner->pawn + kActorVelocity + 4));
       bool lifter = volume && volume == bot.lift_volume && frame - bot.lift_seen < kLiftMemory;
-      if (lifter && Dist3D(me.at, partner->at) < kGiveRange)
+      // Waited by it kLiftPatience and it does not lift again (or the bot
+      // got up the wall itself): it wants to be lifted now. One press of A
+      // made the player the lifter, and the bot only waited by it for the
+      // rest of kLiftMemory, never lifting it.
+      bool by_it = Dist3D(me.at, partner->at) < kGiveRange;
+      if (lifter && (me.at.z - partner->at.z > kOfferBelow ||
+                     (bot.join_wait_since && frame - bot.join_wait_since >= kLiftPatience && speed < 20.0f)))
+      {
+        Logf("frame %u: bot %u: its partner %08X does not lift again in %s: it is lifted\n", frame, id, partner->pawn,
+             ao2::ue3::ObjectName(base, volume).c_str());
+        bot.lift_volume = 0;
+        lifter = false;
+      }
+      bool beside = Dist2D(me.at, partner->at) < kGiveReach * 1.5f; // counted from when it got there
+      bot.join_wait_since = lifter && beside ? (bot.join_wait_since ? bot.join_wait_since : frame) : 0;
+      if (lifter && by_it)
       {
         if (bot.give_until)
         {
@@ -3860,7 +4024,7 @@ namespace
     if (frame >= bot.next_scan)
     {
       bot.next_scan = frame + kScanFrames;
-      float range = float(REXCVAR_GET(ao2_versus_bots_range));
+      float range = float(g_settings.range);
       uint32_t found = 0;
       bool body = false;
       bool keep = false;
@@ -3896,9 +4060,47 @@ namespace
       if (task == Task::kObjective && objective_type == kObjDetonate &&
           Dist3D(me.at, LoadVec(base, goal_actor + kActorLocation)) < kShootReach * 1.2f)
       {
-        Vec at = ObjectiveAim(base, goal_actor);
-        uint32_t hit = TraceHit(ctx, base, pawn, eye, at);
-        bot.objective_seen = !hit || hit == goal_actor ? goal_actor : 0;
+        float half = 0.0f;
+        Vec middle = ObjectiveAim(base, goal_actor, &half);
+        uint32_t clear_hit = ~0u;
+        Vec clear_at = middle;
+        for (float k : {0.0f, 0.5f, -0.4f, 0.8f})
+        {
+          Vec at{middle.x, middle.y, middle.z + half * k};
+          uint32_t hit = TraceHit(ctx, base, pawn, eye, at);
+          if (hit == goal_actor)
+          {
+            bot.objective_seen = goal_actor;
+            bot.objective_aim = at;
+            break;
+          }
+          if (!hit && clear_hit == ~0u)
+          {
+            clear_hit = 0;
+            clear_at = at;
+          }
+          if (!half)
+          {
+            break;
+          }
+        }
+        if (!bot.objective_seen && clear_hit == 0)
+        {
+          bot.objective_seen = goal_actor;
+          bot.objective_aim = clear_at;
+        }
+        bool hits = bot.objective_seen && clear_hit != 0;
+        if (bot.objective_seen && (bot.depot_logged != goal_actor || bot.depot_hits != hits))
+        {
+          bot.depot_logged = goal_actor;
+          bot.depot_hits = hits;
+          Logf("frame %u: bot %u aims at %08X (%s) at %.0f %.0f %.0f (origin %.0f %.0f %.0f, bounds half height "
+               "%.0f): %s\n",
+               frame, id, goal_actor, ao2::ue3::ObjectName(base, goal_actor).c_str(), bot.objective_aim.x,
+               bot.objective_aim.y, bot.objective_aim.z, LoadVec(base, goal_actor + kActorLocation).x,
+               LoadVec(base, goal_actor + kActorLocation).y, LoadVec(base, goal_actor + kActorLocation).z, half,
+               hits ? "a bullet's line hits it" : "a bullet's line touches nothing there");
+        }
       }
       if (found != bot.target)
       {
@@ -3969,7 +4171,7 @@ namespace
       const Character *by = nullptr;
       for (const Character &c : g_characters)
       {
-        if (Enemy(me, c) && Dist2D(me.at, c.at) < float(REXCVAR_GET(ao2_versus_bots_range)) &&
+        if (Enemy(me, c) && Dist2D(me.at, c.at) < float(g_settings.range) &&
             (!by || Dist2D(me.at, c.at) < Dist2D(me.at, by->at)))
         {
           by = &c;
@@ -4011,6 +4213,18 @@ namespace
     {
       Logf("frame %u: bot %u %s %08X, in %s\n", frame, id, now ? "carries" : "puts down", now ? now : bot.carried,
            state.c_str());
+      if (!now && state.find("Falling") != std::string::npos && bot.path_at > 0 && bot.path_at < bot.path.size())
+      {
+        // Fell with it: the link it walked (and the one before, the fall
+        // may have begun there) is no way for a carrier.
+        for (size_t k = bot.path_at; k >= 1 && k + 2 > bot.path_at; --k)
+        {
+          g_carry_falls.insert(LinkKey(bot.path[k - 1], bot.path[k]));
+        }
+        Logf("frame %u: bot %u fell carrying it: link %d -> %d left out of carriers' paths\n", frame, id,
+             bot.path[bot.path_at - 1], bot.path[bot.path_at]);
+        bot.force_path = true;
+      }
       if (!now)
       {
         bot.put_down_at = frame;
@@ -4124,9 +4338,15 @@ namespace
     bool there = have_goal && goal_d < arrive && std::fabs(me.at.z - goal_at.z) < arrive_z;
     // By a partner to join or lift it stays there a little farther off too
     // (at the edge, by turns there pressing A and away aiming, it did
-    // neither).
+    // neither). To join, only within the game's join position
+    // (AO2Character.IsInStepJumpJoinPosition: under 110 away, 50 in
+    // height): it stood 120-150 off pressing A while the lifter walked to
+    // the wall (Lifter_Positioning), and the lift began at the third try.
     bool coop_task = task == Task::kJoin || task == Task::kGive;
-    if (coop_task && bot.coop_there && goal_d < arrive + 50.0f && std::fabs(me.at.z - goal_at.z) < arrive_z + 30.0f)
+    bool join_reach = task != Task::kJoin || arrive_z > kJoinNearZ ||
+                      (goal_d < kJoinNear && std::fabs(me.at.z - goal_at.z) < kJoinNearZ);
+    if (coop_task && bot.coop_there && join_reach && goal_d < arrive + 50.0f &&
+        std::fabs(me.at.z - goal_at.z) < arrive_z + 30.0f)
     {
       there = true;
     }
@@ -4208,14 +4428,19 @@ namespace
       else if (use_goal)
       {
         // A hostage: one press, then the time to take it up (another press
-        // meanwhile put it down again).
-        if (frame >= bot.next_use)
+        // meanwhile put it down again; it is carried ~5 frames after the
+        // press, so a press that did nothing is tried again after
+        // kTakeUpRetry). Not while the bot still falls or gets up: a press
+        // then does nothing (after a fall it took 3 presses, 300 frames).
+        bool settling = state.find("Falling") != std::string::npos || state.find("Unconscious") != std::string::npos ||
+                        frame - bot.put_down_at < 20;
+        if (frame >= bot.next_use && !settling)
         {
-          bot.next_use = frame + 150;
+          bot.next_use = frame + kTakeUpRetry;
           Logf("frame %u: bot %u takes up %08X (%s), %.0f away, in %s\n", frame, id, goal_actor,
                ao2::ue3::ObjectName(base, goal_actor).c_str(), goal_d, state.c_str());
         }
-        in.buttons |= frame - (bot.next_use - 150) < 3 ? kA : 0;
+        in.buttons |= !settling && frame - (bot.next_use - kTakeUpRetry) < 3 ? kA : 0;
       }
       else
       {
@@ -4314,7 +4539,7 @@ namespace
       // A target carrying a hostage is shot in the head, over the hostage.
       uint32_t carried = bot.target ? Carried(base, bot.target) : 0;
       uint32_t own_hostage = Carried(base, pawn);
-      Vec at = shoot_objective                ? ObjectiveAim(base, goal_actor)
+      Vec at = shoot_objective                ? bot.objective_aim
                : bot.target_body && !carried ? Body(base, bot.target)
                                               : Head(base, bot.target);
       if (shoot_objective)
@@ -4327,7 +4552,7 @@ namespace
                ao2::ue3::ObjectName(base, goal_actor).c_str(), goal_d);
         }
       }
-      float miss = float(REXCVAR_GET(ao2_versus_bots_miss)) * kUnitsPerDegree;
+      float miss = float(g_settings.miss) * kUnitsPerDegree * (shoot_objective ? 0.35f : 1.0f);
       uint32_t step = frame / kWanderFrames;
       float k = float(frame % kWanderFrames) / float(kWanderFrames);
       auto wander = [&](uint32_t seed) {
@@ -4349,7 +4574,7 @@ namespace
       }
       bool burst = (frame + id * 13) % kBurstFrames < kBurstFrames * 3 / 5;
       bool looked = shoot_objective ||
-                    frame - bot.target_since >= uint32_t(std::max(0, REXCVAR_GET(ao2_versus_bots_reaction)));
+                    frame - bot.target_since >= uint32_t(g_settings.reaction);
       if (on && burst && looked && frame % 9 < 6 && ClearShot(eye, at, carried, own_hostage))
       {
         in.buttons |= kRT; // pulled 6 frames of 9: single shot weapons fire again too
@@ -4945,11 +5170,13 @@ namespace
       }
     }
 
-    // The weapon for the threat's distance (the primary with none); not
-    // while it throws or reloads, nor over a weapon picked up (slot 4).
+    // The weapon for the threat's distance (the depot's while it shoots at
+    // one: a shotgun did nothing at 900; the primary with none); not while
+    // it throws or reloads, nor over a weapon picked up (slot 4).
     if (!bot.nade_step && frame >= bot.reload_until && !maneuvering && !carrying)
     {
-      int want = bot.threat ? SlotFor(base, inventory, Dist2D(me.at, bot.threat_at))
+      int want = bot.threat         ? SlotFor(base, inventory, Dist2D(me.at, bot.threat_at))
+                 : shoot_objective  ? SlotFor(base, inventory, goal_d)
                  : inventory.slot[0] ? 0
                                      : SlotFor(base, inventory, 1000.0f);
       if (want != bot.slot_want)
@@ -5096,7 +5323,7 @@ namespace
   void RunBots(PPCContext &ctx, uint8_t *base)
   {
     uint32_t modes = LoadU32(base, kGameModes);
-    if (!REXCVAR_GET(ao2_versus_bots) || !g_places || !g_have_template || !modes || !LoadU32(base, modes + 48) ||
+    if (!g_settings.on || !g_places || !g_have_template || !modes || !LoadU32(base, modes + 48) ||
         !FindKeys(base))
     {
       return;
@@ -5157,14 +5384,117 @@ namespace ao2::versus
     g_link_fails.clear();
     g_point_fails.clear();
     g_nav_ready = false;
+    g_sent_by = {};
+    g_settings = {};
+    g_settings_from = -1;
+    g_sent_line.clear();
+    PublishInfo();
     if (mask)
     {
       Logf("empty places: %X%s\n", mask, REXCVAR_GET(ao2_versus_bots) ? ", bots play them" : "");
     }
   }
 
+  void PollSettings(const uint8_t *base)
+  {
+    uint32_t modes = LoadU32(base, kGameModes);
+    if (!modes || !LoadU32(base, modes + 48) || LoadU32(base, modes + 52))
+    {
+      return; // not a versus match (or a ranked one: no bots there)
+    }
+    uint32_t lobby = LoadU32(base, kLobby);
+    bool host = (lobby && base[lobby + kLobbyStarted]) || REXCVAR_GET(ao2_coop_server);
+    auto hundredths = [](double v, double lo, double hi) { return int(std::lround(std::clamp(v, lo, hi) * 100.0)); };
+    char line[160];
+    std::snprintf(line, sizeof(line), "vbots %d %d %d %d %d %d %d %d %d %d %d %d %d %d", host ? 1 : 0,
+                  REXCVAR_GET(ao2_versus_bots) ? 1 : 0, hundredths(REXCVAR_GET(ao2_versus_bots_miss), 0.0, 20.0),
+                  std::clamp(REXCVAR_GET(ao2_versus_bots_reaction), 0, 300),
+                  hundredths(REXCVAR_GET(ao2_versus_bots_turn), 0.5, 45.0),
+                  int(std::lround(std::clamp(REXCVAR_GET(ao2_versus_bots_range), 500.0, 20000.0))),
+                  REXCVAR_GET(ao2_versus_bots_buy) ? 1 : 0, hundredths(REXCVAR_GET(ao2_versus_bots_buy_share), 0.0, 1.0),
+                  REXCVAR_GET(ao2_versus_bots_infinite_ammo) ? 1 : 0,
+                  std::clamp(REXCVAR_GET(ao2_versus_round_minutes), 0, 120),
+                  std::clamp(REXCVAR_GET(ao2_versus_cash_goal), 0, 100000000) / 1000,
+                  std::clamp(REXCVAR_GET(ao2_versus_friendly_fire), 0, 2),
+                  std::clamp(REXCVAR_GET(ao2_versus_respawn_cost), 0, 10000000) / 100,
+                  std::clamp(REXCVAR_GET(ao2_versus_respawn_step), 0, 10000000) / 100);
+    if (g_sent_line != line)
+    {
+      g_sent_line = line;
+      ao2::coop::cmd::Send(line);
+    }
+  }
+
+  void ReceiveSettings(uint32_t controller_id, const char *args, bool mine)
+  {
+    int host, on, miss, reaction, turn, range, buy, share, ammo, minutes = 0, goal = 0, ff = 0, cost = 0, step = 0;
+    int n = controller_id < 4 ? std::sscanf(args, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d", &host, &on, &miss,
+                                            &reaction, &turn, &range, &buy, &share, &ammo, &minutes, &goal, &ff,
+                                            &cost, &step)
+                              : 0;
+    if (n != 9 && n != 14)
+    {
+      Logf("bad settings from %u: %s\n", controller_id, args);
+      return;
+    }
+    Sent &s = g_sent_by[controller_id];
+    s.have = true;
+    s.host = host != 0;
+    s.mine = mine;
+    s.settings.on = on != 0;
+    s.settings.miss = std::clamp(miss, 0, 2000) / 100.0;
+    s.settings.reaction = std::clamp(reaction, 0, 300);
+    s.settings.turn = std::clamp(turn, 50, 4500) / 100.0;
+    s.settings.range = double(std::clamp(range, 500, 20000));
+    s.settings.buy = buy != 0;
+    s.settings.share = std::clamp(share, 0, 100) / 100.0;
+    s.settings.ammo = ammo != 0;
+    s.settings.minutes = std::clamp(minutes, 0, 120);
+    s.settings.goal = std::clamp(goal, 0, 100000) * 1000;
+    s.settings.ff = std::clamp(ff, 0, 2);
+    s.settings.cost = std::clamp(cost, 0, 100000) * 100;
+    s.settings.step = std::clamp(step, 0, 100000) * 100;
+    int from = -1;
+    for (int pass = 0; pass < 2 && from < 0; ++pass)
+    {
+      for (int id = 0; id < 4 && from < 0; ++id)
+      {
+        from = g_sent_by[id].have && (pass || g_sent_by[id].host) ? id : -1;
+      }
+    }
+    g_settings_from = from;
+    g_settings = from >= 0 ? g_sent_by[from].settings : ao2::versus::VersusSettings{};
+    Logf("settings of %u%s: %s; the bots play by %d's: %s, miss %.2f, reaction %d, turn %.2f, range %.0f, buy %d "
+         "(share %.2f), infinite ammo %d; round %d min, cash goal %d, friendly fire %d, respawn %d + %d\n",
+         controller_id, host ? " (host)" : "", args, from, g_settings.on ? "on" : "off", g_settings.miss,
+         g_settings.reaction, g_settings.turn, g_settings.range, g_settings.buy ? 1 : 0, g_settings.share,
+         g_settings.ammo ? 1 : 0, g_settings.minutes, g_settings.goal, g_settings.ff, g_settings.cost,
+         g_settings.step);
+    PublishInfo();
+  }
+
+  const VersusSettings &PlayedSettings()
+  {
+    return g_settings;
+  }
+
+  MatchSettingsInfo MatchSettings()
+  {
+    std::lock_guard lock(g_info_mutex);
+    return g_info;
+  }
+
   void AfterReplayedRecord(PPCContext &ctx, uint8_t *base)
   {
+    if (g_in_frame && !g_rules_ran && !g_injecting)
+    {
+      g_rules_ran = true;
+      uint32_t modes = LoadU32(base, kGameModes);
+      if (modes && LoadU32(base, modes + 48) && !LoadU32(base, modes + 52))
+      {
+        ao2::versus::rules::Frame(ctx, base);
+      }
+    }
     if (g_in_frame && !g_bots_ran && !g_injecting && g_places && g_have_template)
     {
       g_bots_ran = true;
@@ -5228,6 +5558,7 @@ extern "C" REX_FUNC(sub_82A26290)
 {
   g_in_frame = true;
   g_bots_ran = false;
+  g_rules_ran = false;
   __imp__sub_82A26290(ctx, base);
   g_in_frame = false;
 }

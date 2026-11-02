@@ -128,6 +128,42 @@ Here a presence service in every game (UDP 18491, text packets
 
 `invite.log` (with `log_to_files`) shows players found, invites and answers.
 
+### Over Steam (`src/steam_net.cpp`)
+
+With the Steam client running (`ao2_steam`, on by default) the game signs in
+as Spacewar (app 480) and needs no VPN or forwarded ports:
+
+- Friends running the game (rich presence `ao2`) show in the Players window
+  (address "Steam") and are invited as on a LAN.
+- A game a player hosts becomes a Steam lobby (public; friends only for a
+  private game; 2 places, 4 in versus) with `ao2`=1, name, build, mode and
+  player count. The Players window's **STEAM GAMES** lists them worldwide;
+  **JOIN** (or Steam's "Join game" / a lobby invite from **INVITE STEAM
+  FRIENDS**) enters the lobby, the host's game invites whoever enters, and the
+  joiner's game accepts that invite by itself.
+- The list shows host, mission, mode (co-op / Warzone / Bounties /
+  Extraction), free places and ping, the lowest ping first: the host puts its
+  ping location (`ISteamNetworkingUtils`) in the lobby as `loc`, the others
+  estimate the ping from it without connecting.
+- **Public game** (the game's quick match, `GLST` with `FILTER-NOT-PRIVATE=1`)
+  that finds nothing on the PC's own server asks Steam
+  (`ea::SetQuickMatchHook` → `steam::QuickMatch`): the open lobby of the same
+  `B-U-Mode` and build with the lowest ping is joined and its invite accepted
+  (the list request is left unanswered, the game goes on through the invite);
+  with none within ~15 s the list is answered empty and the game hosts.
+- Traffic: every Steam player gets an address in 127.64.0.0/10 made from its
+  SteamID, the same on every PC. For each known player the bridge binds that
+  address on UDP 1000, UDP 18491 and TCP 18480 / 18485 / 13505 (next to the
+  game's own sockets on 0.0.0.0), carries UDP as ISteamNetworkingMessages
+  (4-byte header: source and destination port) and each TCP connection as a
+  P2P connection on the same virtual port, and on the far side passes it on
+  from the sender's address to the PC's own virtual address. The lobby
+  server and the invites treat these addresses as other PCs, not loopback.
+
+`steam_api64.dll` is linked to load late: without it (or without Steam) the
+game plays as before. Built only when `steamworks/sdk` holds the Steamworks
+SDK. `steam.log` shows peers, lobbies and tunnels.
+
 ### Automatic role selection (launcher)
 
 When Play is pressed the launcher broadcasts a query on UDP 18490. If a host

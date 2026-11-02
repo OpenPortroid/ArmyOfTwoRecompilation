@@ -56,6 +56,12 @@ namespace ao2::gpu::overlay
   // The drawer for an ImGuiDrawer (UI thread).
   std::unique_ptr<rex::ui::ImmediateDrawer> CreateImmediateDrawer(Layer layer);
 
+  // Any thread: how much the game's picture under the overlay is blurred
+  // (0 none .. 1 full; the F1 menu's glass look, animated with it). The
+  // renderer reads it at each present.
+  void SetBackdropBlur(float amount);
+  float BackdropBlur();
+
   // Called at each present (GPU thread); must be cheap and not block.
   void SetFrameRequest(void (*request)());
   // Nothing to draw in `layer` until its next recorded frame.

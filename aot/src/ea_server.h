@@ -40,6 +40,19 @@ namespace ao2::ea
     bool is_private = false;
     int players = 0;
     bool playgroup = false; // TYPE=P: a versus party (Custom Match), joined as a playgroup
+    int max_players = 2;    // MAX-PLAYERS (4: versus)
+    std::string map;        // B-U-Map (versus M01_map_world..., "Any"; co-op its level)
+    int game_type = -1;     // B-U-GameType (versus: 0 Warzone, 1 Bounties, 2 Extraction)
+    std::string mode;       // B-U-Mode (what a quick match filters on: FILTER-ATTR-U-Mode)
   };
   bool FindHostedGame(const std::string &host_name, HostedGame *out);
+
+  // A public quick match (GLST with FILTER-NOT-PRIVATE=1) of this machine's
+  // own game that found no game on this server: `hook(mode)` may find one
+  // elsewhere (steam_net.cpp: the Steam lobby with the lowest ping) and
+  // have the game join it through an invite. It blocks until then: true
+  // when the game was sent there (the list is not answered: the game goes
+  // on through the invite), false to answer "no games" (the game hosts).
+  using QuickMatchHook = bool (*)(const std::string &mode);
+  void SetQuickMatchHook(QuickMatchHook hook);
 } // namespace ao2::ea

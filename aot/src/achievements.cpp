@@ -1101,7 +1101,10 @@ namespace ao2::ach
     }
     if (appearing || !tab)
     {
+      // Built again (the list may have changed), scrolled where it was.
+      float scroll = tab ? tab->scroll_target : 0.0f;
       tab = std::make_unique<AchievementsMenu>(ks->achievements().ListAchievements());
+      tab->scroll = tab->scroll_target = scroll;
     }
     tab->Draw(min, max);
   }

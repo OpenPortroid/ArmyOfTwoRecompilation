@@ -18,6 +18,8 @@ New-Item -ItemType Directory -Force $Out | Out-Null
 foreach ($f in "armyoftworecomp.exe", "rexruntime.dll", "ao2_lobby_server.exe", "gamecontrollerdb.txt") {
   Copy-Item "$build\$f" $Out -Force
 }
+# Steam (src/steam_net.cpp), when the build has it.
+if (Test-Path "$build\steam_api64.dll") { Copy-Item "$build\steam_api64.dll" $Out -Force }
 foreach ($f in "vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "msvcp140_1.dll", "msvcp140_2.dll",
                 "msvcp140_atomic_wait.dll", "concrt140.dll") {
   Copy-Item "$($crt.FullName)\$f" $Out -Force

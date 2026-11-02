@@ -20,10 +20,22 @@
 //
 // Co-op (not the multiplayer mode), ranked matches and a lobby with the
 // count already taken from +2788 (+5) keep the game's rule.
+//
+// Teams: the travel URL gives each id its team (?SimControllerId0=0
+// ?SimControllerId1=0 ?SimControllerId2=1 ?SimControllerId3=1), and the ready
+// room swaps a player's team only with one of the other team who wants it
+// too (AO2PlayerController.MPTeamSwap: the Plasma player's WantsToSwapTeam):
+// with bots in the other team's places nobody can come over. To find the
+// lobby player's fields for that, versus_lobby.log dumps every player of the
+// slots (their first 96 bytes) whenever one changes, in the ready room.
+#include "log_files.h"
 #include "versus_bots.h"
+#include "versus_rules.h"
 
+#include <array>
 #include <bit>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 
 #include <rex/cvar.h>
@@ -96,11 +108,53 @@ namespace
   }
 } // namespace
 
+namespace
+{
+  // The lobby's players, dumped when any of them changes (see the top).
+  constexpr uint32_t kDumpBytes = 96;
+  std::array<std::array<uint8_t, kDumpBytes>, 4> g_dumped{};
+  std::array<uint32_t, 4> g_dumped_at{};
+
+  void DumpPlayers(const uint8_t *base, uint32_t lobby)
+  {
+    static FILE *log = ao2::OpenLogFile("versus_lobby.log");
+    uint32_t list = lobby ? LoadU32(base, lobby + kPlayers) : 0;
+    if (!log || !list)
+    {
+      return;
+    }
+    for (uint32_t slot = 2; slot <= 5; ++slot)
+    {
+      uint32_t i = slot - 2;
+      uint32_t player = LoadU32(base, list + 4 * slot);
+      std::array<uint8_t, kDumpBytes> now{};
+      if (player)
+      {
+        std::memcpy(now.data(), base + player, kDumpBytes);
+      }
+      if (player == g_dumped_at[i] && now == g_dumped[i])
+      {
+        continue;
+      }
+      g_dumped_at[i] = player;
+      g_dumped[i] = now;
+      std::fprintf(log, "slot %u: player %08X", slot, player);
+      for (uint32_t b = 0; player && b < kDumpBytes; b += 4)
+      {
+        std::fprintf(log, "%s%08X", b % 32 ? " " : "\n  ", LoadU32(base, player + b));
+      }
+      std::fprintf(log, "\n");
+      std::fflush(log);
+    }
+  }
+} // namespace
+
 // The lobby's "all players ready" (r3 = lobby, returns r3 = bool).
 extern "C" REX_FUNC(__imp__sub_82A0D1B8);
 extern "C" REX_FUNC(sub_82A0D1B8)
 {
   uint32_t lobby = ctx.r3.u32;
+  DumpPlayers(base, lobby);
   __imp__sub_82A0D1B8(ctx, base);
   int present = 0;
   if (!ctx.r3.u32 && ShortMatchReady(base, lobby, present))
@@ -320,6 +374,7 @@ extern "C" REX_FUNC(sub_82A153C0)
   uint32_t lobby = ctx.r3.u32;
   __imp__sub_82A153C0(ctx, base);
   ao2::versus::SetEmptyPlaces(0);
+  ao2::versus::rules::Reset(base); // the respawn price back to the game's, on every machine
   uint32_t modes = LoadU32(base, kGameModes);
   uint32_t controller = lobby ? LoadU32(base, lobby + kController) : 0;
   uint32_t list = lobby ? LoadU32(base, lobby + kPlayers) : 0;

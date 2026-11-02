@@ -14,6 +14,7 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cfloat>
 #include <cmath>
 #include <vector>
@@ -258,12 +259,63 @@ namespace ao2::ui
     dl->AddLine(ImVec2(c.x - h, c.y + h), ImVec2(c.x + h, c.y - h), col, thickness);
   }
 
+  namespace
+  {
+    std::atomic<bool> g_glass{false};
+  } // namespace
+
+  void SetGlass(bool on)
+  {
+    g_glass = on;
+  }
+
+  bool Glass()
+  {
+    return g_glass;
+  }
+
+  float Round(float px)
+  {
+    return g_glass ? px * Scale() : 0.0f;
+  }
+
+  void Card(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 fill)
+  {
+    dl->AddRectFilled(min, max, fill, Round(10.0f));
+  }
+
+  void Frame(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col, float thickness)
+  {
+    dl->AddRect(min, max, col, Round(10.0f), ImDrawFlags_None, thickness);
+  }
+
+  void Bar(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col)
+  {
+    float s = Scale();
+    if (!g_glass)
+    {
+      dl->AddRectFilled(min, ImVec2(min.x + 2.0f * s, max.y), col);
+      return;
+    }
+    float inset = std::min(12.0f * s, (max.y - min.y) * 0.3f);
+    dl->AddRectFilled(ImVec2(min.x + 5.0f * s, min.y + inset), ImVec2(min.x + 8.0f * s, max.y - inset), col,
+                      1.5f * s);
+  }
+
   float KeyCap(ImDrawList *dl, ImVec2 pos, float height, const char *key, float alpha)
   {
     float s = Scale();
     ImVec2 ts = CapsSize(FontKind::kLabel, key);
     float w = std::max(height, ts.x + height * 0.8f);
     ImVec2 max(pos.x + w, pos.y + height);
+    if (g_glass)
+    {
+      dl->AddRectFilled(pos, max, Fade(kWhite, 0.10f * alpha), 6.0f * s);
+      dl->AddRect(pos, max, Fade(kWhite, 0.28f * alpha), 6.0f * s, ImDrawFlags_None, 1.0f * s);
+      Caps(dl, FontKind::kLabel, ImVec2(pos.x + (w - ts.x) * 0.5f, pos.y + (height - ts.y) * 0.5f),
+           Fade(kText, alpha), key);
+      return w;
+    }
     dl->AddRect(pos, max, Fade(kAccent, 0.47f * alpha), 0.0f, ImDrawFlags_None, 1.0f * s);
     dl->AddLine(ImVec2(pos.x + 1.0f * s, max.y + 0.5f * s), ImVec2(max.x - 1.0f * s, max.y + 0.5f * s),
                 Fade(kAccent, 0.47f * alpha), 1.0f * s);
@@ -295,6 +347,31 @@ namespace ao2::ui
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImVec2 min = pos, max(pos.x + size.x, pos.y + size.y);
     ImU32 text;
+    if (g_glass)
+    {
+      // Glass: a pill; primary white, the rest a light wash with a frame.
+      float r = size.y * 0.5f;
+      if (!enabled)
+      {
+        dl->AddRectFilled(min, max, Fade(kWhite, 0.05f * alpha), r);
+        text = Fade(kMuted, 0.7f * alpha);
+      }
+      else if (style == ButtonStyle::kPrimary)
+      {
+        dl->AddRectFilled(min, max, Fade(kWhite, (held ? 0.78f : 0.88f + 0.10f * h) * alpha), r);
+        text = Fade(kInk, alpha);
+      }
+      else
+      {
+        ImU32 frame = style == ButtonStyle::kDanger ? kRed : kWhite;
+        dl->AddRectFilled(min, max, Fade(kWhite, ((held ? 0.20f : 0.07f) + 0.08f * h) * alpha), r);
+        dl->AddRect(min, max, Fade(frame, (0.30f + 0.30f * h) * alpha), r, ImDrawFlags_None, 1.0f * s);
+        text = Fade(Mix(kText, kAccentLight, h), alpha);
+      }
+      ImVec2 ts = CapsSize(FontKind::kLabel, label);
+      Caps(dl, FontKind::kLabel, ImVec2(min.x + (size.x - ts.x) * 0.5f, min.y + (size.y - ts.y) * 0.5f), text, label);
+      return clicked;
+    }
     if (!enabled)
     {
       dl->AddRectFilled(min, max, Fade(kWhite, 0.05f * alpha));

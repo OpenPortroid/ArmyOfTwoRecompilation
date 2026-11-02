@@ -1,0 +1,91 @@
+// steam_net.h - Online play over Steam (Spacewar, app 480): lobbies, invites
+// and all the game's traffic through Steam's relays (steam_net.cpp).
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace ao2::steam
+{
+  // A Steam player's address on this PC's virtual LAN: 127.64.0.0/10, the
+  // same for that player on every PC (network order, as in sockaddr_in).
+  // Inline: the lobby server (ea_server.cpp) is built without Steam.
+  inline bool IsVirtual(uint32_t ip)
+  {
+    return (ip & 0xFF) == 127 && ((ip >> 8) & 0xC0) == 0x40;
+  }
+
+  // Starts Steam (ao2_steam) and its thread. Call once at startup, after
+  // ao2::invite::Start. Without the Steam client nothing happens.
+  void Start();
+
+  // Whether Steam runs (signed in), and as whom.
+  bool Running();
+  std::string PersonaName();
+
+  // For the server list (translated): a lobby's mission and mode.
+  std::string MissionName(const std::string &map, bool versus);
+  const char *ModeName(bool versus, int game_type);
+
+  // The Steam players this game knows (friends in the game, lobby members,
+  // whoever reached it): their virtual addresses, for the presence service's
+  // announcements.
+  std::vector<uint32_t> PeerAddresses();
+
+  // From the presence service (every announcement): the lobby game this
+  // machine hosts, or none. A hosted game gets a Steam lobby (the server
+  // list, friends' "Join game"); a player entering it is invited
+  // (ao2::invite::InviteAddress).
+  struct Hosting
+  {
+    bool on = false;
+    bool is_private = false;
+    bool versus = false;
+    bool in_game = false; // the match runs (no joining it)
+    int players = 1;
+    int max = 2;
+    std::string name;
+    std::string build;
+    std::string map;    // ea::HostedGame map / game_type / mode
+    int game_type = -1;
+    std::string mode;
+  };
+  void SetHosting(const Hosting &hosting);
+
+  // An invite from `ip` comes from a lobby this player chose to join (the
+  // list's JOIN, a friend's "Join game"): accepted without asking. Once.
+  bool TakeAutoAccept(uint32_t ip);
+
+  // The server list (Steam lobbies of this game, worldwide), the lowest
+  // ping first.
+  struct Lobby
+  {
+    uint64_t id = 0;
+    std::string name;
+    std::string build;
+    std::string map;
+    int game_type = -1;
+    bool versus = false;
+    bool is_private = false;
+    bool in_game = false;
+    bool joined = false; // this player's lobby (hosted or joined)
+    bool own = false;    // ... the one it hosts
+    int players = 0;
+    int max = 0;
+    int ping = -1; // ms, estimated from the host's ping location (-1: unknown)
+  };
+  void RefreshLobbies();
+  bool Refreshing();
+  std::vector<Lobby> Lobbies();
+  void JoinLobby(uint64_t id);
+
+  // Steam's invite dialog for this player's lobby (none: false).
+  bool InviteFriends();
+
+  // The game's public quick match found nothing on this PC's server
+  // (ea::SetQuickMatchHook): the open Steam lobby of the same mode and build
+  // with the lowest ping is joined; true once its invite was accepted, false
+  // (at once, or after ~15 s) when there is none or it did not work out.
+  bool QuickMatch(const std::string &mode);
+} // namespace ao2::steam

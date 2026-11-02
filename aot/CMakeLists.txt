@@ -80,6 +80,8 @@ set(ARMYOFTWORECOMP_SOURCES
     src/aim_assist.cpp
     src/versus_bots.cpp
     src/versus_lobby.cpp
+    src/versus_rules.cpp
+    src/steam_net.cpp
     src/debug_menu.cpp
     src/dlc_folder.cpp
     src/perf_overlay.cpp
@@ -173,6 +175,24 @@ endif()
 
 if(WIN32)
     target_link_libraries(armyoftworecomp PRIVATE d3d12 dxgi d3dcompiler ws2_32 iphlpapi synchronization dbghelp pdh gdi32 winmm)
+endif()
+
+# Online play over Steam (src/steam_net.cpp) with the Steamworks SDK in
+# steamworks/sdk (not in the repository); without it the game is built
+# without Steam. steam_api64.dll is loaded late: the game starts without it.
+set(AO2_STEAMWORKS_SDK "${CMAKE_CURRENT_SOURCE_DIR}/../steamworks/sdk" CACHE PATH "Steamworks SDK folder")
+if(WIN32 AND EXISTS "${AO2_STEAMWORKS_SDK}/public/steam/steam_api.h")
+    message(STATUS "Steamworks SDK: ${AO2_STEAMWORKS_SDK}")
+    set(AO2_STEAM_BIN "${AO2_STEAMWORKS_SDK}/redistributable_bin/win64")
+    target_include_directories(armyoftworecomp PRIVATE "${AO2_STEAMWORKS_SDK}/public")
+    target_compile_definitions(armyoftworecomp PRIVATE AO2_STEAM)
+    target_link_libraries(armyoftworecomp PRIVATE "${AO2_STEAM_BIN}/steam_api64.lib" delayimp)
+    target_link_options(armyoftworecomp PRIVATE "LINKER:/DELAYLOAD:steam_api64.dll")
+    add_custom_command(TARGET armyoftworecomp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${AO2_STEAM_BIN}/steam_api64.dll"
+                "$<TARGET_FILE_DIR:armyoftworecomp>/steam_api64.dll"
+        COMMENT "Copying steam_api64.dll next to armyoftworecomp.exe")
 endif()
 
 # Standalone co-op lobby server (the server the game runs with

@@ -31,6 +31,12 @@
 //   passes the inviter and session to its listeners (vfunc +4), which raise
 //   the script's OnXbInviteAccepted.
 //
+// - Over Steam (steam_net.cpp) the Steam players are on a virtual LAN
+//   (127.64.0.0/10): announced to like the players in ao2_friends, invited
+//   the same way; a host's lobby game is a Steam lobby (the F1 menu's
+//   Servers tab), and a player entering it is invited (InviteAddress) and
+//   accepts by itself (steam::TakeAutoAccept).
+//
 // Packets: "AO2I1 <TYPE>\n" then "key=value\n" lines. HELLO / HERE (name,
 // hosting, game state, build), INVITE (id, name, xuid, session, xnaddr,
 // server, build), ACK (id), ANSWER (id, accepted).
@@ -47,6 +53,7 @@
 #include "debug_menu.h"
 #include "ea_server.h"
 #include "log_files.h"
+#include "steam_net.h"
 #include "ui_text.h"
 #include "ui_theme.h"
 
@@ -64,6 +71,7 @@
 #include <algorithm>
 #include <atomic>
 #include <bit>
+#include <cctype>
 #include <chrono>
 #include <cstdarg>
 #include <cstdint>
@@ -75,6 +83,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <span>
 #include <string>
 #include <thread>
 #include <utility>
@@ -161,9 +170,10 @@ namespace
     return buf;
   }
 
+  // This PC (a Steam player's virtual address is another PC).
   bool IsLoopback(uint32_t ip)
   {
-    return (ntohl(ip) >> 24) == 127;
+    return (ntohl(ip) >> 24) == 127 && !ao2::steam::IsVirtual(ip);
   }
 
   uint16_t Port()
@@ -643,6 +653,10 @@ namespace
     {
       targets.push_back(a);
     }
+    for (uint32_t ip : ao2::steam::PeerAddresses())
+    {
+      targets.push_back({ip, Port()});
+    }
     {
       std::lock_guard lock(st.mutex);
       for (const Address &a : st.manual)
@@ -660,6 +674,21 @@ namespace
     {
       SendTo(a, packet);
     }
+    // The game this player hosts, for its Steam lobby.
+    ao2::ea::HostedGame hosted;
+    ao2::steam::Hosting steam;
+    steam.on = MyHostedGame(&hosted);
+    steam.is_private = hosted.is_private;
+    steam.versus = hosted.playgroup || hosted.max_players > 2;
+    steam.in_game = OwnState() == "game";
+    steam.players = hosted.players;
+    steam.max = hosted.max_players;
+    steam.map = hosted.map;
+    steam.game_type = hosted.game_type;
+    steam.mode = hosted.mode;
+    steam.name = LocalName();
+    steam.build = BuildHash();
+    ao2::steam::SetHosting(steam);
     // Our game on a lobby server in another process (its presence answers).
     ao2::ea::HostedGame local;
     Address server;
@@ -675,6 +704,7 @@ namespace
 
   void ShowInviteNotice();
   void ShowAnswerNotice(const std::string &who, bool accepted);
+  void Answer(const ReceivedInvite &inv, bool accept);
 
   void OnPacket(const Address &from, const std::string &type, const Fields &f)
   {
@@ -760,7 +790,8 @@ namespace
       // The inviter's lobby server; a loopback address means the inviter's
       // own PC (unless both run on this one).
       Address server;
-      if (!ParseAddress(Get(f, "server"), &server) || (IsLoopback(server.ip) && !IsLoopback(from.ip)))
+      if (!ParseAddress(Get(f, "server"), &server) || (IsLoopback(server.ip) && !IsLoopback(from.ip)) ||
+          (ao2::steam::IsVirtual(from.ip) && !ao2::steam::IsVirtual(server.ip)))
       {
         server.ip = from.ip;
       }
@@ -790,6 +821,12 @@ namespace
       }
       Log("invite %u from %s (%s), session %016llx, server %s", id, inv.name.c_str(), IpString(from.ip).c_str(),
           (unsigned long long)inv.session_id, inv.server_ip.c_str());
+      if (ao2::steam::TakeAutoAccept(from.ip))
+      {
+        Log("its Steam lobby was joined here: accepted");
+        Answer(inv, true);
+        return;
+      }
       ShowInviteNotice();
     }
     else if (type == "ACK" || type == "ANSWER")
@@ -942,10 +979,10 @@ namespace
       ImVec2 mn(vp->Pos.x + (vp->Size.x - size.x) * 0.5f, top - (1.0f - drop) * (top - vp->Pos.y + size.y));
       ImVec2 mx(mn.x + size.x, mn.y + size.y);
 
-      dl->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
-      dl->AddRectFilled(mn, mx, ui::Fade(ui::kRed, 0.10f * a));
-      dl->AddRect(mn, mx, ui::Fade(ui::kRed, (0.30f + 0.30f * pulse) * a), 0.0f, ImDrawFlags_None, 1.0f * s);
-      dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kRed, a));
+      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
+      ui::Card(dl, mn, mx, ui::Fade(ui::kRed, 0.10f * a));
+      ui::Frame(dl, mn, mx, ui::Fade(ui::kRed, (0.30f + 0.30f * pulse) * a), 1.0f * s);
+      ui::Bar(dl, mn, mx, ui::Fade(ui::kRed, a));
       WarningSign(dl, ImVec2(mn.x + 40.0f * s, mn.y + size.y * 0.5f), 17.0f * s, ui::Fade(ui::kRed, a), 2.5f * s);
       float tx = mn.x + 76.0f * s;
       dl->PushClipRect(mn, ImVec2(mx.x - 12.0f * s, mx.y), true);
@@ -1168,9 +1205,9 @@ namespace
       float pulse = 0.5f + 0.5f * std::sin(now * 4.0f);
 
       // A flat navy card with a hairline frame that breathes, and a paper bar on the left.
-      dl->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
-      dl->AddRect(mn, mx, ui::Fade(ui::kAccent, (0.18f + 0.30f * pulse) * a), 0.0f, ImDrawFlags_None, 1.0f * s);
-      dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kAccent, a));
+      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
+      ui::Frame(dl, mn, mx, ui::Fade(ui::kAccent, (0.18f + 0.30f * pulse) * a), 1.0f * s);
+      ui::Bar(dl, mn, mx, ui::Fade(ui::kAccent, a));
 
       // Sight: rings, ticks, a turning arc.
       ImVec2 c(mn.x + 54.0f * s, mn.y + size.y * 0.5f - 4.0f * s);
@@ -1258,9 +1295,9 @@ namespace
       ImVec2 mn(vp->Pos.x + (vp->Size.x - size.x) * 0.5f, top - (1.0f - in) * hidden - out * 30.0f * s);
       ImVec2 mx(mn.x + size.x, mn.y + size.y);
 
-      dl->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
-      dl->AddRect(mn, mx, ui::Fade(accent, 0.45f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
-      dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(accent, a));
+      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
+      ui::Frame(dl, mn, mx, ui::Fade(accent, 0.45f * a), 1.0f * s);
+      ui::Bar(dl, mn, mx, ui::Fade(accent, a));
 
       ImVec2 c(mn.x + 44.0f * s, mn.y + size.y * 0.5f);
       // The icon pops in, then a ring spreads out once.
@@ -1430,7 +1467,8 @@ namespace
         char status[64];
         if (hosting)
         {
-          std::snprintf(status, sizeof(status), Tr("GAME CREATED  ·  %d/2"), game.players);
+          // A versus party (Custom Match) takes 4 players, a co-op game 2.
+          std::snprintf(status, sizeof(status), Tr("GAME CREATED  ·  %d/%d"), game.players, game.playgroup ? 4 : 2);
         }
         else
         {
@@ -1497,9 +1535,9 @@ namespace
         float bh = 92.0f * s;
         float bx = cx0 + (1.0f - bt) * 36.0f * s;
         ImVec2 mn(bx, y), mx(bx + (cx1 - cx0), y + bh);
-        dl->AddRectFilled(mn, mx, ui::Fade(ui::kRed, 0.10f * ba));
-        dl->AddRect(mn, mx, ui::Fade(ui::kRed, (0.30f + 0.30f * pulse) * ba), 0.0f, ImDrawFlags_None, 1.0f * s);
-        dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kRed, ba));
+        ui::Card(dl, mn, mx, ui::Fade(ui::kRed, 0.10f * ba));
+        ui::Frame(dl, mn, mx, ui::Fade(ui::kRed, (0.30f + 0.30f * pulse) * ba), 1.0f * s);
+        ui::Bar(dl, mn, mx, ui::Fade(ui::kRed, ba));
         WarningSign(dl, ImVec2(mn.x + 38.0f * s, mn.y + bh * 0.5f), 17.0f * s, ui::Fade(ui::kRed, ba), 2.5f * s);
         float tx = mn.x + 72.0f * s;
         dl->PushClipRect(mn, ImVec2(mx.x - 12.0f * s, mx.y), true);
@@ -1512,7 +1550,7 @@ namespace
         y += bh + 26.0f * s;
       }
 
-      // --- Squad: the two seats of the hosted game -----------------------
+      // --- Squad: the seats of the hosted game (two; four in versus) -----
       if (hosting)
       {
         enum class Seat
@@ -1525,18 +1563,18 @@ namespace
         auto seat = [&](float x, const char *label, std::string name, Seat mode) {
           ImVec2 mn(x, y), mx(x + cw, y + ch);
           ImU32 accent = mode == Seat::kReady ? ui::kGreen : ui::kAccent;
-          dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.035f * a));
+          ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.035f * a));
           if (mode == Seat::kWaiting)
           {
             // The empty seat's frame breathes.
-            dl->AddRect(mn, mx, ui::Fade(ui::kAccent, (0.12f + 0.22f * pulse) * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+            ui::Frame(dl, mn, mx, ui::Fade(ui::kAccent, (0.12f + 0.22f * pulse) * a), 1.0f * s);
             name = Tr("WAITING") + std::string(size_t(int(now * 2.5) % 4), '.');
           }
           else
           {
-            dl->AddRect(mn, mx, ui::Fade(ui::kWhite, 0.10f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+            ui::Frame(dl, mn, mx, ui::Fade(ui::kWhite, 0.10f * a), 1.0f * s);
           }
-          dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(accent, a));
+          ui::Bar(dl, mn, mx, ui::Fade(accent, a));
           ui::Caps(dl, FontKind::kLabel, ImVec2(mn.x + 18.0f * s, mn.y + 13.0f * s), ui::Fade(ui::kMuted, a), label);
           dl->PushClipRect(mn, ImVec2(mx.x - 40.0f * s, mx.y), true);
           ui::Text(dl, FontKind::kHeading, ImVec2(mn.x + 18.0f * s, mn.y + 34.0f * s),
@@ -1553,27 +1591,64 @@ namespace
             ui::Spinner(dl, ic, 9.0f * s, 2.5f * s, ui::Fade(ui::kAccent, a));
           }
         };
-        seat(cx0, Tr("PLAYER 1  ·  HOST"), LocalName(), Seat::kReady);
-        std::string partner;
+        // Who accepted an invite, in order (the seats after the host's).
+        std::vector<std::string> partners;
         for (const SentInvite &x : sent)
         {
           if (x.state == SentState::kAccepted)
           {
-            partner = x.name;
+            partners.push_back(x.name);
           }
         }
-        if (game.players >= 2)
+        // Versus: four seats, two rows; co-op: two.
+        int seats = game.playgroup || game.max_players > 2 ? 4 : 2;
+        for (int i = 0; i < seats; ++i)
         {
-          seat(cx0 + cw + gap, Tr("PLAYER 2  ·  PARTNER"), partner.empty() ? Tr("PARTNER") : partner, Seat::kReady);
+          float sx = cx0 + float(i % 2) * (cw + gap), sy = y + float(i / 2) * (ch + gap);
+          float keep_y = y;
+          y = sy;
+          if (i == 0)
+          {
+            seat(sx, Tr("PLAYER 1  ·  HOST"), LocalName(), Seat::kReady);
+          }
+          else if (seats == 2)
+          {
+            std::string partner = partners.empty() ? std::string() : partners.back();
+            if (game.players >= 2)
+            {
+              seat(sx, Tr("PLAYER 2  ·  PARTNER"), partner.empty() ? Tr("PARTNER") : partner, Seat::kReady);
+            }
+            else if (!partner.empty())
+            {
+              seat(sx, Tr("PLAYER 2  ·  JOINING"), partner, Seat::kJoining);
+            }
+            else
+            {
+              seat(sx, Tr("PLAYER 2"), "", Seat::kWaiting);
+            }
+          }
+          else
+          {
+            std::string label = std::string(Tr("PLAYER")) + " " + std::to_string(i + 1);
+            std::string name = size_t(i - 1) < partners.size() ? partners[size_t(i - 1)] : std::string();
+            if (i < game.players)
+            {
+              seat(sx, label.c_str(), name.empty() ? std::string(Tr("PLAYER")) + " " + std::to_string(i + 1) : name,
+                   Seat::kReady);
+            }
+            else if (!name.empty())
+            {
+              label += std::string("  ·  ") + Tr("JOINING");
+              seat(sx, label.c_str(), name, Seat::kJoining);
+            }
+            else
+            {
+              seat(sx, label.c_str(), "", Seat::kWaiting);
+            }
+          }
+          y = keep_y;
         }
-        else if (!partner.empty())
-        {
-          seat(cx0 + cw + gap, Tr("PLAYER 2  ·  JOINING"), partner, Seat::kJoining);
-        }
-        else
-        {
-          seat(cx0 + cw + gap, Tr("PLAYER 2"), "", Seat::kWaiting);
-        }
+        y += float((seats + 1) / 2) * (ch + gap) - gap;
         y += ch + 26.0f * s;
       }
 
@@ -1585,9 +1660,9 @@ namespace
         {
           float ch = 92.0f * s;
           ImVec2 mn(cx0, y), mx(cx1, y + ch);
-          dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.05f * a));
-          dl->AddRect(mn, mx, ui::Fade(ui::kAccent, (0.20f + 0.30f * pulse) * a), 0.0f, ImDrawFlags_None, 1.0f * s);
-          dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kAccent, a));
+          ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.05f * a));
+          ui::Frame(dl, mn, mx, ui::Fade(ui::kAccent, (0.20f + 0.30f * pulse) * a), 1.0f * s);
+          ui::Bar(dl, mn, mx, ui::Fade(ui::kAccent, a));
           ui::Text(dl, FontKind::kHeading, ImVec2(mn.x + 20.0f * s, mn.y + 14.0f * s), ui::Fade(ui::kText, a),
                    inv.name.c_str());
           std::string sub = std::string(inv.is_private ? Tr("invites you to a private co-op game")
@@ -1690,14 +1765,14 @@ namespace
         float &h = *ImGui::GetStateStorage()->GetFloatRef(ImGui::GetID(("row" + key).c_str()), 0.0f);
         h = ui::Approach(h, hovered ? 1.0f : 0.0f, 14.0f);
         // As the launcher's rows: a faint lift and a paper bar on the left when hovered.
-        dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, (0.03f + 0.05f * h) * ra));
-        dl->AddRectFilled(mn, ImVec2(mn.x + 2.0f * s, mx.y), ui::Fade(ui::kAccent, (0.25f + 0.75f * h) * ra));
+        ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, (0.03f + 0.05f * h) * ra));
+        ui::Bar(dl, mn, mx, ui::Fade(ui::kAccent, (0.25f + 0.75f * h) * ra));
         if (auto f = row_flash.find(key); f != row_flash.end())
         {
           float ft = 1.0f - float(now - f->second) / 0.7f;
           if (ft > 0.0f)
           {
-            dl->AddRectFilled(mn, mx, ui::Fade(ui::kAccent, 0.25f * ft * ra));
+            ui::Card(dl, mn, mx, ui::Fade(ui::kAccent, 0.25f * ft * ra));
           }
         }
 
@@ -1710,7 +1785,8 @@ namespace
         }
         ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 42.0f * s, mn.y + 8.0f * s), ui::Fade(ui::kText, ra),
                  p.name.c_str());
-        std::string sub = IpString(p.address.ip) + "  ·  " + StateText(p.state) + (p.hosting ? Tr("  ·  hosting a game") : "");
+        std::string sub = (ao2::steam::IsVirtual(p.address.ip) ? std::string("Steam") : IpString(p.address.ip)) +
+                          "  ·  " + StateText(p.state) + (p.hosting ? Tr("  ·  hosting a game") : "");
         ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 42.0f * s, mn.y + 32.0f * s), ui::Fade(ui::kMuted, ra),
                  sub.c_str());
         if (OtherBuild(p.build))
@@ -1771,6 +1847,22 @@ namespace
         ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y + 2.0f * s), ui::Fade(ui::kMuted, a),
                  Tr("To invite, create a game: Campaign Mode → Private Co-op Game."));
         y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
+      }
+
+      // --- Steam: the games are in the F1 menu's Servers tab ----------------
+      if (ao2::steam::Running())
+      {
+        y += 14.0f * s;
+        section(Tr("STEAM"), -1);
+        ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kMuted, a),
+                 Tr("Steam friends in the game show above. Games hosted over Steam: the Servers tab."));
+        y += ui::FontSize(FontKind::kSmall) + 12.0f * s;
+        if (hosting && ui::Button("steam_invite", ImVec2(cx0, y), ImVec2(240.0f * s, 34.0f * s),
+                                  Tr("INVITE STEAM FRIENDS"), ui::ButtonStyle::kOutline, live, a))
+        {
+          ao2::steam::InviteFriends();
+        }
+        y += hosting ? 34.0f * s + 10.0f * s : 0.0f;
       }
 
       // --- By address ----------------------------------------------------
@@ -1992,6 +2084,20 @@ namespace ao2::invite
   bool Running()
   {
     return g_started;
+  }
+
+  bool IsOtherBuild(const std::string &build)
+  {
+    return OtherBuild(build);
+  }
+
+  void InviteAddress(uint32_t ip, const std::string &name)
+  {
+    std::string error;
+    if (g_started && !Invite({ip, Port()}, name, &error))
+    {
+      Log("not invited %s: %s", name.c_str(), error.c_str());
+    }
   }
 
   bool HasPendingInvite()

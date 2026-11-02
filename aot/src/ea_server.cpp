@@ -30,6 +30,7 @@
 // reached the server at), so LAN and VPN setups work without configuration.
 #include "ea_server.h"
 #include "log_files.h"
+#include "steam_net.h"
 
 // clang-format off
 #include <winsock2.h>
@@ -286,9 +287,10 @@ namespace ao2::ea
       return buf;
     }
 
+    // This PC (a Steam player's virtual address, steam_net.h, is another PC).
     bool IsLoopback(uint32_t ip)
     {
-      return (ntohl(ip) >> 24) == 127;
+      return (ntohl(ip) >> 24) == 127 && !ao2::steam::IsVirtual(ip);
     }
 
     // XNADDR: ina, inaOnline, wPortOnline, abEnet[6], abOnline[20] (the
@@ -306,6 +308,8 @@ namespace ao2::ea
       }
       return Base64Encode(raw);
     }
+
+    std::atomic<ao2::ea::QuickMatchHook> g_quick_match{nullptr};
 
     // ---------------------------------------------------------------------
     // Connections
@@ -762,6 +766,7 @@ namespace ao2::ea
         else if (t == "GLST")
         {
           bool not_private = Get(f, "FILTER-NOT-PRIVATE") == "1";
+          QuickMatchHook hook = g_quick_match.load();
           // Versus: the host's party session (TYPE=P, "Custom Match" screen) lives on
           // next to its game (TYPE=G, ready room); a quick match must find the game.
           std::string type = Get(f, "TYPE");
@@ -778,6 +783,18 @@ namespace ao2::ea
                 continue;
               }
               found.push_back(Summary(g, tid));
+            }
+          }
+          // This PC's own game finds nothing here: perhaps elsewhere (the
+          // hook sends it there through an invite; the list stays unanswered).
+          if (found.empty() && not_private && hook && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G")
+          {
+            std::string mode = Get(f, "FILTER-ATTR-U-Mode");
+            Log("quick match (mode %s): nothing here, looking further", mode.c_str());
+            if (hook(mode))
+            {
+              Log("quick match: sent to another game");
+              return;
             }
           }
           std::string n = std::to_string(found.size());
@@ -1204,9 +1221,19 @@ namespace ao2::ea
       out->is_private = Get(g.fields, "B-U-Private") == "1";
       out->players = g.joined;
       out->playgroup = Get(g.fields, "TYPE") == "P";
+      out->max_players = int(ToU64(Get(g.fields, "MAX-PLAYERS", "2"), 2));
+      out->map = Get(g.fields, "B-U-Map");
+      std::string type = Get(g.fields, "B-U-GameType");
+      out->game_type = type.empty() ? -1 : std::atoi(type.c_str());
+      out->mode = Get(g.fields, "B-U-Mode");
       return out->session_id != 0 && out->xnaddr.size() == 36;
     }
     return false;
+  }
+
+  void SetQuickMatchHook(QuickMatchHook hook)
+  {
+    g_quick_match = hook;
   }
 
 #ifndef AO2_STANDALONE_SERVER

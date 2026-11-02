@@ -26,6 +26,7 @@
 #include "hang_watchdog.h"
 #include "game_language.h"
 #include "graphics_menu.h"
+#include "steam_net.h"
 #include "menu_mouse.h"
 #include "gpu/native/native_graphics_system.h"
 #include "gpu/native/renderer.h"
@@ -108,6 +109,8 @@ public:
     ao2::ea::Start();
     // Invites (Private Co-op): finds the other players, carries invites.
     ao2::invite::Start();
+    // Steam (Spacewar): friends, lobbies and the traffic through its relays.
+    ao2::steam::Start();
 
     if (window())
     {

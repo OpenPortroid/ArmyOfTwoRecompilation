@@ -38,6 +38,19 @@ namespace ao2::ui
   constexpr ImU32 kRed = IM_COL32(232, 104, 96, 255);
   constexpr ImU32 kWhite = IM_COL32(255, 255, 255, 255);
 
+  // The look: the cover's flat navy with hairlines and square corners
+  // (classic), or glass - translucent rounded panels over the blurred game
+  // (ao2_menu_style). Any thread.
+  void SetGlass(bool on);
+  bool Glass();
+  // A corner radius of `px` (at 1080 lines) in the glass look, 0 in classic.
+  float Round(float px);
+  // A row's or box's back (`fill`), its frame, and the state bar on its left
+  // (classic: 2 px at the edge; glass: a short pill inside the rounded box).
+  void Card(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 fill);
+  void Frame(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col, float thickness);
+  void Bar(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col);
+
   // `col` with its alpha multiplied by `alpha` (0..1).
   ImU32 Fade(ImU32 col, float alpha);
   ImU32 Mix(ImU32 a, ImU32 b, float t);

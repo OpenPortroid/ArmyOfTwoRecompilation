@@ -162,4 +162,19 @@ namespace ao2::gpu::overlay
       visitor(frame, g_textures);
     }
   }
+
+  namespace
+  {
+    std::atomic<float> g_backdrop_blur{0.0f};
+  } // namespace
+
+  void SetBackdropBlur(float amount)
+  {
+    g_backdrop_blur.store(amount, std::memory_order_relaxed);
+  }
+
+  float BackdropBlur()
+  {
+    return g_backdrop_blur.load(std::memory_order_relaxed);
+  }
 } // namespace ao2::gpu::overlay

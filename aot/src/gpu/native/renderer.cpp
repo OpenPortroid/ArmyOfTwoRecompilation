@@ -180,15 +180,14 @@ void main(triangle XeVertexOut v[3], inout TriangleStream<XeVertexOut> s) {
     const char kBlitShader[] = R"(
 Texture2D t : register(t0);
 SamplerState smp : register(s0);
-cbuffer c : register(b0) { float2 uv_scale; uint swap_red_blue; };
+cbuffer c : register(b0) { float2 uv_scale; uint swap_red_blue; float2 blur_step; };
 StructuredBuffer<uint> gamma_ramp : register(t1);
 struct VO { float4 p : SV_Position; float2 uv : TEXCOORD0; };
 VO vs(uint id : SV_VertexID) {
   VO o; o.uv = float2((id << 1) & 2, id & 2); o.p = float4(o.uv * float2(2, -2) + float2(-1, 1), 0, 1); return o;
 }
 float Ramp(uint i, uint shift) { return float((gamma_ramp[i] >> shift) & 0x3FFu) * (1.0 / 1023.0); }
-float4 ps(VO i) : SV_Target {
-  float3 c = t.Sample(smp, i.uv * uv_scale).rgb;
+float4 Present(float3 c) {
   c = saturate(swap_red_blue != 0u ? c.bgr : c) * 255.0;
   float3 r;
   [unroll] for (uint k = 0; k < 3; ++k) {
@@ -197,6 +196,22 @@ float4 ps(VO i) : SV_Target {
     r[k] = lerp(Ramp(i0, shift), Ramp(i0 + 1u, shift), c[k] - float(i0));
   }
   return float4(r, 1.0);
+}
+float4 ps(VO i) : SV_Target { return Present(t.Sample(smp, i.uv * uv_scale).rgb); }
+// Under the F1 menu's glass: a gaussian over 13x13 bilinear taps
+// blur_step apart (sigma 3 taps).
+float4 ps_blur(VO i) : SV_Target {
+  float2 uv = i.uv * uv_scale;
+  float3 acc = 0.0;
+  float wsum = 0.0;
+  [loop] for (int y = -6; y <= 6; ++y) {
+    [unroll] for (int x = -6; x <= 6; ++x) {
+      float w = exp(-float(x * x + y * y) * (1.0 / 18.0));
+      acc += t.SampleLevel(smp, uv + float2(x, y) * blur_step, 0).rgb * w;
+      wsum += w;
+    }
+  }
+  return Present(acc / wsum);
 }
 )";
 
@@ -524,6 +539,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       bool pso_thread_started = false;
       std::vector<uint8_t> rect_gs;
       ComPtr<ID3D12PipelineState> blit_pso;
+      ComPtr<ID3D12PipelineState> blit_blur_pso; // the same, blurred (under the F1 menu)
       ComPtr<ID3D12RootSignature> blit_root;
       // Dear ImGui overlay (overlay.h), created on first use.
       ComPtr<ID3D12PipelineState> overlay_pso;
@@ -1916,8 +1932,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         return false;
       }
 
-      // Blit: one table SRV, three root constants (uv scale, red/blue swap),
-      // the gamma ramp, one static sampler.
+      // Blit: one table SRV, five root constants (uv scale, red/blue swap,
+      // the blur's tap step), the gamma ramp, one static sampler.
       D3D12_DESCRIPTOR_RANGE br = {};
       br.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
       br.NumDescriptors = 1;
@@ -1927,7 +1943,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       bp[0].DescriptorTable.pDescriptorRanges = &br;
       bp[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
       bp[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-      bp[1].Constants.Num32BitValues = 3;
+      bp[1].Constants.Num32BitValues = 5;
       bp[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
       // Gamma ramp (t1).
       bp[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
@@ -1968,6 +1984,15 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       {
         NativeLog("blit pipeline failed\n");
         return false;
+      }
+      // The same, blurred (overlay::BackdropBlur); without it the menu is drawn
+      // over the sharp picture.
+      auto ps_blur = Compile(kBlitShader, "ps_blur", "ps_5_1");
+      pd.PS = {ps_blur.data(), ps_blur.size()};
+      if (ps_blur.empty() || FAILED(g.device->CreateGraphicsPipelineState(&pd, IID_PPV_ARGS(&g.blit_blur_pso))))
+      {
+        NativeLog("blurred blit pipeline failed\n");
+        g.blit_blur_pso.Reset();
       }
       g.rect_gs = Compile(kRectGS, "main", "gs_5_1");
       return !g.rect_gs.empty();
@@ -9465,19 +9490,30 @@ float4 ps(float4 p : SV_Position) : SV_Target {
         D3D12_RECT sc = {0, 0, LONG(g.swapchain_width), LONG(g.swapchain_height)};
         // uv scale (the part of the host texture the frame takes), red/blue swap.
         float host_scale = float(source->scale4) * 0.25f;
-        float blit_constants[3] = {
+        float blit_constants[5] = {
             std::min(float(width) * host_scale / float(ScaleSize(source->width, source->scale4)), 1.0f),
-            std::min(float(height) * host_scale / float(ScaleSize(source->height, source->scale4)), 1.0f), 0.0f};
+            std::min(float(height) * host_scale / float(ScaleSize(source->height, source->scale4)), 1.0f), 0.0f,
+            0.0f, 0.0f};
         uint32_t swap_flag = source->red_blue_swapped ? 1u : 0u;
         std::memcpy(&blit_constants[2], &swap_flag, 4);
+        // Under the F1 menu: blurred, up to a radius of 2.5% of the picture's
+        // height (6 taps each way), in the source's uv.
+        float blur = std::clamp(overlay::BackdropBlur(), 0.0f, 1.0f);
+        bool blurred = blur > 0.01f && g.blit_blur_pso;
+        if (blurred)
+        {
+          float step_px = blur * 0.025f * vh / 6.0f;
+          blit_constants[3] = step_px * blit_constants[0] / vw;
+          blit_constants[4] = step_px * blit_constants[1] / vh;
+        }
         g.bound.valid = false;
         g.list->OMSetRenderTargets(1, &g.backbuffer_rtv[bb_index], FALSE, nullptr);
         g.list->RSSetViewports(1, &vp);
         g.list->RSSetScissorRects(1, &sc);
         g.list->SetGraphicsRootSignature(g.blit_root.Get());
-        g.list->SetPipelineState(g.blit_pso.Get());
+        g.list->SetPipelineState(blurred ? g.blit_blur_pso.Get() : g.blit_pso.Get());
         g.list->SetGraphicsRootDescriptorTable(0, gpu);
-        g.list->SetGraphicsRoot32BitConstants(1, 3, blit_constants, 0);
+        g.list->SetGraphicsRoot32BitConstants(1, 5, blit_constants, 0);
         std::memcpy(f.upload_mapped, g.gamma_ramp, sizeof(g.gamma_ramp));
         g.list->SetGraphicsRootShaderResourceView(2, f.upload->GetGPUVirtualAddress());
         g.list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

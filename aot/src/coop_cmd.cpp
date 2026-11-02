@@ -49,6 +49,10 @@
 //   the machine that sent the command (its tag) starts it: the manager sends
 //   the travel to the partner itself, and a start on both loaded the level
 //   twice on both.
+// - "vbots <host> <on> <miss> <reaction> <turn> <range> <buy> <share> <ammo>":
+//   that player's versus bot settings (versus_bots.cpp, the F1 menu's Versus
+//   tab), whole numbers; sent in a versus match whenever they differ from
+//   what went out last in it. The bots play by the host's.
 //
 // --ao2_coop_test_local=true runs all of this in single player (whose frame
 // sync replays the player's own records too).
@@ -60,6 +64,7 @@
 #include "coop.h"
 #include "log_files.h"
 #include "ue3_reflect.h"
+#include "versus_bots.h"
 
 #include <algorithm>
 #include <bit>
@@ -355,6 +360,10 @@ namespace
     {
       g_load = {true, name, difficulty, ao2::coop::OnlineLockstep(base), mine};
     }
+    else if (command.rfind("vbots ", 0) == 0)
+    {
+      ao2::versus::ReceiveSettings(controller_id, command.c_str() + 6, mine);
+    }
     else
     {
       Logf("unknown command\n");
@@ -447,6 +456,7 @@ namespace ao2::coop::cmd
       g_sent_assist = assist;
       Send("aimassist " + std::to_string(assist));
     }
+    ao2::versus::PollSettings(base);
     // Once per lockstep frame.
     uint32_t frame = ao2::coop::SyncFrame(base);
     if (frame == g_last_frame)
