@@ -145,12 +145,23 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   Extraction), free places and ping, the lowest ping first: the host puts its
   ping location (`ISteamNetworkingUtils`) in the lobby as `loc`, the others
   estimate the ping from it without connecting.
-- **Public game** (the game's quick match, `GLST` with `FILTER-NOT-PRIVATE=1`)
-  that finds nothing on the PC's own server asks Steam
+- **Public game** (the game's quick match, `GLST` with `FILTER-NOT-PRIVATE=1`
+  from the PC's own game) gets an empty list at once, so the game hosts a
+  public game; its Steam lobby is in everyone's server list. With
+  `ao2_public_game_search = true` it searches first. A search that finds
+  nothing on the PC's own server asks Steam
   (`ea::SetQuickMatchHook` → `steam::QuickMatch`): the open lobby of the same
   `B-U-Mode` and build with the lowest ping is joined and its invite accepted
   (the list request is left unanswered, the game goes on through the invite);
   with none within ~15 s the list is answered empty and the game hosts.
+- **Play by code** (F1 → Online → Play by code), for players who met
+  elsewhere and are not Steam friends: the code is the player's Steam account ID in Crockford base
+  32 (7 characters, `ABC-DEFG`). Entering the host's code adds the host as a
+  peer and sends `knock` on ISteamNetworkingMessages channel 1 every 2 s for
+  up to 20 s. A host with a lobby game and a free place invites the knocker
+  (`invite::InviteAddress`), which accepts the invite automatically, and
+  answers `invited`. Otherwise it answers `nogame`, `full` or `started`. No
+  lobby is involved, so a private game can be joined this way too.
 - Traffic: every Steam player gets an address in 127.64.0.0/10 made from its
   SteamID, the same on every PC. For each known player the bridge binds that
   address on UDP 1000, UDP 18491 and TCP 18480 / 18485 / 13505 (next to the
@@ -355,7 +366,10 @@ are not function entries; 220 were added to `default_functions.toml`.
 
 A versus match can start with fewer than 4 players (`ao2_versus_min_players`,
 `src/versus_lobby.cpp`); bots play the empty places (`ao2_versus_bots`, on by
-default - every player of the match needs the same setting). Versus is the
+default - every player of the match needs the same setting). In the ready
+room Swap team goes over at once to a free place of the other team
+(`ao2_versus_free_team_swap`, done by the host); with that team full the game's
+swap stays: two players of both teams who both ask. Versus is the
 same lockstep: a bot is input, made on every machine alike from the
 simulation's state and replayed right after the first record of each frame
 (only inside the replay does the viewport hand input to the controller). The

@@ -636,6 +636,26 @@ namespace
   }
 
   // HELLO to the broadcast addresses, the configured and the known players.
+  // The game this player hosts, for its Steam lobby (every second: a game
+  // left goes out of the server list at once).
+  void UpdateSteamHosting()
+  {
+    ao2::ea::HostedGame hosted;
+    ao2::steam::Hosting steam;
+    steam.on = MyHostedGame(&hosted);
+    steam.is_private = hosted.is_private;
+    steam.versus = hosted.playgroup || hosted.max_players > 2;
+    steam.in_game = OwnState() == "game";
+    steam.players = hosted.players;
+    steam.max = hosted.max_players;
+    steam.map = hosted.map;
+    steam.game_type = hosted.game_type;
+    steam.mode = hosted.mode;
+    steam.name = LocalName();
+    steam.build = BuildHash();
+    ao2::steam::SetHosting(steam);
+  }
+
   void Beacon()
   {
     auto &st = state();
@@ -674,21 +694,6 @@ namespace
     {
       SendTo(a, packet);
     }
-    // The game this player hosts, for its Steam lobby.
-    ao2::ea::HostedGame hosted;
-    ao2::steam::Hosting steam;
-    steam.on = MyHostedGame(&hosted);
-    steam.is_private = hosted.is_private;
-    steam.versus = hosted.playgroup || hosted.max_players > 2;
-    steam.in_game = OwnState() == "game";
-    steam.players = hosted.players;
-    steam.max = hosted.max_players;
-    steam.map = hosted.map;
-    steam.game_type = hosted.game_type;
-    steam.mode = hosted.mode;
-    steam.name = LocalName();
-    steam.build = BuildHash();
-    ao2::steam::SetHosting(steam);
     // Our game on a lobby server in another process (its presence answers).
     ao2::ea::HostedGame local;
     Address server;
@@ -998,6 +1003,7 @@ namespace
   {
     auto &st = state();
     char buf[2048];
+    Clock::time_point next_steam_hosting;
     Log("build %s", BuildHash().empty() ? "(unknown)" : BuildHash().c_str());
     while (true)
     {
@@ -1032,6 +1038,11 @@ namespace
       if (beacon)
       {
         Beacon();
+      }
+      if (now >= next_steam_hosting)
+      {
+        next_steam_hosting = now + std::chrono::seconds(1);
+        UpdateSteamHosting();
       }
       VersionBanner();
       for (const auto &[to, packet] : resend)
@@ -1450,50 +1461,54 @@ namespace
         y += ui::FontSize(FontKind::kLabel) + 14.0f * s;
       };
 
-      // --- Header: kicker, title (wiped in), status, divider ---------------
-      const char *kicker = !hosting          ? Tr("CO-OP  //  INVITES")
-                           : game.is_private ? Tr("CO-OP  //  PRIVATE GAME")
-                                             : Tr("CO-OP  //  PUBLIC GAME");
-      ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), kicker);
-      y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
-      const char *title = hosting ? Tr("INVITE A PARTNER") : !received.empty() ? Tr("CALLED TO ARMS") : Tr("PLAYERS ONLINE");
-      ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title);
-      float wipe = ui::EaseOutCubic((since - 0.08f) / 0.45f);
-      float edge = cx0 + title_size.x * wipe;
-      dl->PushClipRect(ImVec2(cx0, y), ImVec2(edge + 1.0f, y + title_size.y), true);
-      ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title);
-      dl->PopClipRect();
+      // --- Header: kicker, title (wiped in), status, divider (not in the F1
+      // menu, which has its own) ---
+      if (!embedded)
       {
-        char status[64];
-        if (hosting)
+        const char *kicker = !hosting          ? Tr("CO-OP  //  INVITES")
+                             : game.is_private ? Tr("CO-OP  //  PRIVATE GAME")
+                                               : Tr("CO-OP  //  PUBLIC GAME");
+        ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), kicker);
+        y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
+        const char *title = hosting ? Tr("INVITE A PARTNER") : !received.empty() ? Tr("CALLED TO ARMS") : Tr("PLAYERS ONLINE");
+        ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title);
+        float wipe = ui::EaseOutCubic((since - 0.08f) / 0.45f);
+        float edge = cx0 + title_size.x * wipe;
+        dl->PushClipRect(ImVec2(cx0, y), ImVec2(edge + 1.0f, y + title_size.y), true);
+        ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title);
+        dl->PopClipRect();
         {
-          // A versus party (Custom Match) takes 4 players, a co-op game 2.
-          std::snprintf(status, sizeof(status), Tr("GAME CREATED  ·  %d/%d"), game.players, game.playgroup ? 4 : 2);
+          char status[64];
+          if (hosting)
+          {
+            // A versus party (Custom Match) takes 4 players, a co-op game 2.
+            std::snprintf(status, sizeof(status), Tr("GAME CREATED  ·  %d/%d"), game.players, game.playgroup ? 4 : 2);
+          }
+          else
+          {
+            std::snprintf(status, sizeof(status), "%s", Tr("NO GAME OF YOURS"));
+          }
+          ImVec2 ss = ui::CapsSize(FontKind::kLabel, status);
+          float chip_h = ss.y + 12.0f * s;
+          ImVec2 cmx(cx1, y + (title_size.y + chip_h) * 0.5f);
+          ImVec2 cmn(cmx.x - ss.x - 36.0f * s, cmx.y - chip_h);
+          ImU32 dot = hosting ? ui::kGreen : ui::kMuted;
+          dl->AddRect(cmn, cmx, ui::Fade(ui::kWhite, 0.16f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
+          ImVec2 dc(cmn.x + 13.0f * s, (cmn.y + cmx.y) * 0.5f);
+          dl->AddCircleFilled(dc, 4.0f * s, ui::Fade(dot, a));
+          if (hosting)
+          {
+            dl->AddCircle(dc, (4.0f + 4.0f * pulse) * s, ui::Fade(dot, (1.0f - pulse) * a), 16, 1.0f * s);
+          }
+          ui::Caps(dl, FontKind::kLabel, ImVec2(cmn.x + 26.0f * s, cmn.y + 6.0f * s), ui::Fade(ui::kText, a), status);
         }
-        else
-        {
-          std::snprintf(status, sizeof(status), "%s", Tr("NO GAME OF YOURS"));
-        }
-        ImVec2 ss = ui::CapsSize(FontKind::kLabel, status);
-        float chip_h = ss.y + 12.0f * s;
-        ImVec2 cmx(cx1, y + (title_size.y + chip_h) * 0.5f);
-        ImVec2 cmn(cmx.x - ss.x - 36.0f * s, cmx.y - chip_h);
-        ImU32 dot = hosting ? ui::kGreen : ui::kMuted;
-        dl->AddRect(cmn, cmx, ui::Fade(ui::kWhite, 0.16f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
-        ImVec2 dc(cmn.x + 13.0f * s, (cmn.y + cmx.y) * 0.5f);
-        dl->AddCircleFilled(dc, 4.0f * s, ui::Fade(dot, a));
-        if (hosting)
-        {
-          dl->AddCircle(dc, (4.0f + 4.0f * pulse) * s, ui::Fade(dot, (1.0f - pulse) * a), 16, 1.0f * s);
-        }
-        ui::Caps(dl, FontKind::kLabel, ImVec2(cmn.x + 26.0f * s, cmn.y + 6.0f * s), ui::Fade(ui::kText, a), status);
+        y += title_size.y + 12.0f * s;
+        // A hairline with a short paper underline at its start, like the launcher's current tab.
+        float line = ui::EaseOutCubic((since - 0.15f) / 0.5f);
+        dl->AddLine(ImVec2(cx0, y), ImVec2(cx0 + (cx1 - cx0) * line, y), ui::Fade(ui::kWhite, 0.13f * a), 1.0f * s);
+        dl->AddRectFilled(ImVec2(cx0, y - 1.0f * s), ImVec2(cx0 + 56.0f * s * line, y + 1.0f * s), ui::Fade(ui::kAccent, a));
+        y += 24.0f * s;
       }
-      y += title_size.y + 12.0f * s;
-      // A hairline with a short paper underline at its start, like the launcher's current tab.
-      float line = ui::EaseOutCubic((since - 0.15f) / 0.5f);
-      dl->AddLine(ImVec2(cx0, y), ImVec2(cx0 + (cx1 - cx0) * line, y), ui::Fade(ui::kWhite, 0.13f * a), 1.0f * s);
-      dl->AddRectFilled(ImVec2(cx0, y - 1.0f * s), ImVec2(cx0 + 56.0f * s * line, y + 1.0f * s), ui::Fade(ui::kAccent, a));
-      y += 24.0f * s;
 
       // --- Other version: players whose build is not this one ------------
       std::vector<std::string> mismatched; // "name (build)"
@@ -1700,7 +1715,13 @@ namespace
 
       // --- Players found -------------------------------------------------
       section(Tr("PLAYERS ONLINE"), int(peers.size()));
-      if (peers.empty())
+      if (peers.empty() && embedded)
+      {
+        ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kMuted, a),
+                 Tr("Players on the LAN and Radmin VPN are found automatically."));
+        y += ui::FontSize(FontKind::kSmall) + 16.0f * s;
+      }
+      else if (peers.empty())
       {
         // Uplink: probes run out from this PC (the centre) along links to
         // the nodes around it, one after another; a node flashes as its

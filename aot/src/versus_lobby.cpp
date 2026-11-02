@@ -25,9 +25,10 @@
 // ?SimControllerId1=0 ?SimControllerId2=1 ?SimControllerId3=1), and the ready
 // room swaps a player's team only with one of the other team who wants it
 // too (AO2PlayerController.MPTeamSwap: the Plasma player's WantsToSwapTeam):
-// with bots in the other team's places nobody can come over. To find the
-// lobby player's fields for that, versus_lobby.log dumps every player of the
-// slots (their first 96 bytes) whenever one changes, in the ready room.
+// with bots in the other team's places nobody can come over. A player who
+// asks goes over at once to a free place of the other team
+// (ao2_versus_free_team_swap, below). versus_lobby.log dumps every player of
+// the slots (their first 96 bytes) whenever one changes, in the ready room.
 #include "log_files.h"
 #include "versus_bots.h"
 #include "versus_rules.h"
@@ -46,6 +47,9 @@ REXCVAR_DEFINE_INT32(ao2_versus_min_players, 1, "Online",
                      "Versus (custom and private matches): the host can start once everybody in the lobby is ready "
                      "and at least this many players are there (1-4); 0 = only with every place taken, as on the "
                      "console. Bots play the empty places (ao2_versus_bots).");
+REXCVAR_DEFINE_BOOL(ao2_versus_free_team_swap, true, "Online",
+                    "Versus ready room: Swap team takes a free place of the other team at once; the game swaps "
+                    "only with a player of the other team who asks too (used when that team is full)");
 
 namespace
 {
@@ -410,4 +414,78 @@ extern "C" REX_FUNC(sub_82A153C0)
     empty |= 1u << id;
   }
   ao2::versus::SetEmptyPlaces(empty);
+}
+
+// The host's player attributes (sub_82A29A68, r3 = lobby, r4 = the message
+// of a player's; the host's own too): after the game's swaps of two players
+// who both asked (+40 WantsToSwapTeam, ids 0-1 one team and 2-3 the other;
+// none while anybody is ready, +24), a player still asking goes to a free
+// id of the other team. Sent as the game sends a swap (sub_82A29988, to
+// every machine and to this one's ready room): first with the wish cleared
+// at the old id (its swap mark goes), then at the new one; a machine whose
+// player changed id empties the old place (sub_82A24670) - this one's
+// player was changed here, so the place is emptied here
+// (AO2PlasmaController OnPlayGroupMemberLeave, sub_82A33138).
+namespace
+{
+  constexpr uint32_t kSendPlayer = 0x82A29988; // r3 = lobby, r4 = player
+  constexpr uint32_t kMemberLeave = 0x82A33138; // r3 = controller, r4 = id
+  constexpr uint32_t kId = 4, kReady = 24, kSwap = 40, kSplit = 20;
+
+  void FreeTeamSwap(PPCContext &ctx, uint8_t *base, uint32_t lobby)
+  {
+    uint32_t modes = LoadU32(base, kGameModes);
+    uint32_t list = lobby ? LoadU32(base, lobby + kPlayers) : 0;
+    uint32_t controller = lobby ? LoadU32(base, lobby + kController) : 0;
+    if (!REXCVAR_GET(ao2_versus_free_team_swap) || !list || !controller || !modes || !LoadU32(base, modes + 48) ||
+        LoadU32(base, modes + 52) || LoadU32(base, lobby + kPlaces) != 4)
+    {
+      return;
+    }
+    uint32_t players[4] = {};
+    bool taken[4] = {};
+    for (uint32_t slot = 2; slot <= 5; ++slot)
+    {
+      uint32_t player = LoadU32(base, list + 4 * slot);
+      players[slot - 2] = player;
+      if (player && LoadU32(base, player + kId) < 4)
+      {
+        if (LoadU32(base, player + kReady))
+        {
+          return; // as the game: no swaps once somebody is ready
+        }
+        taken[LoadU32(base, player + kId)] = true;
+      }
+    }
+    uint32_t top = (ctx.r1.u32 - 256) & ~15u;
+    for (uint32_t player : players)
+    {
+      uint32_t id = player ? LoadU32(base, player + kId) : 4;
+      if (id >= 4 || !LoadU32(base, player + kSwap) || LoadU32(base, player + kSplit))
+      {
+        continue;
+      }
+      uint32_t first = id < 2 ? 2 : 0, to = taken[first] ? first + 1 : first;
+      if (taken[to])
+      {
+        continue; // the other team is full: the game's swap
+      }
+      StoreU32(base, player + kSwap, 0);
+      CallGuest(ctx, base, kSendPlayer, top, lobby, player);
+      StoreU32(base, player + kId, to);
+      CallGuest(ctx, base, kSendPlayer, top, lobby, player);
+      CallGuest(ctx, base, kMemberLeave, top, controller, id);
+      taken[id] = false;
+      taken[to] = true;
+      REXLOG_INFO("versus_lobby: player {} went over to the free place {}", id, to);
+    }
+  }
+} // namespace
+
+extern "C" REX_FUNC(__imp__sub_82A29A68);
+extern "C" REX_FUNC(sub_82A29A68)
+{
+  uint32_t lobby = ctx.r3.u32;
+  __imp__sub_82A29A68(ctx, base);
+  FreeTeamSwap(ctx, base, lobby);
 }

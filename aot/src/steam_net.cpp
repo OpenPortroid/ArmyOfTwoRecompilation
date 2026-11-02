@@ -133,6 +133,50 @@ namespace ao2::steam
     }
   }
 
+  namespace
+  {
+    // Crockford's base 32: no I, L, O or U; read leniently (O as 0, I and L
+    // as 1).
+    constexpr char kCodeDigits[] = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  } // namespace
+
+  std::string EncodeCode(uint32_t account)
+  {
+    std::string code(7, '0');
+    for (int i = 6; i >= 0; --i, account >>= 5)
+    {
+      code[size_t(i)] = kCodeDigits[account & 31];
+    }
+    return code.substr(0, 3) + "-" + code.substr(3);
+  }
+
+  bool DecodeCode(const std::string &text, uint32_t &account)
+  {
+    uint64_t v = 0;
+    int digits = 0;
+    for (char c : text)
+    {
+      c = char(std::toupper(static_cast<unsigned char>(c)));
+      if (c == '-' || c == ' ' || c == '\t')
+      {
+        continue;
+      }
+      c = c == 'O' ? '0' : (c == 'I' || c == 'L') ? '1' : c;
+      const char *at = std::strchr(kCodeDigits, c);
+      if (!c || !at)
+      {
+        return false;
+      }
+      v = v * 32 + uint64_t(at - kCodeDigits);
+      ++digits;
+    }
+    if (digits != 7 || v > 0xFFFFFFFFull || v == 0)
+    {
+      return false;
+    }
+    account = uint32_t(v);
+    return true;
+  }
 } // namespace ao2::steam
 
 #ifdef AO2_STEAM
@@ -274,6 +318,11 @@ namespace
     std::string quick_mode;
     uint64_t quick_lobby = 0;
     std::string persona; // this player's Steam name
+    uint32_t account = 0; // ... and account (JoinCode)
+    // A join by code (JoinByCode): the host's account asked for, the state.
+    uint32_t code_join = 0;
+    ao2::steam::CodeJoin code_state = ao2::steam::CodeJoin::kNone;
+    std::string code_host;
   };
 
   Shared &shared()
@@ -745,9 +794,119 @@ namespace
         ScanFriends();
       }
       UpdateHosting();
+      PumpKnocks();
     }
 
   private:
+    // --- Joining by code: knocks on channel 1 ("knock\n<name>" to the
+    // host, "invited"/"nogame"/"full"/"started" back) ---
+
+    void SendControl(uint64_t to, const std::string &text)
+    {
+      SteamNetworkingMessages()->SendMessageToUser(
+          Identity(to), text.data(), uint32_t(text.size()),
+          k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_AutoRestartBrokenSession, 1);
+    }
+
+    void SetCodeState(ao2::steam::CodeJoin state, const std::string &host = {})
+    {
+      std::lock_guard lock(shared().mutex);
+      shared().code_state = state;
+      if (!host.empty())
+      {
+        shared().code_host = host;
+      }
+    }
+
+    void Knock(uint32_t account)
+    {
+      CSteamID host(account, k_EUniversePublic, k_EAccountTypeIndividual);
+      if (host == SteamUser()->GetSteamID())
+      {
+        SetCodeState(ao2::steam::CodeJoin::kOwnCode);
+        return;
+      }
+      SteamFriends()->RequestUserInformation(host, true);
+      knock_host_ = host.ConvertToUint64();
+      knock_since_ = Clock::now();
+      knock_next_ = knock_since_;
+      if (Peer *p = bridge.AddPeer(knock_host_))
+      {
+        // Its invite may come before its answer.
+        std::lock_guard lock(shared().mutex);
+        shared().auto_accept[p->ip] = Clock::now() + std::chrono::seconds(60);
+      }
+      Log("joining by code: knocking at %llu", (unsigned long long)knock_host_);
+    }
+
+    void PumpKnocks()
+    {
+      auto now = Clock::now();
+      if (knock_host_ && now >= knock_next_)
+      {
+        if (now - knock_since_ > std::chrono::seconds(20))
+        {
+          Log("joining by code: no answer");
+          knock_host_ = 0;
+          SetCodeState(ao2::steam::CodeJoin::kNoAnswer);
+        }
+        else
+        {
+          SendControl(knock_host_, std::string("knock\n") + SteamFriends()->GetPersonaName());
+          knock_next_ = now + std::chrono::seconds(2);
+        }
+      }
+      SteamNetworkingMessage_t *msgs[16];
+      int n = SteamNetworkingMessages()->ReceiveMessagesOnChannel(1, msgs, 16);
+      for (int i = 0; i < n; ++i)
+      {
+        uint64_t from = msgs[i]->m_identityPeer.GetSteamID64();
+        std::string text(static_cast<const char *>(msgs[i]->m_pData), size_t(msgs[i]->m_cbSize));
+        msgs[i]->Release();
+        std::string word = text.substr(0, text.find('\n'));
+        if (word == "knock")
+        {
+          OnKnock(from, text.size() > 6 ? text.substr(6) : std::string());
+        }
+        else if (from == knock_host_)
+        {
+          knock_host_ = 0;
+          std::string name = SteamFriends()->GetFriendPersonaName(CSteamID(from));
+          Log("joining by code: %s answered %s", name.c_str(), word.c_str());
+          SetCodeState(word == "invited" ? ao2::steam::CodeJoin::kInvited
+                       : word == "full"  ? ao2::steam::CodeJoin::kFull
+                       : word == "started" ? ao2::steam::CodeJoin::kStarted
+                                           : ao2::steam::CodeJoin::kNoGame,
+                       name);
+        }
+      }
+    }
+
+    // Someone with this player's code: invited into the game it hosts.
+    void OnKnock(uint64_t from, const std::string &name)
+    {
+      ao2::steam::Hosting h;
+      {
+        std::lock_guard lock(shared().mutex);
+        h = shared().hosting;
+      }
+      const char *answer = !h.on ? "nogame" : h.in_game ? "started" : h.players >= h.max ? "full" : "invited";
+      Peer *p = bridge.AddPeer(from);
+      if (p && !name.empty() && (p->name.empty() || p->name == "[unknown]"))
+      {
+        p->name = name;
+      }
+      Log("%s knocked with this player's code: %s", p ? p->name.c_str() : "?", answer);
+      if (p && std::strcmp(answer, "invited") == 0)
+      {
+        ao2::invite::InviteAddress(p->ip, p->name);
+      }
+      SendControl(from, answer);
+    }
+
+    uint64_t knock_host_ = 0;
+    Clock::time_point knock_since_, knock_next_;
+
     // Friends running this game (its rich presence).
     void ScanFriends()
     {
@@ -771,6 +930,7 @@ namespace
     {
       bool refresh, invite_dialog, quick = false;
       uint64_t join;
+      uint32_t code;
       {
         auto &sh = shared();
         std::lock_guard lock(sh.mutex);
@@ -782,6 +942,7 @@ namespace
         }
         refresh = std::exchange(sh.refresh, false);
         join = std::exchange(sh.join, 0);
+        code = std::exchange(sh.code_join, 0);
         invite_dialog = std::exchange(sh.invite_dialog, false);
         if (refresh)
         {
@@ -816,6 +977,10 @@ namespace
       if (join)
       {
         Join(join);
+      }
+      if (code)
+      {
+        Knock(code);
       }
       if (invite_dialog && lobby_)
       {
@@ -947,8 +1112,14 @@ namespace
       {
         Log("leaving lobby %llx", (unsigned long long)lobby_);
         SteamMatchmaking()->LeaveLobby(CSteamID(lobby_));
-        SetLobby(0, false);
+        // Out of the list now (not at the next refresh); the list asked for
+        // again.
+        std::lock_guard lock(shared().mutex);
+        std::erase_if(shared().lobbies, [&](const ao2::steam::Lobby &l) { return l.id == lobby_; });
+        shared().refresh = true;
       }
+      SetLobby(0, false);
+      lobby_host_ = 0;
     }
 
     void SetLobby(uint64_t id, bool own)
@@ -972,7 +1143,8 @@ namespace
       auto now = Clock::now();
       if (!h.on)
       {
-        if (own_lobby_ && now - hosting_seen_ > std::chrono::seconds(20))
+        // A few seconds' grace (the game between its own screens).
+        if (own_lobby_ && now - hosting_seen_ > std::chrono::seconds(3))
         {
           Leave();
         }
@@ -1055,6 +1227,7 @@ namespace
       }
       SetLobby(e->m_ulSteamIDLobby, false);
       CSteamID owner = SteamMatchmaking()->GetLobbyOwner(CSteamID(lobby_));
+      lobby_host_ = owner.ConvertToUint64();
       int members = SteamMatchmaking()->GetNumLobbyMembers(CSteamID(lobby_));
       for (int i = 0; i < members; ++i)
       {
@@ -1110,6 +1283,7 @@ namespace
 
     uint64_t lobby_ = 0;
     bool own_lobby_ = false;
+    uint64_t lobby_host_ = 0; // the joined lobby's host (its owner at the join)
     bool creating_ = false;
     Clock::time_point hosting_seen_;
     Clock::time_point next_friends_;
@@ -1124,7 +1298,22 @@ namespace
 
   void Session::OnMember(LobbyChatUpdate_t *e)
   {
-    if (e->m_ulSteamIDLobby != lobby_ || !(e->m_rgfChatMemberStateChange & k_EChatMemberStateChangeEntered))
+    if (e->m_ulSteamIDLobby != lobby_)
+    {
+      return;
+    }
+    // The host gone: this player leaves too (else Steam hands the lobby to
+    // it and the game stays in the server list).
+    if (!own_lobby_ && e->m_ulSteamIDUserChanged == lobby_host_ &&
+        (e->m_rgfChatMemberStateChange &
+         (k_EChatMemberStateChangeLeft | k_EChatMemberStateChangeDisconnected | k_EChatMemberStateChangeKicked |
+          k_EChatMemberStateChangeBanned)))
+    {
+      Log("the host left lobby %llx", (unsigned long long)lobby_);
+      Leave();
+      return;
+    }
+    if (!(e->m_rgfChatMemberStateChange & k_EChatMemberStateChangeEntered))
     {
       return;
     }
@@ -1199,6 +1388,7 @@ namespace ao2::steam
     {
       std::lock_guard lock(shared().mutex);
       shared().persona = SteamFriends()->GetPersonaName();
+      shared().account = SteamUser()->GetSteamID().GetAccountID();
     }
     WSADATA wsa = {};
     WSAStartup(MAKEWORD(2, 2), &wsa);
@@ -1308,6 +1498,38 @@ namespace ao2::steam
     return false;
   }
 
+  std::string JoinCode()
+  {
+    std::lock_guard lock(shared().mutex);
+    return g_running && shared().account ? EncodeCode(shared().account) : std::string();
+  }
+
+  bool JoinByCode(const std::string &code)
+  {
+    uint32_t account;
+    if (!g_running || !DecodeCode(code, account))
+    {
+      return false;
+    }
+    std::lock_guard lock(shared().mutex);
+    shared().code_join = account;
+    shared().code_state = CodeJoin::kKnocking;
+    shared().code_host.clear();
+    return true;
+  }
+
+  CodeJoin CodeJoinState()
+  {
+    std::lock_guard lock(shared().mutex);
+    return shared().code_state;
+  }
+
+  std::string CodeJoinHost()
+  {
+    std::lock_guard lock(shared().mutex);
+    return shared().code_host;
+  }
+
   bool InviteFriends()
   {
     std::lock_guard lock(shared().mutex);
@@ -1335,6 +1557,10 @@ namespace ao2::steam
   std::vector<Lobby> Lobbies() { return {}; }
   void JoinLobby(uint64_t) {}
   bool InviteFriends() { return false; }
+  std::string JoinCode() { return {}; }
+  bool JoinByCode(const std::string &) { return false; }
+  CodeJoin CodeJoinState() { return CodeJoin::kNone; }
+  std::string CodeJoinHost() { return {}; }
   bool QuickMatch(const std::string &) { return false; }
 } // namespace ao2::steam
 

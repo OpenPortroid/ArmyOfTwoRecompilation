@@ -62,12 +62,25 @@ REXCVAR_DEFINE_BOOL(ao2_coop_server, false, "Online",
                     "The partner connects with ao2_coop_host = this computer's IP (VPN/LAN/public).");
 REXCVAR_DEFINE_STRING(ao2_coop_host, "", "Online",
                       "Online co-op partner: IP address of the player who runs ao2_coop_server.");
+REXCVAR_DEFINE_BOOL(ao2_public_game_search, false, "Online",
+                    "Public game looks for an open game first (on this PC's server, then over Steam) and "
+                    "hosts only when there is none. Off: it hosts at once, a public game everyone sees in "
+                    "the server list (F1 > Online > Servers).");
 #endif
 
 namespace ao2::ea
 {
   namespace
   {
+    bool PublicGameSearch()
+    {
+#ifndef AO2_STANDALONE_SERVER
+      return REXCVAR_GET(ao2_public_game_search);
+#else
+      return false;
+#endif
+    }
+
     constexpr uint16_t kFeslPort = 18480;
     constexpr uint16_t kTheaterPort = 18485;
     constexpr uint16_t kMessengerPort = 13505;
@@ -785,9 +798,18 @@ namespace ao2::ea
               found.push_back(Summary(g, tid));
             }
           }
-          // This PC's own game finds nothing here: perhaps elsewhere (the
+          // Public game from this PC's own game: by default no search at all,
+          // the list comes back empty and the game hosts a public game (a
+          // Steam lobby everyone sees in the server list). With
+          // ao2_public_game_search: games on this server, then elsewhere (the
           // hook sends it there through an invite; the list stays unanswered).
-          if (found.empty() && not_private && hook && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G")
+          bool own_quick = not_private && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G";
+          if (own_quick && !PublicGameSearch())
+          {
+            Log("public game: hosting (no search)");
+            found.clear();
+          }
+          else if (found.empty() && own_quick && hook)
           {
             std::string mode = Get(f, "FILTER-ATTR-U-Mode");
             Log("quick match (mode %s): nothing here, looking further", mode.c_str());

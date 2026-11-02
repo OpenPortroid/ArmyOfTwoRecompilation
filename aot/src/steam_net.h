@@ -83,6 +83,27 @@ namespace ao2::steam
   // Steam's invite dialog for this player's lobby (none: false).
   bool InviteFriends();
 
+  // Playing with someone met elsewhere (Discord, a forum), Steam friends or
+  // not: this player's code (their Steam account in 7 letters, "ABC-DEFG";
+  // empty without Steam) and a join by the host's code. The host's game, if
+  // it hosts a lobby game with a free place, invites whoever knocks with its
+  // code, and the invite is accepted by itself.
+  std::string JoinCode();
+  bool JoinByCode(const std::string &code); // false: not a code
+  enum class CodeJoin
+  {
+    kNone,
+    kKnocking, // asking the host (up to ~20 s)
+    kInvited,  // the host's game sent its invite
+    kNoGame,   // the host hosts no game now
+    kFull,
+    kStarted,  // its match runs
+    kNoAnswer, // no answer (not running the game, or no Steam)
+    kOwnCode,
+  };
+  CodeJoin CodeJoinState();
+  std::string CodeJoinHost(); // the host's Steam name, once it answered
+
   // The game's public quick match found nothing on this PC's server
   // (ea::SetQuickMatchHook): the open Steam lobby of the same mode and build
   // with the lowest ping is joined; true once its invite was accepted, false

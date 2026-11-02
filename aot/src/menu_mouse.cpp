@@ -82,6 +82,9 @@ REXCVAR_DEFINE_BOOL(ao2_menu_mouse, true, "Input",
                     "The mouse in the menus: the cursor is shown, pointing focuses, the left button selects, the "
                     "right one goes back");
 REXCVAR_DEFINE_BOOL(ao2_menu_exit, true, "General", "An Exit item at the bottom of the main menu");
+REXCVAR_DEFINE_BOOL(ao2_skip_lobby_note, true, "Online",
+                    "Closes the note the game shows on entering your own multiplayer lobby (\"To play a private "
+                    "multiplayer game, invite 3 of your friends...\") as if Continue were pressed");
 REXCVAR_DEFINE_STRING(ao2_menu_mouse_test_file, "", "Debug",
                       "Testing: a file whose \"x y\" (picture pixels) is the cursor in the menus instead of the "
                       "mouse; what is pointed at goes to menu_mouse.log");
@@ -258,6 +261,7 @@ namespace
     // target cut to the screen's height is lower than (aspect_ratio.cpp).
     float lh;
     float x0, y0, x1, y1; // where it is hit
+    float mid = 0.0f;     // an option's middle: a click left of it is D-pad left
     // Its rotation (Rotation.TransformMatrix: row vectors, from its top left
     // corner), inverted: a point relative to x0, y0 back to the unturned widget.
     float inv[4] = {1.0f, 0.0f, 0.0f, 1.0f}, tx = 0.0f, ty = 0.0f;
@@ -287,8 +291,19 @@ namespace
     return false;
   }
 
-  void Collect(const uint8_t *base, uint32_t object, const Widget &scene, std::vector<Widget> &out, int depth = 0)
+  bool Disabled(const uint8_t *base, uint32_t widget);
+
+  // A caption (UILabel) of a scene drawn on the screen, for the options'
+  // hit areas.
+  struct Caption
   {
+    float x0, y0, x1, y1;
+  };
+
+  void Collect(const uint8_t *base, uint32_t object, const Widget &scene, std::vector<Widget> &out,
+               std::vector<Caption> &captions, int depth = 0)
+  {
+    static uint32_t label_class = ao2::ue3::FindClass(base, "UILabel");
     uint32_t data = LoadU32(base, object + kChildren);
     uint32_t count = LoadU32(base, object + kChildren + 4);
     for (uint32_t i = 0; data && i < count && i < 256 && depth < 8; ++i)
@@ -299,8 +314,18 @@ namespace
         continue;
       }
       Kind kind;
+      if (!scene.slab && label_class && ao2::ue3::IsA(base, child, label_class))
+      {
+        Caption c{LoadF32(base, child + kRenderBounds), LoadF32(base, child + kRenderBounds + 4),
+                  LoadF32(base, child + kRenderBounds + 8), LoadF32(base, child + kRenderBounds + 12)};
+        if (c.x1 > c.x0 && c.y1 > c.y0)
+        {
+          captions.push_back(c);
+        }
+      }
       // The main menu's Exit is hit at its label (below).
-      if (Focusable(base, child, kind) && !(scene.slab && ao2::ue3::ObjectName(base, child) == "Exit"))
+      if (Focusable(base, child, kind) && !Disabled(base, child) &&
+          !(scene.slab && ao2::ue3::ObjectName(base, child) == "Exit"))
       {
         if (kind == Kind::kValue && ao2::gfxmenu::IsOpenButton(base, child))
         {
@@ -329,6 +354,7 @@ namespace
           w.tx = m[12];
           w.ty = m[13];
         }
+        w.mid = (w.x0 + w.x1) * 0.5f;
         if (w.x1 > w.x0 && w.y1 > w.y0)
         {
           if (kind == Kind::kValue)
@@ -340,7 +366,36 @@ namespace
           out.push_back(w);
         }
       }
-      Collect(base, child, scene, out, depth + 1);
+      Collect(base, child, scene, out, captions, depth + 1);
+    }
+  }
+
+  // An option's caption just above it (the ready room's "Customize
+  // character" over "Any") is part of it: the whole row is hit, not only
+  // the value's line.
+  void TakeCaptions(std::vector<Widget> &widgets, const std::vector<Caption> &captions)
+  {
+    for (Widget &w : widgets)
+    {
+      if (w.slab || w.kind != Kind::kValue)
+      {
+        continue;
+      }
+      for (const Caption &c : captions)
+      {
+        bool above = c.y0 < w.y0 && c.y1 > w.y0 - 30.0f && c.y1 < w.y0 + 0.5f * (w.y1 - w.y0);
+        bool overlaps = c.x0 < w.x1 && c.x1 > w.x0;
+        bool own = std::none_of(widgets.begin(), widgets.end(), [&](const Widget &o) {
+          return &o != &w && o.kind == Kind::kValue && !o.slab && o.y0 > c.y1 - 1.0f && o.y0 < w.y0 - 1.0f &&
+                 o.x0 < c.x1 && o.x1 > c.x0;
+        });
+        if (above && overlaps && own)
+        {
+          w.y0 = c.y0;
+          w.x0 = std::min(w.x0, c.x0);
+          w.x1 = std::max(w.x1, c.x1);
+        }
+      }
     }
   }
 
@@ -390,7 +445,9 @@ namespace
         space.vh = size_y > 0 ? float(LoadU32(base, target + size_y)) : 0.0f;
         space.lh = float(ao2::aspect::LayoutHeight(uint32_t(space.vw), uint32_t(space.vh)));
       }
-      Collect(base, scene, space, widgets);
+      std::vector<Caption> captions;
+      Collect(base, scene, space, widgets, captions);
+      TakeCaptions(widgets, captions);
       return widgets.empty() ? 0 : scene; // the top scene taking input, if it has anything to point at
     }
     return 0;
@@ -415,24 +472,33 @@ namespace
     return any;
   }
 
-  bool Focused(const uint8_t *base, uint32_t widget)
+  bool InState(const uint8_t *base, uint32_t widget, uint32_t state_class)
   {
-    static uint32_t focused_class = 0;
-    if (!focused_class)
-    {
-      focused_class = ao2::ue3::FindClass(base, "UIState_Focused");
-    }
     uint32_t data = LoadU32(base, widget + kStateStack);
     uint32_t count = LoadU32(base, widget + kStateStack + 4);
-    for (uint32_t i = 0; data && i < count && i < 16; ++i)
+    for (uint32_t i = 0; data && state_class && i < count && i < 16; ++i)
     {
       uint32_t state = LoadU32(base, data + i * 4);
-      if (state && focused_class && ao2::ue3::IsA(base, state, focused_class))
+      if (state && ao2::ue3::IsA(base, state, state_class))
       {
         return true;
       }
     }
     return false;
+  }
+
+  bool Focused(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t focused_class = ao2::ue3::FindClass(base, "UIState_Focused");
+    return InState(base, widget, focused_class);
+  }
+
+  // Greyed out (the ready room's game type and round length, which only the
+  // game setup screen changes): nothing to point at.
+  bool Disabled(const uint8_t *base, uint32_t widget)
+  {
+    static uint32_t disabled_class = ao2::ue3::FindClass(base, "UIState_Disabled");
+    return InState(base, widget, disabled_class);
   }
 
   void Focus(PPCContext &ctx, uint8_t *base, uint32_t widget, bool focus = true)
@@ -817,6 +883,31 @@ namespace
     }
   }
 
+  // The end of a scene's focus chain: UIScreenObject.FocusControls[0]
+  // .FocusedControl (the first player's) followed down from the scene, 0 if
+  // none. This is what the D-pad moves from.
+  uint32_t ChainFocus(const uint8_t *base, uint32_t scene)
+  {
+    static int32_t controls = ao2::ue3::PropertyOffset(base, "UIScreenObject", "FocusControls");
+    if (controls < 0 || !scene)
+    {
+      return 0;
+    }
+    uint32_t o = scene;
+    for (int depth = 0; depth < 12; ++depth)
+    {
+      uint32_t data = LoadU32(base, o + uint32_t(controls));
+      uint32_t count = LoadU32(base, o + uint32_t(controls) + 4);
+      uint32_t next = data && count && count < 8 ? LoadU32(base, data) : 0;
+      if (!next || next == o || (next & 3))
+      {
+        break;
+      }
+      o = next;
+    }
+    return o == scene ? 0 : o;
+  }
+
   // --- The UI dump -----------------------------------------------------------
 
   // ui_dump.trigger in the working directory: every scene on the stack and
@@ -871,9 +962,9 @@ namespace
       uint32_t cls = LoadU32(base, child + kClass);
       std::string cls_name = cls ? ao2::ue3::ObjectName(base, cls) : std::string();
       int indent = depth * 2;
-      std::fprintf(f, "%*s%08X %s (%s)%s pos %g %g %g %g type %u %u %u %u aspect %u bounds %g %g %g %g\n", indent,
-                   "", child, ao2::ue3::ObjectName(base, child).c_str(), cls_name.c_str(),
-                   Hidden(base, child) ? " hidden" : "", LoadF32(base, child + kPosition),
+      std::fprintf(f, "%*s%08X %s (%s)%s%s pos %g %g %g %g type %u %u %u %u aspect %u bounds %g %g %g %g\n",
+                   indent, "", child, ao2::ue3::ObjectName(base, child).c_str(), cls_name.c_str(),
+                   Hidden(base, child) ? " hidden" : "", Focused(base, child) ? " focused" : "", LoadF32(base, child + kPosition),
                    LoadF32(base, child + kPosition + 4), LoadF32(base, child + kPosition + 8),
                    LoadF32(base, child + kPosition + 12), base[child + kPosition + 16], base[child + kPosition + 17],
                    base[child + kPosition + 18], base[child + kPosition + 19], base[child + kPosition + 20],
@@ -916,11 +1007,13 @@ namespace
     {
       uint32_t cls = LoadU32(base, scene + kClass);
       uint32_t target = LoadU32(base, scene + kRenderTarget);
-      std::fprintf(f, "\nscene %08X %s (%s) input %u viewport %g %g target %08X %s\n", scene,
+      uint32_t leaf = ChainFocus(base, scene);
+      std::fprintf(f, "\nscene %08X %s (%s) input %u viewport %g %g target %08X %s focus %08X %s\n", scene,
                    ao2::ue3::ObjectName(base, scene).c_str(), cls ? ao2::ue3::ObjectName(base, cls).c_str() : "",
                    base[scene + kSceneInputMode], LoadF32(base, scene + kViewportSize),
                    LoadF32(base, scene + kViewportSize + 4), target,
-                   target ? ao2::ue3::ObjectName(base, target).c_str() : "");
+                   target ? ao2::ue3::ObjectName(base, target).c_str() : "", leaf,
+                   leaf ? ao2::ue3::ObjectName(base, leaf).c_str() : "");
       DumpWidgets(f, base, scene, 1);
     }
     std::fclose(f);
@@ -947,6 +1040,8 @@ namespace
   uint16_t g_inject = 0;                    // pad buttons held for the menu
   int g_inject_polls = 0;                   // for this many more polls
   uint32_t g_hover = 0;                     // the widget under the cursor
+  uint32_t g_kept = 0, g_kept_until = 0;    // an option clicked, kept focused for a while (below)
+  bool g_polling = false;                   // in OnPadPoll: the focus is ours to move
   float g_last_u = -1.0f, g_last_v = -1.0f; // the cursor as last seen
   uint32_t g_moved = 0;                     // when it last moved (GetTickCount)
   // Pointing counts this long after a move: the slabs' answer comes a few
@@ -991,8 +1086,28 @@ namespace
     return nullptr;
   }
 
+  // The focused widget. A widget's focused state (UIState_Focused) is not
+  // enough: on a screen of several panels (versus' Custom Match: the match
+  // options on the left, the players on the right) one panel's last focused
+  // widget keeps that state while the D-pad works in the other one, and a
+  // walk or click taking it for the focus stepped the other column. The
+  // scene's focus chain is asked first; the state only where there is no chain.
   uint32_t FocusedWidget(const uint8_t *base, const std::vector<Widget> &widgets)
   {
+    uint32_t last_scene = 0;
+    for (const Widget &w : widgets)
+    {
+      uint32_t scene = LoadU32(base, w.object + kOwnerScene);
+      if (!scene || scene == last_scene)
+      {
+        continue;
+      }
+      last_scene = scene;
+      if (uint32_t leaf = ChainFocus(base, scene); leaf && Find(widgets, leaf))
+      {
+        return leaf;
+      }
+    }
     for (const Widget &w : widgets)
     {
       if (Focused(base, w.object))
@@ -1001,6 +1116,47 @@ namespace
       }
     }
     return 0;
+  }
+
+  // Focuses `target` and checks it took (the scene's focus chain). On the
+  // versus lobby (MPLobbyHostScene) a SetFocus with the widget's best player
+  // index can be ignored once the scene's own script has put the focus on a
+  // player slot: then with player 0 (the keyboard's, whose chain the D-pad
+  // moves), then with the focused widget's focus taken away first. False if
+  // it would not take: no press may follow (it would go to the other widget).
+  bool FocusChecked(PPCContext &ctx, uint8_t *base, const std::vector<Widget> &widgets, uint32_t target)
+  {
+    uint32_t before = FocusedWidget(base, widgets);
+    uint32_t player = CallGuest(ctx, base, kBestPlayerIndex, target);
+    CallGuest(ctx, base, Virtual(base, target, kSetFocus), target, 0, player);
+    uint32_t now = FocusedWidget(base, widgets);
+    int tries = 1;
+    if (now != target && player != 0)
+    {
+      ++tries;
+      CallGuest(ctx, base, Virtual(base, target, kSetFocus), target, 0, 0);
+      now = FocusedWidget(base, widgets);
+    }
+    if (now != target && now)
+    {
+      ++tries;
+      CallGuest(ctx, base, Virtual(base, now, kKillFocus), now, 0, 0);
+      CallGuest(ctx, base, Virtual(base, target, kSetFocus), target, 0, 0);
+      uint32_t after = FocusedWidget(base, widgets);
+      if (after != target && after != now)
+      {
+        CallGuest(ctx, base, Virtual(base, now, kSetFocus), now, 0, 0); // not left with none
+        after = FocusedWidget(base, widgets);
+      }
+      now = after;
+    }
+    if (now != target || tries > 1)
+    {
+      Logf("focus %s: player %u, %d tries, %s (was %s, now %s)\n", ao2::ue3::ObjectName(base, target).c_str(),
+           player, tries, now == target ? "took" : "refused", before ? ao2::ue3::ObjectName(base, before).c_str() : "-",
+           now ? ao2::ue3::ObjectName(base, now).c_str() : "-");
+    }
+    return now == target;
   }
 
   // The Options screen and its Graphics and Controls pages: nothing follows
@@ -1113,10 +1269,18 @@ namespace
     return name.rfind("lblbtnUpgrade", 0) == 0 || name.rfind("lblbtnArmor", 0) == 0;
   }
 
+  // Focused directly, not walked to: the options, and the versus lobby and
+  // ready room, whose D-pad steps from a player slot go nowhere.
   bool FocusAtOnce(const uint8_t *base, uint32_t widget)
   {
     uint32_t scene = LoadU32(base, widget + kOwnerScene);
-    return scene && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene", 0) == 0;
+    if (!scene)
+    {
+      return false;
+    }
+    std::string name = ao2::ue3::ObjectName(base, scene);
+    return name.rfind("AllOptionsUIScene", 0) == 0 || name.rfind("MPReadyRoomScene", 0) == 0 ||
+           name.rfind("MPLobbyHostScene", 0) == 0;
   }
 
   // The widget one D-pad step from `target` (up or down first: from an option
@@ -1205,7 +1369,9 @@ namespace
     {
       w.stuck = now == w.from ? w.stuck + 1 : 0;
     }
+    auto name = [&](uint32_t o) { return o ? ao2::ue3::ObjectName(base, o) : std::string("nothing"); };
     auto arrived = [&]() {
+      Logf("walk: at %s after %d steps%s\n", name(w.target).c_str(), w.steps, w.then ? ", pressing" : "");
       if (w.then)
       {
         g_inject = w.then;
@@ -1215,22 +1381,31 @@ namespace
     };
     if (now != w.target && FocusAtOnce(base, w.target))
     {
-      Focus(ctx, base, w.target);
-      now = w.target;
+      FocusChecked(ctx, base, widgets, w.target);
+      now = FocusedWidget(base, widgets);
     }
     // The objectives keep their own pick and put the focus back on it: only
     // the D-pad's steps move it there, one at a time.
-    if (now != w.target && !w.steps && !w.jumped && !objectives && !StepsOnly(base, w.target))
+    // Already one D-pad step from it (Round length over Ready): stepped,
+    // not put next to it first (that put the focus on a player slot).
+    bool adjacent = false;
+    for (int face = 0; now && face < 4; ++face)
+    {
+      adjacent = adjacent || LoadU32(base, now + kNavigationTargets + face * 4) == w.target;
+    }
+    if (now != w.target && !w.steps && !w.jumped && !adjacent && !objectives && !StepsOnly(base, w.target))
     {
       // Not every row on the way: the focus is put next to the target and one
       // step goes in, so a menu following the navigation sees it arrive.
       w.jumped = true;
       if (uint32_t next = NeighbourOf(base, widgets, *target, now))
       {
+        Logf("walk: to %s from %s, first next to it: %s\n", name(w.target).c_str(), name(now).c_str(),
+             name(next).c_str());
         if (!IsMask(base, next))
         {
-          Focus(ctx, base, next);
-          now = next;
+          FocusChecked(ctx, base, widgets, next);
+          now = FocusedWidget(base, widgets); // the steps go from where it really is
         }
         else if (SetMaskIndex(base, next))
         {
@@ -1268,7 +1443,13 @@ namespace
         w = Walk{}; // a focus set directly would part the list from the character / the part shown
         return 0;
       }
-      Focus(ctx, base, w.target);
+      Logf("walk: set on %s (from %s, %d steps, stuck %d)\n", name(w.target).c_str(), name(now).c_str(), w.steps,
+           w.stuck);
+      if (!FocusChecked(ctx, base, widgets, w.target))
+      {
+        w = Walk{}; // not there: its click must not press the focused widget
+        return 0;
+      }
       arrived();
       return 0;
     }
@@ -1284,17 +1465,74 @@ namespace
     {
       w.button = dx < 0.0f ? kDpadLeft : kDpadRight;
     }
+    // The direction whose navigation target it is, where there is one.
+    for (int face = 0; face < 4; ++face)
+    {
+      bool side = face == 0 || face == 2;
+      if (LoadU32(base, now + kNavigationTargets + face * 4) == w.target &&
+          !(side && (from->kind == Kind::kValue || objectives)))
+      {
+        const uint16_t kFaces[4] = {kDpadLeft, kDpadUp, kDpadRight, kDpadDown};
+        w.button = kFaces[face];
+        break;
+      }
+    }
     w.from = now;
     w.phase = 1;
     w.since = tick;
     g_walk_stick = objectives;
-    if (objectives)
-    {
-      Logf("objectives: %s from %s to %s\n", w.button == kDpadUp ? "up" : "down",
-           ao2::ue3::ObjectName(base, now).c_str(), ao2::ue3::ObjectName(base, w.target).c_str());
-    }
+    Logf("walk: %s from %s to %s\n",
+         w.button == kDpadUp ? "up" : w.button == kDpadDown ? "down" : w.button == kDpadLeft ? "left" : "right",
+         name(now).c_str(), name(w.target).c_str());
     ++w.steps;
     return w.button;
+  }
+} // namespace
+
+namespace
+{
+  // The host's lobby (MPLobbyHostScene) opens with a note over it (an
+  // AO2Confirmation, UIScene_Confirmation: "To play a private multiplayer
+  // game, invite 3 of your friends to the game setup screen..."). A
+  // confirmation that comes up within a few seconds of the lobby is closed
+  // with A (its Continue), held for a few polls so the scene sees the press;
+  // later ones (asked for by the player) are left alone.
+  template <typename Store>
+  void SkipLobbyNote(const uint8_t *base, const std::vector<uint32_t> &scenes, uint16_t &buttons, Store &store)
+  {
+    static uint32_t confirmation = ao2::ue3::FindClass(base, "UIScene_Confirmation");
+    static uint32_t lobby_seen = 0, lobby_since = 0, closed = 0;
+    static int hold = 0;
+    uint32_t lobby = 0;
+    for (uint32_t scene : scenes)
+    {
+      if (ao2::ue3::ObjectName(base, scene).rfind("MPLobbyHostScene", 0) == 0)
+      {
+        lobby = scene;
+      }
+    }
+    if (lobby != lobby_seen)
+    {
+      lobby_seen = lobby;
+      lobby_since = GetTickCount();
+    }
+    uint32_t top = scenes.empty() ? 0 : scenes.back();
+    if (hold == 0 && lobby && top && top != lobby && top != closed && confirmation &&
+        ao2::ue3::IsA(base, top, confirmation) && GetTickCount() - lobby_since < 5000)
+    {
+      closed = top;
+      hold = 4;
+      Logf("lobby note %s closed\n", ao2::ue3::ObjectName(base, top).c_str());
+    }
+    if (hold > 0)
+    {
+      // Pressed for three polls, then one let go.
+      if (--hold > 0)
+      {
+        buttons |= kButtonA;
+        store();
+      }
+    }
   }
 } // namespace
 
@@ -1302,8 +1540,34 @@ namespace ao2::menumouse
 {
   void Attach(rex::ui::Window *window) { g_window = window; }
 
+  // UIScreenObject::SetFocus (sub_829A3DA8) not from here: the ready room
+  // moves the focus to the host's slot when a character picked there comes
+  // back from the lobby (the update redraws the slots), and the slot showed
+  // for a frame before the poll put it back. While an option clicked is
+  // kept, the other widgets of its scene are not given the focus.
+  bool RefuseFocus(const uint8_t *base, uint32_t widget)
+  {
+    if (!g_kept || g_polling || widget == g_kept || int32_t(GetTickCount() - g_kept_until) >= 0)
+    {
+      return false;
+    }
+    uint32_t scene = LoadU32(base, g_kept + kOwnerScene);
+    if (!scene || widget == scene || LoadU32(base, widget + kOwnerScene) != scene)
+    {
+      return false;
+    }
+    Logf("refused focus to %s (kept on %s)\n", ao2::ue3::ObjectName(base, widget).c_str(),
+         ao2::ue3::ObjectName(base, g_kept).c_str());
+    return true;
+  }
+
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard)
   {
+    g_polling = true;
+    struct Done
+    {
+      ~Done() { g_polling = false; }
+    } done;
     if (ao2::menu::IsOpen() || ao2::gfxmenu::Capturing())
     {
       // The players window (invites) or the debug menu is up, or the
@@ -1332,6 +1596,11 @@ namespace ao2::menumouse
       p[4] = uint8_t(buttons >> 8);
       p[5] = uint8_t(buttons);
     };
+
+    if (g_kept && g_inject_polls == 0 && (buttons & (kDpadUp | kDpadDown | kDpadLeft | kDpadRight | kButtonA | kButtonB)))
+    {
+      g_kept = 0; // the keys move the focus now
+    }
 
     std::vector<uint32_t> scenes = Scenes(base);
     for (uint32_t s : scenes)
@@ -1415,6 +1684,10 @@ namespace ao2::menumouse
         }
         store_buttons();
       }
+    }
+    if (keyboard && REXCVAR_GET(ao2_skip_lobby_note))
+    {
+      SkipLobbyNote(base, scenes, buttons, store_buttons);
     }
     if (exit && (buttons & kButtonA) && Focused(base, exit))
     {
@@ -1506,6 +1779,20 @@ namespace ao2::menumouse
       {
         g_hover = hit ? hit->object : 0;
       }
+      // The ready room puts the focus back on the host's slot when a
+      // character picked there comes back from the lobby: an option clicked
+      // keeps it while the cursor stays on it (a few seconds after the last
+      // click), so the next click does not go round by the slot.
+      if (g_kept && (!hit || hit->object != g_kept || int32_t(GetTickCount() - g_kept_until) >= 0))
+      {
+        g_kept = 0;
+      }
+      if (g_kept && !left_pressed && g_walk.target == 0 && g_inject_polls == 0 &&
+          FocusedWidget(base, widgets) != g_kept && FocusAtOnce(base, g_kept))
+      {
+        Logf("kept focus on %s\n", ao2::ue3::ObjectName(base, g_kept).c_str());
+        FocusChecked(ctx, base, widgets, g_kept);
+      }
       if (hit && left_pressed && exit && hit->object == exit)
       {
         Quit();
@@ -1513,8 +1800,17 @@ namespace ao2::menumouse
       else if (hit && left_pressed)
       {
         uint16_t press = hit->kind == Kind::kButton ? kButtonA
-                                                    : (x < (hit->x0 + hit->x1) * 0.5f ? kDpadLeft : kDpadRight);
-        if (Focused(base, hit->object) && g_walk.target == 0)
+                                                    : (x < hit->mid ? kDpadLeft : kDpadRight);
+        uint32_t focused = FocusedWidget(base, widgets);
+        Logf("click: %s at %.0f %.0f (focus %s): %s\n", ao2::ue3::ObjectName(base, hit->object).c_str(), x, y,
+             focused ? ao2::ue3::ObjectName(base, focused).c_str() : "nothing",
+             press == kButtonA ? "A" : press == kDpadLeft ? "left" : "right");
+        if (hit->kind == Kind::kValue)
+        {
+          g_kept = hit->object;
+          g_kept_until = GetTickCount() + 3000;
+        }
+        if (focused == hit->object && g_walk.target == 0)
         {
           g_inject = press;
           g_inject_polls = 2;
@@ -1524,7 +1820,7 @@ namespace ao2::menumouse
           WalkTo(hit->object, press);
         }
       }
-      else if (hit && entered && !Focused(base, hit->object))
+      else if (hit && entered && FocusedWidget(base, widgets) != hit->object)
       {
         // The objectives' page arrows are left alone.
         if (!Objectives(base, hit->object) || hit->kind == Kind::kButton)
@@ -1559,3 +1855,16 @@ namespace ao2::menumouse
     }
   }
 } // namespace ao2::menumouse
+
+// UIScreenObject::SetFocus (r3 = the widget, r4 = sender, r5 = player
+// index; returns whether it took).
+extern "C" REX_FUNC(__imp__sub_829A3DA8);
+extern "C" REX_FUNC(sub_829A3DA8)
+{
+  if (ao2::menumouse::RefuseFocus(base, ctx.r3.u32))
+  {
+    ctx.r3.u64 = 0;
+    return;
+  }
+  __imp__sub_829A3DA8(ctx, base);
+}

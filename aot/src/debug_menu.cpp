@@ -117,9 +117,6 @@ REXCVAR_DECLARE(int32_t, ao2_versus_respawn_step);
 
 REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
                       "Key that opens the debug menu (graphics, achievements, invites, cheats, checkpoints); empty = none");
-REXCVAR_DEFINE_STRING(ao2_menu_style, "classic", "Debug",
-                      "Look of the F1 menu and the port's own screens: glass (translucent rounded panels over the "
-                      "blurred game) or classic (the flat navy panel)");
 REXCVAR_DEFINE_STRING(ao2_fps_overlay_key, "F2", "GPU",
                       "Key that switches the frame rate overlay (off, FPS, detailed); empty = none");
 
@@ -375,15 +372,6 @@ namespace
   float Section(ImDrawList *dl, float x0, float x1, float y, const char *label, float a)
   {
     float s = ui::Scale();
-    if (ui::Glass())
-    {
-      // Glass: the caption as written, a little brighter, and the hairline.
-      ui::Text(dl, FontKind::kSmall, ImVec2(x0, y - 2.0f * s), ui::Fade(ui::kText, 0.75f * a), label);
-      float lx = x0 + ui::TextSize(FontKind::kSmall, label).x + 12.0f * s;
-      float ly = y + ui::FontSize(FontKind::kSmall) * 0.55f;
-      dl->AddLine(ImVec2(lx, ly), ImVec2(x1, ly), ui::Fade(ui::kWhite, 0.12f * a), 1.0f * s);
-      return y + ui::FontSize(FontKind::kSmall) + 14.0f * s;
-    }
     std::string caps = Upper(label);
     ui::Caps(dl, FontKind::kLabel, ImVec2(x0, y), ui::Fade(ui::kMuted, a), caps.c_str());
     float lx = x0 + ui::CapsSize(FontKind::kLabel, caps.c_str()).x + 12.0f * s;
@@ -429,25 +417,10 @@ namespace
     }
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImVec2 mx(pos.x + size.x, pos.y + size.y);
-    if (ui::Glass())
-    {
-      // Glass: a pill, the picked one white with ink text.
-      float r = size.y * 0.5f;
-      dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, ((held ? 0.16f : 0.06f) + 0.07f * h) * (1.0f - o) * a), r);
-      dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, (0.86f + 0.10f * h) * o * a), r);
-      dl->AddRect(pos, mx, ui::Fade(ui::kWhite, (0.16f + 0.25f * h) * (1.0f - o) * a), r, ImDrawFlags_None, 1.0f * s);
-      ImU32 text = enabled ? ui::Mix(ui::Mix(ui::kText, ui::kAccentLight, h), ui::kInk, o) : ui::kMuted;
-      ImVec2 ts = ui::TextSize(FontKind::kSmall, label);
-      dl->PushClipRect(pos, mx, true);
-      ui::Text(dl, FontKind::kSmall,
-               ImVec2(pos.x + (size.x - ts.x) * 0.5f, pos.y + (size.y - ts.y) * 0.5f - 1.0f * s), ui::Fade(text, a),
-               label);
-      dl->PopClipRect();
-      return clicked;
-    }
-    dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, ((held ? 0.14f : 0.03f) + 0.07f * h) * (1.0f - o) * a));
-    dl->AddRectFilled(pos, mx, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, h), o * a));
-    dl->AddRect(pos, mx, ui::Fade(ui::kAccent, (0.16f + 0.45f * h) * (1.0f - o) * a), 0.0f, ImDrawFlags_None,
+    float r = ui::Round(6.0f);
+    dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, ((held ? 0.14f : 0.03f) + 0.07f * h) * (1.0f - o) * a), r);
+    dl->AddRectFilled(pos, mx, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, h), o * a), r);
+    dl->AddRect(pos, mx, ui::Fade(ui::kAccent, (0.16f + 0.45f * h) * (1.0f - o) * a), r, ImDrawFlags_None,
                 1.0f * s);
     ImU32 text = enabled ? ui::Mix(ui::Mix(ui::kText, ui::kAccentLight, h), ui::kInk, o) : ui::kMuted;
     ImVec2 ts = ui::TextSize(FontKind::kSmall, label);
@@ -513,39 +486,100 @@ namespace
     dl->AddCircleFilled(knob, r - 4.0f * s, ui::Fade(enabled ? ui::kAccentLight : ui::kMuted, a));
   }
 
-  // The sections, in the sidebar's order (keys 1-7): the settings, online
-  // play, the game.
+  // The sections, in the sidebar's order. Online's two pages show under it
+  // while one of the three is open.
   enum Tab
   {
-    kTabGraphics,
+    kTabSettings,
+    kTabOnline, // the partners: Steam friends, the LAN, a VPN
+    kTabCode,
     kTabServers,
-    kTabInvites,
     kTabVersus,
-    kTabCheckpoints,
-    kTabCheats,
+    kTabDebug,
     kTabAchievements,
     kTabCount,
   };
-  constexpr const char *kTabNames[kTabCount] = {"Graphics", "Servers", "Invites",     "Versus",
-                                                "Checkpoints", "Cheats", "Achievements"};
-  // What each section is for: the line over its content (English, through Tr).
-  constexpr const char *kTabHelp[kTabCount] = {
-      "The picture, performance, field of view and mouse.",
-      "Games hosted over Steam. Join one, or let Quick join pick the open one with the lowest ping.",
-      "Players on the LAN, a VPN and Steam: invite them to your game, answer their invites.",
-      "The rules of the versus matches you host, and the bots that play the empty places.",
-      "Start any mission from any of its checkpoints.",
-      "God mode, infinite ammo and everything unlocked.",
-      "The game's achievements and your progress.",
-  };
-  // The sidebar's groups: a caption and the sections under it.
-  struct TabGroup
+  // The Debug section's pages (chips over its content).
+  enum DebugPage
   {
-    const char *name;
-    int first, count;
+    kPageCheckpoints,
+    kPageCheats,
   };
-  constexpr TabGroup kTabGroups[] = {{"Settings", kTabGraphics, 1}, {"Online", kTabServers, 3}, {"Game", kTabCheckpoints, 3}};
-  int g_last_tab = kTabGraphics; // the tab the menu opens on (the last one shown)
+  // A section's icon in the sidebar, drawn in lines about 18 px across
+  // around `c`.
+  void TabIcon(ImDrawList *dl, int tab, ImVec2 c, ImU32 col)
+  {
+    float s = ui::Scale();
+    float t = 1.6f * s;
+    auto P = [&](float x, float y) { return ImVec2(c.x + x * s, c.y + y * s); };
+    switch (tab)
+    {
+    case kTabSettings: // sliders
+      for (int k = 0; k < 3; ++k)
+      {
+        float y = -5.0f + 5.0f * float(k), kx = k == 0 ? -3.0f : (k == 1 ? 4.0f : -1.0f);
+        dl->AddLine(P(-8, y), P(8, y), col, t);
+        dl->AddCircleFilled(P(kx, y), 2.6f * s, col);
+      }
+      break;
+    case kTabOnline: // two players
+      dl->AddCircle(P(-4, -4), 3.2f * s, col, 16, t);
+      dl->PathArcTo(P(-4, 8), 6.0f * s, 3.14159f, 6.28318f, 12);
+      dl->PathStroke(col, ImDrawFlags_None, t);
+      dl->AddCircle(P(5, -3), 2.6f * s, col, 16, t);
+      dl->PathArcTo(P(5, 8), 4.8f * s, 3.14159f, 6.28318f, 12);
+      dl->PathStroke(col, ImDrawFlags_None, t);
+      break;
+    case kTabCode: // a key
+      dl->AddCircle(P(-4, 0), 4.0f * s, col, 16, t);
+      dl->AddLine(P(0, 0), P(9, 0), col, t);
+      dl->AddLine(P(6, 0), P(6, 4), col, t);
+      dl->AddLine(P(9, 0), P(9, 3), col, t);
+      break;
+    case kTabServers: // two racks
+      dl->AddRect(P(-8, -8), P(8, -1), col, 2.0f * s, ImDrawFlags_None, t);
+      dl->AddRect(P(-8, 1), P(8, 8), col, 2.0f * s, ImDrawFlags_None, t);
+      dl->AddCircleFilled(P(4.5f, -4.5f), 1.3f * s, col);
+      dl->AddCircleFilled(P(4.5f, 4.5f), 1.3f * s, col);
+      break;
+    case kTabVersus: // crossed blades
+      dl->AddLine(P(-7, 7), P(7, -7), col, t);
+      dl->AddLine(P(7, 7), P(-7, -7), col, t);
+      dl->AddLine(P(-7, 2), P(-2, 7), col, t);
+      dl->AddLine(P(7, 2), P(2, 7), col, t);
+      break;
+    case kTabDebug: // a bolt
+    {
+      ImVec2 pts[6] = {P(2, -9), P(-6, 1), P(-1, 1), P(-3, 9), P(6, -2), P(1, -2)};
+      dl->AddPolyline(pts, 6, col, ImDrawFlags_Closed, t);
+      break;
+    }
+    default: // achievements: a cup
+      dl->PathLineTo(P(-6, -8));
+      dl->PathLineTo(P(6, -8));
+      dl->PathArcTo(P(0, -3), 6.0f * s, 0.0f, 3.14159f, 12);
+      dl->PathStroke(col, ImDrawFlags_Closed, t);
+      dl->AddLine(P(0, 3), P(0, 6), col, t);
+      dl->AddLine(P(-4, 7.5f), P(4, 7.5f), col, t);
+      break;
+    }
+  }
+
+  constexpr const char *kTabNames[kTabCount] = {"Settings", "Online", "Play by code", "Servers",
+                                                "Versus",   "Debug",  "Achievements"};
+  // The sidebar: the sections in order, their keys (0: none) and whether
+  // they are Online's pages.
+  struct SideItem
+  {
+    int tab, key;
+    bool sub;
+  };
+  constexpr SideItem kSide[] = {{kTabSettings, 1, false}, {kTabOnline, 2, false}, {kTabCode, 0, true},
+                                {kTabServers, 0, true},   {kTabVersus, 3, false}, {kTabDebug, 4, false},
+                                {kTabAchievements, 5, false}};
+  constexpr const char *kPageNames[] = {"Checkpoints", "Cheats"};
+  int g_last_tab = kTabSettings; // the tab the menu opens on (the last one shown)
+  int g_last_page = kPageCheckpoints;
 
   constexpr ImU32 kBadgeGold = IM_COL32(227, 185, 90, 255);
   constexpr ImU32 kPending = IM_COL32(255, 190, 80, 255); // "after restart"
@@ -578,7 +612,7 @@ namespace
        [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, std::round(v * 100.0) / 100.0); },
        "ao2_mouse_zoom_sensitivity", "mapping.toml", "mouse_zoom"},
   };
-  constexpr int kSliderInfo = 100; // info_ of the first slider row
+  constexpr int kSliderInfo = 100; // tip_ of the first slider row
 
   void SaveSlider(const SliderRow &sr)
   {
@@ -732,8 +766,8 @@ namespace
 
   // The menu: a full screen overlay in the launcher's look (ui_theme.h), as
   // the achievements and players windows: a panel with a title, a sidebar of
-  // sections in groups (a click, 1-7, Tab / Shift+Tab), what the section is
-  // for over its content, and a footer; the content slides in. Esc, F1 and
+  // sections (a click, 1-5, Tab / Shift+Tab; Online's pages unfold under it),
+  // the section's content and a footer; the content slides in. Esc, F1 and
   // Close play it out.
   class DebugMenu final : public rex::ui::ImGuiDialog
   {
@@ -746,7 +780,8 @@ namespace
       missions_ = ScanCheckpoints(g_checkpoint_dir, g_content_dir);
       difficulty_ = std::clamp(REXCVAR_GET(ao2_start_difficulty), 0, 2);
       // An invite waiting for an answer (its notice says the menu key lists it).
-      tab_ = ao2::invite::HasPendingInvite() ? kTabInvites : g_last_tab;
+      tab_ = ao2::invite::HasPendingInvite() ? kTabOnline : g_last_tab;
+      page_ = g_last_page;
     }
 
     // Any time on the UI thread (the menu key): plays the menu out.
@@ -799,14 +834,27 @@ namespace
       }
       ImDrawList *dl = ImGui::GetWindowDrawList();
 
+      // The runtime passes Ctrl and Shift as keys but not as modifiers, so
+      // text fields saw no Ctrl+V / Ctrl+C / Shift+arrows: given here (they
+      // count from the next frame).
+      {
+        ImGuiIO &io = ImGui::GetIO();
+        bool ctrl = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+        bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+        if (ctrl != ImGui::IsKeyDown(ImGuiMod_Ctrl))
+        {
+          io.AddKeyEvent(ImGuiMod_Ctrl, ctrl);
+        }
+        if (shift != ImGui::IsKeyDown(ImGuiMod_Shift))
+        {
+          io.AddKeyEvent(ImGuiMod_Shift, shift);
+        }
+      }
+
       // --- Backdrop and panel ---
-      // Glass: the game blurred behind (the renderer, overlay.h) and only
-      // lightly darkened; classic: darkened well.
-      bool glass = REXCVAR_GET(ao2_menu_style) != "classic";
-      ui::SetGlass(glass);
-      ao2::gpu::overlay::SetBackdropBlur(glass ? a : 0.0f);
+      // The game darkened behind.
       dl->AddRectFilled(vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y),
-                        ui::Fade(ui::kInk, (glass ? 0.38f : 0.78f) * a));
+                        ui::Fade(ui::kInk, 0.62f * a));
       const float pad = 32.0f * s;
       const float pw = std::min(1360.0f * s, vp->Size.x - 40.0f * s);
       const float ph = std::min(900.0f * s, vp->Size.y - 60.0f * s);
@@ -814,59 +862,59 @@ namespace
       float x0 = center.x - pw * 0.5f, y0 = center.y - ph * 0.5f + (1.0f - a) * 30.0f * s;
       float x1 = x0 + pw, y1 = y0 + ph;
       float cx0 = x0 + pad, cx1 = x1 - pad;
-      if (glass)
+      float r = 8.0f * s;
+      for (int k = 1; k <= 12; ++k)
       {
-        // A sheet of tinted glass: dark enough to read on over a bright
-        // scene, with a light rim.
-        float r = 22.0f * s;
-        dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.58f * a), r);
-        dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.04f * a), r);
-        dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.22f * a), r, ImDrawFlags_None, 1.0f * s);
+        float o = float(k) * 2.0f * s;
+        dl->AddRect(ImVec2(x0 - o, y0 - o + 6.0f * s), ImVec2(x1 + o, y1 + o + 6.0f * s),
+                    ui::Fade(ui::kInk, 0.05f * (1.0f - float(k) / 13.0f) * a), r + o, ImDrawFlags_None, 2.0f * s);
       }
-      else
-      {
-        dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.96f * a));
-        dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), 0.0f, ImDrawFlags_None,
-                    1.0f * s);
-        ui::Corners(dl, ImVec2(x0 - 4.0f * s, y0 - 4.0f * s), ImVec2(x1 + 4.0f * s, y1 + 4.0f * s), 18.0f * s,
-                    2.0f * s, ui::Fade(ui::kAccent, 0.55f * a));
-      }
+      dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.93f * a), r);
+      dl->AddRectFilledMultiColor(ImVec2(x0 + r, y0 + 1.0f * s), ImVec2(x1 - r, y0 + 220.0f * s),
+                                  ui::Fade(ui::kWhite, 0.035f * a), ui::Fade(ui::kWhite, 0.035f * a),
+                                  ui::Fade(ui::kWhite, 0.0f), ui::Fade(ui::kWhite, 0.0f));
+      dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), r, ImDrawFlags_None, 1.0f * s);
+      ui::Corners(dl, ImVec2(x0 - 4.0f * s, y0 - 4.0f * s), ImVec2(x1 + 4.0f * s, y1 + 4.0f * s), 18.0f * s,
+                  2.0f * s, ui::Fade(ui::kAccent, 0.55f * a));
 
       // --- Header: kicker, title (wiped in) ---
       float y = y0 + pad;
       ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), "ARMY OF TWO  //  DEBUG");
       y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
-      // Glass: the title as written; classic: letter-spaced capitals.
-      std::string title = glass ? std::string(Tr("Debug menu")) : Upper(Tr("Debug menu"));
-      ImVec2 title_size = glass ? ui::TextSize(FontKind::kTitle, title.c_str())
-                                : ui::CapsSize(FontKind::kTitle, title.c_str());
+      std::string title = Upper(Tr("Debug menu"));
+      ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title.c_str());
       float wipe = ui::EaseOutCubic((since - 0.05f) / 0.45f);
       dl->PushClipRect(ImVec2(cx0, y), ImVec2(cx0 + title_size.x * wipe + 1.0f, y + title_size.y), true);
-      if (glass)
-      {
-        ui::Text(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title.c_str());
-      }
-      else
-      {
-        ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title.c_str());
-      }
+      ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title.c_str());
       dl->PopClipRect();
       y += title_size.y + 20.0f * s;
 
-      // --- Sidebar: the sections in their groups ---
+      // --- Sidebar: the sections; Online's pages under it while open ---
+      const bool online_open = tab_ == kTabOnline || tab_ == kTabCode || tab_ == kTabServers;
       if (live && !io.WantTextInput)
       {
-        for (int i = 0; i < kTabCount; ++i)
+        for (const SideItem &it : kSide)
         {
-          if (ImGui::IsKeyPressed(ImGuiKey(ImGuiKey_1 + i), false) ||
-              ImGui::IsKeyPressed(ImGuiKey(ImGuiKey_Keypad1 + i), false))
+          if (it.key && (ImGui::IsKeyPressed(ImGuiKey(ImGuiKey_0 + it.key), false) ||
+                         ImGui::IsKeyPressed(ImGuiKey(ImGuiKey_Keypad0 + it.key), false)))
           {
-            SetTab(i, now);
+            SetTab(it.tab, now);
           }
         }
         if (ImGui::IsKeyPressed(ImGuiKey_Tab, false))
         {
-          SetTab((tab_ + (io.KeyShift ? kTabCount - 1 : 1)) % kTabCount, now);
+          // The next (Shift: previous) of those shown.
+          std::vector<int> shown;
+          for (const SideItem &it : kSide)
+          {
+            if (!it.sub || online_open)
+            {
+              shown.push_back(it.tab);
+            }
+          }
+          int at = int(std::find(shown.begin(), shown.end(), tab_) - shown.begin());
+          int n = int(shown.size());
+          SetTab(shown[size_t((at + (io.KeyShift ? n - 1 : 1)) % n)], now);
         }
       }
       // Badges: the achievements unlocked, an invite waiting, the cheats on.
@@ -881,118 +929,114 @@ namespace
       {
         cheats_on += on ? 1 : 0;
       }
-      dl->AddLine(ImVec2(cx0, y), ImVec2(cx1, y), ui::Fade(ui::kWhite, glass ? 0.0f : 0.10f * a), 1.0f * s);
-      y += glass ? 6.0f * s : 22.0f * s;
-      const float side_w = 250.0f * s, item_h = 44.0f * s;
+      dl->AddLine(ImVec2(cx0, y), ImVec2(cx1, y), ui::Fade(ui::kWhite, 0.10f * a), 1.0f * s);
+      y += 22.0f * s;
+      const float side_w = 250.0f * s, item_h = 44.0f * s, sub_h = 38.0f * s;
       const float side_x1 = cx0 + side_w;
       const float item_r = ui::Round(10.0f);
       {
-        float sy = y;
-        if (glass)
+        // Online's pages fold out and back.
+        float fold = Eased("online_fold", online_open, 12.0f);
+        float sy = y, mark_h = item_h;
+        for (const SideItem &it : kSide)
         {
-          // The tray (as tall as the sections in it).
-          float tray_h = 10.0f * s;
-          for (const TabGroup &g : kTabGroups)
+          const int i = it.tab;
+          float ih = it.sub ? sub_h * fold : item_h;
+          if (ih < 1.0f)
           {
-            tray_h += ui::FontSize(FontKind::kSmall) + 10.0f * s + float(g.count) * (item_h + 2.0f * s) + 16.0f * s;
+            continue;
           }
-          dl->AddRectFilled(ImVec2(cx0 - 8.0f * s, sy - 10.0f * s), ImVec2(side_x1 + 8.0f * s, sy + tray_h),
-                            ui::Fade(ui::kWhite, 0.045f * a), 16.0f * s);
-        }
-        for (const TabGroup &g : kTabGroups)
-        {
-          if (glass)
+          float ia = it.sub ? a * fold : a;
+          std::string badge;
+          ImU32 badge_col = ui::kAccent;
+          bool dot = false;
+          if (i == kTabOnline)
           {
-            ui::Text(dl, FontKind::kSmall, ImVec2(cx0 + 12.0f * s, sy), ui::Fade(ui::kMuted, a), Tr(g.name));
-            sy += ui::FontSize(FontKind::kSmall) + 10.0f * s;
+            dot = ao2::invite::HasPendingInvite();
           }
-          else
+          else if (i == kTabDebug && cheats_on > 0)
           {
-            std::string caption = Upper(Tr(g.name));
-            ui::Caps(dl, FontKind::kLabel, ImVec2(cx0 + 4.0f * s, sy), ui::Fade(ui::kMuted, 0.75f * a),
-                     caption.c_str());
-            sy += ui::FontSize(FontKind::kLabel) + 10.0f * s;
+            badge = std::to_string(cheats_on) + " " + Upper(Tr("On"));
+            badge_col = ui::kGreen;
           }
-          for (int i = g.first; i < g.first + g.count; ++i)
+          else if (i == kTabAchievements && ach_total_ > 0)
           {
-            std::string badge;
-            ImU32 badge_col = ui::kAccent;
-            bool dot = false;
-            if (i == kTabAchievements && ach_total_ > 0)
-            {
-              badge = std::to_string(ach_got_) + "/" + std::to_string(ach_total_);
-              badge_col = kBadgeGold;
-            }
-            else if (i == kTabInvites)
-            {
-              dot = ao2::invite::HasPendingInvite();
-            }
-            else if (i == kTabCheats && cheats_on > 0)
-            {
-              badge = std::to_string(cheats_on) + " " + Upper(Tr("On"));
-              badge_col = ui::kGreen;
-            }
-            ImVec2 mn(cx0, sy), mx(side_x1, sy + item_h);
-            ImGui::PushID(i);
-            ImGui::SetCursorScreenPos(mn);
-            if (ImGui::InvisibleButton("##tab", ImVec2(side_w, item_h)) && live)
-            {
-              SetTab(i, now);
-            }
-            bool hovered = live && ImGui::IsItemHovered();
-            float h = Eased("tab_hover", hovered, 18.0f);
-            ImGui::PopID();
-            if (hovered)
-            {
-              ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-            }
-            bool active = i == tab_;
-            if (active)
-            {
-              mark_target_ = sy;
-            }
-            if (h > 0.01f && !active)
-            {
-              ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, (glass ? 0.06f : 0.035f) * h * a));
-            }
-            float ty = sy + (item_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
-            const char *label = Tr(kTabNames[i]);
-            ui::Text(dl, FontKind::kBody, ImVec2(cx0 + 20.0f * s, ty),
-                     ui::Fade(active ? ui::kAccentLight : ui::Mix(ui::kMuted, ui::kText, 0.55f + 0.45f * h), a), label);
-            // Its key on the right; a badge after the name.
+            badge = std::to_string(ach_got_) + "/" + std::to_string(ach_total_);
+            badge_col = kBadgeGold;
+          }
+          ImVec2 mn(cx0, sy), mx(side_x1, sy + ih);
+          dl->PushClipRect(mn, mx, true);
+          ImGui::PushID(i);
+          ImGui::SetCursorScreenPos(mn);
+          if (ImGui::InvisibleButton("##tab", ImVec2(side_w, ih)) && live)
+          {
+            SetTab(i, now);
+          }
+          bool hovered = live && ImGui::IsItemHovered();
+          float h = Eased("tab_hover", hovered, 18.0f);
+          ImGui::PopID();
+          if (hovered)
+          {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+          }
+          bool active = i == tab_;
+          if (active)
+          {
+            mark_target_ = sy;
+            mark_h = ih;
+          }
+          if (h > 0.01f && !active)
+          {
+            ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.035f * h * ia));
+          }
+          float full_h = it.sub ? sub_h : item_h;
+          float mid = sy + ih - full_h * 0.5f; // a folding page slides up under Online
+          float ty = mid - ui::FontSize(FontKind::kBody) * 0.5f - 1.0f * s;
+          const char *label = Tr(kTabNames[i]);
+          // The icon, then the name, both nudged right on hover; a page
+          // further in.
+          float indent = it.sub ? 22.0f * s : 0.0f;
+          float nudge = (active ? 0.0f : 3.0f * h) * s;
+          ImU32 col = active ? ui::kAccentLight : ui::Mix(ui::kMuted, ui::kText, 0.55f + 0.45f * h);
+          TabIcon(dl, i, ImVec2(cx0 + 28.0f * s + indent + nudge, mid), ui::Fade(col, (active ? 1.0f : 0.8f) * ia));
+          float lx = cx0 + 50.0f * s + indent + nudge;
+          ui::Text(dl, FontKind::kBody, ImVec2(lx, ty), ui::Fade(col, ia), label);
+          // Its key on the right; a badge after the name.
+          if (it.key)
+          {
             char key[4];
-            std::snprintf(key, sizeof(key), "%d", i + 1);
+            std::snprintf(key, sizeof(key), "%d", it.key);
             ImVec2 ks = ui::CapsSize(FontKind::kLabel, key);
-            ui::Caps(dl, FontKind::kLabel, ImVec2(side_x1 - 14.0f * s - ks.x, sy + (item_h - ks.y) * 0.5f),
-                     ui::Fade(ui::kMuted, (active ? 0.9f : 0.45f) * a), key);
-            float bx = cx0 + 20.0f * s + ui::TextSize(FontKind::kBody, label).x + 10.0f * s, by = sy + item_h * 0.5f;
-            if (!badge.empty())
-            {
-              ImVec2 bs = ui::TextSize(FontKind::kSmall, badge.c_str());
-              ImVec2 bmn(bx, by - bs.y * 0.5f - 1.0f * s), bmx(bx + bs.x + 12.0f * s, by + bs.y * 0.5f + 1.0f * s);
-              dl->AddRect(bmn, bmx, ui::Fade(badge_col, 0.45f * a), 0.0f, ImDrawFlags_None, 1.0f * s);
-              ui::Text(dl, FontKind::kSmall, ImVec2(bx + 6.0f * s, bmn.y + 1.0f * s), ui::Fade(badge_col, a),
-                       badge.c_str());
-            }
-            else if (dot)
-            {
-              float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
-              dl->AddCircleFilled(ImVec2(bx + 3.5f * s, by), 3.5f * s, ui::Fade(ui::kAccent, a));
-              dl->AddCircle(ImVec2(bx + 3.5f * s, by), (3.5f + 4.0f * pulse) * s,
-                            ui::Fade(ui::kAccent, (1.0f - pulse) * a), 16, 1.0f * s);
-            }
-            sy += item_h + 2.0f * s;
+            ui::Caps(dl, FontKind::kLabel, ImVec2(side_x1 - 14.0f * s - ks.x, mid - ks.y * 0.5f),
+                     ui::Fade(ui::kMuted, (active ? 0.9f : 0.45f) * ia), key);
           }
-          sy += 16.0f * s;
+          float bx = lx + ui::TextSize(FontKind::kBody, label).x + 10.0f * s, by = mid;
+          if (!badge.empty())
+          {
+            ImVec2 bs = ui::TextSize(FontKind::kSmall, badge.c_str());
+            ImVec2 bmn(bx, by - bs.y * 0.5f - 1.0f * s), bmx(bx + bs.x + 12.0f * s, by + bs.y * 0.5f + 1.0f * s);
+            dl->AddRect(bmn, bmx, ui::Fade(badge_col, 0.45f * ia), (bmx.y - bmn.y) * 0.5f, ImDrawFlags_None,
+                        1.0f * s);
+            ui::Text(dl, FontKind::kSmall, ImVec2(bx + 6.0f * s, bmn.y + 1.0f * s), ui::Fade(badge_col, ia),
+                     badge.c_str());
+          }
+          else if (dot)
+          {
+            float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
+            dl->AddCircleFilled(ImVec2(bx + 3.5f * s, by), 3.5f * s, ui::Fade(ui::kAccent, ia));
+            dl->AddCircle(ImVec2(bx + 3.5f * s, by), (3.5f + 4.0f * pulse) * s,
+                          ui::Fade(ui::kAccent, (1.0f - pulse) * ia), 16, 1.0f * s);
+          }
+          dl->PopClipRect();
+          sy += ih + 4.0f * s * (it.sub ? fold : 1.0f);
         }
         // The current section: a lifted block with a paper bar, sliding to it.
         mark_y_ = mark_y_ < 0.0f ? mark_target_ : ui::Approach(mark_y_, mark_target_, 16.0f);
-        dl->AddRectFilled(ImVec2(cx0, mark_y_), ImVec2(side_x1, mark_y_ + item_h),
-                          ui::Fade(ui::kWhite, (glass ? 0.16f : 0.07f) * a), item_r);
-        if (!glass)
-        {
-          dl->AddRectFilled(ImVec2(cx0, mark_y_), ImVec2(cx0 + 3.0f * s, mark_y_ + item_h), ui::Fade(ui::kAccent, a));
-        }
+        mark_h_ = mark_h_ < 0.0f ? mark_h : ui::Approach(mark_h_, mark_h, 16.0f);
+        dl->AddRectFilled(ImVec2(cx0, mark_y_), ImVec2(side_x1, mark_y_ + mark_h_), ui::Fade(ui::kWhite, 0.07f * a),
+                          item_r);
+        dl->AddRectFilled(ImVec2(cx0, mark_y_), ImVec2(cx0 + 3.0f * s, mark_y_ + mark_h_), ui::Fade(ui::kAccent, a),
+                          item_r, ImDrawFlags_RoundCornersLeft);
       }
 
       // --- Footer: the keys ---
@@ -1003,7 +1047,7 @@ namespace
       {
         float fx = cx0;
         float label_y = footer_y + (kh - ui::FontSize(FontKind::kLabel)) * 0.5f - 1.0f * s;
-        for (const char *key : {"1-7", "TAB"})
+        for (const char *key : {"1-5", "TAB"})
         {
           fx += ui::KeyCap(dl, ImVec2(fx, footer_y), kh, key, a) + 6.0f * s;
         }
@@ -1037,53 +1081,52 @@ namespace
       float shift = (1.0f - t) * 24.0f * s * float(tab_dir_);
       float content_x = side_x1 + 36.0f * s;
       dl->AddLine(ImVec2(side_x1 + 18.0f * s, y), ImVec2(side_x1 + 18.0f * s, footer_y - 30.0f * s),
-                  ui::Fade(ui::kWhite, glass ? 0.0f : 0.08f * a), 1.0f * s);
+                  ui::Fade(ui::kWhite, 0.08f * a), 1.0f * s);
       {
-        if (glass)
-        {
-          ui::Text(dl, FontKind::kHeading, ImVec2(content_x, y + shift * 0.5f), ui::Fade(ui::kAccentLight, ca),
-                   Tr(kTabNames[tab_]));
-        }
-        else
-        {
-          std::string heading = Upper(Tr(kTabNames[tab_]));
-          ui::Caps(dl, FontKind::kHeading, ImVec2(content_x, y + shift * 0.5f), ui::Fade(ui::kAccentLight, ca),
-                   heading.c_str());
-        }
-        float hy = y + ui::FontSize(FontKind::kHeading) + 8.0f * s;
-        hy = Wrapped(dl, FontKind::kSmall, ImVec2(content_x, hy), cx1 - content_x, ui::Fade(ui::kMuted, ca),
-                     Tr(kTabHelp[tab_]));
-        y = hy + 18.0f * s;
+        std::string heading = Upper(Tr(kTabNames[tab_]));
+        ui::Caps(dl, FontKind::kHeading, ImVec2(content_x, y + shift * 0.5f), ui::Fade(ui::kAccentLight, ca),
+                 heading.c_str());
+        y += ui::FontSize(FontKind::kHeading) + 22.0f * s;
       }
       ImVec2 cmn(content_x, y + shift), cmx(cx1, footer_y - 30.0f * s + shift);
       dl->PushClipRect(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, footer_y - 26.0f * s), true);
       switch (tab_)
       {
+      case kTabSettings:
+        tip_ = -1;
+        Scrolling("settings", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
+        DrawTip(ca);
+        break;
+      case kTabOnline:
+      {
+        bool keep = true;
+        Scrolling("online", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawPartners(o, w, ca, live, keep); });
+        if (!keep)
+        {
+          BeginClose(); // an invite accepted: the game goes on to join it
+        }
+      }
+        break;
+      case kTabCode:
+        Scrolling("code", cmn, cmx, false, [&](ImVec2 o, float w) {
+          if (!SteamUp(o.x, o.x + w, o.y, ca))
+          {
+            return o.y + 80.0f * s;
+          }
+          return DrawCode(o.x, o.x + w, o.y, ca, live);
+        });
+        break;
       case kTabServers:
         Scrolling("servers", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawServers(o, w, ca, live); });
         break;
-      case kTabGraphics:
-      {
-        const float info_w = std::min(300.0f * s, (cmx.x - cmn.x) * 0.3f), info_gap = 28.0f * s;
-        Scrolling("graphics", cmn, ImVec2(cmx.x - info_w - info_gap, cmx.y), false,
-                  [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
-        DrawInfo(ImVec2(cmx.x - info_w, cmn.y), cmx, ca);
-      }
+      case kTabVersus:
+        Scrolling("versus", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawVersus(o, w, ca, live); });
+        break;
+      case kTabDebug:
+        DrawDebug(cmn, cmx, ca, live);
         break;
       case kTabAchievements:
         ao2::ach::DrawTab(cmn, cmx, fresh_);
-        break;
-      case kTabInvites:
-        DrawInvites(cmn, cmx, ca);
-        break;
-      case kTabCheats:
-        Scrolling("cheats", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawCheats(o, w, ca, live); });
-        break;
-      case kTabCheckpoints:
-        DrawCheckpoints(cmn, cmx, ca, live);
-        break;
-      case kTabVersus:
-        Scrolling("versus", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawVersus(o, w, ca, live); });
         break;
       }
       dl->PopClipRect();
@@ -1094,8 +1137,8 @@ namespace
 
     void OnClose() override
     {
-      ao2::gpu::overlay::SetBackdropBlur(0.0f);
       g_last_tab = tab_;
+      g_last_page = page_;
       g_menu = nullptr;
       g_open = false;
     }
@@ -1164,20 +1207,15 @@ namespace
       float x0 = o.x, x1 = o.x + w, y = o.y;
       const float row_h = 52.0f * s, chip_h = 32.0f * s, gap = 6.0f * s;
       const float label_w = 260.0f * s;
-      // A row's back, label and note; the hovered one is the info column's.
+      // A row's back, label and note; the hovered one's help shows as a tip.
       auto row = [&](const char *id, int info, const char *label, const char *note, float &yy) {
         ImVec2 mn(x0, yy), mx(x1, yy + row_h);
         bool hovered = Hovering(mn, mx, live);
         if (hovered)
         {
-          info_ = info;
+          tip_ = info;
         }
-        float h = Eased(id, hovered);
-        ImGui::PushID(id);
-        float sel = Eased("sel", info_ == info, 16.0f);
-        ImGui::PopID();
-        RowBack(dl, mn, mx, std::max(h, sel), a);
-        ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.03f * sel * a));
+        RowBack(dl, mn, mx, Eased(id, hovered), a);
         float ty = mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
         if (note)
         {
@@ -1272,108 +1310,47 @@ namespace
         SaveSlider(kSliders[0]);
         SaveSlider(kSliders[1]);
       }
-      y += 36.0f * s + 30.0f * s;
-
-      // The menu's own look (glass, or the classic panel), saved at once.
-      y = Section(dl, x0, x1, y, Tr("Menu"), a);
-      {
-        ImVec2 mn(x0, y), mx(x1, y + row_h);
-        RowBack(dl, mn, mx, Eased("menu_style", Hovering(mn, mx, live)), a);
-        ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 20.0f * s, mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f -
-                                                                   1.0f * s),
-                 ui::Fade(ui::kText, a), Tr("Menu style"));
-        const char *names[2] = {Tr("Glass"), Tr("Classic")};
-        const char *values[2] = {"glass", "classic"};
-        bool glass_now = REXCVAR_GET(ao2_menu_style) != "classic";
-        float widths[2] = {ChipWidth(names[0]), ChipWidth(names[1])};
-        float cx = x1 - 12.0f * s - widths[0] - widths[1] - gap, cy = y + (row_h - chip_h) * 0.5f;
-        for (int c = 0; c < 2; ++c)
-        {
-          if (Chip(values[c], ImVec2(cx, cy), ImVec2(widths[c], chip_h), names[c], (c == 0) == glass_now, live, a))
-          {
-            REXCVAR_SET(ao2_menu_style, std::string(values[c]));
-            ao2::gfxmenu::SaveValue("ao2_menu_style", std::string("\"") + values[c] + "\"", "hardware.toml", nullptr);
-          }
-          cx += widths[c] + gap;
-        }
-        y += row_h + 6.0f * s;
-      }
-      return y + 8.0f * s;
+      return y + 36.0f * s + 8.0f * s;
     }
 
-    // The Graphics tab's info column: the hovered (or last hovered) row's
-    // name, value and what it does; the frame rate and frame time under it.
-    void DrawInfo(ImVec2 mn, ImVec2 mx, float a)
+    // The hovered settings row's help (RowHelp) by the mouse, after a moment
+    // on it.
+    void DrawTip(float a)
     {
+      double now = ImGui::GetTime();
+      if (tip_ != tip_shown_)
+      {
+        tip_shown_ = tip_;
+        tip_since_ = now;
+      }
+      const char *label = tip_ >= kSliderInfo && tip_ < kSliderInfo + int(std::size(kSliders))
+                              ? kSliders[tip_ - kSliderInfo].label
+                          : tip_ >= 0 && tip_ < ao2::gfxmenu::SettingCount() ? ao2::gfxmenu::SettingLabel(tip_)
+                                                                             : nullptr;
+      const char *help = label ? RowHelp(label) : "";
+      float t = ui::Clamp01(float(now - tip_since_ - 0.35) / 0.15f);
+      if (!*help || t <= 0.0f)
+      {
+        return;
+      }
       float s = ui::Scale();
-      ImDrawList *dl = ImGui::GetWindowDrawList();
-      dl->AddLine(ImVec2(mn.x - 14.0f * s, mn.y), ImVec2(mn.x - 14.0f * s, mx.y), ui::Fade(ui::kWhite, 0.08f * a),
-                  1.0f * s);
-      const char *label = nullptr;
-      std::string value;
-      bool restart = false;
-      if (info_ >= kSliderInfo && info_ < kSliderInfo + int(std::size(kSliders)))
-      {
-        const SliderRow &sr = kSliders[info_ - kSliderInfo];
-        label = sr.label;
-        char text[32];
-        std::snprintf(text, sizeof(text), sr.format, sr.get());
-        value = text;
-      }
-      else if (info_ >= 0 && info_ < ao2::gfxmenu::SettingCount())
-      {
-        label = ao2::gfxmenu::SettingLabel(info_);
-        value = Tr(ao2::gfxmenu::ChoiceName(info_, ao2::gfxmenu::Chosen(info_)));
-        restart = ao2::gfxmenu::WaitsForRestart(info_);
-      }
-      float y = mn.y, w = mx.x - mn.x;
-      if (label)
-      {
-        std::string caps = Upper(Tr(label));
-        ui::Caps(dl, FontKind::kLabel, ImVec2(mn.x, y), ui::Fade(ui::kMuted, a), caps.c_str());
-        y += ui::FontSize(FontKind::kLabel) + 10.0f * s;
-        ui::Text(dl, FontKind::kTitle, ImVec2(mn.x, y), ui::Fade(ui::kAccentLight, a), value.c_str());
-        y += ui::FontSize(FontKind::kTitle) + 10.0f * s;
-        if (restart)
-        {
-          ui::Text(dl, FontKind::kSmall, ImVec2(mn.x, y), ui::Fade(kPending, a), Tr("After restart"));
-          y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
-        }
-        y = Wrapped(dl, FontKind::kSmall, ImVec2(mn.x, y), w, ui::Fade(ui::kText, 0.8f * a), RowHelp(label));
-        y += 28.0f * s;
-      }
-
-      // The frame rate against the limit, and the frame time.
-      float fps = 0.0f, ms = 0.0f, low = 0.0f;
-      ao2::perf::FrameRate(fps, ms, low);
-      int32_t limit = REXCVAR_GET(ao2_fps_target);
-      float top = float(limit > 0 ? limit : 240);
-      auto meter = [&](const char *name, const std::string &text, float frac, ImU32 col) {
-        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x, y), ui::Fade(ui::kMuted, a), name);
-        ImVec2 ts = ui::TextSize(FontKind::kSmall, text.c_str());
-        ui::Text(dl, FontKind::kSmall, ImVec2(mx.x - ts.x, y), ui::Fade(ui::kText, a), text.c_str());
-        y += ui::FontSize(FontKind::kSmall) + 6.0f * s;
-        float &shown = *ImGui::GetStateStorage()->GetFloatRef(ImGui::GetID(name), 0.0f);
-        shown = ui::Approach(shown, ui::Clamp01(frac), 8.0f);
-        dl->AddRectFilled(ImVec2(mn.x, y), ImVec2(mx.x, y + 4.0f * s), ui::Fade(ui::kWhite, 0.08f * a));
-        dl->AddRectFilled(ImVec2(mn.x, y), ImVec2(mn.x + w * shown, y + 4.0f * s), ui::Fade(col, a));
-        y += 4.0f * s + 14.0f * s;
-      };
-      if (fps > 0.0f)
-      {
-        char text[48];
-        std::snprintf(text, sizeof(text), "%.0f FPS", fps);
-        meter(Tr("Frame rate"), text, fps / top, ui::kGreen);
-        std::snprintf(text, sizeof(text), "%.1f ms", ms);
-        meter(Tr("Frame time"), text, ms / 33.3f, ui::kAccent);
-        std::snprintf(text, sizeof(text), "%.0f FPS", low);
-        meter(Tr("1% low"), text, low / top, ui::Mix(ui::kGreen, ui::kAccent, 0.5f));
-      }
-      Wrapped(dl, FontKind::kSmall, ImVec2(mn.x, std::max(y + 6.0f * s, mx.y - 3.0f * ui::FontSize(FontKind::kSmall))),
-              w, ui::Fade(ui::kMuted, a), Tr("Settings are saved as they are changed."));
+      ImDrawList *fg = ImGui::GetForegroundDrawList();
+      const ImGuiViewport *vp = ImGui::GetMainViewport();
+      float w = 360.0f * s, pad = 12.0f * s;
+      ImFont *font = ui::Font(FontKind::kSmall);
+      float th = font->CalcTextSizeA(ui::FontSize(FontKind::kSmall), FLT_MAX, w, help).y;
+      ImVec2 m = ImGui::GetMousePos();
+      ImVec2 mn(std::min(m.x + 18.0f * s, vp->Pos.x + vp->Size.x - w - 2.0f * pad), m.y + 22.0f * s);
+      ImVec2 mx(mn.x + w + 2.0f * pad, mn.y + th + 2.0f * pad);
+      float ta = a * t;
+      fg->AddRectFilled(ImVec2(mn.x, mn.y + 3.0f * s), ImVec2(mx.x, mx.y + 3.0f * s), ui::Fade(ui::kInk, 0.35f * ta),
+                        ui::Round(10.0f));
+      fg->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.98f * ta), ui::Round(10.0f));
+      fg->AddRect(mn, mx, ui::Fade(ui::kAccent, 0.45f * ta), ui::Round(10.0f), ImDrawFlags_None, 1.0f * s);
+      Wrapped(fg, FontKind::kSmall, ImVec2(mn.x + pad, mn.y + pad), w, ui::Fade(ui::kText, ta), help);
     }
 
-    // A card with a title, a line of text, a red line under it (`warning`,
+    // A card with a title, a line of text    // A card with a title, a line of text, a red line under it (`warning`,
     // when set) and a switch; true when clicked.
     bool SwitchCard(const char *id, ImVec2 mn, ImVec2 mx, const char *title, const char *text, const char *warning,
                     bool on, bool enabled, float a, bool live)
@@ -1750,6 +1727,175 @@ namespace
     // or a double click on a row; QUICK JOIN the open game of this version
     // with the lowest ping. Joined, the host's game invites this one (and it
     // accepts by itself): the menu closes for the game to go there.
+    // Playing with someone met elsewhere (Discord): this player's code to
+    // give, and a field for the host's (ao2::steam::JoinByCode).
+    // Steam running; else a box saying so (false).
+    bool SteamUp(float x0, float x1, float y, float a)
+    {
+      if (ao2::steam::Running())
+      {
+        return true;
+      }
+      float s = ui::Scale();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      float fh = ui::FontSize(FontKind::kSmall);
+      ImVec2 mn(x0, y), mx(x1, y + fh * 2.0f + 26.0f * s);
+      ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.03f * a));
+      ui::Bar(dl, mn, mx, ui::Fade(kPending, a));
+      ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, mn.y + 11.0f * s), ui::Fade(ui::kText, a),
+               Tr("Steam is not running."));
+      ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, mn.y + 15.0f * s + fh), ui::Fade(ui::kMuted, a),
+               Tr("Start the Steam client, then restart the game to play over Steam."));
+      return false;
+    }
+
+    float DrawCode(float x0, float x1, float y, float a, bool live)
+    {
+      float s = ui::Scale();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      double now = ImGui::GetTime();
+      const float h = 64.0f * s, bh = 36.0f * s;
+      ImVec2 mn(x0, y), mx(x1, y + h);
+      ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.03f * a));
+      ui::Bar(dl, mn, mx, ui::Fade(ui::kAccent, a));
+      float by = y + (h - bh) * 0.5f;
+
+      // Left: this player's code and COPY.
+      std::string code = ao2::steam::JoinCode();
+      float lx = mn.x + 20.0f * s;
+      ui::Text(dl, FontKind::kSmall, ImVec2(lx, y + 10.0f * s), ui::Fade(ui::kMuted, a), Tr("Your code"));
+      ui::Caps(dl, FontKind::kHeading, ImVec2(lx, y + 14.0f * s + ui::FontSize(FontKind::kSmall)),
+               ui::Fade(ui::kAccentLight, a), code.c_str());
+      float cw = std::max(ui::CapsSize(FontKind::kHeading, code.c_str()).x,
+                          ui::TextSize(FontKind::kSmall, Tr("Your code")).x);
+      bool copied = now < code_copied_until_;
+      if (ui::Button("code_copy", ImVec2(lx + cw + 18.0f * s, by), ImVec2(130.0f * s, bh),
+                     copied ? Tr("COPIED") : Tr("COPY"), ui::ButtonStyle::kOutline, live && !code.empty(), a))
+      {
+        ImGui::SetClipboardText(code.c_str());
+        code_copied_until_ = now + 2.0;
+      }
+
+      // Right: the host's code and JOIN.
+      ao2::steam::CodeJoin state = ao2::steam::CodeJoinState();
+      bool knocking = state == ao2::steam::CodeJoin::kKnocking;
+      const float jw = 130.0f * s, pw = 130.0f * s, fw = 200.0f * s;
+      float jx = mx.x - 14.0f * s - jw, px = jx - 8.0f * s - pw, fx = px - 8.0f * s - fw;
+      // PASTE: the clipboard's code into the field (and asked for at once).
+      bool pasted = false;
+      if (ui::Button("code_paste", ImVec2(px, by), ImVec2(pw, bh), Tr("PASTE"), ui::ButtonStyle::kOutline,
+                     live && !knocking && !code.empty(), a))
+      {
+        const char *clip = ImGui::GetClipboardText();
+        std::string text;
+        for (const char *c = clip ? clip : ""; *c && text.size() + 1 < sizeof(code_text_); ++c)
+        {
+          if (!std::isspace(static_cast<unsigned char>(*c)))
+          {
+            text += char(std::toupper(static_cast<unsigned char>(*c)));
+          }
+        }
+        std::snprintf(code_text_, sizeof(code_text_), "%s", text.c_str());
+        pasted = code_text_[0] != 0;
+      }
+      ImGui::PushFont(ui::Font(FontKind::kBody), ui::FontSize(FontKind::kBody));
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, a);
+      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f * s, (bh - ui::FontSize(FontKind::kBody)) * 0.5f));
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f * s);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f * s);
+      ImGui::PushStyleColor(ImGuiCol_FrameBg, ui::Fade(ui::kWhite, 0.05f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ui::Fade(ui::kWhite, 0.08f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ui::Fade(ui::kWhite, 0.10f));
+      ImGui::PushStyleColor(ImGuiCol_Border, ui::Fade(ui::kAccent, 0.45f));
+      ImGui::PushStyleColor(ImGuiCol_Text, ui::kAccentLight);
+      ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, ui::Fade(ui::kAccent, 0.35f));
+      ImGui::SetCursorScreenPos(ImVec2(fx, by));
+      ImGui::SetNextItemWidth(fw);
+      ImGui::BeginDisabled(!live || code.empty());
+      bool enter = ImGui::InputTextWithHint("##join_code", Tr("Their code"), code_text_, sizeof(code_text_),
+                                            ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue |
+                                                ImGuiInputTextFlags_AutoSelectAll);
+      ImGui::EndDisabled();
+      ImGui::PopStyleColor(6);
+      ImGui::PopStyleVar(4);
+      ImGui::PopFont();
+      bool join = ui::Button("code_join", ImVec2(jx, by), ImVec2(jw, bh), knocking ? Tr("ASKING") : Tr("JOIN"),
+                             ui::ButtonStyle::kPrimary, live && !knocking && code_text_[0], a);
+      if ((join || enter || pasted) && !knocking && code_text_[0])
+      {
+        code_bad_ = !ao2::steam::JoinByCode(code_text_);
+        code_wait_ = !code_bad_;
+      }
+      y = mx.y + 8.0f * s;
+
+      // What became of it.
+      std::string host = ao2::steam::CodeJoinHost();
+      const char *who = host.empty() ? Tr("The host") : host.c_str();
+      char line[320] = {};
+      ImU32 tone = ui::kMuted;
+      if (code_bad_)
+      {
+        std::snprintf(line, sizeof(line), "%s", Tr("That is not a code: 7 letters and digits, like ABC-DEFG."));
+        tone = ui::kRed;
+      }
+      else if (code_wait_ || state != ao2::steam::CodeJoin::kNone)
+      {
+        switch (state)
+        {
+        case ao2::steam::CodeJoin::kKnocking:
+          std::snprintf(line, sizeof(line), "%s", Tr("Asking the host's game for an invite..."));
+          tone = ui::kText;
+          break;
+        case ao2::steam::CodeJoin::kInvited:
+          std::snprintf(line, sizeof(line), Tr("%s's game invited you: on your way."), who);
+          tone = ui::kGreen;
+          if (code_wait_)
+          {
+            code_wait_ = false;
+            BeginClose();
+          }
+          break;
+        case ao2::steam::CodeJoin::kNoGame:
+          std::snprintf(line, sizeof(line),
+                        Tr("%s hosts no game now: they create one in the game (Online), then enter the code again."),
+                        who);
+          tone = ui::kRed;
+          break;
+        case ao2::steam::CodeJoin::kFull:
+          std::snprintf(line, sizeof(line), Tr("%s's game is full."), who);
+          tone = ui::kRed;
+          break;
+        case ao2::steam::CodeJoin::kStarted:
+          std::snprintf(line, sizeof(line), Tr("%s's match has started: wait for it to end."), who);
+          tone = ui::kRed;
+          break;
+        case ao2::steam::CodeJoin::kNoAnswer:
+          std::snprintf(line, sizeof(line), "%s",
+                        Tr("No answer: check the code; the host's game must be running with Steam."));
+          tone = ui::kRed;
+          break;
+        case ao2::steam::CodeJoin::kOwnCode:
+          std::snprintf(line, sizeof(line), "%s", Tr("That is your own code: enter the host's one."));
+          tone = ui::kRed;
+          break;
+        default:
+          break;
+        }
+        if (state != ao2::steam::CodeJoin::kKnocking && state != ao2::steam::CodeJoin::kInvited)
+        {
+          code_wait_ = false;
+        }
+      }
+      if (!line[0])
+      {
+        std::snprintf(line, sizeof(line), "%s",
+                      Tr("Met someone on Discord? One creates a game in the game (Online) and sends their code; the "
+                         "other enters it here. No need to be Steam friends."));
+      }
+      y = Wrapped(dl, FontKind::kSmall, ImVec2(x0, y), x1 - x0, ui::Fade(tone, a), line);
+      return y + 18.0f * s;
+    }
+
     float DrawServers(ImVec2 o, float w, float a, bool live)
     {
       float s = ui::Scale();
@@ -1757,29 +1903,10 @@ namespace
       float x0 = o.x, x1 = o.x + w, y = o.y;
       double now = ImGui::GetTime();
 
-      auto status_box = [&](ImU32 tone, const std::string &line1, const char *line2) {
-        float fh = ui::FontSize(FontKind::kSmall);
-        float h = fh * (line2 ? 2.0f : 1.0f) + 22.0f * s + (line2 ? 4.0f * s : 0.0f);
-        ImVec2 mn(x0, y), mx(x1, y + h);
-        ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.03f * a));
-        ui::Bar(dl, mn, mx, ui::Fade(tone, a));
-        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, mn.y + 11.0f * s), ui::Fade(ui::kText, a), line1.c_str());
-        if (line2)
-        {
-          ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, mn.y + 15.0f * s + fh), ui::Fade(ui::kMuted, a), line2);
-        }
-        y = mx.y + 18.0f * s;
-      };
-      if (!ao2::steam::Running())
+      if (!SteamUp(x0, x1, y, a))
       {
-        status_box(kPending, Tr("Steam is not running."),
-                   Tr("Start the Steam client, then restart the game to play over Steam."));
-        return y;
+        return y + 80.0f * s;
       }
-      char signed_in[160];
-      std::snprintf(signed_in, sizeof(signed_in), Tr("Signed in to Steam as %s."), ao2::steam::PersonaName().c_str());
-      status_box(ui::kGreen, signed_in,
-                 Tr("A game you create in the game shows here for everyone (a private one for your friends)."));
 
       if (fresh_ || now - servers_refreshed_ > 20.0)
       {
@@ -1839,36 +1966,6 @@ namespace
         servers_refreshed_ = now;
         ao2::steam::RefreshLobbies();
       }
-      {
-        // Right aligned: the mode, then the two toggles.
-        const char *modes[] = {Tr("All"), Tr("co-op"), Tr("versus")};
-        const char *free_label = Tr("Free places");
-        const char *same_label = Tr("This version");
-        float ch = 32.0f * s, cy = y + (bh - ch) * 0.5f, gap = 6.0f * s;
-        float widths[5] = {ChipWidth(modes[0]), ChipWidth(modes[1]), ChipWidth(modes[2]), ChipWidth(free_label),
-                           ChipWidth(same_label)};
-        float total = widths[0] + widths[1] + widths[2] + 18.0f * s + widths[3] + widths[4] + gap * 3.0f;
-        float cx = std::max(bx + 150.0f * s, x1 - total);
-        for (int m = 0; m < 3; ++m)
-        {
-          char id[16];
-          std::snprintf(id, sizeof(id), "mode%d", m);
-          if (Chip(id, ImVec2(cx, cy), ImVec2(widths[m], ch), modes[m], server_mode_ == m, live, a))
-          {
-            server_mode_ = m;
-          }
-          cx += widths[m] + (m < 2 ? gap : 18.0f * s);
-        }
-        if (Chip("free", ImVec2(cx, cy), ImVec2(widths[3], ch), free_label, server_free_, live, a))
-        {
-          server_free_ = !server_free_;
-        }
-        cx += widths[3] + gap;
-        if (Chip("same", ImVec2(cx, cy), ImVec2(widths[4], ch), same_label, server_same_, live, a))
-        {
-          server_same_ = !server_same_;
-        }
-      }
       y += bh + 10.0f * s;
       if (joining_ || join_failed_)
       {
@@ -1880,77 +1977,20 @@ namespace
       y += 8.0f * s;
 
       // --- The table ---
+      // All of them, the lowest ping first (as Lobbies() gives them).
       std::vector<const ao2::steam::Lobby *> rows;
       for (const ao2::steam::Lobby &l : all)
       {
-        if ((server_mode_ == 1 && l.versus) || (server_mode_ == 2 && !l.versus) ||
-            (server_free_ && (l.in_game || l.players >= l.max) && !l.joined) ||
-            (server_same_ && ao2::invite::IsOtherBuild(l.build) && !l.own))
-        {
-          continue;
-        }
         rows.push_back(&l);
       }
-      auto key = [&](const ao2::steam::Lobby &l, int col) -> std::string {
-        char num[16];
-        switch (col)
-        {
-        case 0:
-          return l.name;
-        case 1:
-          return ao2::steam::MissionName(l.map, l.versus);
-        case 2:
-          return ao2::steam::ModeName(l.versus, l.game_type);
-        case 3:
-          std::snprintf(num, sizeof(num), "%06d", std::max(0, l.max - l.players));
-          return num;
-        default:
-          std::snprintf(num, sizeof(num), "%06d", l.ping < 0 ? 99999 : l.ping);
-          return num;
-        }
-      };
-      std::stable_sort(rows.begin(), rows.end(), [&](const ao2::steam::Lobby *p, const ao2::steam::Lobby *q) {
-        std::string kp = key(*p, server_sort_), kq = key(*q, server_sort_);
-        return server_asc_ ? kp < kq : kq < kp;
-      });
 
       const float action_w = 150.0f * s;
       const float cols[5] = {x0 + 20.0f * s, x0 + w * 0.32f, x0 + w * 0.52f, x0 + w * 0.66f, x0 + w * 0.76f};
       const float col_end[5] = {cols[1], cols[2], cols[3], cols[4], x1 - action_w - 20.0f * s};
-      const char *heads[5] = {Tr("HOST"), Tr("MISSION"), Tr("MODE"), Tr("FREE"), Tr("PING")};
+      const char *heads[5] = {Tr("HOST"), Tr("MISSION"), Tr("MODE"), Tr("PLAYERS"), Tr("PING")};
       for (int c = 0; c < 5; ++c)
       {
-        ImVec2 ts = ui::CapsSize(FontKind::kLabel, heads[c]);
-        ImGui::PushID(c);
-        ImGui::SetCursorScreenPos(ImVec2(cols[c], y - 4.0f * s));
-        if (ImGui::InvisibleButton("##sort", ImVec2(ts.x + 18.0f * s, ts.y + 8.0f * s)) && live)
-        {
-          // Again on the same column: the other way round; a new one: its usual way.
-          server_asc_ = server_sort_ == c ? !server_asc_ : c != 3;
-          server_sort_ = c;
-        }
-        bool hovered = live && ImGui::IsItemHovered();
-        ImGui::PopID();
-        if (hovered)
-        {
-          ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-        }
-        bool sorted = server_sort_ == c;
-        ui::Caps(dl, FontKind::kLabel, ImVec2(cols[c], y),
-                 ui::Fade(sorted || hovered ? ui::kAccentLight : ui::kMuted, (sorted ? 1.0f : 0.8f) * a), heads[c]);
-        if (sorted)
-        {
-          float tx = cols[c] + ts.x + 7.0f * s, tmid = y + ts.y * 0.5f, r = 3.5f * s;
-          ImU32 col = ui::Fade(ui::kAccent, a);
-          if (server_asc_)
-          {
-            dl->AddTriangleFilled(ImVec2(tx, tmid + r), ImVec2(tx + 2.0f * r, tmid + r), ImVec2(tx + r, tmid - r), col);
-          }
-          else
-          {
-            dl->AddTriangleFilled(ImVec2(tx, tmid - r), ImVec2(tx + 2.0f * r, tmid - r), ImVec2(tx + r, tmid + r), col);
-          }
-        }
+        ui::Caps(dl, FontKind::kLabel, ImVec2(cols[c], y), ui::Fade(ui::kMuted, 0.8f * a), heads[c]);
       }
       y += ui::FontSize(FontKind::kLabel) + 10.0f * s;
 
@@ -1959,11 +1999,8 @@ namespace
         float eh = 120.0f * s;
         ImVec2 mn(x0, y), mx(x1, y + eh);
         ui::Frame(dl, mn, mx, ui::Fade(ui::kWhite, 0.08f * a), 1.0f * s);
-        const char *line1 = refreshing && all.empty() ? Tr("Looking for games...")
-                            : all.empty()             ? Tr("No games over Steam right now.")
-                                                      : Tr("No games match the filters.");
-        const char *line2 = all.empty() ? Tr("Create a Public game in the game: it shows here for everyone.")
-                                        : Tr("Turn a filter off above to see the others.");
+        const char *line1 = refreshing ? Tr("Looking for games...") : Tr("No games over Steam right now.");
+        const char *line2 = Tr("Create a Public game in the game: it shows here for everyone.");
         ImVec2 s1 = ui::TextSize(FontKind::kBody, line1), s2 = ui::TextSize(FontKind::kSmall, line2);
         ui::Text(dl, FontKind::kBody, ImVec2((x0 + x1 - s1.x) * 0.5f, y + eh * 0.5f - s1.y - 2.0f * s),
                  ui::Fade(ui::kText, a), line1);
@@ -2014,9 +2051,9 @@ namespace
         dl->PopClipRect();
         cell(1, ui::kText, ao2::steam::MissionName(l.map, l.versus));
         cell(2, ui::kText, ao2::steam::ModeName(l.versus, l.game_type));
-        int free = std::max(0, l.max - l.players);
-        cell(3, free && !l.in_game ? ui::kText : ui::kMuted,
-             free ? std::to_string(free) + " / " + std::to_string(l.max) : std::string(Tr("FULL")));
+        bool full = l.players >= l.max;
+        cell(3, !full && !l.in_game ? ui::kText : ui::kMuted,
+             std::to_string(std::min(l.players, l.max)) + " / " + std::to_string(l.max));
         cell(4, l.ping < 0 ? ui::kMuted : l.ping < 80 ? ui::kGreen : l.ping < 150 ? ui::kAccent : ui::kRed,
              l.ping >= 0 ? std::to_string(l.ping) + " ms" : std::string("\xE2\x80\x94"));
         // The action.
@@ -2055,23 +2092,58 @@ namespace
       return y + ui::FontSize(FontKind::kSmall) + 8.0f * s;
     }
 
-    // --- Invites: the players window's content (coop_invite.cpp).
-    void DrawInvites(ImVec2 mn, ImVec2 mx, float a)
+    // --- Online: the partners (Steam friends, the LAN, a VPN:
+    // coop_invite.cpp).
+    float DrawPartners(ImVec2 o, float w, float a, bool live, bool &keep)
     {
-      if (!ao2::invite::Running())
+      float s = ui::Scale();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      float x0 = o.x;
+      float y = o.y;
+      if (ao2::invite::Running())
       {
-        ImDrawList *dl = ImGui::GetWindowDrawList();
-        ui::Text(dl, FontKind::kBody, mn, ui::Fade(ui::kMuted, a), Tr("Invites are off (ao2_invites)."));
-        return;
+        ImGui::SetCursorScreenPos(ImVec2(x0, y));
+        keep = ao2::invite::DrawTab(ImVec2(x0, y), w, fresh_);
+        y = ImGui::GetCursorScreenPos().y + 10.0f * s;
       }
-      bool keep = true;
-      Scrolling("invites", mn, mx, false, [&](ImVec2 o, float w) {
-        keep = ao2::invite::DrawTab(o, w, fresh_);
-        return ImGui::GetCursorScreenPos().y;
-      });
-      if (!keep)
+      else
       {
-        BeginClose(); // an invite accepted: the game goes on to join it
+        ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(ui::kMuted, a), Tr("Invites are off (ao2_invites)."));
+        y += ui::FontSize(FontKind::kSmall) + 18.0f * s;
+      }
+      return y;
+    }
+
+    // --- Debug: the checkpoints or the cheats, picked with the chips over
+    // them.
+    void DrawDebug(ImVec2 mn, ImVec2 mx, float a, bool live)
+    {
+      float s = ui::Scale();
+      const float ch = 34.0f * s, gap = 8.0f * s;
+      float cx = mn.x;
+      page_ = std::clamp(page_, 0, int(std::size(kPageNames)) - 1);
+      for (int p = 0; p < int(std::size(kPageNames)); ++p)
+      {
+        const char *label = Tr(kPageNames[p]);
+        float cw = ChipWidth(label) + 12.0f * s;
+        char id[16];
+        std::snprintf(id, sizeof(id), "page%d", p);
+        if (Chip(id, ImVec2(cx, mn.y), ImVec2(cw, ch), label, page_ == p, live, a) && page_ != p)
+        {
+          page_ = p;
+          fresh_ = true;
+        }
+        cx += cw + gap;
+      }
+      ImVec2 cmn(mn.x, mn.y + ch + 20.0f * s);
+      switch (page_)
+      {
+      case kPageCheckpoints:
+        DrawCheckpoints(cmn, mx, a, live);
+        break;
+      default:
+        Scrolling("cheats", cmn, mx, false, [&](ImVec2 o, float w) { return DrawCheats(o, w, a, live); });
+        break;
       }
     }
 
@@ -2263,13 +2335,13 @@ namespace
     bool fresh_list_ = false; // another mission picked
     double opened_ = -1.0, closing_ = -1.0, tab_changed_ = 0.0, list_shown_ = 0.0;
     float mark_y_ = -1.0f, mark_target_ = 0.0f; // the sidebar's current section block (y)
-    // Servers: the filters, the sort, the join under way.
-    int server_mode_ = 0;           // 0 all, 1 co-op, 2 versus
-    bool server_free_ = false;      // only games with a free place
-    bool server_same_ = true;       // only this version
-    int server_sort_ = 4;           // column: 0 host, 1 mission, 2 mode, 3 players, 4 ping
-    bool server_asc_ = true;
+    float mark_h_ = -1.0f;                      // ... and its height (an Online page's is lower)
+    // Online: the games list's refresh, the join under way.
     double servers_refreshed_ = -100.0;
+    char code_text_[24] = {};       // the host's code (Play by code)
+    bool code_bad_ = false;         // ... was not a code
+    bool code_wait_ = false;        // ... asked for here: closed once invited
+    double code_copied_until_ = 0.0;
     uint64_t joining_ = 0;          // the lobby being joined
     double joining_since_ = 0.0;
     bool join_failed_ = false;
@@ -2277,7 +2349,9 @@ namespace
     bool close_requested_ = false;
     double badges_time_ = 0.0;
     int ach_got_ = 0, ach_total_ = 0;
-    int info_ = 0; // the Graphics tab's row the info column tells about (kSliderInfo + n: a slider)
+    int tip_ = -1, tip_shown_ = -1; // the settings row hovered (kSliderInfo + n: a slider), the one tipped
+    double tip_since_ = 0.0;
+    int page_ = kPageCheckpoints;   // the Debug section's page
     bool slider_dirty_[4] = {}; // a slider moved and not yet saved (kSliders)
     bool bot_slider_dirty_[std::size(kBotSliders)] = {}; // the same for kBotSliders
     bool rule_custom_[std::size(kRuleRows)] = {};        // Custom picked (the value may still be a choice's)
