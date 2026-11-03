@@ -118,7 +118,6 @@ set(ARMYOFTWORECOMP_SOURCES
     src/coop_lod.cpp
     src/coop_streaming.cpp
     src/audio_listener_guard.cpp
-    src/missing_shader_guard.cpp
     src/aspect_ratio.cpp
     src/cyrillic_fonts.cpp
     src/game_language.cpp
