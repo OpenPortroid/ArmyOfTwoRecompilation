@@ -13,7 +13,9 @@
 // or release until further notice (lt+ ... lt-), waitNNN (milliseconds),
 // mxN / myN (move the mouse by N counts, as if the mouse moved), skip (the
 // cutscene skip key, cutscene_skip.cpp), lxN / lyN / rxN / ryN (stick axis
-// held at N, -32768..32767, until set again; lx0 releases).
+// held at N, -32768..32767, until set again; lx0 releases). p2 sends the
+// taps and waits after it to player 2 (user 1: split-screen tests, the pad of
+// a guest), p1 back to player 1; latches, sticks and the mouse stay player 1's.
 #include <algorithm>
 #include <atomic>
 #include <cstring>
@@ -45,7 +47,7 @@ REXCVAR_DEFINE_BOOL(ao2_toggle_aim, false, "Input",
                     "and cutscenes the trigger is left as it is");
 REXCVAR_DEFINE_STRING(ao2_input_script, "", "Debug",
                       "Scripted pad input (also from input.script): a b x y start back up down left right lb rb ls "
-                      "rs lt rt [+|-] waitNNN mxN myN skip lxN lyN rxN ryN");
+                      "rs lt rt [+|-] waitNNN mxN myN skip lxN lyN rxN ryN p1 p2");
 
 namespace
 {
@@ -70,6 +72,7 @@ namespace
     uint32_t ms;
     float dx = 0.0f;
     float dy = 0.0f;
+    uint32_t user = 0; // a tap's player (p1 / p2)
   };
 
   std::mutex g_mutex;
@@ -78,6 +81,7 @@ namespace
   clock::time_point g_step_end;
   bool g_step_active = false;
   uint32_t g_latched = 0;
+  uint32_t g_held_user = 0; // the player the running tap is for
   int16_t g_sticks[4] = {}; // lx ly rx ry
   uint32_t g_last_inputs = 0;
   uint32_t g_packet = 0x10000;
@@ -169,10 +173,16 @@ namespace
   {
     std::istringstream in(script);
     std::string token;
+    uint32_t user = 0;
     while (in >> token)
     try
     {
-      if (token.rfind("wait", 0) == 0)
+      size_t first = g_steps.size();
+      if (token == "p1" || token == "p2")
+      {
+        user = token[1] - '1';
+      }
+      else if (token.rfind("wait", 0) == 0)
       {
         g_steps.push_back({Step::kHold, 0, uint32_t(std::stoul(token.substr(4)))});
       }
@@ -200,6 +210,10 @@ namespace
       {
         g_steps.push_back({Step::kHold, mask, 150});
         g_steps.push_back({Step::kHold, 0, 150});
+      }
+      for (size_t i = first; i < g_steps.size(); ++i)
+      {
+        g_steps[i].user = user;
       }
     }
     catch (const std::exception &)
@@ -233,8 +247,9 @@ namespace
     Parse(text.str());
   }
 
-  // Inputs the script holds right now; false when no script is running.
-  bool CurrentInputs(uint32_t &inputs)
+  // Inputs the script holds right now for player `user` (0 or 1); false
+  // when no script is running (for player 2: when no tap of its runs).
+  bool CurrentInputs(uint32_t user, uint32_t &inputs)
   {
     std::lock_guard lock(g_mutex);
     auto now = clock::now();
@@ -277,6 +292,7 @@ namespace
       if (now < g_step_end)
       {
         held = step.inputs;
+        g_held_user = step.user;
         break;
       }
       g_steps.pop_front();
@@ -288,7 +304,12 @@ namespace
       g_last_inputs = 0;
       return false;
     }
-    inputs = held | g_latched;
+    if (user)
+    {
+      inputs = g_held_user == user ? held : 0;
+      return g_step_active && g_held_user == user;
+    }
+    inputs = (g_held_user == 0 ? held : 0) | g_latched;
     if (inputs != g_last_inputs)
     {
       g_last_inputs = inputs;
@@ -402,12 +423,12 @@ extern "C" REX_FUNC(sub_82B07AF0)
   {
     ApplyToggleAim(ctx, base, user, base + state);
   }
-  if ((user != 0 && !keyboard) || !state)
+  uint32_t inputs = 0;
+  bool scripted = state && user < 2 && CurrentInputs(user, inputs);
+  if ((user != 0 && !keyboard && !scripted) || !state)
   {
     return;
   }
-  uint32_t inputs = 0;
-  bool scripted = user == 0 && CurrentInputs(inputs);
   int32_t rx = 0, ry = 0;
   bool mouse = keyboard && ctx.r3.u32 == 0 && ao2::mouse::TakeStickFallback(rx, ry);
   ao2::autopilot::Pad pilot{};
@@ -473,7 +494,7 @@ extern "C" REX_FUNC(sub_82B07AF0)
     AddThumb(p + 12, pilot.rx);
     AddThumb(p + 14, pilot.ry);
   }
-  if (scripted)
+  if (scripted && user == 0)
   {
     std::lock_guard lock(g_mutex);
     for (uint32_t i = 0; i < 4; ++i)

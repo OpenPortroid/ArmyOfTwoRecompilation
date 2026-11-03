@@ -1512,8 +1512,11 @@ namespace
                                  "This match plays by the host's rules and bot settings.");
         status += "  \xC2\xB7  ";
         status += !m.on ? Tr("Bots off") : preset >= 0 ? Tr(kBotPresets[preset].name) : Tr("Custom");
-        note = match.mine ? "" : Tr("Changes here apply when you host.");
+        note = Tr("The settings are locked until the match ends.");
         tone = ui::kGreen;
+        // The match keeps the settings it began with (PollSettings sends them
+        // once): nothing here changes mid-match.
+        live = false;
       }
       else if (network_)
       {

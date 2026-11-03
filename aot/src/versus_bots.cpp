@@ -428,7 +428,7 @@ namespace
   std::array<Sent, 4> g_sent_by{};
   ao2::versus::VersusSettings g_settings; // what the bots play by
   int g_settings_from = -1;            // the id whose settings they are; -1: the defaults
-  std::string g_sent_line;             // what this machine sent last in this match
+  std::string g_sent_line;             // what this machine sent in this match
   std::mutex g_info_mutex;             // the menu's copy (UI thread)
   ao2::versus::MatchSettingsInfo g_info;
 
@@ -5418,7 +5418,9 @@ namespace ao2::versus
                   std::clamp(REXCVAR_GET(ao2_versus_friendly_fire), 0, 2),
                   std::clamp(REXCVAR_GET(ao2_versus_respawn_cost), 0, 10000000) / 100,
                   std::clamp(REXCVAR_GET(ao2_versus_respawn_step), 0, 10000000) / 100);
-    if (g_sent_line != line)
+    // Once per match: the rules and bots stay as the match began (the F1
+    // menu does not change them mid-match either).
+    if (g_sent_line.empty())
     {
       g_sent_line = line;
       ao2::coop::cmd::Send(line);

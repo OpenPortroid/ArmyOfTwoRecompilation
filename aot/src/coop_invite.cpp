@@ -1562,12 +1562,17 @@ namespace
       // menu, which has its own) ---
       if (!embedded)
       {
+        // A versus party (Custom Match) is named so, not co-op.
+        const bool versus = hosting && (game.playgroup || game.max_players > 2);
         const char *kicker = !hosting          ? Tr("CO-OP  //  INVITES")
+                             : versus          ? (game.is_private ? Tr("VERSUS  //  PRIVATE GAME") : Tr("VERSUS  //  PUBLIC GAME"))
                              : game.is_private ? Tr("CO-OP  //  PRIVATE GAME")
                                                : Tr("CO-OP  //  PUBLIC GAME");
         ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), kicker);
         y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
-        const char *title = hosting ? Tr("INVITE A PARTNER") : !received.empty() ? Tr("CALLED TO ARMS") : Tr("PLAYERS ONLINE");
+        const char *title = hosting ? (versus ? Tr("INVITE PLAYERS") : Tr("INVITE A PARTNER"))
+                            : !received.empty() ? Tr("CALLED TO ARMS")
+                                                : Tr("PLAYERS ONLINE");
         ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title);
         float wipe = ui::EaseOutCubic((since - 0.08f) / 0.45f);
         float edge = cx0 + title_size.x * wipe;
@@ -1579,7 +1584,7 @@ namespace
           if (hosting)
           {
             // A versus party (Custom Match) takes 4 players, a co-op game 2.
-            std::snprintf(status, sizeof(status), Tr("GAME CREATED  ·  %d/%d"), game.players, game.playgroup ? 4 : 2);
+            std::snprintf(status, sizeof(status), Tr("GAME CREATED  ·  %d/%d"), game.players, versus ? 4 : 2);
           }
           else
           {

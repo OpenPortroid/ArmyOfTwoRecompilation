@@ -119,9 +119,15 @@ namespace
   std::array<std::array<uint8_t, kDumpBytes>, 4> g_dumped{};
   std::array<uint32_t, 4> g_dumped_at{};
 
-  void DumpPlayers(const uint8_t *base, uint32_t lobby)
+  FILE *LobbyLog()
   {
     static FILE *log = ao2::OpenLogFile("versus_lobby.log");
+    return log;
+  }
+
+  void DumpPlayers(const uint8_t *base, uint32_t lobby)
+  {
+    FILE *log = LobbyLog();
     uint32_t list = lobby ? LoadU32(base, lobby + kPlayers) : 0;
     if (!log || !list)
     {
@@ -420,7 +426,8 @@ extern "C" REX_FUNC(sub_82A153C0)
 // of a player's; the host's own too): after the game's swaps of two players
 // who both asked (+40 WantsToSwapTeam, ids 0-1 one team and 2-3 the other;
 // none while anybody is ready, +24), a player still asking goes to a free
-// id of the other team. Sent as the game sends a swap (sub_82A29988, to
+// id of the other team - also while others are ready (a split-screen guest
+// is ready at once, and a move to a free place changes nobody else). Sent as the game sends a swap (sub_82A29988, to
 // every machine and to this one's ready room): first with the wish cleared
 // at the old id (its swap mark goes), then at the new one; a machine whose
 // player changed id empties the old place (sub_82A24670) - this one's
@@ -430,7 +437,7 @@ namespace
 {
   constexpr uint32_t kSendPlayer = 0x82A29988; // r3 = lobby, r4 = player
   constexpr uint32_t kMemberLeave = 0x82A33138; // r3 = controller, r4 = id
-  constexpr uint32_t kId = 4, kReady = 24, kSwap = 40, kSplit = 20;
+  constexpr uint32_t kId = 4, kSwap = 40;
 
   void FreeTeamSwap(PPCContext &ctx, uint8_t *base, uint32_t lobby)
   {
@@ -450,10 +457,6 @@ namespace
       players[slot - 2] = player;
       if (player && LoadU32(base, player + kId) < 4)
       {
-        if (LoadU32(base, player + kReady))
-        {
-          return; // as the game: no swaps once somebody is ready
-        }
         taken[LoadU32(base, player + kId)] = true;
       }
     }
@@ -461,7 +464,9 @@ namespace
     for (uint32_t player : players)
     {
       uint32_t id = player ? LoadU32(base, player + kId) : 4;
-      if (id >= 4 || !LoadU32(base, player + kSwap) || LoadU32(base, player + kSplit))
+      // A split-screen pair (+20: a player with a guest, and the guest)
+      // swaps one by one too: the game refuses them every swap.
+      if (id >= 4 || !LoadU32(base, player + kSwap))
       {
         continue;
       }
@@ -478,6 +483,11 @@ namespace
       taken[id] = false;
       taken[to] = true;
       REXLOG_INFO("versus_lobby: player {} went over to the free place {}", id, to);
+      if (FILE *log = LobbyLog())
+      {
+        std::fprintf(log, "player %u went over to the free place %u\n", id, to);
+        std::fflush(log);
+      }
     }
   }
 } // namespace

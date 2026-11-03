@@ -121,6 +121,11 @@ Details: [aot/docs/online_coop.md](aot/docs/online_coop.md).
   a prompt they share shows both.
 - Without the launcher: `input_player1`, `input_player2`, `user_gamertag_2` and `max_local_users` in
   `settings\mapping.toml`.
+- Versus in split-screen: in the Custom Match lobby press Y (Guest Sign-In), then A: player 2 joins as player 1's
+  guest, on the same team, and the match is played on a split screen; bots fill the other places. Not in ranked
+  matches, as on the console (`ao2_versus_guest` in `settings\online.toml`). The guest plays with player 2's devices,
+  or, with one gamepad and the devices left automatic, with that gamepad while player 1 keeps the keyboard and
+  mouse; it returns to player 1 after the match.
 
 ## Settings
 

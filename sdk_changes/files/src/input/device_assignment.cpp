@@ -9,7 +9,11 @@
  *              See LICENSE file in the project root for full license text.
  */
 
+#include <algorithm>
 #include <atomic>
+#include <cstring>
+#include <mutex>
+#include <string>
 #include <string_view>
 
 #include <rex/cvar.h>
@@ -35,6 +39,15 @@ namespace {
 constexpr std::string_view kKeyboardName = "Keyboard and Mouse";
 
 std::atomic<uint32_t> g_keyboard_user{0};
+
+// A guest takes the only gamepad (rex_input_pad_guest): with the automatic
+// assignment the keyboard and that pad are both player 1's.
+std::atomic<bool> g_pad_guest{false};
+std::atomic<uint32_t> g_physical_pads{0};
+std::atomic<bool> g_auto_assignment{true};
+std::atomic<uint32_t> g_generation{0};
+std::mutex g_names_mutex;
+std::string g_names;  // the devices last assigned, for rex_input_devices
 
 // What one player's input_playerN value names.
 struct PlayerDevices {
@@ -80,6 +93,10 @@ uint32_t KeyboardUser() {
   return g_keyboard_user.load(std::memory_order_relaxed);
 }
 
+uint32_t AssignmentGeneration() {
+  return g_generation.load(std::memory_order_acquire);
+}
+
 void SlotAssignment::OnDevicesChanged(const std::vector<DeviceInfo>& devices) {
   for (auto& user : users_) {
     user.clear();
@@ -87,6 +104,21 @@ void SlotAssignment::OnDevicesChanged(const std::vector<DeviceInfo>& devices) {
 
   std::string p1 = REXCVAR_GET(input_player1);
   std::string p2 = REXCVAR_GET(input_player2);
+  uint32_t pads = 0;
+  for (const auto& device : devices) {
+    pads += !device.synthetic;
+  }
+  g_physical_pads.store(pads, std::memory_order_relaxed);
+  {
+    std::string names;
+    for (const auto& device : devices) {
+      names += (names.empty() ? "" : ", ") + device.name + (device.synthetic ? " (synthetic)" : "");
+    }
+    std::lock_guard<std::mutex> lock(g_names_mutex);
+    g_names = names;
+  }
+  g_auto_assignment.store(p1 == "auto" && p2 == "auto" && !REXCVAR_GET(keyboard_own_player),
+                          std::memory_order_relaxed);
   if (p1 != "auto" || p2 != "auto") {
     // Chosen devices (the launcher's split-screen page). A pad named by
     // both players is the first one's.
@@ -122,8 +154,10 @@ void SlotAssignment::OnDevicesChanged(const std::vector<DeviceInfo>& devices) {
 
   // Key off the ordinal rather than list position, so unplugging pad one does
   // not promote pad two to player one.
-  // With keyboard_own_player the first pad is player 2.
-  uint32_t first_pad_user = REXCVAR_GET(keyboard_own_player) ? 1 : 0;
+  // With keyboard_own_player the first pad is player 2; so is the only one
+  // while a guest has it.
+  bool pad_guest = g_pad_guest.load(std::memory_order_relaxed) && pads == 1;
+  uint32_t first_pad_user = REXCVAR_GET(keyboard_own_player) || pad_guest ? 1 : 0;
   for (const auto& device : devices) {
     if (device.synthetic) {
       users_[0].push_back(device.id);
@@ -163,4 +197,29 @@ void SharedAssignment::DevicesForUser(uint32_t user_index, std::vector<DeviceId>
 
 extern "C" uint32_t rex_input_keyboard_user() {
   return rex::input::KeyboardUser();
+}
+
+extern "C" uint32_t rex_input_pad_guest(uint32_t on) {
+  using namespace rex::input;
+  bool applies = g_auto_assignment.load(std::memory_order_relaxed) &&
+                 g_physical_pads.load(std::memory_order_relaxed) == 1;
+  if (g_pad_guest.exchange(on != 0, std::memory_order_relaxed) != (on != 0)) {
+    g_generation.fetch_add(1, std::memory_order_release);
+  }
+  return applies;
+}
+
+extern "C" uint32_t rex_input_gamepads() {
+  return rex::input::g_physical_pads.load(std::memory_order_relaxed);
+}
+
+extern "C" uint32_t rex_input_devices(char* out, uint32_t size) {
+  std::lock_guard<std::mutex> lock(rex::input::g_names_mutex);
+  const std::string& names = rex::input::g_names;
+  if (out && size) {
+    size_t n = std::min<size_t>(names.size(), size - 1);
+    std::memcpy(out, names.data(), n);
+    out[n] = 0;
+  }
+  return static_cast<uint32_t>(names.size());
 }

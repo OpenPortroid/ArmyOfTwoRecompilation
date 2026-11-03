@@ -382,12 +382,50 @@ namespace
     return package && ao2::ue3::ObjectName(base, package) == "Shell";
   }
 
+  // The player's controller id of a pad. In a Plasma (multiplayer) world the
+  // gameplay InputAxis (sub_827F86C0) looks the pad up first: sub_82A0BFB0's
+  // object, sub_82A186E0's +4016 is a map, sub_82A02CD0(map, pad) an entry
+  // whose +4 is the player's controller id. With a guest on a place before
+  // its host the two are crossed (the keyboard's pad 0 played controller 2,
+  // the guest's pad 1 controller 0); elsewhere the pad is the id.
+  // The world check before it (sub_8279F1E0) is not asked here: in a versus
+  // match with a guest it said no where UpdateLookingAction runs, and the
+  // keyboard's pad 0 was taken for controller 0 - the guest's. The map's
+  // entries are the lobby's local players, so an entry for the pad is the
+  // answer. Back in the menus the object's +8 is 0 (the map keeps its
+  // entries).
+  constexpr uint32_t kPlasmaObject = 0x831F3010;   // the object sub_82A0BFB0 returns, +8 set when up
+  constexpr uint32_t kPlasmaManager = 0x82A186E0;  // (object) -> manager, +4016 the pad map
+  constexpr uint32_t kPadMapFind = 0x82A02CD0;     // (map, pad) -> entry, +4 the controller id
+
+  uint32_t PlayerIdOfPad(PPCContext &ctx, uint8_t *base, uint32_t pad)
+  {
+    uint32_t object = LoadU32(base, kPlasmaObject);
+    uint32_t id = pad;
+    uint32_t map = 0, entry = 0;
+    if (object && LoadU32(base, object + 8))
+    {
+      uint32_t manager = CallGuest(ctx, base, kPlasmaManager, object, 0);
+      map = manager ? LoadU32(base, manager + 4016) : 0;
+      entry = map ? CallGuest(ctx, base, kPadMapFind, map, pad) : 0;
+      id = entry ? LoadU32(base, entry + 4) : pad;
+    }
+    static uint32_t last[4] = {~0u, ~0u, ~0u, ~0u};
+    if (pad < 4 && id != last[pad] && REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "pad %u: player %u (plasma object %08X, map %08X, entry %08X)\n", pad, id, object, map,
+                   entry);
+      last[pad] = id;
+    }
+    return id;
+  }
+
   // Split-screen: the controller of the player the keyboard and mouse belong
   // to (0: nobody's, or not known yet).
   uint32_t KeyboardController(PPCContext &ctx, uint8_t *base)
   {
     uint32_t user = ao2::mouse::KeyboardUser();
-    return user < 4 ? ControllerOf(ctx, base, user) : 0;
+    return user < 4 ? ControllerOf(ctx, base, PlayerIdOfPad(ctx, base, user)) : 0;
   }
 
   // Outside online co-op every local player's camera runs the hooks below:
@@ -403,7 +441,13 @@ namespace
     {
       return false;
     }
-    uint32_t owner = ControllerOf(ctx, base, user);
+    uint32_t owner = ControllerOf(ctx, base, PlayerIdOfPad(ctx, base, user));
+    static uint32_t last = ~0u;
+    if (owner != last && REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "keyboard pad %u: controller %08X\n", user, owner);
+      last = owner;
+    }
     return !owner || owner == controller || !LoadU32(base, owner + 2024);
   }
 
@@ -883,6 +927,24 @@ namespace
   constexpr uint32_t kKeyMouseX = 24, kKeyMouseY = 25;
   constexpr uint32_t kFrameSync = 0x831F3008;      // frame sync object singleton
   constexpr uint32_t kSyncIsNetwork = 0x82A0EC20;  // (sync) -> network game
+  // The player of the keyboard and mouse in a lockstep game: their pad's
+  // player (PlayerIdOfPad) when it is one of this machine's (with the UI
+  // data stores). Split-screen in versus has two players signed in here,
+  // and LocalController took the one on the first place - the guest's when
+  // the guest stood before the host.
+  uint32_t KeyboardPlayerController(PPCContext &ctx, uint8_t *base)
+  {
+    uint32_t pad = ao2::mouse::KeyboardUser();
+    uint32_t id = pad < 4 ? PlayerIdOfPad(ctx, base, pad) : ~0u;
+    uint32_t controller = id < 4 ? ControllerOf(ctx, base, id) : 0;
+    static uint32_t last = ~0u;
+    if (controller != last && REXCVAR_GET(ao2_mouse_debug) && DebugLog())
+    {
+      std::fprintf(DebugLog(), "keyboard pad %u: player %u, controller %08X\n", pad, id, controller);
+    }
+    last = controller;
+    return controller && LoadU32(base, controller + 800) ? controller : LocalController(ctx, base);
+  }
 
   // A replayed turn code of a controller id for this lockstep frame (set,
   // not added: a frame's code may arrive more than once).
@@ -916,7 +978,10 @@ namespace
     PPCContext saved = ctx;
     ctx.r3.u64 = axis_obj;
     ctx.r4.u64 = client;
-    ctx.r5.u64 = 0; // the pad of this machine's player
+    // The pad of the keyboard's player (0 unless split-screen gives the
+    // keyboard to another one).
+    uint32_t pad = ao2::mouse::KeyboardUser();
+    ctx.r5.u64 = pad < 4 ? pad : 0;
     ctx.r6.u64 = LoadName(base, name_global);
     ctx.f1.f64 = double(float(value));
     ctx.f2.f64 = 1.0 / 60.0;
@@ -937,7 +1002,7 @@ namespace
     uint32_t frame = ao2::coop::SyncFrame(base);
     if (frame != g_send_frame)
     {
-      g_local_controller = LocalController(ctx, base);
+      g_local_controller = KeyboardPlayerController(ctx, base);
       // The finished record's turn is on its way (prediction).
       NoteSent(g_sent_yaw, g_sent_pitch);
       // A new record: carry what the old one could not represent.
@@ -1468,6 +1533,11 @@ extern "C" REX_FUNC(sub_82A0EEC8)
   }
   if (mouse)
   {
+    // The replay hands that id to the gameplay InputAxis as a pad, which in
+    // a Plasma world maps it to the player (PlayerIdOfPad): with a guest the
+    // record's id can be another local player's controller id, and the turn
+    // went to the guest.
+    uint32_t player_id = PlayerIdOfPad(ctx, base, controller_id);
     uint32_t count = std::min<uint32_t>(LoadU32(base, record + 312), 8);
     for (uint32_t i = 0; i < count; ++i)
     {
@@ -1475,7 +1545,7 @@ extern "C" REX_FUNC(sub_82A0EEC8)
       if (key == kKeyMouseX || key == kKeyMouseY)
       {
         int code = std::clamp(int(int32_t(LoadU32(base, record + 252 + i * 8))), -kTurnCodeMax, kTurnCodeMax);
-        ReplayedTurn(ctx, base, controller_id, key == kKeyMouseX, code);
+        ReplayedTurn(ctx, base, player_id, key == kKeyMouseX, code);
       }
     }
   }

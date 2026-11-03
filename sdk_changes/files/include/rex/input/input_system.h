@@ -86,6 +86,9 @@ constexpr uint32_t kNoUser = 0xFFFFFFFF;
 /// kNoUser.
 uint32_t KeyboardUser();
 
+/// Bumped when the devices must be assigned again (rex_input_pad_guest).
+uint32_t AssignmentGeneration();
+
 /// Create a default InputSystem with SDL + NOP drivers.
 /// In tool mode, only the NOP driver is added.
 std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode);
@@ -98,3 +101,16 @@ extern "C" uint32_t rex_input_last_input();
 
 /// KeyboardUser for the game, by name (GetProcAddress): 0xFFFFFFFF = nobody.
 extern "C" uint32_t rex_input_keyboard_user();
+
+/// Guest sign-in with one gamepad (the automatic assignment, which gives the
+/// keyboard and the pad to player 1): `on` hands the pad to player 2, the
+/// keyboard and mouse stay player 1's; 0 gives it back. Returns 1 when the
+/// assignment is the automatic one with exactly one gamepad.
+extern "C" uint32_t rex_input_pad_guest(uint32_t on);
+
+/// The gamepads (physical devices) the assignment last saw.
+extern "C" uint32_t rex_input_gamepads();
+
+/// The devices the assignment last saw, by name ("(synthetic)" after the
+/// keyboard / stand-in), into `out` (cut to `size`); returns the full length.
+extern "C" uint32_t rex_input_devices(char* out, uint32_t size);

@@ -380,8 +380,10 @@ A versus match can start with fewer than 4 players (`ao2_versus_min_players`,
 `src/versus_lobby.cpp`); bots play the empty places (`ao2_versus_bots`, on by
 default - every player of the match needs the same setting). In the ready
 room Swap team goes over at once to a free place of the other team
-(`ao2_versus_free_team_swap`, done by the host); with that team full the game's
-swap stays: two players of both teams who both ask. Versus is the
+(`ao2_versus_free_team_swap`, done by the host), also while others are ready
+and for each of a split-screen pair (the game refuses a pair every swap, and
+its guest is ready at once); with that team full the game's swap stays: two
+players of both teams who both ask. Versus is the
 same lockstep: a bot is input, made on every machine alike from the
 simulation's state and replayed right after the first record of each frame
 (only inside the replay does the viewport hand input to the controller). The
@@ -399,6 +401,69 @@ its animation), so bots never press it while rolling or vaulting. Bots have
 infinite ammo (`ao2_versus_bots_infinite_ammo`), wait to be healed when down
 and heal partners that lie. Tested on one PC (host with three bots, Iraq); a
 match with other players and bots is not tested yet.
+
+### Versus split-screen (`src/versus_guest.cpp`)
+
+The game has split-screen versus the console way: the second player of a
+machine is the first one's guest (the lobby's Y, Guest Sign-In; not in ranked
+matches). The guest is a player of its own in the lobby's slots (+20 set,
+the name in brackets) with its own id, on the host player's team, and the
+match splits the screen (`AO2MPGame.IsSplitScreen`, the MP HUD items). The
+game's sign-in handler (`sub_82AF4B28`, on XN_SYS_SIGNINCHANGED) takes a user
+to the lobby's guest handler (`sub_82A2F190`) only when its
+XUserGetSigninInfo (`sub_82B07E10`) has `XUSER_INFO_FLAG_GUEST` (info +8,
+2); the runtime signs user 1 in while a device is assigned to it
+(`input_player2`) but never as a guest. `ao2_versus_guest` (on) makes the
+users 1-3 signed in when the guest sign-in UI opens (`sub_82A209D0`,
+`sub_82A055C8`) guests until their sign-in state is 0 or this PC has been out of every
+lobby and match for 2 s; `versus_guest.log` says when. On the console the guest brings its own controller; here the
+automatic assignment gives the keyboard and the first pad to player 1, so
+with one pad and nobody else signed in the sign-in lends that pad to player
+2 (`rex_input_pad_guest` in rexruntime; the keyboard and mouse stay player
+1's), and the user becomes a guest once the runtime signs it in (its
+250 ms device poll sends XN_SYS_SIGNINCHANGED again). The pad goes back
+after 2 s out of every lobby and match (the Plasma lobby's +2793 / +2794,
+which the guest handler wants set: 0 in the main menu, 1 in the lobby).
+
+The match numbers the local players by their places (a guest on a place
+before the host's makes the guest's LocalPlayer GamePlayers[0] and gives the
+others other ControllerIds), and they stay so after it. At the same 2 s
+GamePlayers gets back the order and the ControllerIds it had at the guest
+sign-in. The main menu's screen is laid out before that, for the match's
+numbering: the LocalPlayer that had the host's id keeps the screen (Origin
+0,0) and GamePlayers[0], the keyboard's, is off it (Origin 1,0), and its
+scenes are neither drawn nor updated - in the campaign's split-screen
+Select Mission / New Game opened a scene with nothing bound and nothing
+focused. Until the next level GamePlayers[0] takes the part of the screen
+another player has (they swap Origin and Size); laying out again
+(`PlayerController.bViewportLayoutDirty`) gave the same layout.
+`--ao2_script_trace=true` (`src/script_trace.cpp`) logs the UnrealScript
+functions the main menu runs (`UObject::ProcessInternal`, `sub_82445C30`) to
+`script_trace.log`: two runs side by side found this. Tested on one PC: host
+and guest against two bots (Iraq), then the campaign's split-screen. A guest with
+players of other PCs is not tested yet; the lent pad works (one Bluetooth
+Xbox pad, the test instance with `--ao2_steam=false`).
+
+Steam Input takes the pad: with `ao2_steam` on (SteamAPI_Init as Spacewar,
+480) and Steam Input on for it, SDL lists the Bluetooth Xbox pad but
+`SDL_OpenGamepad` fails ("Failed to obtain XInput device capabilities");
+without SDL's XInput backend (`SDL_XINPUT_ENABLED=0`) it is a joystick
+without a gamepad mapping. Steam's overlay (`gameoverlayrenderer64.dll`,
+loaded by SteamAPI_Init) hooks the XInput DLLs by name: XInputGetState says
+"not connected" for every slot, and Steam gives a game it did not start no
+virtual pad either (`SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD=1` was
+tried: nothing). RawInput, Windows.Gaming.Input and HIDAPI see nothing too.
+A copy of `XInput1_4.dll` under another name is not hooked, so the runtime's
+SDL driver (`UseUnhookedXInput`, `hid_xinput_past_steam`, on by default)
+copies it to `%TEMP%ex_xinput1_4.dll` and points SDL's XInput entry points
+there once SDL's gamepad subsystem is up. With that off, Steam's Spacewar →
+Controller → Disable Steam Input, or `ao2_steam=false`, gives the pad back. `versus_guest.log` lists the runtime's devices, SDL's own counts and
+the last open error when the guest finds no controller. The runtime's SDL
+driver also opens the pads SDL lists whose `SDL_EVENT_GAMEPAD_ADDED` never
+came (it pumps SDL's events only for pads it knows, so it had none).
+
+For tests without a second gamepad: `--input_player2=keyboard` signs user 1
+in, and `p2` in `input.script` sends the taps after it to user 1.
 
 ## Testing on one PC
 

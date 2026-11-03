@@ -11,6 +11,7 @@ namespace AO2Launcher
     static class Discovery
     {
         const int Port = 18490;
+        const int ServerPort = 18480;
         const uint Magic = 0x414F3244;
         const uint Version = 1;
 
@@ -148,7 +149,13 @@ namespace AO2Launcher
                                 if (n == 16 && Get(buf, 0) == Magic && Get(buf, 4) == Version &&
                                     Get(buf, 8) == 2 && Get(buf, 12) == nonce)
                                 {
-                                    return ((IPEndPoint)from).Address.ToString();
+                                    // A host whose lobby server can't be reached (a firewall letting UDP through but
+                                    // not TCP) would leave the game on "Connecting to EA servers": host instead.
+                                    var host = ((IPEndPoint)from).Address;
+                                    if (ServerReachable(host, 1000))
+                                    {
+                                        return host.ToString();
+                                    }
                                 }
                             }
                         }
@@ -170,6 +177,28 @@ namespace AO2Launcher
                     catch
                     {
                     }
+                }
+            }
+        }
+
+        // The host's lobby server (ea_server.cpp, TCP 18480) takes connections.
+        static bool ServerReachable(IPAddress host, int timeoutMs)
+        {
+            using (var s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                try
+                {
+                    IAsyncResult r = s.BeginConnect(new IPEndPoint(host, ServerPort), null, null);
+                    if (!r.AsyncWaitHandle.WaitOne(timeoutMs))
+                    {
+                        return false;
+                    }
+                    s.EndConnect(r);
+                    return true;
+                }
+                catch
+                {
+                    return false;
                 }
             }
         }

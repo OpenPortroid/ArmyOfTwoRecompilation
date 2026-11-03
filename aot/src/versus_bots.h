@@ -37,8 +37,8 @@ namespace ao2::versus
   };
 
   // Game thread, the lockstep commands' poll (coop_cmd.cpp) while they can
-  // go: in a versus match, this machine's bot settings go out (again when
-  // they change).
+  // go: in a versus match, this machine's bot settings go out once, as the
+  // match began.
   void PollSettings(const uint8_t *base);
   // Game thread, a replayed "vbots <args>" of `controller_id` (every
   // machine, the same frame); `mine`: sent by this machine.

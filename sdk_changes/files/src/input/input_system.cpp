@@ -285,6 +285,10 @@ void InputSystem::RefreshDevices() {
   // Carry forward ordinals already handed out, so a device keeps its guest user
   // when another pad is unplugged.
   bool changed = seen.size() != devices_.size();
+  // A guest took or gave back a pad (rex_input_pad_guest).
+  static std::atomic<uint32_t> assigned_generation{0};
+  uint32_t generation = AssignmentGeneration();
+  changed |= assigned_generation.exchange(generation, std::memory_order_relaxed) != generation;
   std::vector<bool> fresh(seen.size(), false);
   for (size_t i = 0; i < seen.size(); i++) {
     auto existing = std::find_if(devices_.begin(), devices_.end(),
@@ -355,6 +359,12 @@ void InputSystem::RefreshDevices() {
 
   if (changed && assignment_) {
     assignment_->OnDevicesChanged(devices_);
+    std::string list;
+    for (const auto& device : devices_) {
+      list += fmt::format("{}[{}{}] ", device.name, device.synthetic ? "synthetic" : "pad ",
+                          device.synthetic ? std::string() : std::to_string(device.ordinal + 1));
+    }
+    REXLOG_INFO("input devices: {}", list);
     // A pad plugged in for player 1 takes the button prompts at once, the
     // last one unplugged gives them back to the keys.
     std::vector<DeviceId> pads_after = Player1Pads();

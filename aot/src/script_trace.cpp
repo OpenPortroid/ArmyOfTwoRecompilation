@@ -1,0 +1,143 @@
+// script_trace.cpp - Debug: which UnrealScript functions run in the menus.
+//
+// --ao2_script_trace=true (or "set ao2_script_trace true" in console.txt)
+// logs every script function UObject::ProcessInternal (sub_82445C30, r3 =
+// the object, r4 = the FFrame: its Node is the function) runs while the
+// world is the main menu's (Shell) to script_trace.log: the object, then
+// the function's class and name. A function is logged its first 100 times;
+// a repeat of the line before is counted instead. For telling two menu runs
+// apart (the campaign's split-screen after a versus match and after the
+// start).
+#include <bit>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <unordered_map>
+
+#include <rex/cvar.h>
+#include <rex/ppc.h>
+
+#include "log_files.h"
+#include "ue3_reflect.h"
+
+REXCVAR_DEFINE_BOOL(ao2_script_trace, false, "Debug",
+                    "Debug: log the UnrealScript functions run in the main menu to script_trace.log");
+
+namespace
+{
+  constexpr uint32_t kWorld = 0x831F2CC8; // GWorld; +40 its package
+  constexpr uint32_t kClass = 52;         // UObject.Class
+  constexpr uint32_t kOuter = 40;         // UObject.Outer
+  constexpr int kMaxPerFunction = 100;
+
+  uint32_t LoadU32(const uint8_t *base, uint32_t addr)
+  {
+    uint32_t v;
+    std::memcpy(&v, base + addr, 4);
+    return std::byteswap(v);
+  }
+
+  FILE *Log()
+  {
+    static FILE *f = ao2::OpenLogFile("script_trace.log");
+    return f;
+  }
+
+  bool Plausible(uint32_t object)
+  {
+    return object >= 0x40000000 && object < 0x80000000 && !(object & 3);
+  }
+
+  // The FFrame's Node: the first of its words +4..+24 that is a UFunction
+  // (found once).
+  uint32_t FrameFunction(const uint8_t *base, uint32_t frame)
+  {
+    static uint32_t function_class = 0;
+    static int32_t node = -1;
+    if (!function_class)
+    {
+      function_class = ao2::ue3::FindClass(base, "Function");
+      if (!function_class)
+      {
+        return 0;
+      }
+    }
+    if (node < 0)
+    {
+      for (uint32_t off = 4; off <= 24; off += 4)
+      {
+        uint32_t w = LoadU32(base, frame + off);
+        if (Plausible(w) && LoadU32(base, w + kClass) == function_class)
+        {
+          node = int32_t(off);
+          if (Log())
+          {
+            std::fprintf(Log(), "FFrame Node at +%u\n", off);
+          }
+          break;
+        }
+      }
+      if (node < 0)
+      {
+        return 0;
+      }
+    }
+    uint32_t function = LoadU32(base, frame + uint32_t(node));
+    return Plausible(function) && LoadU32(base, function + kClass) == function_class ? function : 0;
+  }
+
+  bool InShell(const uint8_t *base)
+  {
+    uint32_t world = LoadU32(base, kWorld);
+    uint32_t package = world ? LoadU32(base, world + 40) : 0;
+    return package && ao2::ue3::ObjectName(base, package) == "Shell";
+  }
+
+  void Trace(const uint8_t *base, uint32_t object, uint32_t frame)
+  {
+    if (!Log() || !Plausible(frame) || !InShell(base))
+    {
+      return;
+    }
+    uint32_t function = FrameFunction(base, frame);
+    if (!function)
+    {
+      return;
+    }
+    static std::unordered_map<uint32_t, int> counts;
+    if (++counts[function] > kMaxPerFunction)
+    {
+      return;
+    }
+    uint32_t owner = LoadU32(base, function + kOuter);
+    std::string line = (Plausible(object) ? ao2::ue3::ObjectName(base, object) : std::string("?")) + " " +
+                       (Plausible(owner) ? ao2::ue3::ObjectName(base, owner) : std::string("?")) + "." +
+                       ao2::ue3::ObjectName(base, function);
+    static std::string last;
+    static int repeats = 0;
+    if (line == last)
+    {
+      ++repeats;
+      return;
+    }
+    if (repeats)
+    {
+      std::fprintf(Log(), "  (x%d)\n", repeats + 1);
+      repeats = 0;
+    }
+    std::fprintf(Log(), "%s\n", line.c_str());
+    std::fflush(Log());
+    last = std::move(line);
+  }
+} // namespace
+
+// UObject::ProcessInternal (r3 = object, r4 = FFrame, r5 = result).
+extern "C" REX_FUNC(__imp__sub_82445C30);
+extern "C" REX_FUNC(sub_82445C30)
+{
+  if (REXCVAR_GET(ao2_script_trace))
+  {
+    Trace(base, ctx.r3.u32, ctx.r4.u32);
+  }
+  __imp__sub_82445C30(ctx, base);
+}

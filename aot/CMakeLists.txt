@@ -79,6 +79,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/ui_blur.cpp
     src/aim_assist.cpp
     src/versus_bots.cpp
+    src/versus_guest.cpp
     src/versus_lobby.cpp
     src/versus_rules.cpp
     src/steam_net.cpp
@@ -88,6 +89,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/autopilot.cpp
     src/console_cmd.cpp
     src/movie_trace.cpp
+    src/script_trace.cpp
     src/control_movie_fix.cpp
     src/coop_input_delay.cpp
     src/frame_time.cpp
@@ -116,6 +118,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/coop_lod.cpp
     src/coop_streaming.cpp
     src/audio_listener_guard.cpp
+    src/missing_shader_guard.cpp
     src/aspect_ratio.cpp
     src/cyrillic_fonts.cpp
     src/game_language.cpp
