@@ -116,10 +116,10 @@ namespace AO2Launcher
         void DrawConfirm(Graphics g)
         {
             Confirm c = confirm;
-            Fill(g, Color.FromArgb(190, InkDeep), new RectangleF(0, 40, W, H - 40));
+            Fill(g, Color.FromArgb(190, InkDeep), new RectangleF(0, 0, W, H));
             bool check = c.Check != null;
             var box = new RectangleF((W - 560) / 2, check ? 170 : 186, 560, check ? 276 : 236);
-            Panel(g, box);
+            Panel(g, box, true);
             Caps(g, L.T(c.Title), fTitle, c.Danger ? Crimson : PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
             var text = new StringFormat { Alignment = StringAlignment.Center };
             DrawText(g, c.Text, fLabel, TextLight, new RectangleF(box.X + 30, box.Y + 60, box.Width - 60, 96), text);

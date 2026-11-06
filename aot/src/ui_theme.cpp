@@ -1,8 +1,7 @@
 // ui_theme.cpp - The port's own screens in the launcher's look.
 //
-// Flat and quiet, in the tones of the game's cover: deep navy panels, a warm
-// paper accent, hairlines, and letter-spaced semibold capitals for titles and
-// buttons (as on the launcher, launcher\src\Skin.cs). The fonts are Windows'
+// Rounded panels of dark glass, one cold accent and sentence case (as on the
+// launcher, launcher\src\Skin.cs). The fonts are Windows'
 // Segoe UI and Segoe UI Semibold, both with Cyrillic; where they are missing
 // (Wine, Proton) the Tektur font of the package, as ImGui's own has no Cyrillic.
 // The SDK's ImGui drawers bake the atlas once (no dynamic font textures), so the
@@ -32,14 +31,111 @@ namespace
   constexpr int kKinds = 5;
   constexpr float kBaseSize[kKinds] = {34.0f, 23.0f, 18.0f, 15.0f, 14.0f};
   // Letter spacing of Caps, as a share of the font size.
-  constexpr float kTracking = 0.14f;
+  constexpr float kTracking = 0.012f;
+
+  // Words that stay capitals when text keyed in capitals goes to sentence case.
+  constexpr const char *kKeepCaps[] = {"DLC", "FPS", "IP",  "LAN", "PC",  "HDR", "SSAO", "HBAO", "GTAO", "FXAA",
+                                       "SMAA", "ESC", "TAB", "LB",  "RB",  "LT",  "RT",   "OK",   "VS"};
+
+  // Text with no small letter (ASCII, Latin-1, Cyrillic), in sentence case.
+  std::string SentenceCase(const char *text)
+  {
+    const auto *p = reinterpret_cast<const unsigned char *>(text);
+    for (const unsigned char *q = p; *q; ++q)
+    {
+      bool ascii = *q >= 'a' && *q <= 'z';
+      bool latin1 = *q == 0xC3 && q[1] >= 0xA0 && q[1] != 0xB7;
+      bool cyrillic = (*q == 0xD0 && q[1] >= 0xB0) || *q == 0xD1;
+      if (ascii || latin1 || cyrillic)
+      {
+        return text;
+      }
+    }
+    std::string out(text);
+    bool first = true;
+    for (size_t at = 0; at < out.size();)
+    {
+      size_t end = out.find(' ', at);
+      end = end == std::string::npos ? out.size() : end;
+      std::string word = out.substr(at, end - at);
+      bool letter = false, digit = false;
+      for (unsigned char c : word)
+      {
+        letter = letter || (c >= 'A' && c <= 'Z') || c >= 0xC3;
+        digit = digit || (c >= '0' && c <= '9');
+      }
+      bool keep = !letter || digit;
+      for (const char *k : kKeepCaps)
+      {
+        keep = keep || word == k;
+      }
+      if (!keep)
+      {
+        bool capital = first;
+        for (size_t i = at; i < end;)
+        {
+          unsigned char c = out[i];
+          if (c < 0x80)
+          {
+            if (!capital && c >= 'A' && c <= 'Z')
+            {
+              out[i] = char(c + 32);
+            }
+            capital = capital && !(c >= 'A' && c <= 'Z');
+            ++i;
+          }
+          else if (i + 1 < end && c == 0xC3 && (unsigned char)out[i + 1] < 0xA0)
+          {
+            if (!capital && (unsigned char)out[i + 1] != 0x97)
+            {
+              out[i + 1] = char((unsigned char)out[i + 1] + 0x20);
+            }
+            capital = false;
+            i += 2;
+          }
+          else if (i + 1 < end && c == 0xD0)
+          {
+            unsigned char d = out[i + 1];
+            if (!capital)
+            {
+              if (d == 0x81) // Yo
+              {
+                out[i] = char(0xD1);
+                out[i + 1] = char(0x91);
+              }
+              else if (d >= 0x90 && d <= 0x9F) // A..Pe
+              {
+                out[i + 1] = char(d + 0x20);
+              }
+              else if (d >= 0xA0 && d <= 0xAF) // Er..Ya
+              {
+                out[i] = char(0xD1);
+                out[i + 1] = char(d - 0x20);
+              }
+            }
+            capital = false;
+            i += 2;
+          }
+          else
+          {
+            ++i;
+          }
+        }
+      }
+      first = first && !letter;
+      at = end + 1;
+    }
+    return out;
+  }
 
   struct AtlasFonts
   {
     ImFontAtlas *atlas = nullptr;
     ImFont *fonts[kKinds] = {};
+    ImFont *zoomed[kKinds] = {}; // baked kBakedZoom times bigger
   };
   std::vector<AtlasFonts> g_atlases; // UI thread
+  float g_zoom = 1.0f;               // UI thread
 
   bool Exists(const char *path)
   {
@@ -106,12 +202,14 @@ namespace ao2::ui
     for (int k = 0; k < kKinds; ++k)
     {
       bool display = k <= int(FontKind::kHeading) || k == int(FontKind::kLabel);
-      fonts.fonts[k] =
-          display ? Load(atlas, {"C:\\Windows\\Fonts\\seguisb.ttf", "C:\\Windows\\Fonts\\segoeui.ttf",
-                                 "C:\\Windows\\Fonts\\arialbd.ttf"},
-                         kBaseSize[k] * screen)
-                  : Load(atlas, {"C:\\Windows\\Fonts\\segoeui.ttf", "C:\\Windows\\Fonts\\arial.ttf"},
-                         kBaseSize[k] * screen);
+      auto bake = [&](float size) {
+        return display ? Load(atlas, {"C:\\Windows\\Fonts\\seguisb.ttf", "C:\\Windows\\Fonts\\segoeui.ttf",
+                                      "C:\\Windows\\Fonts\\arialbd.ttf"},
+                              size)
+                       : Load(atlas, {"C:\\Windows\\Fonts\\segoeui.ttf", "C:\\Windows\\Fonts\\arial.ttf"}, size);
+      };
+      fonts.fonts[k] = bake(kBaseSize[k] * screen);
+      fonts.zoomed[k] = bake(kBaseSize[k] * screen * kBakedZoom);
     }
     if (previous_default)
     {
@@ -126,6 +224,10 @@ namespace ao2::ui
     ImFontAtlas *atlas = ImGui::GetIO().Fonts;
     for (const AtlasFonts &a : g_atlases)
     {
+      if (a.atlas == atlas && g_zoom > 1.01f && a.zoomed[int(kind)])
+      {
+        return a.zoomed[int(kind)];
+      }
       if (a.atlas == atlas && a.fonts[int(kind)])
       {
         return a.fonts[int(kind)];
@@ -141,7 +243,17 @@ namespace ao2::ui
 
   float Scale()
   {
-    return std::clamp(ImGui::GetMainViewport()->Size.y / 1080.0f, 0.7f, 2.5f);
+    return std::clamp(ImGui::GetMainViewport()->Size.y / 1080.0f, 0.7f, 2.5f) * g_zoom;
+  }
+
+  ZoomScope::ZoomScope(float zoom) : previous_(g_zoom)
+  {
+    g_zoom = zoom;
+  }
+
+  ZoomScope::~ZoomScope()
+  {
+    g_zoom = previous_;
   }
 
   ImU32 Fade(ImU32 col, float alpha)
@@ -212,8 +324,10 @@ namespace ao2::ui
     return n;
   }
 
-  ImVec2 CapsSize(FontKind kind, const char *text)
+  ImVec2 CapsSize(FontKind kind, const char *keyed)
   {
+    std::string sentence = SentenceCase(keyed);
+    const char *text = sentence.c_str();
     float size = FontSize(kind);
     int letters = 0;
     for (const char *p = text; *p; p += Utf8Length(p))
@@ -224,8 +338,10 @@ namespace ao2::ui
     return ImVec2(plain.x + size * kTracking * float(std::max(letters - 1, 0)), plain.y);
   }
 
-  void Caps(ImDrawList *dl, FontKind kind, ImVec2 pos, ImU32 col, const char *text)
+  void Caps(ImDrawList *dl, FontKind kind, ImVec2 pos, ImU32 col, const char *keyed)
   {
+    std::string sentence = SentenceCase(keyed);
+    const char *text = sentence.c_str();
     ImFont *font = Font(kind);
     float size = FontSize(kind), track = size * kTracking;
     float x = std::floor(pos.x), y = std::floor(pos.y);
@@ -236,18 +352,6 @@ namespace ao2::ui
       x += font->CalcTextSizeA(size, FLT_MAX, 0.0f, p, p + n).x + track;
       p += n;
     }
-  }
-
-  void Corners(ImDrawList *dl, ImVec2 min, ImVec2 max, float length, float thickness, ImU32 col)
-  {
-    auto corner = [&](ImVec2 p, float dx, float dy) {
-      ImVec2 pts[3] = {ImVec2(p.x + dx * length, p.y), p, ImVec2(p.x, p.y + dy * length)};
-      dl->AddPolyline(pts, 3, col, ImDrawFlags_None, thickness);
-    };
-    corner(min, 1.0f, 1.0f);
-    corner(ImVec2(max.x, min.y), -1.0f, 1.0f);
-    corner(ImVec2(min.x, max.y), 1.0f, -1.0f);
-    corner(max, -1.0f, -1.0f);
   }
 
   void Stripes(ImDrawList *dl, ImVec2 min, ImVec2 max, float width, float offset, ImU32 col)
@@ -286,30 +390,29 @@ namespace ao2::ui
 
   float Round(float px)
   {
-    return px * 0.6f * Scale();
+    return px * Scale();
   }
 
-  // A soft shadow under it and its upper half a shade lighter.
+  // A soft shadow under it.
   void Card(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 fill)
   {
     float s = Scale();
-    float r = Round(10.0f);
+    float r = Round(14.0f);
     float fa = float((fill >> IM_COL32_A_SHIFT) & 0xFF) / 255.0f;
-    float sa = std::min(0.30f, fa * 3.0f);
-    dl->AddRectFilled(ImVec2(min.x, min.y + 2.0f * s), ImVec2(max.x, max.y + 2.0f * s), Fade(kInk, sa * 0.6f), r);
+    float sa = std::min(0.22f, fa * 3.0f);
+    dl->AddRectFilled(ImVec2(min.x, min.y + 2.0f * s), ImVec2(max.x, max.y + 2.0f * s), Fade(kInk, sa), r);
     dl->AddRectFilled(min, max, fill, r);
-    dl->AddRectFilled(min, ImVec2(max.x, (min.y + max.y) * 0.5f), Fade(kWhite, fa * 0.35f), r,
-                      ImDrawFlags_RoundCornersTop);
   }
 
   void Frame(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col, float thickness)
   {
-    dl->AddRect(min, max, col, Round(10.0f), ImDrawFlags_None, thickness);
+    dl->AddRect(min, max, col, Round(14.0f), ImDrawFlags_None, thickness);
   }
 
   void Bar(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col)
   {
-    dl->AddRectFilled(min, ImVec2(min.x + 3.0f * Scale(), max.y), col, Round(10.0f), ImDrawFlags_RoundCornersLeft);
+    float s = Scale(), inset = std::min(16.0f * s, (max.y - min.y) * 0.3f);
+    dl->AddRectFilled(ImVec2(min.x + 8.0f * s, min.y + inset), ImVec2(min.x + 11.0f * s, max.y - inset), col, 1.5f * s);
   }
 
   float KeyCap(ImDrawList *dl, ImVec2 pos, float height, const char *key, float alpha)
@@ -318,25 +421,22 @@ namespace ao2::ui
     ImVec2 ts = CapsSize(FontKind::kLabel, key);
     float w = std::max(height, ts.x + height * 0.8f);
     ImVec2 max(pos.x + w, pos.y + height);
-    dl->AddRectFilled(pos, max, Fade(kWhite, 0.04f * alpha), 3.0f * s);
-    dl->AddRect(pos, max, Fade(kAccent, 0.47f * alpha), 3.0f * s, ImDrawFlags_None, 1.0f * s);
-    dl->AddLine(ImVec2(pos.x + 3.0f * s, max.y + 0.5f * s), ImVec2(max.x - 3.0f * s, max.y + 0.5f * s),
-                Fade(kAccent, 0.47f * alpha), 1.0f * s);
-    Caps(dl, FontKind::kLabel, ImVec2(pos.x + (w - ts.x) * 0.5f, pos.y + (height - ts.y) * 0.5f), Fade(kText, alpha),
+    dl->AddRectFilled(pos, max, Fade(kAccentLight, alpha), 6.0f * s);
+    Caps(dl, FontKind::kLabel, ImVec2(pos.x + (w - ts.x) * 0.5f, pos.y + (height - ts.y) * 0.5f), Fade(kInk, alpha),
          key);
     return w;
   }
 
-  // As on the launcher: primary is a paper block with ink capitals, the rest
-  // a hairline frame that fills lightly on hover; danger has a red frame.
-  // A press darkens the block.
+  // As on the launcher: primary is a white block with dark lettering, the rest
+  // faint glass that brightens on hover; danger has a red frame.
+  // A press tints the block.
   bool Button(const char *id, ImVec2 pos, ImVec2 size, const char *label, ButtonStyle style, bool enabled,
               float alpha)
   {
     float s = Scale();
     ImGui::PushID(id);
     ImGui::SetCursorScreenPos(pos);
-    bool clicked = ImGui::InvisibleButton("##button", size) && enabled;
+    bool clicked = ImGui::InvisibleButton("##button", size, ImGuiButtonFlags_EnableNav) && enabled;
     bool hovered = enabled && ImGui::IsItemHovered();
     bool held = enabled && ImGui::IsItemActive();
     float &h = *ImGui::GetStateStorage()->GetFloatRef(ImGui::GetID("hover"), 0.0f);
@@ -350,7 +450,7 @@ namespace ao2::ui
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImVec2 min = pos, max(pos.x + size.x, pos.y + size.y);
     ImU32 text;
-    const float r = 4.0f * s;
+    const float r = 10.0f * s;
     if (!enabled)
     {
       dl->AddRectFilled(min, max, Fade(kWhite, 0.05f * alpha), r);
@@ -359,7 +459,7 @@ namespace ao2::ui
     }
     else if (style == ButtonStyle::kPrimary)
     {
-      ImU32 base = IM_COL32(214, 210, 202, 255);
+      ImU32 base = IM_COL32(226, 232, 240, 255);
       dl->AddRectFilled(ImVec2(min.x, min.y + 3.0f * s), ImVec2(max.x, max.y + 3.0f * s),
                         Fade(kInk, (0.35f + 0.15f * h) * alpha), r);
       dl->AddRectFilled(min, max, Fade(held ? kAccent : Mix(base, kAccentLight, h), alpha), r);
@@ -373,9 +473,11 @@ namespace ao2::ui
     }
     else
     {
-      ImU32 frame = style == ButtonStyle::kDanger ? kRed : kAccent;
-      dl->AddRectFilled(min, max, Fade(kWhite, ((held ? 0.18f : 0.0f) + 0.10f * h) * alpha), r);
-      dl->AddRect(min, max, Fade(frame, (0.30f + 0.45f * h) * alpha), r, ImDrawFlags_None, 1.0f * s);
+      dl->AddRectFilled(min, max, Fade(kWhite, (0.09f + (held ? 0.14f : 0.0f) + 0.09f * h) * alpha), r);
+      if (style == ButtonStyle::kDanger)
+      {
+        dl->AddRect(min, max, Fade(kRed, (0.45f + 0.45f * h) * alpha), r, ImDrawFlags_None, 1.0f * s);
+      }
       text = Fade(Mix(kText, kAccentLight, h), alpha);
     }
     ImVec2 ts = CapsSize(FontKind::kLabel, label);

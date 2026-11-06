@@ -130,6 +130,12 @@ namespace AO2Launcher
 
             // --- Title bar, main screen ---
             a("Launcher", "Лаунчер", "Lanceur", "Launcher", "Lanzador", "Launcher");
+            a("Solo", "Один", "Solo", "Allein", "Solo", "Da solo");
+            a("Co-op", "Кооператив", "Coop", "Koop", "Cooperativo", "Cooperativa");
+            a("The campaign on this PC, with the game playing your partner.", "Кампания на этом ПК, напарником управляет игра.", "La campagne sur ce PC, le jeu contrôle votre partenaire.", "Die Kampagne auf diesem PC, das Spiel steuert deinen Partner.", "La campaña en este PC, el juego controla a tu compañero.", "La campagna su questo PC, il gioco controlla il tuo compagno.");
+            a("Looks for a host on the local network: joins it if there is one, otherwise you host.", "Лаунчер ищет хост в локальной сети: если найдёт, вы подключитесь, если нет, станете хостом.", "Cherche un hôte sur le réseau local : le rejoint s'il y en a un, sinon vous hébergez.", "Sucht einen Host im lokalen Netz: tritt ihm bei, wenn es einen gibt, sonst bist du der Host.", "Busca un anfitrión en la red local: se une si lo hay; si no, tú eres el anfitrión.", "Cerca un host nella rete locale: se c'è si unisce, altrimenti sei tu l'host.");
+            a("Two players on one PC, each with their own half of the screen.", "Два игрока на одном ПК, у каждого своя половина экрана.", "Deux joueurs sur un PC, chacun avec sa moitié d'écran.", "Zwei Spieler an einem PC, jeder mit seiner Bildschirmhälfte.", "Dos jugadores en un PC, cada uno con su mitad de pantalla.", "Due giocatori su un PC, ognuno con la propria metà dello schermo.");
+            a("Starting the game", "Запуск игры", "Démarrage du jeu", "Spiel wird gestartet", "Iniciando el juego", "Avvio del gioco");
             a("Installation", "Установка", "Installation", "Installation", "Instalación", "Installazione");
             a("Settings", "Настройки", "Paramètres", "Einstellungen", "Ajustes", "Impostazioni");
             a("BACK", "НАЗАД", "RETOUR", "ZURÜCK", "ATRÁS", "INDIETRO");

@@ -13,6 +13,8 @@ namespace AO2Launcher
     // the downloadable content. Files can also be dropped on the window.
     sealed partial class LauncherForm
     {
+        const float InstX = 280, InstW = 640, InstDescTop = 500;
+
         const int InstRows = 4; // game, update, DLC, shortcut; then the install button
         const float InstTop = 160, InstRowH = 58;
 
@@ -366,14 +368,14 @@ namespace AO2Launcher
         void DrawInstall(Graphics g)
         {
             // The title bar with BACK is drawn over this by OnPaint.
-            var col = new RectangleF(ColX - 24, 56, ColW + 48, 540);
+            var col = new RectangleF(InstX - 24, 56, InstW + 48, 540);
             Panel(g, col);
-            SectionHeader(g, L.T("GAME INSTALLATION"), ColX + 2, 68, ColW - 4);
+            SectionHeader(g, L.T("GAME INSTALLATION"), InstX + 6, 62, InstW - 4);
             using (var txt = new SolidBrush(TextLight))
             {
                 g.DrawString(L.T("The launcher contains no game files: you need your own copy of Army of Two for Xbox 360 and " +
                                  "Title Update 2. Choose the files below or drop them on this window."),
-                    fDesc, txt, new RectangleF(ColX + 6, 98, ColW - 12, 56));
+                    fDesc, txt, new RectangleF(InstX + 6, 98, InstW - 12, 56));
             }
 
             string dlcStatus = !InstRowEnabled(2) ? L.T("choose Title Update 2 first")
@@ -396,9 +398,9 @@ namespace AO2Launcher
                 using (var tb = new SolidBrush(TextLight))
                 {
                     string text = string.Format("{0} - {1:0}%", instStep, instProgress * 100);
-                    g.DrawString(text, fLabel, tb, new RectangleF(ColX, by - 6, ColW, 22), CenterFmt());
+                    g.DrawString(text, fLabel, tb, new RectangleF(InstX, by - 6, InstW, 22), CenterFmt());
                 }
-                Progress(g, new RectangleF(ColX + 40, by + 24, ColW - 80, 4), (float)instProgress);
+                Progress(g, new RectangleF(InstX + 40, by + 24, InstW - 80, 4), (float)instProgress);
                 var cancel = new RectangleF((W - 180) / 2, by + 46, 180, 34);
                 FlatButton(g, cancel, L.T(cancelInstall ? "CANCELLING…" : "CANCEL"), fBtn, false, Lit(instSel, InstRows) || IsHover("install"), cancelInstall);
                 AddHot(cancel, "install", () => ActivateInstall(InstRows), InstRows);
@@ -414,18 +416,18 @@ namespace AO2Launcher
                 {
                     using (var eb = new SolidBrush(Bad))
                     {
-                        g.DrawString(instError, fDesc, eb, new RectangleF(ColX + 6, by + 60, ColW - 12, 36), CenterFmt2());
+                        g.DrawString(instError, fDesc, eb, new RectangleF(InstX + 6, by + 60, InstW - 12, 36), CenterFmt2());
                     }
                 }
             }
 
             using (var line = new Pen(Hairline, 1f))
             {
-                g.DrawLine(line, ColX + 6, DescTop + 12, ColX + ColW - 6, DescTop + 12);
+                g.DrawLine(line, InstX + 6, InstDescTop + 12, InstX + InstW - 6, InstDescTop + 12);
             }
             using (var b = new SolidBrush(TextDim))
             {
-                g.DrawString(L.T(InstDesc[Math.Max(0, Math.Min(InstRows, instSel))]), fDesc, b, new RectangleF(ColX + 6, DescTop + 20, ColW - 12, 70));
+                g.DrawString(L.T(InstDesc[Math.Max(0, Math.Min(InstRows, instSel))]), fDesc, b, new RectangleF(InstX + 6, InstDescTop + 20, InstW - 12, 70));
             }
         }
 
@@ -437,7 +439,7 @@ namespace AO2Launcher
 
         void DrawInstRow(Graphics g, int index, string label, string status, Color statusColor, string button)
         {
-            var rr = new RectangleF(ColX, InstTop + index * InstRowH, ColW, InstRowH);
+            var rr = new RectangleF(InstX, InstTop + index * InstRowH, InstW, InstRowH);
             bool enabled = InstRowEnabled(index);
             bool selected = Lit(instSel, index) && enabled;
             using (var b = new SolidBrush(Color.FromArgb(0, 0, 0, 0)))
@@ -450,8 +452,8 @@ namespace AO2Launcher
             }
             const float btnW = 128;
             var fmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            var lr = new RectangleF(ColX + 20, rr.Y + 9, ColW - btnW - 50, 22);
-            var sr = new RectangleF(ColX + 20, rr.Y + 32, ColW - btnW - 50, 18);
+            var lr = new RectangleF(InstX + 20, rr.Y + 9, InstW - btnW - 50, 22);
+            var sr = new RectangleF(InstX + 20, rr.Y + 32, InstW - btnW - 50, 18);
             if (selected && !installing)
             {
                 // The current row: brighter label.

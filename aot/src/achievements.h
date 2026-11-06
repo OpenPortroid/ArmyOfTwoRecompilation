@@ -20,4 +20,6 @@ namespace ao2::ach
   // achievements' counts and list in [min, max]; `appearing` starts it over (its fade-in,
   // the scroll at the top).
   void DrawTab(ImVec2 min, ImVec2 max, bool appearing);
+  // Moves the tab's list (the gamepad; the next DrawTab takes it).
+  void ScrollBy(float pixels);
 } // namespace ao2::ach

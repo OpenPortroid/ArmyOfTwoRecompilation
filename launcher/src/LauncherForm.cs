@@ -104,29 +104,31 @@ namespace AO2Launcher
     {
         // Logical canvas; everything is drawn in these units and scaled by DPI.
         const float W = 1200, H = 660;
-        // Settings screen: centred column.
-        const float ColX = 280, ColW = 640, RowsTop = 132, DescTop = 500;
-        const float RowH = 34;
-        const float ValueW = 186;
+        // Settings screen: the sections at the left, the rows in the middle, the preview and the description at the right.
+        const float SideX = 16, SideW = 212, PanelTop = 48, PanelBottom = 604;
+        const float ColX = 256, ColW = 620, RowsTop = 102, RowsBottom = 594;
+        const float AsideX = 904, AsideW = 280;
+        const float RowH = 40;
+        const float ValueW = 200;
         const float InfoCountW = 110, InfoBarH = 14; // an Info row's counter and bar (Row.Count, Row.Frac)
 
         // Light text on the cover's deep navy (Skin.cs); the accent is its paper grey.
         static readonly Color Amber = Color.FromArgb(224, 220, 212);
         static readonly Color TextLight = Color.FromArgb(206, 212, 222);
-        static readonly Color TextDim = Color.FromArgb(140, 152, 170);
-        static readonly Color TextOff = Color.FromArgb(86, 98, 116);
-        static readonly Color TextBoxBack = Color.FromArgb(14, 30, 56);
+        static readonly Color TextDim = Color.FromArgb(176, 188, 204);
+        static readonly Color TextOff = Color.FromArgb(112, 124, 142);
+        static readonly Color TextBoxBack = Color.FromArgb(9, 18, 34);
 
         readonly Settings S = new Settings();
         readonly Gamepad pad = new Gamepad();
         readonly Timer timer = new Timer();
 
         float scale = 1;
-        Bitmap bgMainSrc, bgDimSrc, logo;
-        Bitmap bgMain, bgDim;
+        Bitmap bgMainSrc, bgDimSrc, logo, previewSrc;
+        Bitmap bgMain, bgDim, previewScaled;
         FontFamily famCond, famReg;
         Font fLabel, fValue, fDesc, fSmall, fHint, fPlay, fInstall, fBtn, fTab;
-        Font fTitle, fTitleSub, fBack, fSection, fLcd, fTiny;
+        Font fTitle, fTitleSub, fBack, fSection, fLcd, fTiny, fHead, fHero, fNav;
         bool padConnected;
 
         string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED", "PROFILES", "ACHIEVEMENTS" };
@@ -624,9 +626,9 @@ namespace AO2Launcher
         // The notes window; with a release from the list it has BACK and DOWNLOAD instead of CLOSE.
         void DrawNotesBox(Graphics g, string title, string text, Updates.Release pick)
         {
-            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 0, W, H));
             var box = new RectangleF((W - 640) / 2, 70, 640, 520);
-            Panel(g, box);
+            Panel(g, box, true);
             Caps(g, title, fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
             Line(g, Hairline, box.X + 30, box.Y + 58.5f, box.Right - 30, box.Y + 58.5f);
 
@@ -928,9 +930,9 @@ namespace AO2Launcher
                 DrawNotesBox(g, L.T("PATCH NOTES") + "  ·  v" + pick.Version, text, pick);
                 return;
             }
-            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 0, W, H));
             var box = new RectangleF((W - 640) / 2, 70, 640, 520);
-            Panel(g, box);
+            Panel(g, box, true);
             Caps(g, L.T("VERSIONS"), fTitle, PaperHi, new RectangleF(box.X, box.Y + 22, box.Width, 22), 2.4f);
             Line(g, Hairline, box.X + 30, box.Y + 58.5f, box.Right - 30, box.Y + 58.5f);
 
@@ -1390,8 +1392,19 @@ namespace AO2Launcher
             DropBackdrops();
         }
 
+        [DllImport("dwmapi.dll")]
+        static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
         protected override void OnShown(EventArgs e)
         {
+            try
+            {
+                int round = 2; // DWMWA_WINDOW_CORNER_PREFERENCE = DWMWCP_ROUND; Windows 10 just says no
+                DwmSetWindowAttribute(Handle, 33, ref round, sizeof(int));
+            }
+            catch
+            {
+            }
             base.OnShown(e);
             ActiveControl = null;
         }
@@ -1440,6 +1453,7 @@ namespace AO2Launcher
             bgMainSrc = Res("bg.jpg");
             bgDimSrc = Res("bg_dim.jpg");
             logo = Res("logo.png");
+            previewSrc = Res("preview.jpg");
             Stream ico = Assembly.GetExecutingAssembly().GetManifestResourceStream("AO2Launcher.app.ico");
             if (ico != null)
             {
@@ -1451,16 +1465,19 @@ namespace AO2Launcher
             famCond = famCaps;
             famReg = Family("Segoe UI", "Arial");
             famLcd = famReg;
-            fLabel = new Font(famReg, 14.5f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fLabel = new Font(famReg, 15f, FontStyle.Regular, GraphicsUnit.Pixel);
             fValue = new Font(famCaps, 14f, FontStyle.Regular, GraphicsUnit.Pixel);
-            fDesc = new Font(famReg, 13f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fHead = new Font(famCaps, 23f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fHero = new Font(famCaps, 28f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fNav = new Font(famCaps, 14.5f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fDesc = new Font(famReg, 14f, FontStyle.Regular, GraphicsUnit.Pixel);
             fSmall = new Font(famReg, 12.5f, FontStyle.Regular, GraphicsUnit.Pixel);
             fHint = new Font(famReg, 13f, FontStyle.Regular, GraphicsUnit.Pixel);
-            fPlay = new Font(famCaps, 17f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fPlay = new Font(famCaps, 25f, FontStyle.Regular, GraphicsUnit.Pixel);
             fInstall = new Font(famCaps, 15f, FontStyle.Regular, GraphicsUnit.Pixel);
-            fBtn = new Font(famCaps, 12.5f, FontStyle.Regular, GraphicsUnit.Pixel);
-            fTab = new Font(famCaps, 12f, FontStyle.Regular, GraphicsUnit.Pixel);
-            fTitle = new Font(famCaps, 13f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fBtn = new Font(famCaps, 14f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fTab = new Font(famCaps, 14f, FontStyle.Regular, GraphicsUnit.Pixel);
+            fTitle = new Font(famCaps, 15f, FontStyle.Regular, GraphicsUnit.Pixel);
             fTitleSub = new Font(famReg, 13f, FontStyle.Regular, GraphicsUnit.Pixel);
             fBack = new Font(famCaps, 11f, FontStyle.Regular, GraphicsUnit.Pixel);
             fSection = new Font(famCaps, 11f, FontStyle.Regular, GraphicsUnit.Pixel);
@@ -2244,9 +2261,9 @@ namespace AO2Launcher
                 OfferAvx1();
                 return;
             }
-            if (S.Bool("split_screen"))
+            if (S.Bool("split_screen") || S.Bool("solo"))
             {
-                // Two players here: nobody to look for on the network.
+                // Two players here, or one alone: nobody to look for on the network.
                 StartGame(null);
                 return;
             }
@@ -2295,6 +2312,7 @@ namespace AO2Launcher
                 return;
             }
             ShowToast(S.Bool("split_screen") ? L.T("Starting split-screen")
+                : S.Bool("solo") ? L.T("Starting the game")
                 : host != null ? L.F("Host found: {0} - joining", host) : L.T("No host found - hosting a game"), false);
             if (S.Bool("close_on_launch"))
             {
@@ -2315,14 +2333,32 @@ namespace AO2Launcher
             {
                 SetScreen(UiScreen.Settings);
             }
-            else
+            else if (i == 2)
             {
                 Close();
             }
+            else
+            {
+                SetPlayMode(i - 3);
+            }
         }
 
-        // The main screen's buttons left to right: SETTINGS, PLAY, EXIT (mainSel 1, 0, 2).
-        static readonly int[] MainOrder = { 1, 0, 2 };
+        // How the next game is played: 0 alone (no host search), 1 co-op (the host search), 2 split-screen.
+        int PlayMode
+        {
+            get { return S.Bool("split_screen") ? 2 : S.Bool("solo") ? 0 : 1; }
+        }
+
+        void SetPlayMode(int mode)
+        {
+            S["split_screen"] = mode == 2 ? "1" : "0";
+            S["solo"] = mode == 0 ? "1" : "0";
+            S.Save();
+            LayoutRows();
+        }
+
+        // The main screen's items in order: the three modes (mainSel 3..5), PLAY, SETTINGS, EXIT.
+        static readonly int[] MainOrder = { 3, 4, 5, 0, 1, 2 };
 
         void MainMove(int dir)
         {
@@ -2870,7 +2906,7 @@ namespace AO2Launcher
         }
 
         // Main screen: the art sits in a wide band between the title bar and the bottom bar.
-        const float ArtTop = 40, ArtBottom = 520;
+        const float ArtBottom = 488; // the top of the main screen's dock
 
         // Draws src into dest (device pixels) cropped to cover it, centred.
         static void DrawCover(Graphics g, Bitmap src, RectangleF dest)
@@ -2895,32 +2931,79 @@ namespace AO2Launcher
             return new Bitmap(ClientSize.Width, ClientSize.Height, PixelFormat.Format32bppPArgb);
         }
 
+        // The art over the whole window, shaded at the top and the bottom, the logo, and the dock's glass:
+        // the art under it blurred (scaled down and up again), so nothing of that is painted per frame.
         Bitmap MainBackdrop(Bitmap src)
         {
             Bitmap bmp = NewBackdrop();
             using (Graphics bg = Graphics.FromImage(bmp))
             {
                 bg.Clear(InkDeep);
-                var band = new RectangleF(0, ArtTop * scale, W * scale, (ArtBottom - ArtTop) * scale);
-                DrawCover(bg, src, band);
-                float b = 90 * scale;
-                using (var d = new LinearGradientBrush(new RectangleF(band.X, band.Bottom - b - 1, band.Width, b + 1),
-                           Color.FromArgb(0, InkDeep), Color.FromArgb(200, InkDeep), LinearGradientMode.Vertical))
+                DrawCover(bg, src, new RectangleF(0, 0, bmp.Width, bmp.Height));
+                float top = 120 * scale, bottom = H * scale * 0.56f;
+                using (var d = new LinearGradientBrush(new RectangleF(0, 0, bmp.Width, top + 1), Color.FromArgb(160, InkDeep), Color.FromArgb(0, InkDeep), LinearGradientMode.Vertical))
                 {
-                    bg.FillRectangle(d, band.X, band.Bottom - b, band.Width, b);
+                    bg.FillRectangle(d, 0, 0, bmp.Width, top);
+                }
+                using (var d = new LinearGradientBrush(new RectangleF(0, bmp.Height - bottom - 1, bmp.Width, bottom + 1), Color.FromArgb(0, InkDeep), Color.FromArgb(232, InkDeep), LinearGradientMode.Vertical))
+                {
+                    bg.FillRectangle(d, 0, bmp.Height - bottom, bmp.Width, bottom);
+                }
+                var dock = new RectangleF(DockR.X * scale, DockR.Y * scale, DockR.Width * scale, DockR.Height * scale);
+                int sw = Math.Max(8, (int)(dock.Width / 14)), sh = Math.Max(4, (int)(dock.Height / 14));
+                using (var small = new Bitmap(sw, sh, PixelFormat.Format32bppPArgb))
+                {
+                    using (Graphics sg = Graphics.FromImage(small))
+                    {
+                        sg.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                        sg.DrawImage(bmp, new Rectangle(0, 0, sw, sh), dock, GraphicsUnit.Pixel);
+                    }
+                    bg.SmoothingMode = SmoothingMode.AntiAlias;
+                    using (GraphicsPath path = RoundPath(dock, 24 * scale))
+                    using (var ia = new ImageAttributes())
+                    {
+                        ia.SetWrapMode(WrapMode.TileFlipXY);
+                        bg.SetClip(path);
+                        bg.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        bg.DrawImage(small, Rectangle.Round(dock), 0, 0, sw, sh, GraphicsUnit.Pixel, ia);
+                        bg.ResetClip();
+                    }
                 }
                 bg.ScaleTransform(scale, scale);
-                bg.SmoothingMode = SmoothingMode.AntiAlias;
+                FillRound(bg, Color.FromArgb(186, InkPanel), DockR, 24);
+                OutlineRound(bg, Color.FromArgb(44, 255, 255, 255), DockR, 24);
                 if (logo != null)
                 {
-                    float lw = 440, lh = lw * logo.Height / logo.Width;
-                    float top = ArtTop + (ArtBottom - ArtTop - lh) / 2 - 8;
-                    bg.DrawImage(logo, new RectangleF((W - lw) / 2, top, lw, lh));
+                    float lw = 460, lh = lw * logo.Height / logo.Width;
+                    bg.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    bg.DrawImage(logo, new RectangleF((W - lw) / 2, 56 + (ArtBottom - 56 - lh) / 2, lw, lh));
                 }
-                Fill(bg, InkDeep, new RectangleF(0, ArtBottom, W, H - ArtBottom));
-                Line(bg, Hairline, 0, ArtBottom + 0.5f, W, ArtBottom + 0.5f);
             }
             return bmp;
+        }
+
+        static readonly RectangleF DockR = new RectangleF(24, ArtBottom, W - 48, 148);
+
+        // The preview in the settings' side panel, with its rounded corners, at the window's scale.
+        Bitmap Preview(float w, float h)
+        {
+            int pw = (int)Math.Round(w * scale), ph = (int)Math.Round(h * scale);
+            if (previewScaled == null || previewScaled.Width != pw || previewScaled.Height != ph)
+            {
+                if (previewScaled != null)
+                {
+                    previewScaled.Dispose();
+                }
+                previewScaled = new Bitmap(pw, ph, PixelFormat.Format32bppPArgb);
+                using (Graphics pg = Graphics.FromImage(previewScaled))
+                using (GraphicsPath path = RoundPath(new RectangleF(0, 0, pw, ph), 12 * scale))
+                {
+                    pg.SmoothingMode = SmoothingMode.AntiAlias;
+                    pg.SetClip(path);
+                    DrawCover(pg, previewSrc, new RectangleF(0, 0, pw, ph));
+                }
+            }
+            return previewScaled;
         }
 
         // Settings and install: the art blurred under a deep ink wash.
@@ -2930,7 +3013,7 @@ namespace AO2Launcher
             using (Graphics bg = Graphics.FromImage(bmp))
             {
                 DrawCover(bg, src, new RectangleF(0, 0, bmp.Width, bmp.Height));
-                using (var wash = new SolidBrush(Color.FromArgb(185, InkDeep)))
+                using (var wash = new SolidBrush(Color.FromArgb(150, InkDeep)))
                 {
                     bg.FillRectangle(wash, 0, 0, bmp.Width, bmp.Height);
                 }
@@ -3044,72 +3127,100 @@ namespace AO2Launcher
             double scale = Math.Max(1.0, Math.Min(4.0, S.Double("render_scale")));
             string mode = S.Bool("fullscreen") ? L.T("Fullscreen") : L.F("Window {0}", S["window_size"].Replace("x", "×"));
             string aspect = S["aspect_ratio"] == "auto" ? "" : " " + S["aspect_ratio"];
-            return string.Format("{0}×{1}{2}   ·   {3}   ·   {4} FPS", (int)Math.Round(1280 * scale), (int)Math.Round(720 * scale),
+            return string.Format("{0}×{1}{2}  ·  {3}  ·  {4} FPS", (int)Math.Round(1280 * scale), (int)Math.Round(720 * scale),
                 aspect, mode, S.Int("fps"));
         }
 
         void DrawMain(Graphics g)
         {
-            var play = new RectangleF((W - 260) / 2, 538, 260, 50);
-            var set = new RectangleF(play.X - 20 - 170, 542, 170, 42);
-            var exit = new RectangleF(play.Right + 20, 542, 170, 42);
             bool install = gameExe != null && !Installed;
+            float colX = DockR.X + 288, colW = 590, colY = DockR.Y + 18;
+
+            // Left: the profile. Middle: how to play. Right: Play, Settings, Exit.
+            DrawProfileChip(g);
+
+            string[] modes = { L.T("Solo"), L.T("Co-op"), Sentence(L.T("SPLIT-SCREEN")) };
+            string[] helps =
+            {
+                L.T("The campaign on this PC, with the game playing your partner."),
+                L.T("Looks for a host on the local network: joins it if there is one, otherwise you host."),
+                L.T("Two players on one PC, each with their own half of the screen."),
+            };
+            int mode = PlayMode;
+            FillRound(g, Color.FromArgb(70, 0, 0, 0), new RectangleF(colX, colY, colW, 54), 15);
+            float segW = (colW - 8 - 8) / 3;
+            for (int i = 0; i < 3; i++)
+            {
+                var seg = new RectangleF(colX + 4 + i * (segW + 4), colY + 4, segW, 46);
+                string id = "mode" + i;
+                bool on = i == mode, hv = IsHover(id), lit = Lit(mainSel, 3 + i);
+                if (on)
+                {
+                    FillRound(g, Accent, seg, 11);
+                }
+                else if (hv || lit)
+                {
+                    FillRound(g, Color.FromArgb(34, 255, 255, 255), seg, 11);
+                }
+                if (lit && !IsHover(id))
+                {
+                    OutlineRound(g, on ? PaperHi : Color.FromArgb(170, Accent), seg, 11, 1.5f);
+                }
+                DrawText(g, modes[i], fNav, on ? InkDeep : PaperHi, seg, CenterFmt());
+                int m = i;
+                AddHot(seg, id, () => SetPlayMode(m), 3 + i);
+            }
+
+            var help = new RectangleF(colX + 4, colY + 60, colW - 8, 50);
+            if (gameExe == null)
+            {
+                bool hv = IsHover("path");
+                DrawText(g, L.T("Game not found — click to locate armyoftworecomp.exe"), fDesc, hv ? PaperHi : Crimson, help, StringFormat.GenericDefault);
+                AddHot(help, "path", () => BrowseGame());
+            }
+            else
+            {
+                DrawText(g, helps[mode], fDesc, Paper, help, StringFormat.GenericDefault);
+            }
+
+            float btnX = DockR.Right - 18 - 244;
+            var play = new RectangleF(btnX, colY, 244, 66);
+            var set = new RectangleF(btnX, colY + 72, 118, 40);
+            var exit = new RectangleF(btnX + 126, colY + 72, 118, 40);
             FlatButton(g, set, L.T("SETTINGS"), fBtn, false, Lit(mainSel, 1) || IsHover("settings"), false);
             FlatButton(g, exit, L.T("EXIT"), fBtn, false, Lit(mainSel, 2) || IsHover("exit"), false);
-            FlatButton(g, play, L.T(searching ? "LOOKING FOR A HOST…" : install ? "INSTALL" : "PLAY"), searching ? fBtn : fPlay, true,
+            FlatButton(g, play, L.T(searching ? "LOOKING FOR A HOST…" : install ? "INSTALL" : "PLAY"), searching || install ? fInstall : fPlay, true,
                 !searching && (Lit(mainSel, 0) || IsHover("play")), searching);
             AddHot(set, "settings", () => SetScreen(UiScreen.Settings), 1);
             AddHot(exit, "exit", Close, 2);
             AddHot(play, "play", Play, 0);
 
-            var status = new RectangleF((W - 520) / 2, 616, 520, 22);
-            if (gameExe == null)
-            {
-                bool hv = IsHover("path");
-                DrawText(g, L.T("Game not found — click to locate armyoftworecomp.exe"), fLcd, hv ? PaperHi : Crimson, status, CenterFmt());
-                AddHot(status, "path", () => BrowseGame());
-            }
-            else
-            {
-                DrawText(g, Summary(), fLcd, Color.FromArgb(130, 142, 160), status, CenterFmt());
-            }
-            Dot(g, 28, 627, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
-            DrawProfileChip(g);
-
-            // The version, bottom right (and the newer release, when there is one): click for every release
-            // with its patch notes.
-            string pn = L.T("VERSION") + "  v" + Updates.Current;
+            // Top right, up to the window's buttons: the version (click: every release with its patch notes),
+            // the controller, the graphics in short.
+            string pn = "v" + Updates.Current;
             if (UpdateAvailable)
             {
                 pn = L.F("{0} · update available: {1}", pn, "v" + latest.Version);
             }
-            float tw = CapsWidth(g, pn, fBack, 1.6f);
-            float pw = tw + 28 + 16; // the text, its padding and the arrow
-            var pr = new RectangleF(W - 24 - pw, 614, pw, 26);
-            bool phv = IsHover("version");
-            if (phv)
+            float right = Chip(g, pn, W - 104, 22, UpdateAvailable ? Accent : PaperHi, "version", OpenReleases);
+            right = Chip(g, L.T(padConnected ? "Controller connected" : "No controller"), right - 8, 22, padConnected ? Color.FromArgb(150, 225, 170) : PaperHi);
+            if (gameExe != null)
             {
-                Fill(g, Color.FromArgb(14, 255, 255, 255), pr);
+                Chip(g, Summary(), right - 8, 22, PaperHi);
             }
-            Color vc = phv ? PaperHi : UpdateAvailable ? Paper : Color.FromArgb(130, 142, 160);
-            Caps(g, pn, fBack, vc, new RectangleF(pr.X, pr.Y, pw - 16, pr.Height), 1.6f);
-            float ax = pr.Right - 17, ay = pr.Y + pr.Height / 2;
-            Line(g, vc, ax, ay - 4, ax + 4, ay, 1.4f);
-            Line(g, vc, ax + 4, ay, ax, ay + 4, 1.4f);
-            AddHot(pr, "version", OpenReleases);
         }
 
         // The update window: over the art, the rest of the main screen dimmed and not clickable.
         void DrawPrompt(Graphics g)
         {
-            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 40, W, H - 40));
+            Fill(g, Color.FromArgb(170, InkDeep), new RectangleF(0, 0, W, H));
             bool avx1Only = Avx1Only;
             // Offered by itself, without AVX2: the title says why. The window widens to its title.
             bool noAvx2 = avx1Only && !Game.HasAvx2();
             string noAvx2Title = L.T("YOUR PROCESSOR DOES NOT SUPPORT AVX2 INSTRUCTIONS");
             float bw0 = noAvx2 ? Math.Min(W - 80, Math.Max(520, CapsWidth(g, noAvx2Title, fTitle, 2.4f) + 80)) : 520;
             var box = new RectangleF((W - bw0) / 2, 196, bw0, 210);
-            Panel(g, box);
+            Panel(g, box, true);
             var text = new StringFormat { Alignment = StringAlignment.Center };
             var line1 = new RectangleF(box.X + 30, box.Y + 62, box.Width - 60, 42);
             var line2 = new RectangleF(box.X + 30, box.Y + 98, box.Width - 60, 36);
@@ -3188,45 +3299,34 @@ namespace AO2Launcher
             AddHot(later, "upd_later", PromptSecond);
         }
 
-        // Each tab's slot: its name in the current language plus one gap, the same for all, spread over the
-        // whole bar, so the space between the names is equal.
-        float[] TabSlots(Graphics g)
-        {
-            float[] widths = tabNames.Select(n => CapsWidth(g, L.T(n), fTab, 1.8f)).ToArray();
-            float gap = Math.Max(12, (W - 40 - widths.Sum()) / widths.Length);
-            return widths.Select(w => w + gap).ToArray();
-        }
-
         void DrawSettings(Graphics g)
         {
-            // Tabs: text, the current one underlined.
-            Fill(g, Color.FromArgb(230, InkDeep), new RectangleF(0, 40, W, 44));
-            Line(g, Hairline, 0, 83.5f, W, 83.5f);
-            float[] slots = TabSlots(g);
-            float x = 20;
+            // Left: the sections.
+            Panel(g, new RectangleF(SideX, PanelTop, SideW, PanelBottom - PanelTop));
+            float ty = PanelTop + 10;
             for (int i = 0; i < tabNames.Length; i++)
             {
-                string name = L.T(tabNames[i]);
-                float tw = CapsWidth(g, name, fTab, 1.8f);
-                var r = new RectangleF(x, 40, slots[i], 44);
+                var r = new RectangleF(SideX + 10, ty, SideW - 20, 44);
                 bool on = i == tab;
                 bool hv = IsHover("tab" + i);
-                if (hv && !on)
-                {
-                    Fill(g, Color.FromArgb(14, 255, 255, 255), r);
-                }
-                Caps(g, name, fTab, on ? PaperHi : hv ? Color.FromArgb(214, 218, 226) : Color.FromArgb(130, 142, 160), r, 1.8f);
                 if (on)
                 {
-                    Fill(g, Paper, new RectangleF(r.X + (r.Width - tw) / 2 - 4, r.Bottom - 3, tw + 8, 2));
+                    FillRound(g, Accent, r, 12);
                 }
+                else if (hv)
+                {
+                    FillRound(g, Color.FromArgb(24, 255, 255, 255), r, 12);
+                }
+                var nf = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+                DrawText(g, Sentence(L.T(tabNames[i])), fNav, on ? InkDeep : PaperHi, new RectangleF(r.X + 14, r.Y, r.Width - 20, r.Height), nf);
                 int t = i;
                 AddHot(r, "tab" + i, () => SetTab(t));
-                x = r.Right;
+                ty += 46;
             }
 
-            Panel(g, new RectangleF(ColX - 24, 96, ColW + 48, 500));
-            SectionHeader(g, L.T(tabNames[tab]), ColX + 2, 106, ColW - 4);
+            // Middle: the rows.
+            Panel(g, new RectangleF(ColX - 16, PanelTop, ColW + 32, PanelBottom - PanelTop));
+            SectionHeader(g, L.T(tabNames[tab]), ColX + 8, PanelTop + 12, ColW - 16);
 
             List<Row> rows = VisibleRows();
             for (int i = 0; i < rows.Count; i++)
@@ -3238,14 +3338,53 @@ namespace AO2Launcher
             }
             DrawScrollBar(g);
 
-            Line(g, Hairline, ColX, DescTop + 0.5f, ColX + ColW, DescTop + 0.5f);
-            Row cur = SelectedRow();
-            if (cur != null && cur.Desc != null && !focusHidden)
+            // Right: a picture of the game, what the current row is set to and what it does.
+            var aside = new RectangleF(AsideX, PanelTop, AsideW, PanelBottom - PanelTop);
+            Panel(g, aside);
+            var pic = new RectangleF(aside.X + 10, aside.Y + 10, aside.Width - 20, 160);
+            if (previewSrc != null)
             {
-                DrawText(g, L.T(cur.Desc), fDesc, TextDim, new RectangleF(ColX, DescTop + 12, ColW, 76), StringFormat.GenericDefault);
+                g.DrawImage(Preview(pic.Width, pic.Height), pic);
+            }
+            Row cur = SelectedRow();
+            if (cur != null && !focusHidden)
+            {
+                string val = CurrentValue(cur);
+                if (val != null)
+                {
+                    float vw = Math.Min(pic.Width - 16, g.MeasureString(val, fSmall).Width + 22);
+                    var vr = new RectangleF(pic.Right - 8 - vw, pic.Bottom - 8 - 26, vw, 26);
+                    FillRound(g, InkDeep, vr, 13);
+                    DrawText(g, val, fSmall, PaperHi, vr, CenterFmt());
+                }
+                var tf = new StringFormat();
+                SizeF ts = g.MeasureString(cur.Caption, fNav, (int)(aside.Width - 40), tf);
+                DrawText(g, cur.Caption, fNav, PaperHi, new RectangleF(aside.X + 20, pic.Bottom + 14, aside.Width - 40, ts.Height + 2), tf);
+                if (cur.Desc != null)
+                {
+                    float dy = pic.Bottom + 14 + ts.Height + 8;
+                    DrawText(g, L.T(cur.Desc), fDesc, Paper, new RectangleF(aside.X + 20, dy, aside.Width - 40, aside.Bottom - dy - 12), StringFormat.GenericDefault);
+                }
             }
             DrawHints(g);
             DrawDrop(g);
+        }
+
+        static bool IsSwitch(Row r)
+        {
+            return r.Values != null && r.Values.Length == 2 && r.Values[0] == "0" && r.Values[1] == "1" &&
+                   r.Names != null && r.Names[0] == "OFF" && r.Names[1] == "ON";
+        }
+
+        // What the side panel's picture shows for a row: its value, when it has one.
+        string CurrentValue(Row r)
+        {
+            if (r.Kind == RowKind.Choice)
+            {
+                int i = Array.IndexOf(r.Values, S[r.Key]);
+                return Sentence(i >= 0 ? r.ChoiceName(i) : S[r.Key]);
+            }
+            return r.Kind == RowKind.Slider ? r.Format(S.Double(r.Key)) : null;
         }
 
         void DrawRow(Graphics g, Row r, int index)
@@ -3274,7 +3413,6 @@ namespace AO2Launcher
             }
             bool enabled = r.Enabled();
             bool selected = Lit(sel, index) || (r.Box != null && r.Box.Focused);
-            Line(g, Color.FromArgb(14, 255, 255, 255), rr.X, rr.Bottom - 0.5f, rr.Right, rr.Bottom - 0.5f);
             if (selected)
             {
                 SelectionBar(g, rr);
@@ -3298,8 +3436,13 @@ namespace AO2Launcher
                 case RowKind.Choice:
                 {
                     int i = Array.IndexOf(r.Values, S[r.Key]);
-                    string text = i >= 0 ? r.ChoiceName(i) : S[r.Key];
+                    string text = Sentence(i >= 0 ? r.ChoiceName(i) : S[r.Key]);
                     AddHot(rr, id, () => Change(r, r.Drop ? 0 : 1), index);
+                    if (IsSwitch(r))
+                    {
+                        DrawSwitch(g, vr.Right, r.Y + r.H / 2, i == 1, enabled);
+                        break;
+                    }
                     DrawText(g, text, fValue, valColor, new RectangleF(vx + 16, r.Y, ValueW - 32, r.H), CenterFmt());
                     if (r.Drop && enabled)
                     {
@@ -3322,16 +3465,19 @@ namespace AO2Launcher
                 case RowKind.Slider:
                 {
                     double v = S.Double(r.Key);
-                    var track = new RectangleF(vx + 6, r.Y + r.H / 2 - 1, ValueW - 74, 2);
+                    var track = new RectangleF(vx + 6, r.Y + r.H / 2 - 3, ValueW - 74, 6);
                     float t = (float)((v - r.Min) / (r.Max - r.Min));
                     t = Math.Max(0, Math.Min(1, t));
-                    Fill(g, Color.FromArgb(50, 255, 255, 255), track);
-                    Color knob = !enabled ? TextOff : selected || dragging != null ? PaperHi : Paper;
-                    Fill(g, knob, new RectangleF(track.X, track.Y, track.Width * t, track.Height));
+                    FillRound(g, Color.FromArgb(52, 255, 255, 255), track, 3);
+                    Color knob = !enabled ? TextOff : PaperHi;
+                    if (t > 0)
+                    {
+                        FillRound(g, !enabled ? TextOff : Accent, new RectangleF(track.X, track.Y, Math.Max(6, track.Width * t), track.Height), 3);
+                    }
                     using (var b = new SolidBrush(knob))
                     {
-                        float kr = selected ? 6.5f : 5.5f;
-                        g.FillEllipse(b, track.X + track.Width * t - kr, track.Y + 1 - kr, kr * 2, kr * 2);
+                        float kr = selected ? 8f : 7f;
+                        g.FillEllipse(b, track.X + track.Width * t - kr, track.Y + 3 - kr, kr * 2, kr * 2);
                     }
                     var fmt = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
                     DrawText(g, r.Format(v), fValue, valColor, new RectangleF(track.Right + 8, r.Y, vr.Right - track.Right - 8, r.H), fmt);
@@ -3351,9 +3497,9 @@ namespace AO2Launcher
                 case RowKind.Text:
                 {
                     var box = new RectangleF(vx, r.Y + 5, ValueW, r.H - 10);
-                    Fill(g, TextBoxBack, box);
+                    FillRound(g, TextBoxBack, box, 8);
                     bool focused = r.Box != null && r.Box.Focused;
-                    Outline(g, focused ? Paper : selected ? Color.FromArgb(110, Paper) : Color.FromArgb(50, Paper), box);
+                    OutlineRound(g, focused ? Accent : selected ? Color.FromArgb(120, Accent) : Color.FromArgb(44, 255, 255, 255), box, 8);
                     if (snapshotting)
                     {
                         // DrawToBitmap leaves the real text boxes out: paint the text.
@@ -3385,19 +3531,19 @@ namespace AO2Launcher
 
         void DrawButtonGlyph(Graphics g, float x, float cy, string letter, Color color)
         {
-            var r = new RectangleF(x, cy - 9, 18, 18);
-            using (var b = new SolidBrush(color))
+            var r = new RectangleF(x, cy - 10, 20, 20);
+            using (var b = new SolidBrush(PaperHi))
             {
                 g.FillEllipse(b, r);
             }
-            DrawText(g, letter, fBack, Color.White, new RectangleF(r.X, r.Y + 0.5f, r.Width, r.Height), CenterFmt());
+            DrawText(g, letter, fBack, InkDeep, new RectangleF(r.X, r.Y + 0.5f, r.Width, r.Height), CenterFmt());
         }
 
         void DrawBumper(Graphics g, float x, float cy, string text)
         {
-            var r = new RectangleF(x, cy - 8, 28, 16);
-            Outline(g, Color.FromArgb(120, Paper), r);
-            Caps(g, text, fBack, Color.FromArgb(214, 218, 226), r, 0.6f);
+            var r = new RectangleF(x, cy - 10, 28, 20);
+            FillRound(g, PaperHi, r, 6);
+            Caps(g, text, fBack, InkDeep, r, 0.6f);
         }
 
         // A keyboard key: a hairline keycap sized to its caption. Returns its width.
@@ -3408,10 +3554,9 @@ namespace AO2Launcher
 
         void DrawKeyCap(Graphics g, float x, float cy, string text)
         {
-            var r = new RectangleF(x, cy - 9, KeyCapWidth(g, text), 18);
-            Outline(g, Color.FromArgb(120, Paper), r);
-            Line(g, Color.FromArgb(120, Paper), r.X + 1, r.Bottom + 0.5f, r.Right - 1, r.Bottom + 0.5f);
-            Caps(g, text, fBack, Color.FromArgb(214, 218, 226), r, 0.6f);
+            var r = new RectangleF(x, cy - 10, KeyCapWidth(g, text), 20);
+            FillRound(g, PaperHi, r, 6);
+            Caps(g, text, fBack, InkDeep, r, 0.6f);
         }
 
         // Hint line at the bottom, like the game's "(A) Select (B) Back": keyboard keys, or the
@@ -3443,7 +3588,7 @@ namespace AO2Launcher
                 widths[i] = w;
                 total += w + (i > 0 ? groupGap : 0);
             }
-            float x = ColX + (ColW - total) / 2f;
+            float x = 28;
             for (int i = 0; i < keys.Length; i++)
             {
                 float x0 = x;
@@ -3473,7 +3618,8 @@ namespace AO2Launcher
                 }
                 x = x0 + widths[i] + groupGap;
             }
-            Dot(g, 28, cy, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
+            float dw = g.MeasureString(L.T(padConnected ? "Controller connected" : "No controller"), fTiny).Width;
+            Dot(g, W - 40 - dw, cy, padConnected, L.T(padConnected ? "Controller connected" : "No controller"));
         }
 
         void DrawToast(Graphics g)
@@ -3485,9 +3631,9 @@ namespace AO2Launcher
             SizeF sz = g.MeasureString(toast, fLabel);
             float w = Math.Min(W - 40, sz.Width + 40);
             float y = screen == UiScreen.Main ? ArtBottom - 46 : 556;
-            var tr = new RectangleF((W - w) / 2, y, w, 30);
-            Fill(g, Color.FromArgb(245, InkDeep), tr);
-            Outline(g, toastBad ? Crimson : Color.FromArgb(120, Paper), tr);
+            var tr = new RectangleF((W - w) / 2, y, w, 32);
+            FillRound(g, Color.FromArgb(245, InkDeep), tr, 16);
+            OutlineRound(g, toastBad ? Crimson : Color.FromArgb(120, Accent), tr, 16);
             DrawText(g, toast, fLabel, toastBad ? Crimson : PaperHi, tr, CenterFmt());
         }
     }

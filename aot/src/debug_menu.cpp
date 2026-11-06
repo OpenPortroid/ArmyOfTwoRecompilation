@@ -67,8 +67,10 @@
 #include <cctype>
 #include <cfloat>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <map>
@@ -78,6 +80,7 @@
 #include <vector>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <rex/cvar.h>
 #include <rex/input/input_system.h>
@@ -89,6 +92,14 @@
 #include <rex/ui/window.h>
 #include <rex/ui/window_listener.h>
 #include <rex/ui/windowed_app_context.h>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 
 REXCVAR_DECLARE(bool, ao2_god_mode);
 REXCVAR_DECLARE(bool, ao2_infinite_ammo);
@@ -116,6 +127,11 @@ REXCVAR_DECLARE(int32_t, ao2_versus_friendly_fire);
 REXCVAR_DECLARE(int32_t, ao2_versus_respawn_cost);
 REXCVAR_DECLARE(int32_t, ao2_versus_respawn_step);
 
+REXCVAR_DEFINE_BOOL(ao2_debug_menu_pad, true, "Debug",
+                    "Select + Start on a gamepad opens and closes the menu of the menu key. Off: Start and Select "
+                    "alone are not held back ~0.1 s to see whether the other follows");
+REXCVAR_DEFINE_DOUBLE(ao2_menu_scale, 1.3, "Debug",
+                      "Size of the menu key's menu against the port's other screens (1 to 1.6); changes at once");
 REXCVAR_DEFINE_STRING(ao2_debug_menu_key, "F1", "Debug",
                       "Key that opens the debug menu (graphics, achievements, invites, cheats, checkpoints); empty = none");
 REXCVAR_DEFINE_STRING(ao2_fps_overlay_key, "F2", "GPU",
@@ -311,6 +327,10 @@ namespace
   }
   // Native renderer: UI frames are wanted / one is queued to the UI thread.
   std::atomic<bool> g_frames_wanted{false}, g_frame_queued{false};
+  // Per player: the game's polls left to see the pad let go after the menu (OnPadPoll).
+  std::atomic<int> g_pad_swallow[4];
+  constexpr ImGuiKey kPadKeys[5] = {ImGuiKey_GamepadDpadUp, ImGuiKey_GamepadDpadDown, ImGuiKey_GamepadDpadLeft,
+                                    ImGuiKey_GamepadDpadRight, ImGuiKey_GamepadFaceDown};
 
   // --- Drawing ----------------------------------------------------------------
 
@@ -368,31 +388,90 @@ namespace
     return h;
   }
 
-  // A section's caption in capitals with a hairline after it (as the players
-  // window's); returns the y under it.
+  // A switch's colour when on, as the launcher's.
+  constexpr ImU32 kOnColor = IM_COL32(47, 134, 201, 255);
+
+  // A section's caption over its group; returns the y under it.
   float Section(ImDrawList *dl, float x0, float x1, float y, const char *label, float a)
   {
     float s = ui::Scale();
-    std::string caps = Upper(label);
-    ui::Caps(dl, FontKind::kLabel, ImVec2(x0, y), ui::Fade(ui::kMuted, a), caps.c_str());
-    float lx = x0 + ui::CapsSize(FontKind::kLabel, caps.c_str()).x + 12.0f * s;
-    float ly = y + ui::FontSize(FontKind::kLabel) * 0.65f;
-    dl->AddLine(ImVec2(lx, ly), ImVec2(x1, ly), ui::Fade(ui::kWhite, 0.10f * a), 1.0f * s);
-    return y + ui::FontSize(FontKind::kLabel) + 14.0f * s;
+    ui::Text(dl, FontKind::kLabel, ImVec2(x0 + 4.0f * s, y), ui::Fade(ui::kMuted, a), label);
+    return y + ui::FontSize(FontKind::kLabel) + 12.0f * s;
   }
 
-  // A row's back: a faint lift and a paper bar on the left, both brighter
-  // when hovered (`h`), as the launcher's rows.
+  // A row's back: a faint lift, brighter when hovered (`h`); `bar` is its state mark.
   void RowBack(ImDrawList *dl, ImVec2 mn, ImVec2 mx, float h, float a, ImU32 bar = ui::kAccent)
   {
-    float s = ui::Scale();
-    ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, (0.025f + 0.045f * h) * a));
-    ui::Bar(dl, mn, mx, ui::Fade(bar, (0.2f + 0.8f * h) * a));
+    ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, (0.035f + 0.045f * h) * a));
+    ui::Bar(dl, mn, mx, ui::Fade(bar, (0.25f + 0.75f * h) * a));
+  }
+
+  // --- The gamepad in the menu: ImGui's own navigation goes over the buttons, which all are
+  // InvisibleButtons (those with ImGuiButtonFlags_EnableNav: others it passes by); what is hovered
+  // with the mouse is focused with the pad (ImGui's items and Hovering).
+  bool g_pad_mode = false;     // the pad, not the mouse and keys, is in use (UI thread)
+  bool g_open_by_pad = false;  // the menu being opened starts in that mode
+  ImVec2 g_pad_focus_mn, g_pad_focus_mx; // the focused item, last frame
+  bool g_pad_focus_valid = false;
+  int g_pad_step = 0;          // a focused slider's move this frame
+  bool g_pad_lr_held = false;  // left or right is down: a slider saves when let go
+  bool g_pad_on_slider = false; // a slider is focused: it has left and right, navigation does not
+  thread_local bool g_pad_reading = false; // this thread reads the pad past the active callback
+
+  struct PadRead
+  {
+    uint16_t buttons = 0;
+    uint8_t triggers[2] = {};
+    int16_t thumbs[4] = {}; // lx, ly, rx, ry
+  };
+
+  // rexruntime.dll's rex_input_read_pads: false without a pad or from a runtime without it.
+  bool ReadPads(PadRead &out)
+  {
+    using Fn = uint32_t (*)(uint16_t *, uint8_t *, int16_t *);
+    static Fn fn = []() -> Fn {
+      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
+      return runtime ? reinterpret_cast<Fn>(GetProcAddress(runtime, "rex_input_read_pads")) : nullptr;
+    }();
+    if (!fn)
+    {
+      return false;
+    }
+    g_pad_reading = true;
+    bool any = fn(&out.buttons, out.triggers, out.thumbs) != 0;
+    g_pad_reading = false;
+    return any;
   }
 
   bool Hovering(ImVec2 mn, ImVec2 mx, bool live)
   {
+    if (g_pad_mode)
+    {
+      float cx = (g_pad_focus_mn.x + g_pad_focus_mx.x) * 0.5f, cy = (g_pad_focus_mn.y + g_pad_focus_mx.y) * 0.5f;
+      return live && g_pad_focus_valid && cx >= mn.x && cx < mx.x && cy >= mn.y && cy < mx.y;
+    }
     return live && ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(mn, mx);
+  }
+
+  // A button's picture in the footer: a white disc (`round`) or a rounded block with its name; returns its width.
+  float PadCap(ImDrawList *dl, ImVec2 pos, float h, const char *label, bool round, float a)
+  {
+    ImVec2 ts = ui::TextSize(FontKind::kLabel, label);
+    float w = round ? h : std::max(h, ts.x + h * 0.7f);
+    dl->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), ui::Fade(ui::kAccentLight, a), round ? h * 0.5f : h * 0.28f);
+    ui::Text(dl, FontKind::kLabel, ImVec2(pos.x + (w - ts.x) * 0.5f, pos.y + (h - ts.y) * 0.5f - 1.0f * ui::Scale()),
+             ui::Fade(ui::kInk, a), label);
+    return w;
+  }
+
+  // The directional pad's picture; returns its width.
+  float PadCross(ImDrawList *dl, ImVec2 pos, float h, float a)
+  {
+    float arm = h * 0.34f, r = h * 0.09f;
+    ImU32 col = ui::Fade(ui::kAccentLight, a);
+    dl->AddRectFilled(ImVec2(pos.x + (h - arm) * 0.5f, pos.y), ImVec2(pos.x + (h + arm) * 0.5f, pos.y + h), col, r);
+    dl->AddRectFilled(ImVec2(pos.x, pos.y + (h - arm) * 0.5f), ImVec2(pos.x + h, pos.y + (h + arm) * 0.5f), col, r);
+    return h;
   }
 
   float ChipWidth(const char *label)
@@ -400,13 +479,13 @@ namespace
     return std::max(ui::TextSize(FontKind::kSmall, label).x + 26.0f * ui::Scale(), 58.0f * ui::Scale());
   }
 
-  // A choice: a hairline box, the picked one a paper block; true when clicked.
-  bool Chip(const char *id, ImVec2 pos, ImVec2 size, const char *label, bool on, bool enabled, float a)
+  // A choice: faint glass, the picked one in the accent; `flat`: nothing behind the others, for a
+  // segmented row on a track of its own. True when clicked.
+  bool Chip(const char *id, ImVec2 pos, ImVec2 size, const char *label, bool on, bool enabled, float a, bool flat = false)
   {
-    float s = ui::Scale();
     ImGui::PushID(id);
     ImGui::SetCursorScreenPos(pos);
-    bool clicked = ImGui::InvisibleButton("##chip", size) && enabled;
+    bool clicked = ImGui::InvisibleButton("##chip", size, ImGuiButtonFlags_EnableNav) && enabled;
     bool hovered = enabled && ImGui::IsItemHovered();
     bool held = enabled && ImGui::IsItemActive();
     float h = Eased("hover", hovered, 20.0f);
@@ -418,30 +497,32 @@ namespace
     }
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImVec2 mx(pos.x + size.x, pos.y + size.y);
-    float r = ui::Round(6.0f);
-    dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, ((held ? 0.14f : 0.03f) + 0.07f * h) * (1.0f - o) * a), r);
-    dl->AddRectFilled(pos, mx, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, h), o * a), r);
-    dl->AddRect(pos, mx, ui::Fade(ui::kAccent, (0.16f + 0.45f * h) * (1.0f - o) * a), r, ImDrawFlags_None,
-                1.0f * s);
+    float r = size.y * 0.32f;
+    float rest = flat ? 0.0f : 0.07f;
+    dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, ((held ? 0.16f : rest) + 0.08f * h) * (1.0f - o) * a), r);
+    dl->AddRectFilled(pos, mx, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, 0.45f * h), o * a), r);
     ImU32 text = enabled ? ui::Mix(ui::Mix(ui::kText, ui::kAccentLight, h), ui::kInk, o) : ui::kMuted;
     ImVec2 ts = ui::TextSize(FontKind::kSmall, label);
     dl->PushClipRect(pos, mx, true);
-    ui::Text(dl, FontKind::kSmall, ImVec2(pos.x + (size.x - ts.x) * 0.5f, pos.y + (size.y - ts.y) * 0.5f - 1.0f * s),
+    ui::Text(dl, FontKind::kSmall, ImVec2(pos.x + (size.x - ts.x) * 0.5f, pos.y + (size.y - ts.y) * 0.5f - 1.0f * ui::Scale()),
              ui::Fade(text, a), label);
     dl->PopClipRect();
     return clicked;
   }
 
   // A slider over [lo, hi] at `pos`, `w` wide; true when `value` changed.
-  bool Slider(const char *id, ImVec2 pos, float w, double &value, double lo, double hi, float a, bool live)
+  // On the pad left and right move it by `pad_step` (0: a fiftieth of the range).
+  bool Slider(const char *id, ImVec2 pos, float w, double &value, double lo, double hi, float a, bool live,
+              double pad_step = 0.0)
   {
     float s = ui::Scale();
     float hgt = 28.0f * s;
     ImGui::PushID(id);
     ImGui::SetCursorScreenPos(pos);
-    ImGui::InvisibleButton("##slider", ImVec2(w, hgt));
-    bool active = live && ImGui::IsItemActive();
+    ImGui::InvisibleButton("##slider", ImVec2(w, hgt), ImGuiButtonFlags_EnableNav);
+    bool active = live && !g_pad_mode && ImGui::IsItemActive();
     bool hovered = live && ImGui::IsItemHovered();
+    bool focused = live && g_pad_mode && ImGui::IsItemFocused();
     float h = Eased("hover", hovered || active, 20.0f);
     ImGui::PopID();
     if (hovered || active)
@@ -449,6 +530,16 @@ namespace
       ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
     }
     bool changed = false;
+    if (focused)
+    {
+      g_pad_on_slider = true;
+      if (g_pad_step)
+      {
+        double v = std::clamp(value + double(g_pad_step) * (pad_step > 0.0 ? pad_step : (hi - lo) / 50.0), lo, hi);
+        changed = v != value;
+        value = v;
+      }
+    }
     if (active)
     {
       double t = std::clamp(double(ImGui::GetIO().MousePos.x - pos.x) / double(w), 0.0, 1.0);
@@ -461,16 +552,19 @@ namespace
     }
     float t = float(std::clamp((value - lo) / (hi - lo), 0.0, 1.0));
     ImDrawList *dl = ImGui::GetWindowDrawList();
-    float cy = pos.y + hgt * 0.5f, th = 2.0f * s;
-    dl->AddRectFilled(ImVec2(pos.x, cy - th), ImVec2(pos.x + w, cy + th), ui::Fade(ui::kWhite, 0.10f * a));
-    dl->AddRectFilled(ImVec2(pos.x, cy - th), ImVec2(pos.x + w * t, cy + th), ui::Fade(ui::kAccent, a));
+    float cy = pos.y + hgt * 0.5f, th = 3.0f * s;
+    dl->AddRectFilled(ImVec2(pos.x, cy - th), ImVec2(pos.x + w, cy + th), ui::Fade(ui::kWhite, 0.13f * a), th);
+    if (t > 0.0f)
+    {
+      dl->AddRectFilled(ImVec2(pos.x, cy - th), ImVec2(pos.x + std::max(w * t, 2.0f * th), cy + th), ui::Fade(ui::kAccent, a), th);
+    }
     ImVec2 knob(pos.x + w * t, cy);
     if (h > 0.01f)
     {
-      dl->AddCircleFilled(knob, (9.0f + 5.0f * h) * s, ui::Fade(ui::kAccent, 0.18f * h * a));
+      dl->AddCircleFilled(knob, (10.0f + 6.0f * h) * s, ui::Fade(ui::kAccent, 0.20f * h * a), 32);
     }
-    dl->AddCircleFilled(knob, 8.0f * s, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, h), a));
-    dl->AddCircle(knob, 8.0f * s, ui::Fade(ui::kInk, 0.6f * a), 20, 1.5f * s);
+    dl->AddCircleFilled(ImVec2(knob.x, knob.y + 1.5f * s), 10.0f * s, ui::Fade(ui::kInk, 0.45f * a), 32);
+    dl->AddCircleFilled(knob, 9.0f * s, ui::Fade(ui::kAccentLight, a), 32);
     return changed;
   }
 
@@ -480,11 +574,11 @@ namespace
     float s = ui::Scale();
     float w = 50.0f * s, h = 26.0f * s, r = h * 0.5f;
     ImVec2 mx(pos.x + w, pos.y + h);
-    ImU32 track = ui::Mix(ui::Fade(ui::kWhite, 0.10f), ui::Fade(ui::kGreen, 0.85f), o);
+    ImU32 track = ui::Mix(ui::Fade(ui::kWhite, 0.20f), kOnColor, o);
     dl->AddRectFilled(pos, mx, ui::Fade(track, enabled ? a : 0.4f * a), r);
-    dl->AddRect(pos, mx, ui::Fade(ui::kWhite, 0.18f * (1.0f - o) * a), r, ImDrawFlags_None, 1.0f * s);
     ImVec2 knob(pos.x + r + (w - h) * o, pos.y + r);
-    dl->AddCircleFilled(knob, r - 4.0f * s, ui::Fade(enabled ? ui::kAccentLight : ui::kMuted, a));
+    dl->AddCircleFilled(ImVec2(knob.x, knob.y + 1.0f * s), r - 3.0f * s, ui::Fade(ui::kInk, 0.35f * a), 28);
+    dl->AddCircleFilled(knob, r - 3.0f * s, ui::Fade(enabled ? ui::kAccentLight : ui::kMuted, a), 28);
   }
 
   // The sections, in the sidebar's order. Online's two pages show under it
@@ -787,6 +881,8 @@ namespace
       // An invite waiting for an answer (its notice says the menu key lists it).
       tab_ = ao2::invite::HasPendingInvite() ? kTabOnline : g_last_tab;
       page_ = g_last_page;
+      g_pad_mode = g_open_by_pad;
+      pad_focus_first_ = g_pad_mode;
     }
 
     // Any time on the UI thread (the menu key): plays the menu out.
@@ -795,6 +891,7 @@ namespace
   protected:
     void OnDraw(ImGuiIO &io) override
     {
+      ui::ZoomScope zoom(float(std::clamp(REXCVAR_GET(ao2_menu_scale), 1.0, 1.6)));
       double now = ImGui::GetTime();
       if (close_requested_)
       {
@@ -818,7 +915,7 @@ namespace
       }
       bool live = closing_ < 0.0;
       float s = ui::Scale();
-      float since = float(now - opened_);
+      PadInput(io, now, live);
 
       const uint8_t *base = GuestBase();
       network_ = base && ao2::coop::cmd::Routed(base);
@@ -829,6 +926,8 @@ namespace
       ImGui::SetNextWindowSize(vp->Size);
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
       ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+      // ImGui's square cursor stays off: DrawPadFocus draws the focus.
+      ImGui::PushStyleColor(ImGuiCol_NavCursor, IM_COL32(0, 0, 0, 0));
       ImGui::Begin("##debug_menu", nullptr,
                    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse);
@@ -856,46 +955,40 @@ namespace
         }
       }
 
-      // --- Backdrop and panel ---
-      // The game darkened behind.
-      dl->AddRectFilled(vp->Pos, ImVec2(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y),
-                        ui::Fade(ui::kInk, 0.62f * a));
-      const float pad = 32.0f * s;
-      const float pw = std::min(1360.0f * s, vp->Size.x - 40.0f * s);
-      const float ph = std::min(900.0f * s, vp->Size.y - 60.0f * s);
+      // --- Backdrop: the game darkened behind ---
+      {
+        ImVec2 p0 = vp->Pos, p1(vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y);
+        float band = vp->Size.y * 0.32f;
+        dl->AddRectFilled(p0, p1, ui::Fade(ui::kInk, 0.58f * a));
+        ImU32 edge = ui::Fade(ui::kInk, 0.34f * a), none = ui::Fade(ui::kInk, 0.0f);
+        dl->AddRectFilledMultiColor(p0, ImVec2(p1.x, p0.y + band), edge, edge, none, none);
+        dl->AddRectFilledMultiColor(ImVec2(p0.x, p1.y - band), p1, none, none, edge, edge);
+      }
+
+      // From the top: the sections' bar, the sheet, the keys.
+      const float pad = 32.0f * s, gap = 14.0f * s;
+      const float bar_h = 58.0f * s, keys_h = 28.0f * s;
+      const float pw = std::min(1480.0f * s, vp->Size.x - 80.0f * s);
+      const float ph = std::min(880.0f * s, vp->Size.y - 48.0f * s - bar_h - keys_h - 2.0f * gap);
       ImVec2 center = vp->GetCenter();
-      float x0 = center.x - pw * 0.5f, y0 = center.y - ph * 0.5f + (1.0f - a) * 30.0f * s;
+      float rest_top = center.y - (bar_h + gap + ph + gap + keys_h) * 0.5f;
+      float top = rest_top - (1.0f - a) * 16.0f * s;
+      float x0 = center.x - pw * 0.5f, y0 = rest_top + bar_h + gap + (1.0f - a) * 30.0f * s;
       float x1 = x0 + pw, y1 = y0 + ph;
       float cx0 = x0 + pad, cx1 = x1 - pad;
-      float r = 8.0f * s;
+      float r = 24.0f * s;
       for (int k = 1; k <= 12; ++k)
       {
         float o = float(k) * 2.0f * s;
         dl->AddRect(ImVec2(x0 - o, y0 - o + 6.0f * s), ImVec2(x1 + o, y1 + o + 6.0f * s),
                     ui::Fade(ui::kInk, 0.05f * (1.0f - float(k) / 13.0f) * a), r + o, ImDrawFlags_None, 2.0f * s);
       }
-      dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.93f * a), r);
-      dl->AddRectFilledMultiColor(ImVec2(x0 + r, y0 + 1.0f * s), ImVec2(x1 - r, y0 + 220.0f * s),
-                                  ui::Fade(ui::kWhite, 0.035f * a), ui::Fade(ui::kWhite, 0.035f * a),
-                                  ui::Fade(ui::kWhite, 0.0f), ui::Fade(ui::kWhite, 0.0f));
-      dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.13f * a), r, ImDrawFlags_None, 1.0f * s);
-      ui::Corners(dl, ImVec2(x0 - 4.0f * s, y0 - 4.0f * s), ImVec2(x1 + 4.0f * s, y1 + 4.0f * s), 18.0f * s,
-                  2.0f * s, ui::Fade(ui::kAccent, 0.55f * a));
+      dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.95f * a), r);
+      dl->AddRectFilledMultiColor(ImVec2(x0 + r, y0 + 1.0f * s), ImVec2(x1 - r, y0 + 150.0f * s), ui::Fade(ui::kWhite, 0.035f * a),
+                                  ui::Fade(ui::kWhite, 0.035f * a), ui::Fade(ui::kWhite, 0.0f), ui::Fade(ui::kWhite, 0.0f));
+      dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.12f * a), r, ImDrawFlags_None, 1.0f * s);
 
-      // --- Header: kicker, title (wiped in) ---
-      float y = y0 + pad;
-      ui::Caps(dl, FontKind::kLabel, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), "ARMY OF TWO  //  DEBUG");
-      y += ui::FontSize(FontKind::kLabel) + 6.0f * s;
-      std::string title = Upper(Tr("Debug menu"));
-      ImVec2 title_size = ui::CapsSize(FontKind::kTitle, title.c_str());
-      float wipe = ui::EaseOutCubic((since - 0.05f) / 0.45f);
-      dl->PushClipRect(ImVec2(cx0, y), ImVec2(cx0 + title_size.x * wipe + 1.0f, y + title_size.y), true);
-      ui::Caps(dl, FontKind::kTitle, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), title.c_str());
-      dl->PopClipRect();
-      y += title_size.y + 20.0f * s;
-
-      // --- Sidebar: the sections; Online's pages under it while open ---
-      const bool online_open = tab_ == kTabOnline || tab_ == kTabCode || tab_ == kTabServers;
+      // --- The sections: keys 1-5, Tab through all of them ---
       if (live && !io.WantTextInput)
       {
         for (const SideItem &it : kSide)
@@ -908,18 +1001,8 @@ namespace
         }
         if (ImGui::IsKeyPressed(ImGuiKey_Tab, false))
         {
-          // The next (Shift: previous) of those shown.
-          std::vector<int> shown;
-          for (const SideItem &it : kSide)
-          {
-            if (!it.sub || online_open)
-            {
-              shown.push_back(it.tab);
-            }
-          }
-          int at = int(std::find(shown.begin(), shown.end(), tab_) - shown.begin());
-          int n = int(shown.size());
-          SetTab(shown[size_t((at + (io.KeyShift ? n - 1 : 1)) % n)], now);
+          // The next (Shift: previous).
+          StepTab(io.KeyShift ? -1 : 1, now);
         }
       }
       // Badges: the achievements unlocked, an invite waiting, the cheats on.
@@ -934,48 +1017,85 @@ namespace
       {
         cheats_on += on ? 1 : 0;
       }
-      dl->AddLine(ImVec2(cx0, y), ImVec2(cx1, y), ui::Fade(ui::kWhite, 0.10f * a), 1.0f * s);
-      y += 22.0f * s;
-      const float side_w = 250.0f * s, item_h = 44.0f * s, sub_h = 38.0f * s;
-      const float side_x1 = cx0 + side_w;
-      const float item_r = ui::Round(10.0f);
       {
-        // Online's pages fold out and back.
-        float fold = Eased("online_fold", online_open, 12.0f);
-        float sy = y, mark_h = item_h;
+        struct Pill
+        {
+          int tab;
+          const char *label;
+          std::string badge;
+          ImU32 badge_col;
+          bool dot;
+          float w;
+        };
+        std::vector<Pill> pills;
+        const float side_pad = 16.0f * s, icon_w = 28.0f * s, item_gap = 2.0f * s, inner = 5.0f * s;
+        const float item_h = bar_h - 2.0f * inner;
+        float total = 0.0f;
         for (const SideItem &it : kSide)
         {
-          const int i = it.tab;
-          float ih = it.sub ? sub_h * fold : item_h;
-          if (ih < 1.0f)
+          Pill pill{it.tab, Tr(kTabNames[it.tab]), {}, ui::kAccent, false, 0.0f};
+          if (it.tab == kTabOnline)
           {
-            continue;
+            pill.dot = ao2::invite::HasPendingInvite();
           }
-          float ia = it.sub ? a * fold : a;
-          std::string badge;
-          ImU32 badge_col = ui::kAccent;
-          bool dot = false;
-          if (i == kTabOnline)
+          else if (it.tab == kTabDebug && cheats_on > 0)
           {
-            dot = ao2::invite::HasPendingInvite();
+            pill.badge = std::to_string(cheats_on);
+            pill.badge_col = ui::kGreen;
           }
-          else if (i == kTabDebug && cheats_on > 0)
+          else if (it.tab == kTabAchievements && ach_total_ > 0)
           {
-            badge = std::to_string(cheats_on) + " " + Upper(Tr("On"));
-            badge_col = ui::kGreen;
+            pill.badge = std::to_string(ach_got_) + "/" + std::to_string(ach_total_);
+            pill.badge_col = kBadgeGold;
           }
-          else if (i == kTabAchievements && ach_total_ > 0)
+          pill.w = 2.0f * side_pad + icon_w + ui::TextSize(FontKind::kBody, pill.label).x;
+          if (!pill.badge.empty())
           {
-            badge = std::to_string(ach_got_) + "/" + std::to_string(ach_total_);
-            badge_col = kBadgeGold;
+            pill.w += ui::TextSize(FontKind::kSmall, pill.badge.c_str()).x + 10.0f * s;
           }
-          ImVec2 mn(cx0, sy), mx(side_x1, sy + ih);
-          dl->PushClipRect(mn, mx, true);
-          ImGui::PushID(i);
+          total += pill.w + item_gap;
+          pills.push_back(std::move(pill));
+        }
+        total -= item_gap;
+        // A narrow screen or long words: the sections share what there is.
+        float fit = std::min(1.0f, (pw - 2.0f * inner - item_gap * float(pills.size() - 1)) / (total - item_gap * float(pills.size() - 1)));
+        float bar_w = std::min(pw, total + 2.0f * inner);
+        float bx0 = center.x - bar_w * 0.5f;
+        dl->AddRectFilled(ImVec2(bx0, top), ImVec2(bx0 + bar_w, top + bar_h), ui::Fade(ui::kPanel, 0.92f * a), bar_h * 0.5f);
+        dl->AddRect(ImVec2(bx0, top), ImVec2(bx0 + bar_w, top + bar_h), ui::Fade(ui::kWhite, 0.14f * a), bar_h * 0.5f,
+                    ImDrawFlags_None, 1.0f * s);
+
+        // The current one's block slides to it, under the others' text.
+        float px = bx0 + inner;
+        for (const Pill &pill : pills)
+        {
+          if (pill.tab == tab_)
+          {
+            mark_target_ = px;
+            mark_width_target_ = pill.w * fit;
+          }
+          px += pill.w * fit + item_gap;
+        }
+        mark_x_ = mark_x_ < 0.0f ? mark_target_ : ui::Approach(mark_x_, mark_target_, 18.0f);
+        mark_w_ = mark_w_ < 0.0f ? mark_width_target_ : ui::Approach(mark_w_, mark_width_target_, 18.0f);
+        dl->AddRectFilled(ImVec2(mark_x_ - 2.0f * s, top + inner - 2.0f * s),
+                          ImVec2(mark_x_ + mark_w_ + 2.0f * s, top + inner + item_h + 2.0f * s), ui::Fade(ui::kAccent, 0.20f * a),
+                          item_h * 0.5f + 2.0f * s);
+        dl->AddRectFilled(ImVec2(mark_x_, top + inner), ImVec2(mark_x_ + mark_w_, top + inner + item_h), ui::Fade(ui::kAccent, a),
+                          item_h * 0.5f);
+
+        px = bx0 + inner;
+        float mid = top + bar_h * 0.5f;
+        for (const Pill &pill : pills)
+        {
+          float w = pill.w * fit;
+          ImVec2 mn(px, top + inner), mx(px + w, top + inner + item_h);
+          ImGui::PushID(pill.tab);
           ImGui::SetCursorScreenPos(mn);
-          if (ImGui::InvisibleButton("##tab", ImVec2(side_w, ih)) && live)
+          // No navigation here: on the pad the sections are LB and RB.
+          if (ImGui::InvisibleButton("##tab", ImVec2(w, item_h)) && live)
           {
-            SetTab(i, now);
+            SetTab(pill.tab, now);
           }
           bool hovered = live && ImGui::IsItemHovered();
           float h = Eased("tab_hover", hovered, 18.0f);
@@ -984,84 +1104,71 @@ namespace
           {
             ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
           }
-          bool active = i == tab_;
-          if (active)
-          {
-            mark_target_ = sy;
-            mark_h = ih;
-          }
+          bool active = pill.tab == tab_;
           if (h > 0.01f && !active)
           {
-            ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, 0.035f * h * ia));
+            dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.10f * h * a), item_h * 0.5f);
           }
-          float full_h = it.sub ? sub_h : item_h;
-          float mid = sy + ih - full_h * 0.5f; // a folding page slides up under Online
-          float ty = mid - ui::FontSize(FontKind::kBody) * 0.5f - 1.0f * s;
-          const char *label = Tr(kTabNames[i]);
-          // The icon, then the name, both nudged right on hover; a page
-          // further in.
-          float indent = it.sub ? 22.0f * s : 0.0f;
-          float nudge = (active ? 0.0f : 3.0f * h) * s;
-          ImU32 col = active ? ui::kAccentLight : ui::Mix(ui::kMuted, ui::kText, 0.55f + 0.45f * h);
-          TabIcon(dl, i, ImVec2(cx0 + 28.0f * s + indent + nudge, mid), ui::Fade(col, (active ? 1.0f : 0.8f) * ia));
-          float lx = cx0 + 50.0f * s + indent + nudge;
-          ui::Text(dl, FontKind::kBody, ImVec2(lx, ty), ui::Fade(col, ia), label);
-          // Its key on the right; a badge after the name.
-          if (it.key)
+          ImU32 col = active ? ui::kInk : ui::kAccentLight;
+          dl->PushClipRect(mn, mx, true);
+          TabIcon(dl, pill.tab, ImVec2(px + side_pad + 10.0f * s, mid), ui::Fade(col, a));
+          float lx = px + side_pad + icon_w;
+          ui::Text(dl, FontKind::kBody, ImVec2(lx, mid - ui::FontSize(FontKind::kBody) * 0.5f - 1.0f * s), ui::Fade(col, a),
+                   pill.label);
+          float bx = lx + ui::TextSize(FontKind::kBody, pill.label).x + 8.0f * s;
+          if (!pill.badge.empty())
           {
-            char key[4];
-            std::snprintf(key, sizeof(key), "%d", it.key);
-            ImVec2 ks = ui::CapsSize(FontKind::kLabel, key);
-            ui::Caps(dl, FontKind::kLabel, ImVec2(side_x1 - 14.0f * s - ks.x, mid - ks.y * 0.5f),
-                     ui::Fade(ui::kMuted, (active ? 0.9f : 0.45f) * ia), key);
-          }
-          float bx = lx + ui::TextSize(FontKind::kBody, label).x + 10.0f * s, by = mid;
-          if (!badge.empty())
-          {
-            ImVec2 bs = ui::TextSize(FontKind::kSmall, badge.c_str());
-            ImVec2 bmn(bx, by - bs.y * 0.5f - 1.0f * s), bmx(bx + bs.x + 12.0f * s, by + bs.y * 0.5f + 1.0f * s);
-            dl->AddRect(bmn, bmx, ui::Fade(badge_col, 0.45f * ia), (bmx.y - bmn.y) * 0.5f, ImDrawFlags_None,
-                        1.0f * s);
-            ui::Text(dl, FontKind::kSmall, ImVec2(bx + 6.0f * s, bmn.y + 1.0f * s), ui::Fade(badge_col, ia),
-                     badge.c_str());
-          }
-          else if (dot)
-          {
-            float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
-            dl->AddCircleFilled(ImVec2(bx + 3.5f * s, by), 3.5f * s, ui::Fade(ui::kAccent, ia));
-            dl->AddCircle(ImVec2(bx + 3.5f * s, by), (3.5f + 4.0f * pulse) * s,
-                          ui::Fade(ui::kAccent, (1.0f - pulse) * ia), 16, 1.0f * s);
+            ui::Text(dl, FontKind::kSmall, ImVec2(bx, mid - ui::FontSize(FontKind::kSmall) * 0.5f - 1.0f * s),
+                     ui::Fade(active ? ui::kInk : pill.badge_col, a), pill.badge.c_str());
           }
           dl->PopClipRect();
-          sy += ih + 4.0f * s * (it.sub ? fold : 1.0f);
+          if (pill.dot)
+          {
+            float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
+            ImVec2 dc(mx.x - 12.0f * s, top + inner + 12.0f * s);
+            ImU32 dcol = active ? ui::kInk : ui::kAccent;
+            dl->AddCircleFilled(dc, 3.5f * s, ui::Fade(dcol, a));
+            dl->AddCircle(dc, (3.5f + 4.0f * pulse) * s, ui::Fade(dcol, (1.0f - pulse) * a), 16, 1.0f * s);
+          }
+          px += w + item_gap;
         }
-        // The current section: a lifted block with a paper bar, sliding to it.
-        mark_y_ = mark_y_ < 0.0f ? mark_target_ : ui::Approach(mark_y_, mark_target_, 16.0f);
-        mark_h_ = mark_h_ < 0.0f ? mark_h : ui::Approach(mark_h_, mark_h, 16.0f);
-        dl->AddRectFilled(ImVec2(cx0, mark_y_), ImVec2(side_x1, mark_y_ + mark_h_), ui::Fade(ui::kWhite, 0.07f * a),
-                          item_r);
-        dl->AddRectFilled(ImVec2(cx0, mark_y_), ImVec2(cx0 + 3.0f * s, mark_y_ + mark_h_), ui::Fade(ui::kAccent, a),
-                          item_r, ImDrawFlags_RoundCornersLeft);
       }
 
-      // --- Footer: the keys ---
-      const float kh = 24.0f * s;
-      const float footer_y = y1 - pad - kh;
-      dl->AddLine(ImVec2(cx0, footer_y - 14.0f * s), ImVec2(cx1, footer_y - 14.0f * s),
-                  ui::Fade(ui::kWhite, 0.08f * a), 1.0f * s);
+      // --- Under the sheet: the keys ---
+      const float kh = 26.0f * s;
+      const float footer_y = y1 + gap + (keys_h - kh) * 0.5f;
       {
         float fx = cx0;
         float label_y = footer_y + (kh - ui::FontSize(FontKind::kLabel)) * 0.5f - 1.0f * s;
-        for (const char *key : {"1-5", "TAB"})
+        // The prompts follow the hands: the pad's buttons from its first press on.
+        auto legend = [&](const char *text) {
+          ui::Caps(dl, FontKind::kLabel, ImVec2(fx + 2.0f * s, label_y), ui::Fade(ui::kText, a), text);
+          fx += 2.0f * s + ui::CapsSize(FontKind::kLabel, text).x + 26.0f * s;
+        };
+        if (g_pad_mode)
         {
-          fx += ui::KeyCap(dl, ImVec2(fx, footer_y), kh, key, a) + 6.0f * s;
+          for (const char *key : {"LB", "RB"})
+          {
+            fx += PadCap(dl, ImVec2(fx, footer_y), kh, key, false, a) + 6.0f * s;
+          }
+          legend(Tr("Sections"));
+          fx += PadCross(dl, ImVec2(fx, footer_y), kh, a) + 6.0f * s;
+          legend(Tr("Move"));
+          fx += PadCap(dl, ImVec2(fx, footer_y), kh, "A", true, a) + 6.0f * s;
+          legend(Tr("Select"));
         }
-        std::string tabs = Upper(Tr("Sections"));
-        ui::Caps(dl, FontKind::kLabel, ImVec2(fx + 2.0f * s, label_y), ui::Fade(ui::kMuted, a), tabs.c_str());
+        else
+        {
+          for (const char *key : {"1-5", "TAB"})
+          {
+            fx += ui::KeyCap(dl, ImVec2(fx, footer_y), kh, key, a) + 6.0f * s;
+          }
+          legend(Tr("Sections"));
+        }
 
-        std::string label = Upper(Tr("Close"));
-        float label_w = ui::CapsSize(FontKind::kLabel, label.c_str()).x;
-        float key_w = std::max(kh, ui::CapsSize(FontKind::kLabel, "ESC").x + kh * 0.8f); // as ui::KeyCap
+        const char *label = Tr("Close");
+        float label_w = ui::CapsSize(FontKind::kLabel, label).x;
+        float key_w = g_pad_mode ? kh : std::max(kh, ui::CapsSize(FontKind::kLabel, "ESC").x + kh * 0.8f); // as ui::KeyCap
         float total = key_w + 8.0f * s + label_w;
         ImVec2 pos(cx1 - total, footer_y);
         ImGui::SetCursorScreenPos(pos);
@@ -1074,33 +1181,35 @@ namespace
         {
           ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
         }
-        ui::KeyCap(dl, pos, kh, "ESC", a);
+        if (g_pad_mode)
+        {
+          PadCap(dl, pos, kh, "B", true, a);
+        }
+        else
+        {
+          ui::KeyCap(dl, pos, kh, "ESC", a);
+        }
         ui::Caps(dl, FontKind::kLabel, ImVec2(pos.x + key_w + 8.0f * s, label_y),
-                 ui::Fade(hovered ? ui::kAccentLight : ui::kText, a), label.c_str());
+                 ui::Fade(hovered ? ui::kAccentLight : ui::kText, a), label);
       }
 
-      // --- The section's content, right of the sidebar: what it is for,
-      // then the content, sliding in from the side it was picked on ---
+      // --- The sheet: the section's name, then its content, sliding in from
+      // the side it was picked on ---
       float t = ui::EaseOutCubic(float(now - tab_changed_) / 0.3f);
       float ca = a * ui::Clamp01(float(now - tab_changed_) / 0.18f);
       float shift = (1.0f - t) * 24.0f * s * float(tab_dir_);
-      float content_x = side_x1 + 36.0f * s;
-      dl->AddLine(ImVec2(side_x1 + 18.0f * s, y), ImVec2(side_x1 + 18.0f * s, footer_y - 30.0f * s),
-                  ui::Fade(ui::kWhite, 0.08f * a), 1.0f * s);
-      {
-        std::string heading = Upper(Tr(kTabNames[tab_]));
-        ui::Caps(dl, FontKind::kHeading, ImVec2(content_x, y + shift * 0.5f), ui::Fade(ui::kAccentLight, ca),
-                 heading.c_str());
-        y += ui::FontSize(FontKind::kHeading) + 22.0f * s;
-      }
-      ImVec2 cmn(content_x, y + shift), cmx(cx1, footer_y - 30.0f * s + shift);
-      dl->PushClipRect(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, footer_y - 26.0f * s), true);
+      float content_x = cx0;
+      float y = y0 + 24.0f * s;
+      ui::Text(dl, FontKind::kTitle, ImVec2(content_x, y + shift * 0.5f), ui::Fade(ui::kAccentLight, ca), Tr(kTabNames[tab_]));
+      y += ui::FontSize(FontKind::kTitle) + 22.0f * s;
+      float content_y1 = y1 - 20.0f * s;
+      ImVec2 cmn(content_x, y + shift), cmx(cx1, content_y1 + shift);
+      dl->PushClipRect(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, content_y1 + 4.0f * s), true);
       switch (tab_)
       {
       case kTabSettings:
         tip_ = -1;
         Scrolling("settings", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
-        DrawTip(ca);
         break;
       case kTabOnline:
       {
@@ -1137,18 +1246,57 @@ namespace
       dl->PopClipRect();
       fresh_ = false;
 
+      // Over the content, the tip over both.
+      DrawPadFocus(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, content_y1 + 4.0f * s), ca, live);
+      if (tab_ == kTabSettings)
+      {
+        DrawTip(ca);
+      }
+
       ImGui::End();
+      ImGui::PopStyleColor();
     }
 
     void OnClose() override
     {
       g_last_tab = tab_;
       g_last_page = page_;
+      // The drawer's other windows navigate no more, the pad's keys are up.
+      ImGuiIO &io = GetIO();
+      io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+      io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+      for (int i = 0; i < 5; ++i)
+      {
+        io.AddKeyEvent(kPadKeys[i], false);
+      }
+      // What closed it (B, Select + Start) is still down.
+      if (g_pad_mode)
+      {
+        for (auto &swallow : g_pad_swallow)
+        {
+          swallow = 2;
+        }
+      }
+      g_pad_mode = false;
+      g_pad_focus_valid = false;
+      g_pad_step = 0;
+      g_pad_lr_held = false;
       g_menu = nullptr;
       g_open = false;
     }
 
   private:
+    // The gamepad (PadInput).
+    bool pad_first_read_ = true;
+    uint16_t pad_ignored_ = 0, pad_prev_ = 0;
+    bool pad_keys_[5] = {};
+    bool pad_focus_first_ = false; // the next scrolling list's first item takes the focus
+    int pad_lr_ = 0;
+    double pad_lr_next_ = 0.0;
+    float pad_scroll_ = 0.0f;
+    bool pad_ring_on_ = false;
+    ImVec2 pad_ring_mn_, pad_ring_mx_;
+
     void BeginClose()
     {
       if (closing_ < 0.0)
@@ -1167,6 +1315,159 @@ namespace
       tab_ = tab;
       tab_changed_ = now;
       fresh_ = true;
+      pad_focus_first_ = g_pad_mode;
+    }
+
+    // The section `dir` (1, -1) from this one, round the end.
+    void StepTab(int dir, double now)
+    {
+      int n = int(std::size(kSide)), at = 0;
+      for (int i = 0; i < n; ++i)
+      {
+        at = kSide[i].tab == tab_ ? i : at;
+      }
+      SetTab(kSide[(at + n + dir) % n].tab, now);
+    }
+
+    // Reads the pad, whatever the game gets, and acts on it. Directions and A go to ImGui's
+    // navigation, which takes them from the next frame.
+    void PadInput(ImGuiIO &io, double now, bool live)
+    {
+      io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+      io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+      PadRead pad;
+      bool read = g_window->HasFocus() && g_modal.load(std::memory_order_relaxed) == 0 && ReadPads(pad);
+      uint16_t b = read ? pad.buttons : 0;
+      // Down when the menu opened (Select + Start): nothing until let go.
+      if (pad_first_read_)
+      {
+        pad_first_read_ = false;
+        pad_ignored_ = b;
+      }
+      pad_ignored_ &= b;
+      b &= uint16_t(~pad_ignored_);
+      uint16_t pressed = b & uint16_t(~pad_prev_);
+      pad_prev_ = b;
+
+      constexpr int kLean = 16000; // of 32767: a stick counts as a direction
+      constexpr int kDead = 8000;
+      bool up = (b & 0x0001) || pad.thumbs[1] > kLean, down = (b & 0x0002) || pad.thumbs[1] < -kLean;
+      bool left = (b & 0x0004) || pad.thumbs[0] < -kLean, right = (b & 0x0008) || pad.thumbs[0] > kLean;
+      float rs = std::abs(pad.thumbs[3]) > kDead ? float(pad.thumbs[3]) / 32767.0f : 0.0f;
+      bool used = b != 0 || up || down || left || right || rs != 0.0f;
+
+      // Whichever was used last has the highlight and the prompts.
+      ImGuiContext &g = *ImGui::GetCurrentContext();
+      if (used && !g_pad_mode)
+      {
+        g_pad_mode = true;
+        pad_focus_first_ = true;
+      }
+      else if (g_pad_mode && !used)
+      {
+        bool others = std::abs(io.MouseDelta.x) + std::abs(io.MouseDelta.y) > 1.0f || ImGui::IsAnyMouseDown();
+        for (int k = ImGuiKey_NamedKey_BEGIN; !others && k < ImGuiKey_GamepadStart; ++k)
+        {
+          others = ImGui::IsKeyPressed(ImGuiKey(k), false);
+        }
+        if (others)
+        {
+          g_pad_mode = false;
+          g.NavCursorVisible = false;
+          g.NavHighlightItemUnderNav = false;
+        }
+      }
+      if (g_pad_mode)
+      {
+        g.NavCursorVisible = true;
+        g.NavHighlightItemUnderNav = true;
+      }
+
+      // A slider's left and right are its own (the first move at once, held they repeat).
+      bool on_slider = g_pad_on_slider;
+      g_pad_on_slider = false;
+      int lr = left == right ? 0 : left ? -1 : 1;
+      g_pad_step = 0;
+      if (lr != pad_lr_)
+      {
+        pad_lr_ = lr;
+        pad_lr_next_ = now + 0.35;
+        g_pad_step = lr;
+      }
+      else if (lr && now >= pad_lr_next_)
+      {
+        pad_lr_next_ = now + 0.05;
+        g_pad_step = lr;
+      }
+      g_pad_lr_held = lr != 0;
+
+      const bool down_now[5] = {up, down, left && !on_slider, right && !on_slider, (b & 0x1000) != 0};
+      for (int i = 0; i < 5; ++i)
+      {
+        bool on = live && down_now[i];
+        if (on != pad_keys_[i])
+        {
+          pad_keys_[i] = on;
+          io.AddKeyEvent(kPadKeys[i], on);
+        }
+      }
+
+      float s = ui::Scale();
+      pad_scroll_ = -rs * 1100.0f * s * io.DeltaTime;
+      if (tab_ == kTabAchievements)
+      {
+        // A list without items to focus: the directions move it as well.
+        ao2::ach::ScrollBy(pad_scroll_ + (down ? 1.0f : up ? -1.0f : 0.0f) * 900.0f * s * io.DeltaTime);
+      }
+      if (!live)
+      {
+        return;
+      }
+      if (pressed & 0x0100)
+      {
+        StepTab(-1, now);
+      }
+      if (pressed & 0x0200)
+      {
+        StepTab(1, now);
+      }
+      if ((pressed & 0x2000) || ((b & 0x0030) == 0x0030 && (pressed & 0x0030)))
+      {
+        BeginClose();
+      }
+    }
+
+    // A frame that glides to the focused item; remembers that item for Hovering and the tip.
+    void DrawPadFocus(ImVec2 clip_mn, ImVec2 clip_mx, float a, bool live)
+    {
+      ImGuiContext &g = *ImGui::GetCurrentContext();
+      g_pad_focus_valid = g_pad_mode && g.NavWindow && g.NavId && g.NavIdIsAlive;
+      if (!g_pad_focus_valid)
+      {
+        // The item went (a list changed), or nothing was ever focused here.
+        pad_focus_first_ = g_pad_mode && live;
+        pad_ring_on_ = false;
+        return;
+      }
+      ImRect r = ImGui::WindowRectRelToAbs(g.NavWindow, g.NavWindow->NavRectRel[ImGuiNavLayer_Main]);
+      g_pad_focus_mn = r.Min;
+      g_pad_focus_mx = r.Max;
+      float s = ui::Scale();
+      ImVec2 mn(r.Min.x - 3.0f * s, r.Min.y - 3.0f * s), mx(r.Max.x + 3.0f * s, r.Max.y + 3.0f * s);
+      if (!pad_ring_on_)
+      {
+        pad_ring_on_ = true;
+        pad_ring_mn_ = mn;
+        pad_ring_mx_ = mx;
+      }
+      pad_ring_mn_ = ImVec2(ui::Approach(pad_ring_mn_.x, mn.x, 30.0f), ui::Approach(pad_ring_mn_.y, mn.y, 30.0f));
+      pad_ring_mx_ = ImVec2(ui::Approach(pad_ring_mx_.x, mx.x, 30.0f), ui::Approach(pad_ring_mx_.y, mx.y, 30.0f));
+      ImDrawList *fg = ImGui::GetForegroundDrawList();
+      float rounding = std::min((pad_ring_mx_.y - pad_ring_mn_.y) * 0.36f, 16.0f * s);
+      fg->PushClipRect(clip_mn, clip_mx, true);
+      fg->AddRectFilled(pad_ring_mn_, pad_ring_mx_, ui::Fade(ui::kAccentLight, 0.08f * a), rounding);
+      fg->AddRect(pad_ring_mn_, pad_ring_mx_, ui::Fade(ui::kAccentLight, a), rounding, ImDrawFlags_None, 2.0f * s);
+      fg->PopClipRect();
     }
 
     // A scrolling child window over [mn, mx], back at its top when `reset`
@@ -1180,17 +1481,34 @@ namespace
       ImGui::SetCursorScreenPos(mn);
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
       ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 6.0f * s);
-      ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 0.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 3.0f * s);
       ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ui::Fade(ui::kWhite, 0.04f));
       ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ui::Fade(ui::kAccent, 0.45f));
       ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ui::Fade(ui::kAccent, 0.7f));
       ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, ui::kAccent);
-      if (ImGui::BeginChild(id, ImVec2(mx.x - mn.x, mx.y - mn.y), ImGuiChildFlags_None,
+      if (ImGui::BeginChild(id, ImVec2(mx.x - mn.x, mx.y - mn.y), ImGuiChildFlags_NavFlattened,
                             ImGuiWindowFlags_NoBackground))
       {
         if (reset)
         {
           ImGui::SetScrollY(0.0f);
+        }
+        if (pad_focus_first_)
+        {
+          // SetKeyboardFocusHere without its activating: a text field would take the pad's directions.
+          pad_focus_first_ = false;
+          ImGuiContext &g = *ImGui::GetCurrentContext();
+          ImGui::SetNavWindow(g.CurrentWindow);
+          ImGui::NavMoveRequestSubmit(ImGuiDir_None, ImGuiDir_Down,
+                                      ImGuiNavMoveFlags_IsTabbing | ImGuiNavMoveFlags_FocusApi |
+                                          ImGuiNavMoveFlags_NoSetNavCursorVisible,
+                                      ImGuiScrollFlags_KeepVisibleEdgeX | ImGuiScrollFlags_KeepVisibleEdgeY);
+          g.NavTabbingDir = 1;
+          g.NavTabbingCounter = 1;
+        }
+        if (pad_scroll_ != 0.0f && ImGui::IsWindowFocused())
+        {
+          ImGui::SetScrollY(ImGui::GetScrollY() + pad_scroll_);
         }
         ImVec2 o = ImGui::GetCursorScreenPos();
         float w = ImGui::GetContentRegionAvail().x - 14.0f * s;
@@ -1210,8 +1528,20 @@ namespace
       float s = ui::Scale();
       ImDrawList *dl = ImGui::GetWindowDrawList();
       float x0 = o.x, x1 = o.x + w, y = o.y;
-      const float row_h = 52.0f * s, chip_h = 32.0f * s, gap = 6.0f * s;
-      const float label_w = 260.0f * s;
+      const float row_h = 60.0f * s, chip_h = 36.0f * s, gap = 2.0f * s, track = 3.0f * s, edge = 12.0f * s;
+      const float label_w = 290.0f * s;
+      // The rows of a section share one rounded back, with hairlines between them.
+      auto group = [&](float yy, int rows) {
+        ImVec2 mn(x0, yy), mx(x1, yy + row_h * float(rows));
+        float gr = 16.0f * s;
+        dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.035f * a), gr);
+        dl->AddRect(mn, mx, ui::Fade(ui::kWhite, 0.07f * a), gr, ImDrawFlags_None, 1.0f * s);
+        for (int i = 1; i < rows; ++i)
+        {
+          float ly = yy + row_h * float(i);
+          dl->AddLine(ImVec2(x0 + 20.0f * s, ly), ImVec2(x1 - 20.0f * s, ly), ui::Fade(ui::kWhite, 0.07f * a), 1.0f * s);
+        }
+      };
       // A row's back, label and note; the hovered one's help shows as a tip.
       auto row = [&](const char *id, int info, const char *label, const char *note, float &yy) {
         ImVec2 mn(x0, yy), mx(x1, yy + row_h);
@@ -1220,7 +1550,12 @@ namespace
         {
           tip_ = info;
         }
-        RowBack(dl, mn, mx, Eased(id, hovered), a);
+        float h = Eased(id, hovered);
+        if (h > 0.01f)
+        {
+          dl->AddRectFilled(ImVec2(mn.x + 4.0f * s, mn.y + 4.0f * s), ImVec2(mx.x - 4.0f * s, mx.y - 4.0f * s),
+                            ui::Fade(ui::kWhite, 0.05f * h * a), 12.0f * s);
+        }
         float ty = mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
         if (note)
         {
@@ -1234,6 +1569,12 @@ namespace
       for (int section = 0; section < 2; ++section)
       {
         y = Section(dl, x0, x1, y, Tr(section == 0 ? "Display" : "Effects"), a);
+        int in_section = 0;
+        for (int i = 0; i < ao2::gfxmenu::SettingCount(); ++i)
+        {
+          in_section += ao2::gfxmenu::SettingSection(i) == section ? 1 : 0;
+        }
+        group(y, in_section);
         for (int i = 0; i < ao2::gfxmenu::SettingCount(); ++i)
         {
           if (ao2::gfxmenu::SettingSection(i) != section)
@@ -1252,33 +1593,36 @@ namespace
             widths[c] = ChipWidth(Tr(ao2::gfxmenu::ChoiceName(i, c)));
             total += widths[c] + (c ? gap : 0.0f);
           }
-          float room = x1 - 12.0f * s - (x0 + label_w);
+          float room = x1 - edge - 2.0f * track - (x0 + label_w);
           if (total > room)
           {
             std::fill(widths.begin(), widths.end(), (room - gap * float(n - 1)) / float(n));
             total = room;
           }
-          float cx = x1 - 12.0f * s - total, cy = y + (row_h - chip_h) * 0.5f;
+          float cx = x1 - edge - track - total, cy = y + (row_h - chip_h) * 0.5f;
+          dl->AddRectFilled(ImVec2(cx - track, cy - track), ImVec2(cx + total + track, cy + chip_h + track),
+                            ui::Fade(ui::kInk, 0.55f * a), chip_h * 0.32f + track);
           ImGui::PushID(id.c_str());
           for (int c = 0; c < n; ++c)
           {
             std::string cid = std::to_string(c);
             if (Chip(cid.c_str(), ImVec2(cx, cy), ImVec2(widths[c], chip_h), Tr(ao2::gfxmenu::ChoiceName(i, c)),
-                     c == chosen, live, a))
+                     c == chosen, live, a, true))
             {
               ao2::gfxmenu::Pick(i, c);
             }
             cx += widths[c] + gap;
           }
           ImGui::PopID();
-          y += row_h + 6.0f * s;
+          y += row_h;
         }
-        y += 18.0f * s;
+        y += 26.0f * s;
       }
 
       // Field of view (fov.cpp) and mouse (mouse_aim.cpp): saved once the
       // slider is let go (not each frame of the drag).
       y = Section(dl, x0, x1, y, Tr("View and mouse"), a);
+      group(y, int(std::size(kSliders)));
       for (int k = 0; k < int(std::size(kSliders)); ++k)
       {
         const SliderRow &sr = kSliders[k];
@@ -1286,28 +1630,28 @@ namespace
         double v = sr.get();
         char text[32];
         std::snprintf(text, sizeof(text), sr.format, v);
-        float value_w = 70.0f * s;
-        float sw = std::min(420.0f * s, x1 - 12.0f * s - value_w - (x0 + label_w));
-        float sx = x1 - 12.0f * s - value_w - sw;
+        float value_w = 84.0f * s;
+        float sw = std::min(460.0f * s, x1 - 20.0f * s - value_w - (x0 + label_w));
+        float sx = x1 - 20.0f * s - value_w - sw;
         if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live))
         {
           sr.set(v);
           slider_dirty_[k] = true;
         }
-        if (slider_dirty_[k] && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        if (slider_dirty_[k] && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !g_pad_lr_held)
         {
           slider_dirty_[k] = false;
           SaveSlider(sr);
         }
         ImVec2 ts = ui::TextSize(FontKind::kBody, text);
-        ui::Text(dl, FontKind::kBody, ImVec2(x1 - 12.0f * s - ts.x, y + (row_h - ts.y) * 0.5f - 1.0f * s),
+        ui::Text(dl, FontKind::kBody, ImVec2(x1 - 20.0f * s - ts.x, y + (row_h - ts.y) * 0.5f - 1.0f * s),
                  ui::Fade(ui::kAccentLight, a), text);
-        y += row_h + 6.0f * s;
+        y += row_h;
       }
-      y += 6.0f * s;
+      y += 16.0f * s;
       std::string reset = Upper(Tr("Game's field of view"));
       float bw = ui::CapsSize(FontKind::kLabel, reset.c_str()).x + 40.0f * s;
-      if (ui::Button("reset_fov", ImVec2(x0, y), ImVec2(bw, 36.0f * s), reset.c_str(), ui::ButtonStyle::kOutline, live,
+      if (ui::Button("reset_fov", ImVec2(x0, y), ImVec2(bw, 40.0f * s), reset.c_str(), ui::ButtonStyle::kOutline, live,
                      a))
       {
         REXCVAR_SET(ao2_fov, 70.0);
@@ -1315,11 +1659,11 @@ namespace
         SaveSlider(kSliders[0]);
         SaveSlider(kSliders[1]);
       }
-      return y + 36.0f * s + 8.0f * s;
+      return y + 40.0f * s + 8.0f * s;
     }
 
-    // The hovered settings row's help (RowHelp) by the mouse, after a moment
-    // on it.
+    // The hovered settings row's help (RowHelp) by the mouse, or by the pad's focus, after a
+    // moment on it. As wide as its lines.
     void DrawTip(float a)
     {
       double now = ImGui::GetTime();
@@ -1341,21 +1685,26 @@ namespace
       float s = ui::Scale();
       ImDrawList *fg = ImGui::GetForegroundDrawList();
       const ImGuiViewport *vp = ImGui::GetMainViewport();
-      float w = 360.0f * s, pad = 12.0f * s;
+      float wrap = 360.0f * s, pad = 12.0f * s;
       ImFont *font = ui::Font(FontKind::kSmall);
-      float th = font->CalcTextSizeA(ui::FontSize(FontKind::kSmall), FLT_MAX, w, help).y;
-      ImVec2 m = ImGui::GetMousePos();
-      ImVec2 mn(std::min(m.x + 18.0f * s, vp->Pos.x + vp->Size.x - w - 2.0f * pad), m.y + 22.0f * s);
-      ImVec2 mx(mn.x + w + 2.0f * pad, mn.y + th + 2.0f * pad);
+      ImVec2 ts = font->CalcTextSizeA(ui::FontSize(FontKind::kSmall), FLT_MAX, wrap, help);
+      float bw = std::ceil(ts.x) + 2.0f * pad, bh = ts.y + 2.0f * pad, margin = 8.0f * s;
+      // Under the mouse or the focused item, above it where there is no room.
+      ImVec2 under = g_pad_mode ? ImVec2(g_pad_focus_mn.x, g_pad_focus_mx.y + 10.0f * s)
+                                : ImVec2(ImGui::GetMousePos().x + 18.0f * s, ImGui::GetMousePos().y + 22.0f * s);
+      float above = g_pad_mode ? g_pad_focus_mn.y - 10.0f * s - bh : ImGui::GetMousePos().y - 10.0f * s - bh;
+      float right = vp->Pos.x + vp->Size.x - margin, bottom = vp->Pos.y + vp->Size.y - margin;
+      ImVec2 mn(std::max(vp->Pos.x + margin, std::min(under.x, right - bw)), under.y + bh > bottom ? above : under.y);
+      ImVec2 mx(mn.x + bw, mn.y + bh);
       float ta = a * t;
       fg->AddRectFilled(ImVec2(mn.x, mn.y + 3.0f * s), ImVec2(mx.x, mx.y + 3.0f * s), ui::Fade(ui::kInk, 0.35f * ta),
                         ui::Round(10.0f));
-      fg->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.98f * ta), ui::Round(10.0f));
-      fg->AddRect(mn, mx, ui::Fade(ui::kAccent, 0.45f * ta), ui::Round(10.0f), ImDrawFlags_None, 1.0f * s);
-      Wrapped(fg, FontKind::kSmall, ImVec2(mn.x + pad, mn.y + pad), w, ui::Fade(ui::kText, ta), help);
+      fg->AddRectFilled(mn, mx, ui::Fade(ui::kInk, 0.98f * ta), ui::Round(10.0f));
+      fg->AddRect(mn, mx, ui::Fade(ui::kWhite, 0.16f * ta), ui::Round(10.0f), ImDrawFlags_None, 1.0f * s);
+      Wrapped(fg, FontKind::kSmall, ImVec2(mn.x + pad, mn.y + pad), wrap, ui::Fade(ui::kText, ta), help);
     }
 
-    // A card with a title, a line of text    // A card with a title, a line of text, a red line under it (`warning`,
+    // A card with a title, a line of text, a red line under it (`warning`,
     // when set) and a switch; true when clicked.
     bool SwitchCard(const char *id, ImVec2 mn, ImVec2 mx, const char *title, const char *text, const char *warning,
                     bool on, bool enabled, float a, bool live)
@@ -1365,7 +1714,7 @@ namespace
       float card_h = mx.y - mn.y;
       ImGui::PushID(id);
       ImGui::SetCursorScreenPos(mn);
-      bool clicked = ImGui::InvisibleButton("##card", ImVec2(mx.x - mn.x, card_h)) && enabled && live;
+      bool clicked = ImGui::InvisibleButton("##card", ImVec2(mx.x - mn.x, card_h), ImGuiButtonFlags_EnableNav) && enabled && live;
       bool hovered = enabled && live && ImGui::IsItemHovered();
       float h = Eased("hover", hovered);
       float onf = Eased("on", on, 16.0f);
@@ -1375,11 +1724,10 @@ namespace
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
       }
       float ea = enabled ? a : 0.45f * a;
-      ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, (0.03f + 0.04f * h) * ea));
-      ui::Card(dl, mn, mx, ui::Fade(ui::kGreen, 0.06f * onf * ea));
-      dl->AddRect(mn, mx, ui::Fade(ui::Mix(ui::kWhite, ui::kGreen, onf), (0.10f + 0.25f * onf + 0.15f * h) * ea), 0.0f,
+      ui::Card(dl, mn, mx, ui::Fade(ui::kWhite, (0.04f + 0.04f * h) * ea));
+      dl->AddRectFilled(mn, mx, ui::Fade(ui::kAccent, 0.07f * onf * ea), ui::Round(14.0f));
+      dl->AddRect(mn, mx, ui::Fade(ui::Mix(ui::kWhite, ui::kAccent, onf), (0.08f + 0.30f * onf + 0.12f * h) * ea), ui::Round(14.0f),
                   ImDrawFlags_None, 1.0f * s);
-      ui::Bar(dl, mn, mx, ui::Fade(ui::Mix(ui::kMuted, ui::kGreen, onf), ea));
       float sw = 50.0f * s;
       dl->PushClipRect(mn, ImVec2(mx.x - sw - 30.0f * s, mx.y), true);
       ui::Text(dl, FontKind::kHeading, ImVec2(mn.x + 22.0f * s, mn.y + 18.0f * s), ui::Fade(ui::kText, ea), title);
@@ -1714,12 +2062,14 @@ namespace
         float value_w = 80.0f * s;
         float sw = std::min(420.0f * s, x1 - 12.0f * s - value_w - (x0 + label_w));
         float sx = x1 - 12.0f * s - value_w - sw;
-        if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live))
+        // Cash per purchase goes in twentieths: its own step, a smaller one would round back.
+        if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live,
+                   k == kBotShareRow ? 0.05 : 0.0))
         {
           sr.set(v);
           bot_slider_dirty_[k] = true;
         }
-        if (bot_slider_dirty_[k] && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        if (bot_slider_dirty_[k] && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !g_pad_lr_held)
         {
           bot_slider_dirty_[k] = false;
           SaveBotValue(sr.cvar, sr.get());
@@ -2187,7 +2537,7 @@ namespace
           ImVec2 rmn(o.x, y), rmx(o.x + w, y + rh);
           ImGui::PushID(i);
           ImGui::SetCursorScreenPos(rmn);
-          if (ImGui::InvisibleButton("##mission", ImVec2(w, rh)) && live)
+          if (ImGui::InvisibleButton("##mission", ImVec2(w, rh), ImGuiButtonFlags_EnableNav) && live)
           {
             mission_ = i;
             fresh_list_ = true;
@@ -2268,7 +2618,7 @@ namespace
           ImVec2 rmn(o.x + (1.0f - rt) * 24.0f * s, yy), rmx(rmn.x + w, yy + rh);
           ImGui::PushID(c.name.c_str());
           ImGui::SetCursorScreenPos(ImVec2(o.x, yy));
-          if (ImGui::InvisibleButton("##checkpoint", ImVec2(w, rh)) && live)
+          if (ImGui::InvisibleButton("##checkpoint", ImVec2(w, rh), ImGuiButtonFlags_EnableNav) && live)
           {
             selected_ = c.name;
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -2347,8 +2697,8 @@ namespace
     bool fresh_ = true;       // the tab's first frame: its content starts over
     bool fresh_list_ = false; // another mission picked
     double opened_ = -1.0, closing_ = -1.0, tab_changed_ = 0.0, list_shown_ = 0.0;
-    float mark_y_ = -1.0f, mark_target_ = 0.0f; // the sidebar's current section block (y)
-    float mark_h_ = -1.0f;                      // ... and its height (an Online page's is lower)
+    float mark_x_ = -1.0f, mark_target_ = 0.0f;       // the sections' bar: the current one's block (x)
+    float mark_w_ = -1.0f, mark_width_target_ = 0.0f; // ... and its width
     // Online: the games list's refresh, the join under way.
     double servers_refreshed_ = -100.0;
     char code_text_[24] = {};       // the host's code (Join with code)
@@ -2656,6 +3006,10 @@ namespace ao2::menu
       // Replaces the SDK's callback (window focus; with its overlays open,
       // whether ImGui wants the mouse).
       input->SetActiveCallback([window, sdk_drawer]() {
+        if (g_pad_reading)
+        {
+          return true; // the menu's own read (ReadPads)
+        }
         if (!window->HasFocus() || Blocking())
         {
           return false;
@@ -2672,6 +3026,96 @@ namespace ao2::menu
   bool IsOpen()
   {
     return Blocking();
+  }
+
+  void OnPadPoll(uint32_t user, uint8_t *state)
+  {
+    if (user >= 4 || Blocking())
+    {
+      return; // the game gets an untouched pad anyway
+    }
+    constexpr uint16_t kPair = 0x0030; // Select, Start
+    using Clock = std::chrono::steady_clock;
+    static constexpr auto kWait = std::chrono::milliseconds(100), kTap = std::chrono::milliseconds(50);
+    struct Chord
+    {
+      bool latched = false;  // the pair was pressed: kept from the game until let go
+      uint16_t waiting = 0;  // held back for the other one to come
+      uint16_t passing = 0;  // given to the game
+      uint16_t tap = 0;      // let go while waiting: the game still gets its press
+      Clock::time_point since, tap_until;
+    };
+    static Chord chords[4];
+    uint16_t b = uint16_t(state[4] << 8 | state[5]);
+    auto write = [&](uint16_t v) {
+      state[4] = uint8_t(v >> 8);
+      state[5] = uint8_t(v);
+    };
+
+    // After the menu: nothing until the hands are off. Two polls in a row, as one may have started
+    // while the menu was open and read an empty pad.
+    int swallow = g_pad_swallow[user].load(std::memory_order_relaxed);
+    if (swallow > 0)
+    {
+      bool off = b == 0 && state[6] < 30 && state[7] < 30;
+      g_pad_swallow[user].store(off ? swallow - 1 : 2, std::memory_order_relaxed);
+      write(0);
+      state[6] = 0;
+      state[7] = 0;
+      chords[user] = Chord{};
+      return;
+    }
+    if (!REXCVAR_GET(ao2_debug_menu_pad))
+    {
+      return;
+    }
+
+    Chord &c = chords[user];
+    uint16_t pair = b & kPair;
+    auto now = Clock::now();
+    if (c.latched)
+    {
+      c.latched = pair != 0;
+      write(b & uint16_t(~kPair));
+      return;
+    }
+    if (pair == kPair)
+    {
+      c = Chord{};
+      c.latched = true;
+      write(b & uint16_t(~kPair));
+      if (g_window)
+      {
+        g_window->app_context().CallInUIThreadDeferred([] {
+          g_open_by_pad = !g_menu;
+          Toggle();
+          g_open_by_pad = false;
+        });
+      }
+      return;
+    }
+    c.passing &= pair;
+    if (c.waiting && !(pair & c.waiting))
+    {
+      c.tap = c.waiting;
+      c.tap_until = now + kTap;
+      c.waiting = 0;
+    }
+    if (!c.waiting && (pair & uint16_t(~c.passing)))
+    {
+      c.waiting = pair & uint16_t(~c.passing);
+      c.since = now;
+    }
+    if (c.waiting && now - c.since >= kWait)
+    {
+      c.passing |= c.waiting;
+      c.waiting = 0;
+    }
+    if (c.tap && now >= c.tap_until)
+    {
+      c.tap = 0;
+    }
+    write(uint16_t((b & ~kPair) | c.passing | c.tap));
   }
 
   void ConfigureFonts(ImFontAtlas *atlas)

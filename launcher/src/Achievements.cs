@@ -342,7 +342,7 @@ namespace AO2Launcher
             }
             else
             {
-                Outline(g, Color.FromArgb(50, Paper), ir);
+                OutlineRound(g, Color.FromArgb(50, Paper), ir, 6);
             }
             Color labelColor = selected ? PaperHi : earned ? TextLight : TextDim;
             var lfmt = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };

@@ -78,6 +78,7 @@ REXCVAR_DEFINE_DOUBLE(ao2_achievement_sound, 0.4, "General",
 
 namespace
 {
+  float g_scroll_by = 0.0f; // ScrollBy, UI thread
   using rex::system::XLanguage;
 
   struct Section
@@ -879,6 +880,8 @@ namespace
         content_h += head_h + float(g.items.size()) * (row_h + gap) + 14.0f * s;
       }
       float max_scroll = std::max(0.0f, content_h - list_h);
+      scroll_target += g_scroll_by;
+      g_scroll_by = 0.0f;
       if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
       {
         const ImGuiIO &io = ImGui::GetIO();
@@ -1089,6 +1092,11 @@ namespace ao2::ach
       ++total;
       got += am.IsUnlocked(info.id) ? 1 : 0;
     }
+  }
+
+  void ScrollBy(float pixels)
+  {
+    g_scroll_by += pixels;
   }
 
   void DrawTab(ImVec2 min, ImVec2 max, bool appearing)

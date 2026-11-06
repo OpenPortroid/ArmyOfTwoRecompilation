@@ -234,18 +234,21 @@ namespace AO2Launcher
         // Profiles tab.
         void DrawProfileChip(Graphics g)
         {
-            var r = new RectangleF(24, 538, 232, 50);
+            var r = new RectangleF(DockR.X + 10, DockR.Y + 10, 262, DockR.Height - 20);
             bool hv = IsHover("profile");
             if (hv)
             {
-                Fill(g, Color.FromArgb(14, 255, 255, 255), r);
+                FillRound(g, Color.FromArgb(24, 255, 255, 255), r, 14);
             }
             var fmt = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            string head = L.T("PROFILE");
-            float hw = CapsWidth(g, head, fBack, 1.6f);
-            Caps(g, head, fBack, Color.FromArgb(130, 142, 160), new RectangleF(r.X + 10, r.Y + 6, hw, 18), 1.6f, StringAlignment.Near);
-            DrawText(g, ProfileName(S["profile"]), fLabel, hv ? PaperHi : TextLight, new RectangleF(r.X + 18 + hw, r.Y + 4, r.Width - hw - 24, 22), fmt);
-            DrawText(g, SummaryLine(S["profile"]), fSmall, hv ? Paper : TextDim, new RectangleF(r.X + 10, r.Y + 26, r.Width - 16, 20), fmt);
+            Profiles.Summary s = SummaryOf(S["profile"]);
+            float x = r.X + 14, w = r.Width - 24;
+            DrawText(g, Sentence(L.T("PROFILE")) + " " + ProfileName(S["profile"]), fSmall, Paper, new RectangleF(x, r.Y + 18, w, 22), fmt);
+            DrawText(g, s.Map ?? L.T("no saves yet"), fHero, PaperHi, new RectangleF(x, r.Y + 40, w, 40), fmt);
+            if (s.Money >= 0)
+            {
+                DrawText(g, MoneyText(s.Money), fNav, Accent, new RectangleF(x, r.Y + 80, w, 24), fmt);
+            }
             AddHot(r, "profile", () =>
             {
                 SetScreen(UiScreen.Settings);

@@ -1,4 +1,4 @@
-// cutscene_skip.cpp - Skip cutscenes and movies with Enter or Space.
+// cutscene_skip.cpp - Skip cutscenes and movies with Enter, Space or the pad's Start.
 //
 // The game has two kinds of cutscenes, and the skip key ends whichever is
 // playing:
@@ -55,7 +55,8 @@
 #include <rex/ui/window_listener.h>
 
 REXCVAR_DEFINE_BOOL(ao2_skip_cutscenes, true, "Input",
-                    "Enter or Space skips the playing cutscene or movie (in online co-op for both players)");
+                    "Enter, Space or the pad's Start skips the playing cutscene or movie (in online co-op for both "
+                    "players)");
 REXCVAR_DEFINE_BOOL(ao2_skip_unskippable, true, "Input",
                     "The skip key also ends cutscenes and movies the game itself does not let skip "
                     "(startup logos, most in-engine cinematics)");
@@ -327,6 +328,18 @@ namespace
     return player && LoadU32(base, player + 88);
   }
 
+  // This machine's first player watches an in-engine cinematic.
+  bool InCinematic(PPCContext &ctx, uint8_t *base)
+  {
+    uint32_t engine = LoadU32(base, kEngine);
+    uint32_t client = engine ? LoadU32(base, engine + 772) : 0;
+    uint32_t vtable = client ? LoadU32(base, client) : 0;
+    uint32_t local_player =
+        vtable ? CallGuest(ctx, base, LoadU32(base, vtable + 268), ScratchStackTop(ctx), client, 0) : 0;
+    uint32_t controller = local_player ? LoadU32(base, local_player + 64) : 0;
+    return controller && (LoadU32(base, controller + 808) & kCinematicModeBit);
+  }
+
   // Online co-op: the lockstep simulates frames (its counter moves). It
   // stands still while the level loads and its intro movie plays.
   bool LockstepRunning(const uint8_t *base)
@@ -389,6 +402,48 @@ namespace ao2::skip
   void Request()
   {
     g_request.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
+  }
+
+  void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t user, uint8_t *state)
+  {
+    if (user >= 4 || !REXCVAR_GET(ao2_skip_cutscenes))
+    {
+      return;
+    }
+    // Both the game thread and a movie's thread poll: one press is one skip.
+    static std::atomic<bool> down[4];
+    static std::atomic<bool> taken[4]; // this press skipped: kept from the game until let go
+    bool start = (state[5] & kButtonStart) != 0;
+    if (!start)
+    {
+      down[user].store(false, std::memory_order_relaxed);
+      taken[user].store(false, std::memory_order_relaxed);
+      return;
+    }
+    if (!down[user].exchange(true, std::memory_order_relaxed))
+    {
+      bool skipped;
+      if (ao2::coop::InNetworkGame(base))
+      {
+        // The skip goes to both machines through Poll, as the keys'.
+        skipped = MoviePlaying(base) || InCinematic(ctx, base);
+        if (skipped)
+        {
+          Request();
+        }
+      }
+      else
+      {
+        // SkipMovie: false when no movie plays (a menu); SkipMatinee: when no cinematic is on.
+        bool force = REXCVAR_GET(ao2_skip_unskippable);
+        skipped = SkipMovie(ctx, base, force) || (force && SkipMatinee(ctx, base));
+      }
+      taken[user].store(skipped, std::memory_order_relaxed);
+    }
+    if (taken[user].load(std::memory_order_relaxed))
+    {
+      state[5] &= uint8_t(~kButtonStart);
+    }
   }
 
   void Poll(PPCContext &ctx, uint8_t *base)

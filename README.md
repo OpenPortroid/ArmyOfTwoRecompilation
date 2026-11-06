@@ -60,7 +60,7 @@ what it says it is, and a package with game files in it is not ours.
 - Achievements with on-screen notices
 - Keyboard and mouse support, including keyboard key glyphs in on-screen button prompts
 - Key and gamepad rebinding inside the game (Options → Graphics → Controls) and in the launcher
-- Skippable pre-rendered cutscenes using the Enter or Space key
+- Skippable pre-rendered cutscenes using the Enter or Space key, or Start on a gamepad
 - Frame rate overlay on F2 (off, simple, detailed)
 - The debug menu (F1): graphics, field of view and mouse settings, achievements, invites, cheats.
 
@@ -84,7 +84,8 @@ what it says it is, and a package with game files in it is not ours.
 | R3                    | MMB              | R3          |
 | GPS                   | Tab              | Back        |
 | Pause                 | Esc              | Start       |
-| Port debug menu       | F1               |             |
+| Skip a cutscene       | Enter, Space     | Start       |
+| Port debug menu       | F1               | Back + Start |
 | Frame rate overlay    | F2               |             |
 | Accept an invite      | F6               |             |
 

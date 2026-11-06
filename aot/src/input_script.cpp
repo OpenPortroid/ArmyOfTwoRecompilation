@@ -35,6 +35,7 @@
 
 #include "autopilot.h"
 #include "cutscene_skip.h"
+#include "debug_menu.h"
 #include "graphics_menu.h"
 #include "menu_mouse.h"
 #include "mouse_aim.h"
@@ -524,6 +525,11 @@ extern "C" REX_FUNC(sub_82B07AF0)
   uint32_t state = ctx.r4.u32;
   __imp__sub_82B07AF0(ctx, base);
   user &= 0xFF;
+  if (state && ctx.r3.u32 == 0)
+  {
+    ao2::menu::OnPadPoll(user, base + state);
+    ao2::skip::OnPadPoll(ctx, base, user, base + state);
+  }
   // Scripted input and the autopilot drive player 1; the mouse (the right
   // stick where it does not aim) and W / S at the wheel go to the player with
   // the keyboard - another one in split-screen.

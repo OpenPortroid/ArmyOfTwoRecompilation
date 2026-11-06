@@ -49,6 +49,7 @@ namespace AO2Launcher
             { "host_ip", "" },
             { "gamertag", "" },
             { "split_screen", "0" },
+            { "solo", "0" },
             { "gamertag2", "" },
             { "p1_input", "keyboard" },
             { "p2_input", "pads" },

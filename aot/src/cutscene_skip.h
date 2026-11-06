@@ -18,6 +18,11 @@ namespace ao2::skip
   // Asks for a skip as if the key was pressed (scripted input).
   void Request();
 
+  // The game's pad poll, `state` the XINPUT_STATE it gets (big-endian): Start skips what Enter and
+  // Space skip. The game does not see a Start that skipped something, so it opens no pause menu; with
+  // nothing to skip it gets Start as ever.
+  void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t user, uint8_t *state);
+
   // Game thread, engine pad polling: performs a pending skip request.
   void Poll(PPCContext &ctx, uint8_t *base);
 

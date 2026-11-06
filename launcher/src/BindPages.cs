@@ -409,7 +409,7 @@ namespace AO2Launcher
 
         float RowsView
         {
-            get { return DescTop - 6 - RowsTop; }
+            get { return RowsBottom - RowsTop; }
         }
 
         bool RowShown(Row r)
@@ -455,7 +455,7 @@ namespace AO2Launcher
             {
                 return;
             }
-            float x = ColX + ColW + 12, top = RowsTop, h = RowsView;
+            float x = ColX + ColW + 6, top = RowsTop, h = RowsView;
             float th = Math.Max(24, h * h / (h + maxScroll));
             float ty = top + (h - th) * scroll / maxScroll;
             DrawGrabBar(g, new RectangleF(x, top, 3, h), ty, th, 30, 150, f =>
@@ -580,8 +580,8 @@ namespace AO2Launcher
             RectangleF box = DropRect();
             // Everything else: a click there only closes the list.
             AddHot(new RectangleF(0, 0, W, H), "drop_off", CloseDrop);
-            Fill(g, InkDeep, box);
-            Outline(g, Color.FromArgb(120, Paper), box);
+            FillRound(g, InkDeep, box, 12);
+            OutlineRound(g, Color.FromArgb(120, Accent), box, 12);
             var fmt = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
             int current = Array.IndexOf(dropRow.Values, S[dropRow.Key]);
             for (int i = 0; i < dropRow.Values.Length; i++)
@@ -600,7 +600,7 @@ namespace AO2Launcher
                 {
                     DrawText(g, "✓", fLabel, c, new RectangleF(ir.X + 10, ir.Y, 20, ir.Height), fmt);
                 }
-                string text = dropRow.DropName != null ? dropRow.DropName(i) : dropRow.ChoiceName(i);
+                string text = Sentence(dropRow.DropName != null ? dropRow.DropName(i) : dropRow.ChoiceName(i));
                 DrawText(g, text, fLabel, c, new RectangleF(ir.X + 32, ir.Y, ir.Width - 40, ir.Height), fmt);
                 int pick = i;
                 AddHot(ir, "drop" + i, () => PickDrop(pick));
@@ -668,8 +668,8 @@ namespace AO2Launcher
             }
 
             var box = new RectangleF(vx, r.Y + 5, ValueW - 46, r.H - 10);
-            Fill(g, TextBoxBack, box);
-            Outline(g, cap ? Paper : selected ? Color.FromArgb(110, Paper) : Color.FromArgb(50, Paper), box);
+            FillRound(g, TextBoxBack, box, 8);
+            OutlineRound(g, cap ? Accent : selected ? Color.FromArgb(120, Accent) : Color.FromArgb(44, 255, 255, 255), box, 8);
             string keys = cap ? CaptureText(r) : Bindings.Display(S[r.Key]);
             DrawText(g, keys, cap ? fBack : fSmall, cap ? PaperHi : valColor, new RectangleF(box.X + 4, box.Y, box.Width - 8, box.Height), CenterFmt());
             AddHot(rr, id, () => Change(r, 0), index);

@@ -1,6 +1,7 @@
 // debug_menu.h - The F1 debug menu (see debug_menu.cpp).
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -31,6 +32,11 @@ namespace ao2::menu
 
   // Any thread: the menu is open (the game gets no input).
   bool IsOpen();
+
+  // The game's pad poll, `state` the XINPUT_STATE it gets (big-endian): Select + Start
+  // toggles the menu. Neither reaches the game as part of the pair, so a single Start or Select
+  // comes ~0.1 s late; after the menu the buttons still held stay away from the game.
+  void OnPadPoll(uint32_t user, uint8_t *state);
 
   // ImGui font setup (ReXApp::OnConfigureFonts): a readable UI font with
   // Cyrillic.

@@ -1,6 +1,6 @@
 // ui_theme.h - The port's own screens in the launcher's look (see ui_theme.cpp):
-// the cover's deep navy, a warm paper accent, hairlines, letter-spaced
-// capitals, and small animations.
+// rounded panels of dark glass, one cold accent, sentence case, and small
+// animations.
 #pragma once
 
 #include <imgui.h>
@@ -32,16 +32,29 @@ namespace ao2::ui
   // when the theme's could not be loaded) and its size on this screen.
   ImFont *Font(FontKind kind);
   float FontSize(FontKind kind);
-  // The screen's scale against 1080 lines.
+  // The screen's scale against 1080 lines, and the zoom of what is being drawn.
   float Scale();
+  // While alive, Scale() and the fonts are `zoom` times bigger (1..): a screen that wants to be larger
+  // than the others (its text stays sharp up to kBakedZoom).
+  constexpr float kBakedZoom = 1.3f;
+  struct ZoomScope
+  {
+    explicit ZoomScope(float zoom);
+    ~ZoomScope();
+    ZoomScope(const ZoomScope &) = delete;
+    ZoomScope &operator=(const ZoomScope &) = delete;
+
+  private:
+    float previous_;
+  };
 
   // Colours (alpha 255).
-  constexpr ImU32 kAccent = IM_COL32(224, 220, 212, 255);      // the cover's paper
-  constexpr ImU32 kAccentLight = IM_COL32(246, 244, 238, 255);
-  constexpr ImU32 kInk = IM_COL32(6, 16, 34, 255);             // text on the accent
-  constexpr ImU32 kPanel = IM_COL32(10, 24, 48, 255);
-  constexpr ImU32 kText = IM_COL32(220, 226, 236, 255);
-  constexpr ImU32 kMuted = IM_COL32(140, 152, 170, 255);
+  constexpr ImU32 kAccent = IM_COL32(143, 211, 255, 255);
+  constexpr ImU32 kAccentLight = IM_COL32(244, 247, 251, 255);
+  constexpr ImU32 kInk = IM_COL32(7, 16, 31, 255);             // text on the accent
+  constexpr ImU32 kPanel = IM_COL32(14, 26, 48, 255);
+  constexpr ImU32 kText = IM_COL32(226, 232, 240, 255);
+  constexpr ImU32 kMuted = IM_COL32(176, 188, 204, 255);
   constexpr ImU32 kGreen = IM_COL32(120, 200, 140, 255);
   constexpr ImU32 kRed = IM_COL32(232, 104, 96, 255);
   constexpr ImU32 kWhite = IM_COL32(255, 255, 255, 255);
@@ -49,7 +62,7 @@ namespace ao2::ui
   // A corner radius for `px` (at 1080 lines): the boxes' slight rounding.
   float Round(float px);
   // A row's or box's back (`fill`, with a soft shadow), its frame, and the
-  // state bar at its left edge.
+  // state mark inside its left edge.
   void Card(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 fill);
   void Frame(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col, float thickness);
   void Bar(ImDrawList *dl, ImVec2 min, ImVec2 max, ImU32 col);
@@ -66,12 +79,10 @@ namespace ao2::ui
 
   ImVec2 TextSize(FontKind kind, const char *text);
   void Text(ImDrawList *dl, FontKind kind, ImVec2 pos, ImU32 col, const char *text);
-  // Capitals with extra space between the letters (titles, labels, buttons),
-  // like the launcher's captions.
+  // Titles, labels, buttons: text keyed in capitals is drawn in sentence case
+  // (abbreviations and words with digits stay), like the launcher's captions.
   ImVec2 CapsSize(FontKind kind, const char *text);
   void Caps(ImDrawList *dl, FontKind kind, ImVec2 pos, ImU32 col, const char *text);
-  // Military corner brackets around a rectangle.
-  void Corners(ImDrawList *dl, ImVec2 min, ImVec2 max, float length, float thickness, ImU32 col);
   // Diagonal hazard stripes filling a rectangle, scrolled by `offset` px.
   void Stripes(ImDrawList *dl, ImVec2 min, ImVec2 max, float width, float offset, ImU32 col);
   // A spinning arc (busy).

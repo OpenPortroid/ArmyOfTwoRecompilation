@@ -47,6 +47,9 @@ class InputSystem : public system::IInputSystem {
   X_RESULT GetState(uint32_t user_index, X_INPUT_STATE* out_state);
   X_RESULT SetState(uint32_t user_index, X_INPUT_VIBRATION* vibration);
   X_RESULT GetKeystroke(uint32_t user_index, uint32_t flags, X_INPUT_KEYSTROKE* out_keystroke);
+  /// Every physical pad merged, whoever it is assigned to and without the
+  /// player's button remap; returns how many there are.
+  uint32_t ReadPads(X_INPUT_GAMEPAD* out);
 
  private:
   /// Re-enumerates every driver and notifies the assignment when the set
@@ -107,6 +110,11 @@ extern "C" uint32_t rex_input_keyboard_user();
 /// keyboard and mouse stay player 1's; 0 gives it back. Returns 1 when the
 /// assignment is the automatic one with exactly one gamepad.
 extern "C" uint32_t rex_input_pad_guest(uint32_t on);
+
+/// InputSystem::ReadPads for the game's own screens, by name (GetProcAddress):
+/// `triggers` holds left and right, `thumbs` lx, ly, rx, ry. A driver still asks
+/// its active callback, which must let this call through.
+extern "C" uint32_t rex_input_read_pads(uint16_t* buttons, uint8_t* triggers, int16_t* thumbs);
 
 /// The gamepads (physical devices) the assignment last saw.
 extern "C" uint32_t rex_input_gamepads();

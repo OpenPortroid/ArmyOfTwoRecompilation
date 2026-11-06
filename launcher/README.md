@@ -3,12 +3,14 @@
 `bin\ArmyOfTwoLauncher.exe` is a single file and needs only .NET Framework 4.x (built into Windows 10/11).
 Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itself).
 
-- The look (`src\Skin.cs`): flat and minimal in the cover's tones — deep navy, warm grey paper for the main button
-  and accents, hairlines, letter-spaced Segoe UI Semibold captions. The cover and the logo are baked into cached
-  backdrops, so a repaint takes a few milliseconds (`--bench=<file>` measures it per screen).
-- Two screens. **Main**: the art and logo, then Settings, Play and Exit. **Settings**: the Graphics, Controls, Keyboard,
-  Gamepad, Split-Screen, Network and Advanced tabs; Back returns to the main screen. A tab longer than the panel scrolls
-  (wheel, or by moving the selection).
+- The look (`src\Skin.cs`): the art behind rounded panels of dark glass, one cold accent, sentence case in Segoe UI. The cover,
+  the logo and the blur under the main screen's dock are baked into cached backdrops, so a repaint takes a few milliseconds
+  (`--bench=<file>` measures it per screen).
+- Two screens. **Main**: the art and logo, the dock with the profile, how to play (Solo: no host search; Co-op: the host search;
+  Split-Screen) and Play, Settings, Exit. **Settings**: the Graphics, Controls, Keyboard, Gamepad, Split-Screen, Network, Advanced,
+  Profiles and Achievements sections at the left, the rows in the middle, a picture (`res\preview.jpg`), the row's value and
+  its description at the right; Back returns to the main screen. A section longer than the panel scrolls (wheel, or by moving
+  the selection).
 - **Achievements** (`src\Achievements.cs`): the current profile's achievements by section (as the game's own
   Achievements page has them), icons, gamerscore and when each was earned. The names, descriptions and icons are the
   game's: the game writes them to the shared cache (`Documents\armyoftworecomp_tu2\cache\achievements`) when it

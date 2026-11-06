@@ -228,9 +228,19 @@ void RemapPad(X_INPUT_GAMEPAD& pad) {
 
 }  // namespace
 
-InputSystem::InputSystem(rex::ui::Window* window) : window_(window) {}
+namespace {
+InputSystem* g_input_system = nullptr;
+}  // namespace
 
-InputSystem::~InputSystem() = default;
+InputSystem::InputSystem(rex::ui::Window* window) : window_(window) {
+  g_input_system = this;
+}
+
+InputSystem::~InputSystem() {
+  if (g_input_system == this) {
+    g_input_system = nullptr;
+  }
+}
 
 X_STATUS InputSystem::Setup() {
   return X_STATUS_SUCCESS;
@@ -485,6 +495,31 @@ X_RESULT InputSystem::GetState(uint32_t user_index, X_INPUT_STATE* out_state) {
   return X_ERROR_SUCCESS;
 }
 
+uint32_t InputSystem::ReadPads(X_INPUT_GAMEPAD* out) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  X_INPUT_STATE merged = {};
+  uint32_t pads = 0;
+  for (size_t i = 0; i < devices_.size(); i++) {
+    if (devices_[i].synthetic) {
+      continue;
+    }
+    X_INPUT_STATE state = {};
+    if (device_owners_[i]->GetDeviceState(devices_[i].id, &state) != X_ERROR_SUCCESS) {
+      continue;
+    }
+    if (!IsNeutral(state.gamepad)) {
+      NoteLastInput(LastInput::kGamepad);
+    }
+    if (pads++ == 0) {
+      merged = state;
+    } else {
+      MergeInto(merged, state);
+    }
+  }
+  *out = merged.gamepad;
+  return pads;
+}
+
 X_RESULT InputSystem::SetState(uint32_t user_index, X_INPUT_VIBRATION* vibration) {
   SCOPE_profile_cpu_f("hid");
   std::lock_guard<std::mutex> lock(mutex_);
@@ -595,4 +630,21 @@ std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode) {
 
 extern "C" uint32_t rex_input_last_input() {
   return static_cast<uint32_t>(rex::input::GetLastInput());
+}
+
+extern "C" uint32_t rex_input_read_pads(uint16_t* buttons, uint8_t* triggers, int16_t* thumbs) {
+  rex::input::InputSystem* input = rex::input::g_input_system;
+  if (!input) {
+    return 0;
+  }
+  rex::input::X_INPUT_GAMEPAD pad = {};
+  uint32_t pads = input->ReadPads(&pad);
+  *buttons = pad.buttons;
+  triggers[0] = pad.left_trigger;
+  triggers[1] = pad.right_trigger;
+  thumbs[0] = pad.thumb_lx;
+  thumbs[1] = pad.thumb_ly;
+  thumbs[2] = pad.thumb_rx;
+  thumbs[3] = pad.thumb_ry;
+  return pads;
 }

@@ -36,6 +36,12 @@ namespace AO2Launcher
             p("The list of achievements comes from the game's files: start the game once to see it here.",
               "A lista de conquistas vem dos arquivos do jogo: inicie o jogo uma vez para vê-la aqui.");
             p("Launcher", "Launcher");
+            p("Solo", "Sozinho");
+            p("Co-op", "Cooperativo");
+            p("The campaign on this PC, with the game playing your partner.", "A campanha neste PC, com o jogo controlando seu parceiro.");
+            p("Looks for a host on the local network: joins it if there is one, otherwise you host.", "Procura um anfitrião na rede local: entra se houver um, senão você hospeda.");
+            p("Two players on one PC, each with their own half of the screen.", "Dois jogadores em um PC, cada um com sua metade da tela.");
+            p("Starting the game", "Iniciando o jogo");
             p("Installation", "Instalação");
             p("Settings", "Configurações");
             p("BACK", "VOLTAR");
