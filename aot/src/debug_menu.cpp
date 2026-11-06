@@ -2672,16 +2672,15 @@ namespace ao2::menu
         0x2010, 0x205E, // punctuation
         0,
     };
-    const char *kFont = "C:\\Windows\\Fonts\\segoeui.ttf";
-    std::error_code ec;
-    if (std::filesystem::exists(kFont, ec))
+    for (const std::string &path : ao2::ui::FontFiles({"C:\\Windows\\Fonts\\segoeui.ttf"}))
     {
       ImFontConfig config;
       config.OversampleH = 2;
       config.OversampleV = 1;
-      if (ImFont *font = atlas->AddFontFromFileTTF(kFont, 18.0f, &config, kRanges))
+      if (ImFont *font = atlas->AddFontFromFileTTF(path.c_str(), 18.0f, &config, kRanges))
       {
         ImGui::GetIO().FontDefault = font;
+        break;
       }
     }
     ao2::ui::AddFonts(atlas); // the players window (coop_invite.cpp)

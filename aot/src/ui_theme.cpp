@@ -3,10 +3,15 @@
 // Flat and quiet, in the tones of the game's cover: deep navy panels, a warm
 // paper accent, hairlines, and letter-spaced semibold capitals for titles and
 // buttons (as on the launcher, launcher\src\Skin.cs). The fonts are Windows'
-// Segoe UI and Segoe UI Semibold, both with Cyrillic. The SDK's ImGui drawers
-// bake the atlas once (no dynamic font textures), so the fonts are baked at
-// the screen's scale and drawn at the window's.
+// Segoe UI and Segoe UI Semibold, both with Cyrillic; where they are missing
+// (Wine, Proton) the Tektur font of the package, as ImGui's own has no Cyrillic.
+// The SDK's ImGui drawers bake the atlas once (no dynamic font textures), so the
+// fonts are baked at the screen's scale and drawn at the window's.
 #include "ui_theme.h"
+
+#include "utils.h"
+
+#include <rex/cvar.h>
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -17,6 +22,10 @@
 #include <cfloat>
 #include <cmath>
 #include <vector>
+
+REXCVAR_DEFINE_BOOL(ao2_ui_system_fonts, true, "Debug",
+                    "Draw the port's screens with Windows' fonts; off: with the package's Tektur, as where they are "
+                    "missing (Wine, Proton)");
 
 namespace
 {
@@ -46,16 +55,12 @@ namespace
         0x2190, 0x2193, // arrows
         0,
     };
-    for (const char *path : paths)
+    for (const std::string &path : ao2::ui::FontFiles(paths))
     {
-      if (!Exists(path))
-      {
-        continue;
-      }
       ImFontConfig config;
       config.OversampleH = 2;
       config.OversampleV = 1;
-      if (ImFont *font = atlas->AddFontFromFileTTF(path, size, &config, kRanges))
+      if (ImFont *font = atlas->AddFontFromFileTTF(path.c_str(), size, &config, kRanges))
       {
         return font;
       }
@@ -66,6 +71,27 @@ namespace
 
 namespace ao2::ui
 {
+  std::vector<std::string> FontFiles(std::initializer_list<const char *> system_paths)
+  {
+    std::vector<std::string> files;
+    if (REXCVAR_GET(ao2_ui_system_fonts))
+    {
+      for (const char *path : system_paths)
+      {
+        if (Exists(path))
+        {
+          files.emplace_back(path);
+        }
+      }
+    }
+    std::string own = (utils::RepoRoot() / "localization" / "fonts" / "Tektur.ttf").string();
+    if (Exists(own.c_str()))
+    {
+      files.push_back(std::move(own));
+    }
+    return files;
+  }
+
   void AddFonts(ImFontAtlas *atlas)
   {
     // Baked for the screen the game most likely fills.

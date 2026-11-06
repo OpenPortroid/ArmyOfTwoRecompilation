@@ -727,16 +727,13 @@ namespace ao2::perf
         0,
     };
     // Monospaced, so the figures stay put.
-    for (const char *path : {"C:\\Windows\\Fonts\\consola.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
+    for (const std::string &path :
+         ao2::ui::FontFiles({"C:\\Windows\\Fonts\\consola.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"}))
     {
-      if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES)
-      {
-        continue;
-      }
       ImFontConfig config;
       config.OversampleH = 2;
       config.OversampleV = 1;
-      if (ImFont *font = atlas->AddFontFromFileTTF(path, 16.0f, &config, kRanges))
+      if (ImFont *font = atlas->AddFontFromFileTTF(path.c_str(), 16.0f, &config, kRanges))
       {
         ImGui::GetIO().FontDefault = font;
         break;

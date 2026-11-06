@@ -5,6 +5,10 @@
 
 #include <imgui.h>
 
+#include <initializer_list>
+#include <string>
+#include <vector>
+
 namespace ao2::ui
 {
   enum class FontKind
@@ -15,6 +19,10 @@ namespace ao2::ui
     kSmall,   // Segoe UI: labels, hints
     kLabel,   // Segoe UI Semibold: captions in letter-spaced capitals (buttons, sections)
   };
+
+  // The font files to try for a screen, the best first: those of `system_paths` that exist, then the package's Tektur,
+  // for a system without them (Wine, Proton). Each has Latin-1 and Cyrillic.
+  std::vector<std::string> FontFiles(std::initializer_list<const char *> system_paths);
 
   // ImGui font setup of a drawer (inside its ConfigureFonts, its context
   // current): adds the theme's fonts to `atlas`. Leaves FontDefault alone.

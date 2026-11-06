@@ -157,7 +157,8 @@ Start `ArmyOfTwoLauncher.exe` instead. It opens the install screen if the game i
 No, and it is not planned: the launcher only accepts the European disc (title `4541084C`) with its Title Update 2.
 
 **Does it run on Linux or Steam Deck?**
-Not officially ([#44](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/44)).
+Not officially ([#44](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/44)). Proton is untested so far;
+[this page](aot/docs/proton.md) says how to try it and what to report.
 
 **My antivirus says the launcher is a virus.**
 That is a false positive ([#14](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/14)): the launcher is
