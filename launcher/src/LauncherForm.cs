@@ -1615,6 +1615,24 @@ namespace AO2Launcher
                     Desc = "Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
                            "4096 needs about 150 MB more video memory."
                 },
+                new Row
+                {
+                    Kind = RowKind.Slider, Label = "Field of view", Key = "fov", Min = 40, Max = 130, Step = 1,
+                    Format = v => v.ToString("0", CultureInfo.InvariantCulture) + "°",
+                    Desc = "How wide the view is on foot. The game's is 70°."
+                },
+                new Row
+                {
+                    Kind = RowKind.Slider, Label = "Aiming zoom", Key = "fov_aim", Min = 0, Max = 1, Step = 0.05,
+                    Format = v => v.ToString("0.00", CultureInfo.InvariantCulture),
+                    Desc = "How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope."
+                },
+                new Row
+                {
+                    Kind = RowKind.Slider, Label = "Camera shake", Key = "camera_shake", Min = 0, Max = 1, Step = 0.05,
+                    Format = v => v.ToString("0.00", CultureInfo.InvariantCulture),
+                    Desc = "How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did."
+                },
             };
 
             // Controls

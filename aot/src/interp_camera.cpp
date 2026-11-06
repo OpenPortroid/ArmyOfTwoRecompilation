@@ -41,7 +41,21 @@
 // sub_8289DC00 whenever the capture is put into the scene) gets the drawn
 // view's FOV and lens shift (fov.cpp Projection), or with ao2_fov the
 // highlighted objects were off the objects in the view. Done at the end of
-// CalcSceneView: the FOV is taken after the view point.
+// CalcSceneView: the FOV is taken after the view point. In split-screen each
+// player has a capture of its own: one belongs to the player whose view the
+// game placed it at (Capture::player), or every capture was put on the view
+// made last and the first player's GPS showed the second player's camera.
+//
+// Camera shake (ao2_camera_shake; made some players sick): only the drawn view
+// loses it. The shake is in the camera actor the simulation aims with and the
+// lockstep checks, and its random phases are drawn from the shared generator:
+// the game goes on shaking there. Two camera modifiers shake: Handycam, the
+// hand-held camera's constant bobbing and lag on foot (sub_82341DE8), and
+// ScreenShake, shots and explosions (sub_82342C30). Their ModifyCamera (vtable
+// slot 67, r3 = modifier, r4 = camera: adds to the camera's location at +684,
+// rotation at +696 and FOV at +460) tells how far it moved the view this step,
+// and GetPlayerViewPoint and the FOV take the part to lose off before they are
+// interpolated. SnipingOscillation, the scope's sway, stays: it is aiming.
 #include <windows.h>
 
 #include <algorithm>
@@ -70,6 +84,10 @@ REXCVAR_DEFINE_BOOL(ao2_predict_camera_orbit, true, "Input",
 REXCVAR_DEFINE_BOOL(ao2_interp_captures, true, "Gameplay",
                     "Scene captures that show the player's own view (the GPS overlay) follow the drawn view "
                     "(interpolated, predicted) instead of the last simulation step's");
+REXCVAR_DEFINE_DOUBLE(ao2_camera_shake, 1.0, "Gameplay",
+                      "How much of the game's camera shake is drawn: 1 = all of it, 0 = none. Only the drawn view, "
+                      "the game state is not changed")
+    .range(0.0, 1.0);
 
 namespace
 {
@@ -141,7 +159,8 @@ namespace
     uint32_t component = 0;
     uint32_t step = 0;     // the last step the game moved it on
     bool has_ours = false; // `ours` was written to it
-    bool follows = false;  // it shows the player's view
+    bool follows = false;  // it shows the view of `player`
+    uint32_t player = 0;   // the local player
     float ours[16] = {};
     // The drawn projection against the game's (fov::Projection) that
     // sub_8289DC00 gives it.
@@ -150,6 +169,19 @@ namespace
   Capture g_captures[8];
 
   thread_local uint32_t t_view_player = 0; // the local player in CalcSceneView
+
+  // What a shaking modifier (Handycam, ScreenShake; a camera has up to two of
+  // each) did to its camera's view on the last step. Game thread.
+  struct Shake
+  {
+    uint32_t modifier = 0;
+    uint32_t controller = 0; // the camera's CurrentPlayerController
+    uint32_t step = 0;
+    float location[3] = {};
+    float rotation[3] = {};
+    float fov = 0.0f;
+  };
+  Shake g_shakes[8];
 
   // The views GetPlayerViewPoint saw, for UpdateCaptures at the end of
   // CalcSceneView.
@@ -390,7 +422,7 @@ namespace
   // Puts the scene captures that show the player's view onto the drawn view.
   // `sim` / `sim_prev` = the view matrices of the step (and the one before,
   // or null), `drawn` = the drawn view, `moved` = it differs from the step's.
-  void UpdateCaptures(PPCContext &ctx, uint8_t *base, const float sim[16], const float *sim_prev,
+  void UpdateCaptures(PPCContext &ctx, uint8_t *base, uint32_t player, const float sim[16], const float *sim_prev,
                       const float drawn[16], bool moved)
   {
     if (!REXCVAR_GET(ao2_interp_captures))
@@ -433,13 +465,19 @@ namespace
       {
         // The game placed it (or it is another object now): whose view is it?
         bool follows = SameView(m, sim) || (sim_prev && SameView(m, sim_prev));
-        if (follows != c.follows)
+        // Not this player's view: another local player's maybe, whose view
+        // decides that.
+        if (follows || !c.player || c.player == player)
         {
-          CaptureLog(c.component, follows ? 1 : 0);
+          if (follows != c.follows)
+          {
+            CaptureLog(c.component, follows ? 1 : 0);
+          }
+          c.follows = follows;
+          c.player = follows ? player : 0;
         }
-        c.follows = follows;
       }
-      if (!c.follows)
+      if (!c.follows || c.player != player)
       {
         continue;
       }
@@ -593,21 +631,118 @@ namespace
     }
     return radius;
   }
+
+  // The part of the camera shake not to draw (0..1); 0: nothing to do.
+  float ShakeToLose()
+  {
+    return 1.0f - float(std::clamp(REXCVAR_GET(ao2_camera_shake), 0.0, 1.0));
+  }
+
+  // Takes it off the view `controller` is drawn from (location, rotation:
+  // guest addresses of the view point, 0 not to change them) and returns what
+  // the FOV loses. A modifier that ran no step lately is gone with its camera.
+  float LoseShake(uint8_t *base, uint32_t controller, uint32_t location, uint32_t rotation)
+  {
+    float lose = ShakeToLose();
+    if (lose <= 0.0f || !controller)
+    {
+      return 0.0f;
+    }
+    uint32_t step = ao2::decouple::WorldStep();
+    float fov = 0.0f;
+    for (const Shake &s : g_shakes)
+    {
+      if (!s.modifier || s.controller != controller || step - s.step > 1)
+      {
+        continue;
+      }
+      for (int i = 0; location && rotation && i < 3; i++)
+      {
+        StoreF32(base, location + 4 * i, LoadF32(base, location + 4 * i) - s.location[i] * lose);
+        StoreF32(base, rotation + 4 * i, LoadF32(base, rotation + 4 * i) - s.rotation[i] * lose);
+      }
+      fov += s.fov * lose;
+    }
+    return fov;
+  }
 } // namespace
+
+namespace
+{
+  // Runs a shaking modifier's ModifyCamera and notes how far it moved the view.
+  template <typename Fn>
+  void MeasureShake(PPCContext &ctx, uint8_t *base, Fn modify)
+  {
+    constexpr uint32_t kCameraLocation = 684;   // CameraActor.CameraModifiers_Location
+    constexpr uint32_t kCameraRotation = 696;   // CameraActor.CameraModifiers_Rotation
+    constexpr uint32_t kCameraFov = 460;        // CameraActor.FOVAngle
+    constexpr uint32_t kCameraController = 732; // CameraActor.CurrentPlayerController
+    uint32_t modifier = ctx.r3.u32, camera = ctx.r4.u32;
+    if (ShakeToLose() <= 0.0f || !camera)
+    {
+      modify(ctx, base);
+      return;
+    }
+    float location[3], rotation[3], fov = LoadF32(base, camera + kCameraFov);
+    for (int i = 0; i < 3; i++)
+    {
+      location[i] = LoadF32(base, camera + kCameraLocation + 4 * i);
+      rotation[i] = LoadF32(base, camera + kCameraRotation + 4 * i);
+    }
+    modify(ctx, base);
+    Shake *slot = nullptr;
+    for (Shake &s : g_shakes)
+    {
+      if (s.modifier == modifier)
+      {
+        slot = &s;
+        break;
+      }
+      if (!slot || (slot->modifier && (!s.modifier || s.step < slot->step)))
+      {
+        slot = &s;
+      }
+    }
+    slot->modifier = modifier;
+    slot->controller = LoadU32(base, camera + kCameraController);
+    slot->step = ao2::decouple::WorldStep();
+    for (int i = 0; i < 3; i++)
+    {
+      slot->location[i] = LoadF32(base, camera + kCameraLocation + 4 * i) - location[i];
+      slot->rotation[i] = LoadF32(base, camera + kCameraRotation + 4 * i) - rotation[i];
+    }
+    slot->fov = LoadF32(base, camera + kCameraFov) - fov;
+  }
+} // namespace
+
+// AO2CameraModifier_ScreenShake::ModifyCamera.
+extern "C" REX_FUNC(__imp__sub_82342C30);
+extern "C" REX_FUNC(sub_82342C30)
+{
+  MeasureShake(ctx, base, __imp__sub_82342C30);
+}
+
+// AO2CameraModifier_Handycam::ModifyCamera.
+extern "C" REX_FUNC(__imp__sub_82341DE8);
+extern "C" REX_FUNC(sub_82341DE8)
+{
+  MeasureShake(ctx, base, __imp__sub_82341DE8);
+}
 
 // ULocalPlayer::CalcSceneView: remember whose view is being made.
 extern "C" REX_FUNC(__imp__sub_8284BF18);
 extern "C" REX_FUNC(sub_8284BF18)
 {
   uint32_t outer = t_view_player;
-  t_view_player = ctx.r3.u32;
+  uint32_t player = ctx.r3.u32;
+  t_view_player = player;
   t_capture_views.set = false;
   __imp__sub_8284BF18(ctx, base);
   t_view_player = outer;
   if (t_capture_views.set)
   {
     const CaptureViews &v = t_capture_views;
-    UpdateCaptures(ctx, base, v.sim, v.has_prev ? v.prev : nullptr, v.drawn, v.moved);
+    UpdateCaptures(ctx, base, player, v.sim, v.has_prev ? v.prev : nullptr, v.drawn, v.moved);
     t_capture_views.set = false;
   }
   ao2::fov::ClearLensShift();
@@ -629,6 +764,7 @@ extern "C" REX_FUNC(sub_82384248)
     sim_location[i] = LoadF32(base, location + 4 * i);
     sim_rotation[i] = LoadF32(base, rotation + 4 * i);
   }
+  LoseShake(base, controller, location, rotation);
   uint32_t step = ao2::decouple::WorldStep();
   float alpha = 1.0f;
   bool interpolated = On() && Interpolate(base, controller, location, rotation, step, alpha);
@@ -687,6 +823,7 @@ extern "C" REX_FUNC(sub_823E06D8)
   {
     return;
   }
+  ctx.f1.f64 -= LoseShake(base, controller, 0, 0);
   if (On())
   {
     PlayerViews &p = Views(t_view_player);

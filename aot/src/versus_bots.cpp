@@ -146,6 +146,7 @@
 #include "coop.h"
 #include "coop_cmd.h"
 #include "log_files.h"
+#include "mouse_aim.h"
 #include "ue3_reflect.h"
 #include "versus_rules.h"
 
@@ -416,12 +417,19 @@ namespace
 
   // ---- The match's bot settings (see the top): what each id sent, and
   // what the bots play by.
-  constexpr uint32_t kLobby = 0x831F3024;  // the Plasma lobby singleton
-  constexpr uint32_t kLobbyStarted = 4449; // byte: this machine's StartGame went through (the host's)
+  constexpr uint32_t kLobby = 0x831F3024; // the Plasma lobby singleton
+  // How sure a sender is that it hosts. Runs its own EA server is not enough:
+  // the launcher starts everybody who does not join by address so, an invited
+  // player too. The lowest id of those won, and with a guest on a place before
+  // its host (split-screen) the host's id was no longer the lowest: a partner's
+  // rules counted instead.
+  constexpr int kHostServer = 1;  // ao2_coop_server
+  constexpr int kHostStarted = 2; // this machine's StartGame started the match
+  bool g_started_here = false;    // NoteMatchStart
   struct Sent
   {
     bool have = false;
-    bool host = false;
+    int host = 0;      // kHost*
     bool mine = false; // sent by this machine
     ao2::versus::VersusSettings settings;
   };
@@ -440,7 +448,7 @@ namespace
     if (g_settings_from >= 0)
     {
       const Sent &s = g_sent_by[g_settings_from];
-      g_info.host = s.host;
+      g_info.host = s.host > 0;
       g_info.mine = s.mine;
       g_info.settings = s.settings;
     }
@@ -5364,6 +5372,11 @@ namespace
   }
 } // namespace
 
+namespace ao2::versus_guest
+{
+  uint32_t GuestCount(); // versus_guest.cpp
+}
+
 namespace ao2::versus
 {
   void SetEmptyPlaces(uint32_t mask)
@@ -5395,18 +5408,39 @@ namespace ao2::versus
     }
   }
 
-  void PollSettings(const uint8_t *base)
+  // Every player of the lobby is on this PC: the host player and its guests.
+  bool AllPlayersHere(const uint8_t *base)
+  {
+    constexpr uint32_t kLobbyPlayers = 4016; // the lobby's player slots (a list object), 2-5 the players
+    uint32_t lobby = LoadU32(base, kLobby);
+    uint32_t list = lobby ? LoadU32(base, lobby + kLobbyPlayers) : 0;
+    if (!list)
+    {
+      return false;
+    }
+    uint32_t present = 0;
+    for (uint32_t slot = 2; slot <= 5; ++slot)
+    {
+      present += LoadU32(base, list + 4 * slot) != 0;
+    }
+    return present == 1 + ao2::versus_guest::GuestCount();
+  }
+
+  void PollSettings(const uint8_t *base, bool routed)
   {
     uint32_t modes = LoadU32(base, kGameModes);
     if (!modes || !LoadU32(base, modes + 48) || LoadU32(base, modes + 52))
     {
       return; // not a versus match (or a ranked one: no bots there)
     }
-    uint32_t lobby = LoadU32(base, kLobby);
-    bool host = (lobby && base[lobby + kLobbyStarted]) || REXCVAR_GET(ao2_coop_server);
+    if (ao2::mouse::InFrontEnd())
+    {
+      return; // the lobby: the settings go out when the match's level is there
+    }
+    int host = g_started_here ? kHostStarted : REXCVAR_GET(ao2_coop_server) ? kHostServer : 0;
     auto hundredths = [](double v, double lo, double hi) { return int(std::lround(std::clamp(v, lo, hi) * 100.0)); };
     char line[160];
-    std::snprintf(line, sizeof(line), "vbots %d %d %d %d %d %d %d %d %d %d %d %d %d %d", host ? 1 : 0,
+    std::snprintf(line, sizeof(line), "vbots %d %d %d %d %d %d %d %d %d %d %d %d %d %d", host,
                   REXCVAR_GET(ao2_versus_bots) ? 1 : 0, hundredths(REXCVAR_GET(ao2_versus_bots_miss), 0.0, 20.0),
                   std::clamp(REXCVAR_GET(ao2_versus_bots_reaction), 0, 300),
                   hundredths(REXCVAR_GET(ao2_versus_bots_turn), 0.5, 45.0),
@@ -5420,10 +5454,22 @@ namespace ao2::versus
                   std::clamp(REXCVAR_GET(ao2_versus_respawn_step), 0, 10000000) / 100);
     // Once per match: the rules and bots stay as the match began (the F1
     // menu does not change them mid-match either).
-    if (g_sent_line.empty())
+    if (!g_sent_line.empty())
+    {
+      return;
+    }
+    if (routed)
     {
       g_sent_line = line;
       ao2::coop::cmd::Send(line);
+    }
+    else if (AllPlayersHere(base))
+    {
+      // With a guest and nobody else the lockstep commands do not go: nobody
+      // to agree with either.
+      g_sent_line = line;
+      Logf("no lockstep commands, every player on this PC: the settings count at once\n");
+      ReceiveSettings(0, line + 6, true);
     }
   }
 
@@ -5441,7 +5487,7 @@ namespace ao2::versus
     }
     Sent &s = g_sent_by[controller_id];
     s.have = true;
-    s.host = host != 0;
+    s.host = std::clamp(host, 0, kHostStarted);
     s.mine = mine;
     s.settings.on = on != 0;
     s.settings.miss = std::clamp(miss, 0, 2000) / 100.0;
@@ -5456,12 +5502,13 @@ namespace ao2::versus
     s.settings.ff = std::clamp(ff, 0, 2);
     s.settings.cost = std::clamp(cost, 0, 100000) * 100;
     s.settings.step = std::clamp(step, 0, 100000) * 100;
+    // Whoever started the match; else who runs a server; else anybody.
     int from = -1;
-    for (int pass = 0; pass < 2 && from < 0; ++pass)
+    for (int want = kHostStarted; want >= 0 && from < 0; --want)
     {
       for (int id = 0; id < 4 && from < 0; ++id)
       {
-        from = g_sent_by[id].have && (pass || g_sent_by[id].host) ? id : -1;
+        from = g_sent_by[id].have && g_sent_by[id].host >= want ? id : -1;
       }
     }
     g_settings_from = from;
@@ -5478,6 +5525,18 @@ namespace ao2::versus
   const VersusSettings &PlayedSettings()
   {
     return g_settings;
+  }
+
+  void NoteMatchStart(bool started_here)
+  {
+    g_started_here = started_here;
+  }
+
+  bool MatchRunning(const uint8_t *base)
+  {
+    uint32_t modes = LoadU32(base, kGameModes);
+    return modes && LoadU32(base, modes + 48) && !LoadU32(base, modes + 52) && !ao2::mouse::InFrontEnd() &&
+           !ao2::versus::rules::Ended();
   }
 
   MatchSettingsInfo MatchSettings()

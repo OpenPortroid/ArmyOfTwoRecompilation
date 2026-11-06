@@ -243,6 +243,18 @@ namespace AO2Launcher
             a.Add("--ao2_depth_of_field=" + (s.Int("dof") > 0 ? 1 : 0));
             int shadow = s.Int("shadow_res");
             a.Add("--ao2_shadow_resolution=" + (shadow == 1024 || shadow == 2048 || shadow == 4096 ? shadow : 0));
+            if (s["fov"].Length > 0)
+            {
+                a.Add("--ao2_fov=" + Num(Math.Max(40.0, Math.Min(130.0, s.Double("fov")))));
+            }
+            if (s["fov_aim"].Length > 0)
+            {
+                a.Add("--ao2_fov_aim=" + Num(Math.Max(0.0, Math.Min(1.0, s.Double("fov_aim")))));
+            }
+            if (s["camera_shake"].Length > 0)
+            {
+                a.Add("--ao2_camera_shake=" + Num(Math.Max(0.0, Math.Min(1.0, s.Double("camera_shake")))));
+            }
             string lang = s["language"];
             a.Add("--ao2_game_language=" + (Array.IndexOf(Languages, lang) >= 0 ? lang : "auto"));
 

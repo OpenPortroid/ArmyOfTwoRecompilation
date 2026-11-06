@@ -36,13 +36,22 @@ namespace ao2::versus
     int32_t step = 0;      // ao2_versus_respawn_step
   };
 
-  // Game thread, the lockstep commands' poll (coop_cmd.cpp) while they can
-  // go: in a versus match, this machine's bot settings go out once, as the
-  // match began.
-  void PollSettings(const uint8_t *base);
+  // Game thread, the lockstep commands' poll (coop_cmd.cpp): in a versus
+  // match, this machine's settings go out once, as the match began. `routed`:
+  // lockstep commands can go; without them they count at once when every
+  // player of the match is on this PC (split-screen), else not at all.
+  void PollSettings(const uint8_t *base, bool routed);
   // Game thread, a replayed "vbots <args>" of `controller_id` (every
   // machine, the same frame); `mine`: sent by this machine.
   void ReceiveSettings(uint32_t controller_id, const char *args, bool mine);
+  // Game thread, the match start on every machine (versus_lobby.cpp), which
+  // clears the lobby's "StartGame went through" byte: whether it was set here.
+  void NoteMatchStart(bool started_here);
+
+  // Any thread: a versus match's level is loaded (not the Shell world with the
+  // lobby, where the next match's settings can still change) and it has not
+  // ended. A ranked match has no settings of ours.
+  bool MatchRunning(const uint8_t *base);
 
   // Any thread: whose settings the bots of this match play by (from: the
   // controller id, -1 = none came yet).

@@ -375,6 +375,7 @@ namespace
       {"Sharper shadow edges for more GPU time. Auto is the game's own.", "Чётче края теней ценой времени GPU. «Авто» - как в игре.", "Schärfere Schattenkanten für mehr GPU-Zeit. Auto ist die des Spiels.", "Bords d'ombre plus nets contre du temps GPU. Auto est celle du jeu.", "Bordes de sombra más nítidos a costa de GPU. Auto es la del juego.", "Bordi delle ombre più nitidi a costo di GPU. Auto è quella del gioco."},
       {"How wide the view is on foot. The game's is 70°.", "Ширина обзора пешком. В игре 70°.", "Wie weit die Sicht zu Fuß ist. Im Spiel 70°.", "La largeur de la vue à pied. Celle du jeu : 70°.", "La amplitud de la vista a pie. La del juego es 70°.", "Ampiezza della visuale a piedi. Quella del gioco è 70°."},
       {"How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope.", "Насколько прицеливание сужает обзор: 1 как в игре, 0 совсем нет. Снайперский прицел не меняется.", "Wie stark Zielen die Sicht verengt: 1 wie im Spiel, 0 gar nicht. Nicht das Zielfernrohr.", "À quel point viser rétrécit la vue : 1 comme le jeu, 0 pas du tout. Pas la lunette.", "Cuánto estrecha la vista al apuntar: 1 como el juego, 0 nada. No la mira telescópica.", "Quanto mirare restringe la vista: 1 come il gioco, 0 per niente. Non il mirino."},
+      {"How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did.", "Насколько трясётся вид: 1 как в игре, 0 совсем нет. Пули летят туда же, куда и раньше.", "Wie stark die Sicht wackelt: 1 wie im Spiel, 0 gar nicht. Die Kugeln fliegen wie zuvor.", "À quel point la vue tremble : 1 comme le jeu, 0 pas du tout. Les balles vont au même endroit.", "Cuánto tiembla la vista: 1 como en el juego, 0 nada. Las balas van al mismo sitio.", "Quanto trema la visuale: 1 come nel gioco, 0 per niente. I proiettili vanno dove andavano."},
       {"How fast the mouse turns the camera.", "Как быстро мышь поворачивает камеру.", "Wie schnell die Maus die Kamera dreht.", "La vitesse à laquelle la souris tourne la caméra.", "Lo rápido que el ratón gira la cámara.", "Quanto velocemente il mouse gira la telecamera."},
       {"How fast the mouse turns while aiming, against the normal speed.", "Скорость мыши при прицеливании относительно обычной.", "Mausgeschwindigkeit beim Zielen, relativ zur normalen.", "La vitesse de la souris en visant, par rapport à la normale.", "La velocidad del ratón al apuntar, respecto a la normal.", "La velocità del mouse mirando, rispetto a quella normale."},
 
@@ -382,6 +383,7 @@ namespace
       {"Field of view", "Поле зрения", "Sichtfeld", "Champ de vision", "Campo de visión", "Campo visivo"},
       {"Aiming zoom", "Сужение при прицеливании", "Zoom beim Zielen", "Zoom en visant", "Zoom al apuntar",
        "Zoom mirando"},
+      {"Camera shake", "Тряска камеры", "Kamerawackeln", "Tremblement de la caméra", "Temblor de cámara", "Tremolio della telecamera"},
       {"Game's field of view", "Как в игре", "Wie im Spiel", "Comme le jeu", "Como el juego", "Come il gioco"},
       {"Sensitivity", "Чувствительность", "Empfindlichkeit", "Sensibilité", "Sensibilidad", "Sensibilità"},
       {"Zoomed sensitivity", "Чувствительность в прицеле", "Empfindlichkeit beim Zielen", "Sensibilité en visant",
@@ -735,6 +737,7 @@ namespace
       {"Sharper shadow edges for more GPU time. Auto is the game's own.", "Bordas de sombra mais nítidas ao custo de GPU. Auto é a do jogo."},
       {"How wide the view is on foot. The game's is 70°.", "A largura da visão a pé. A do jogo é 70°."},
       {"How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope.", "Quanto mirar estreita a visão: 1 como no jogo, 0 nada. Não a luneta."},
+      {"How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did.", "Quanto a visão treme: 1 como no jogo, 0 nada. As balas vão para onde iam."},
       {"How fast the mouse turns the camera.", "A velocidade com que o mouse gira a câmera."},
       {"How fast the mouse turns while aiming, against the normal speed.", "A velocidade do mouse ao mirar, em relação à normal."},
       {"Somalia", "Somália"},

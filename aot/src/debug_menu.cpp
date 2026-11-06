@@ -97,6 +97,7 @@ REXCVAR_DECLARE(bool, ao2_unlock_bonus_weapons);
 REXCVAR_DECLARE(int32_t, ao2_fps_target);
 REXCVAR_DECLARE(double, ao2_fov);
 REXCVAR_DECLARE(double, ao2_fov_aim);
+REXCVAR_DECLARE(double, ao2_camera_shake);
 REXCVAR_DECLARE(double, ao2_mouse_sensitivity);
 REXCVAR_DECLARE(double, ao2_mouse_zoom_sensitivity);
 REXCVAR_DECLARE(int32_t, ao2_start_difficulty);
@@ -601,10 +602,13 @@ namespace
   };
   const SliderRow kSliders[] = {
       {"Field of view", 40.0, 130.0, "%.0f\xC2\xB0", [] { return REXCVAR_GET(ao2_fov); },
-       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }, "ao2_fov", "hardware.toml", nullptr},
+       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }, "ao2_fov", "hardware.toml", "fov"},
       {"Aiming zoom", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_fov_aim); },
        [](double v) { REXCVAR_SET(ao2_fov_aim, std::round(v * 100.0) / 100.0); }, "ao2_fov_aim", "hardware.toml",
-       nullptr},
+       "fov_aim"},
+      {"Camera shake", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_camera_shake); },
+       [](double v) { REXCVAR_SET(ao2_camera_shake, std::round(v * 100.0) / 100.0); }, "ao2_camera_shake",
+       "hardware.toml", "camera_shake"},
       {"Sensitivity", 0.1, 10.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_sensitivity); },
        [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, std::round(v * 100.0) / 100.0); }, "ao2_mouse_sensitivity",
        "mapping.toml", "mouse_sens"},
@@ -746,6 +750,7 @@ namespace
         {"Shadow resolution", "Sharper shadow edges for more GPU time. Auto is the game's own."},
         {"Field of view", "How wide the view is on foot. The game's is 70\xC2\xB0."},
         {"Aiming zoom", "How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope."},
+        {"Camera shake", "How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did."},
         {"Sensitivity", "How fast the mouse turns the camera."},
         {"Zoomed sensitivity", "How fast the mouse turns while aiming, against the normal speed."},
     };
@@ -1501,10 +1506,15 @@ namespace
       float x0 = o.x, x1 = o.x + w, y = o.y;
 
       // Whose settings count.
+      // Locked only while a match's level runs: the lobby after a match is
+      // still a network session and still has that match's settings until
+      // the next map load, but what is chosen there is for the next match.
       ao2::versus::MatchSettingsInfo match = ao2::versus::MatchSettings();
+      const uint8_t *base = GuestBase();
+      bool running = network_ && base && ao2::versus::MatchRunning(base);
       std::string status, note;
       ImU32 tone = ui::kMuted;
-      if (network_ && match.from >= 0)
+      if (running && match.from >= 0)
       {
         const ao2::versus::VersusSettings &m = match.settings;
         int preset = BotPresetOf(m.miss, m.reaction, m.turn, m.range);
@@ -1518,7 +1528,7 @@ namespace
         // once): nothing here changes mid-match.
         live = false;
       }
-      else if (network_)
+      else if (running)
       {
         status = Tr("Waiting for the match's settings.");
         tone = kPending;

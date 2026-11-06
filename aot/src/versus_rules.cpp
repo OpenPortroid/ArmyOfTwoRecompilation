@@ -36,6 +36,7 @@
 #include "versus_bots.h"
 
 #include <algorithm>
+#include <atomic>
 #include <bit>
 #include <cmath>
 #include <cstdio>
@@ -264,6 +265,7 @@ namespace
   uint32_t g_game = 0;
   float g_game_ff = 0.0f; // the game's friendly fire scale
   int g_last_ff = 0;
+  std::atomic<bool> g_ended{false}; // for the F1 menu (Ended)
 } // namespace
 
 namespace ao2::versus::rules
@@ -284,6 +286,12 @@ namespace ao2::versus::rules
     g_game = 0;
     g_last_ff = 0;
     g_world = 0;
+    g_ended.store(false, std::memory_order_relaxed);
+  }
+
+  bool Ended()
+  {
+    return g_ended.load(std::memory_order_relaxed);
   }
 
   void Frame(PPCContext &ctx, uint8_t *base)
@@ -308,6 +316,7 @@ namespace ao2::versus::rules
       Logf("frame %u: game %08X, round %d min, friendly fire scale %.2f\n", frame, game, g_lobby_minutes, g_game_ff);
     }
     bool ended = p.ended >= 0 && (LoadU32(base, game + p.ended) & p.ended_mask);
+    g_ended.store(ended, std::memory_order_relaxed);
     uint32_t gri = p.gri >= 0 ? LoadU32(base, game + p.gri) : 0;
     auto set_left = [&](int32_t left) {
       StoreU32(base, game + p.remaining, uint32_t(left));

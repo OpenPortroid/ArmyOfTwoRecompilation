@@ -886,6 +886,8 @@ namespace
   }
 
   std::atomic<bool> g_driving{false};
+  std::atomic<uint32_t> g_driving_users{0}; // bit = pad; the keyboard's as g_driving
+  std::atomic<uint32_t> g_keyboard_player{~0u}; // KeyboardPlayerId; ~0: not looked yet
   // The world is the front end (InShell), as of the game thread's last pad poll.
   std::atomic<bool> g_in_shell{false};
   // Clock ticks of the last UpdateLookingAction of any branch: it runs on
@@ -1237,6 +1239,17 @@ namespace ao2::mouse
     return g_driving.load(std::memory_order_relaxed);
   }
 
+  bool DrivingUser(uint32_t user)
+  {
+    return user < 4 && (g_driving_users.load(std::memory_order_relaxed) >> user & 1);
+  }
+
+  uint32_t KeyboardPlayerId()
+  {
+    uint32_t id = g_keyboard_player.load(std::memory_order_relaxed);
+    return id != ~0u ? id : KeyboardUser();
+  }
+
   bool InFrontEnd()
   {
     return g_in_shell.load(std::memory_order_relaxed);
@@ -1250,7 +1263,8 @@ namespace ao2::mouse
       return 0;
     }
     bool in_play = clock::now() - looked < kNativeIdle;
-    uint32_t controller = LockstepMouse(base) ? LocalController(ctx, base) : ControllerOf(ctx, base, user);
+    uint32_t controller =
+        LockstepMouse(base) ? LocalController(ctx, base) : ControllerOf(ctx, base, PlayerIdOfPad(ctx, base, user));
     uint32_t holder = controller ? LoadU32(base, controller + 2024) : 0;
     uint32_t pawn = holder ? LoadU32(base, controller + 452) : 0;
     bool cinematic = controller && (LoadU32(base, controller + 808) & kCinematicMode);
@@ -1471,8 +1485,26 @@ extern "C" REX_FUNC(sub_82A95F70)
     player = LocalController(ctx, base);
   }
   uint32_t pawn = player ? LoadU32(base, player + 452) : 0;
-  g_driving.store(pawn && pawn != LoadU32(base, player + 2024) && IsDrivenVehicle(base, pawn),
-                  std::memory_order_relaxed);
+  bool driving = pawn && pawn != LoadU32(base, player + 2024) && IsDrivenVehicle(base, pawn);
+  g_driving.store(driving, std::memory_order_relaxed);
+  // The other pads' players (split-screen), for the pad hook's trigger.
+  uint32_t keyboard = ao2::mouse::KeyboardUser();
+  uint32_t users = driving && keyboard < 4 ? 1u << keyboard : 0;
+  g_keyboard_player.store(keyboard < 4 ? PlayerIdOfPad(ctx, base, keyboard) : ~0u, std::memory_order_relaxed);
+  for (uint32_t user = 0; user < 4; ++user)
+  {
+    if (user == keyboard)
+    {
+      continue;
+    }
+    uint32_t other = ControllerOf(ctx, base, PlayerIdOfPad(ctx, base, user));
+    uint32_t other_pawn = other ? LoadU32(base, other + 452) : 0;
+    if (other_pawn && other_pawn != LoadU32(base, other + 2024) && IsDrivenVehicle(base, other_pawn))
+    {
+      users |= 1u << user;
+    }
+  }
+  g_driving_users.store(users, std::memory_order_relaxed);
 }
 
 // Pad polling: one button or axis to the viewport's input receiver (r3 =

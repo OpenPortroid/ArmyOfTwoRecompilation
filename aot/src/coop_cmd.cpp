@@ -397,6 +397,10 @@ namespace ao2::coop::cmd
 
   void Poll(PPCContext &ctx, uint8_t *base)
   {
+    if (!Ready(base))
+    {
+      ao2::versus::PollSettings(base, false);
+    }
     if (!Routed(base))
     {
       // The game is over: on both machines, nothing of it is left.
@@ -456,7 +460,7 @@ namespace ao2::coop::cmd
       g_sent_assist = assist;
       Send("aimassist " + std::to_string(assist));
     }
-    ao2::versus::PollSettings(base);
+    ao2::versus::PollSettings(base, true);
     // Once per lockstep frame.
     uint32_t frame = ao2::coop::SyncFrame(base);
     if (frame == g_last_frame)

@@ -456,6 +456,11 @@ namespace
 
 namespace ao2::versus_guest
 {
+  uint32_t GuestCount()
+  {
+    return uint32_t(std::popcount(g_guests.load(std::memory_order_relaxed)));
+  }
+
   // Game thread, every world step (UGameEngine::Tick, decouple.cpp).
   void Frame(uint8_t *base)
   {

@@ -18,6 +18,7 @@
 // a guest), p1 back to player 1; latches, sticks and the mouse stay player 1's.
 #include <algorithm>
 #include <atomic>
+#include <bit>
 #include <cstring>
 #include <chrono>
 #include <cstdio>
@@ -37,6 +38,7 @@
 #include "graphics_menu.h"
 #include "menu_mouse.h"
 #include "mouse_aim.h"
+#include "ue3_reflect.h"
 
 REXCVAR_DEFINE_BOOL(ao2_vehicle_wasd, true, "Input",
                     "Driving a vehicle: the left stick forward / back (W / S) also presses the right / left "
@@ -48,10 +50,126 @@ REXCVAR_DEFINE_BOOL(ao2_toggle_aim, false, "Input",
 REXCVAR_DEFINE_STRING(ao2_input_script, "", "Debug",
                       "Scripted pad input (also from input.script): a b x y start back up down left right lb rb ls "
                       "rs lt rt [+|-] waitNNN mxN myN skip lxN lyN rxN ryN p1 p2");
+REXCVAR_DEFINE_BOOL(ao2_pad_rapid_trigger, true, "Input",
+                    "Gamepad: letting the right trigger back part of the way counts as letting it go, and pulling "
+                    "it again as a new press, so quick shots do not need the trigger all the way out. Not at the "
+                    "wheel, where it is the gas");
+REXCVAR_DEFINE_BOOL(ao2_fire_buffer, true, "Input",
+                    "A shot asked for (right trigger, left mouse button) while the weapon's firing animation still "
+                    "runs is fired when it ends, instead of being lost");
 
 namespace
 {
   using clock = std::chrono::steady_clock;
+
+  // The game takes a trigger as pressed above 30 of 255 and as let go at or
+  // below it (the pad poll's sub_82A95D70), the mouse button goes 255 / 0. A
+  // finger shooting quickly brings an analog trigger back only part of the
+  // way: no release, no new press, and the single-shot weapons fire when the
+  // finger happens to come back far enough. So a move of the trigger back by
+  // kRapidTravel from its highest point is a release (the game sees 0) and a
+  // move forward by as much from its lowest is a press. From out of the
+  // trigger's travel a press comes where the game's own does.
+  constexpr uint8_t kGamePressed = 30;
+  constexpr int kRapidTravel = 40;
+  struct RapidTrigger
+  {
+    bool down = false;
+    uint8_t extreme = 0; // the highest while down, the lowest while up
+  };
+  RapidTrigger g_rapid[4];
+
+  uint8_t RapidFire(uint32_t user, uint8_t pulled, bool analog)
+  {
+    RapidTrigger &t = g_rapid[user];
+    if (analog)
+    {
+      t = {pulled > kGamePressed, pulled};
+      return pulled;
+    }
+    if (t.down)
+    {
+      t.extreme = std::max(t.extreme, pulled);
+      if (pulled <= kGamePressed || pulled + kRapidTravel <= t.extreme)
+      {
+        t = {false, pulled};
+      }
+    }
+    else
+    {
+      t.extreme = std::min(t.extreme, pulled);
+      if (pulled > kGamePressed && (t.extreme <= kGamePressed || pulled >= t.extreme + kRapidTravel))
+      {
+        t = {true, pulled};
+      }
+    }
+    return t.down ? pulled : 0;
+  }
+
+  uint32_t LoadBe32(const uint8_t *base, uint32_t addr)
+  {
+    const uint8_t *p = base + addr;
+    return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3];
+  }
+
+  // Single shots fire from the firing animation (AO2Weapon
+  // .bFiringControlledByAnimNotifies, AO2Character.FiringWeapon): the state
+  // stays until the animation's end (FiredFromNotifyEndTime), and only then
+  // asks whether fire is held. A press and release before that is lost, so
+  // shots at an even pace hit or miss the end by chance and every so often one
+  // does not come. A press in that time is held until the next shot has been
+  // fired (the end time changes) or a moment after the end.
+  constexpr float kBufferLimit = 0.25f; // seconds past the end
+  struct FireBuffer
+  {
+    bool pressed = false;
+    bool queued = false;
+    float end = 0.0f; // the end time when it was queued
+  };
+  FireBuffer g_fire_buffer[4];
+
+  uint8_t BufferShot(PPCContext &ctx, uint8_t *base, uint32_t user, uint8_t pulled)
+  {
+    FireBuffer &b = g_fire_buffer[user];
+    bool pressed = pulled > kGamePressed;
+    bool edge = pressed && !b.pressed;
+    b.pressed = pressed;
+    static const int32_t pawn_weapon = ao2::ue3::PropertyOffset(base, "Pawn", "Weapon");
+    static const int32_t end_time = ao2::ue3::PropertyOffset(base, "AO2Weapon", "FiredFromNotifyEndTime");
+    static const int32_t world_info = ao2::ue3::PropertyOffset(base, "Actor", "WorldInfo");
+    static const int32_t seconds = ao2::ue3::PropertyOffset(base, "WorldInfo", "TimeSeconds");
+    static const uint32_t weapon_class = ao2::ue3::FindClass(base, "AO2Weapon");
+    static int32_t by_anim = -1;
+    static uint32_t by_anim_mask = 0;
+    static const bool has_anim =
+        ao2::ue3::BoolProperty(base, "AO2Weapon", "bFiringControlledByAnimNotifies", by_anim, by_anim_mask);
+    uint32_t pawn = ao2::mouse::AimTogglePawn(ctx, base, user);
+    uint32_t weapon = pawn && pawn_weapon >= 0 ? LoadBe32(base, pawn + uint32_t(pawn_weapon)) : 0;
+    if (!weapon || !has_anim || end_time < 0 || world_info < 0 || seconds < 0 || !weapon_class ||
+        !ao2::ue3::IsA(base, weapon, weapon_class) || !(LoadBe32(base, weapon + uint32_t(by_anim)) & by_anim_mask))
+    {
+      b.queued = false;
+      return pulled;
+    }
+    uint32_t world = LoadBe32(base, weapon + uint32_t(world_info));
+    if (!world)
+    {
+      b.queued = false;
+      return pulled;
+    }
+    float now = std::bit_cast<float>(LoadBe32(base, world + uint32_t(seconds)));
+    float end = std::bit_cast<float>(LoadBe32(base, weapon + uint32_t(end_time)));
+    if (edge && now < end)
+    {
+      b.queued = true;
+      b.end = end;
+    }
+    else if (b.queued && (end != b.end || now > b.end + kBufferLimit))
+    {
+      b.queued = false;
+    }
+    return b.queued ? uint8_t(255) : pulled;
+  }
 
   // Inputs: XINPUT buttons in the low 16 bits, then the triggers.
   constexpr uint32_t kLeftTrigger = 1u << 16;
@@ -422,6 +540,20 @@ extern "C" REX_FUNC(sub_82B07AF0)
   if (state && user < 4 && ctx.r3.u32 == 0 && REXCVAR_GET(ao2_toggle_aim))
   {
     ApplyToggleAim(ctx, base, user, base + state);
+  }
+  if (state && user < 4 && ctx.r3.u32 == 0)
+  {
+    uint8_t *pad = base + state;
+    if (REXCVAR_GET(ao2_pad_rapid_trigger))
+    {
+      pad[7] = RapidFire(user, pad[7], ao2::mouse::DrivingUser(user));
+    }
+    if (REXCVAR_GET(ao2_fire_buffer))
+    {
+      PPCContext saved = ctx;
+      pad[7] = BufferShot(ctx, base, user, pad[7]);
+      ctx = saved;
+    }
   }
   uint32_t inputs = 0;
   bool scripted = state && user < 2 && CurrentInputs(user, inputs);

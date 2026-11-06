@@ -466,6 +466,24 @@ namespace AO2Launcher
               "Was weit hinter dem Zielpunkt liegt, wird unscharf; der Fokus folgt dem Fadenkreuz.",
               "Lo que queda muy por detrás del punto al que apuntas se desenfoca; el enfoque sigue a la mira.",
               "Ciò che sta molto dietro il punto mirato va fuori fuoco; la messa a fuoco segue il mirino.");
+            a("Field of view", "Поле зрения", "Champ de vision", "Sichtfeld", "Campo de visión", "Campo visivo");
+            a("How wide the view is on foot. The game's is 70°.", "Ширина обзора пешком. В игре 70°.",
+              "La largeur de la vue à pied. Celle du jeu : 70°.", "Wie weit die Sicht zu Fuß ist. Im Spiel 70°.",
+              "La amplitud de la vista a pie. La del juego es 70°.", "Ampiezza della visuale a piedi. Quella del gioco è 70°.");
+            a("Aiming zoom", "Сужение при прицеливании", "Zoom en visant", "Zoom beim Zielen", "Zoom al apuntar", "Zoom mirando");
+            a("How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope.",
+              "Насколько прицеливание сужает обзор: 1 как в игре, 0 совсем нет. Снайперский прицел не меняется.",
+              "À quel point viser rétrécit la vue : 1 comme le jeu, 0 pas du tout. Pas la lunette.",
+              "Wie stark Zielen die Sicht verengt: 1 wie im Spiel, 0 gar nicht. Nicht das Zielfernrohr.",
+              "Cuánto estrecha la vista apuntar: 1 como en el juego, 0 nada. No la mira telescópica.",
+              "Quanto mirare restringe la visuale: 1 come nel gioco, 0 per niente. Non il mirino.");
+            a("Camera shake", "Тряска камеры", "Tremblement de la caméra", "Kamerawackeln", "Temblor de cámara", "Tremolio della telecamera");
+            a("How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did.",
+              "Насколько трясётся вид: 1 как в игре, 0 совсем нет. Пули летят туда же, куда и раньше.",
+              "À quel point la vue tremble : 1 comme le jeu, 0 pas du tout. Les balles vont au même endroit.",
+              "Wie stark die Sicht wackelt: 1 wie im Spiel, 0 gar nicht. Die Kugeln fliegen wie zuvor.",
+              "Cuánto tiembla la vista: 1 como en el juego, 0 nada. Las balas van al mismo sitio.",
+              "Quanto trema la visuale: 1 come nel gioco, 0 per niente. I proiettili vanno dove andavano.");
             a("Shadow resolution", "Разрешение теней", "Résolution des ombres", "Schattenauflösung",
               "Resolución de sombras", "Risoluzione delle ombre");
             a("Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +

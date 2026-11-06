@@ -27,6 +27,10 @@ namespace AO2Launcher
             { "motion_blur", "0" },
             { "dof", "0" },
             { "shadow_res", "0" },
+            // Empty until moved here or in the game's F1 menu: no flag, the game's own settings count.
+            { "fov", "" },
+            { "fov_aim", "" },
+            { "camera_shake", "" },
             { "vsync", "0" },
             { "language", "auto" },
             { "seen_version", "" }, // the version whose release notes were shown
@@ -277,8 +281,11 @@ namespace AO2Launcher
             {
                 return v;
             }
-            double.TryParse(Defaults[key], NumberStyles.Float, CultureInfo.InvariantCulture, out v);
-            return v;
+            if (double.TryParse(Defaults[key], NumberStyles.Float, CultureInfo.InvariantCulture, out v))
+            {
+                return v;
+            }
+            return key == "fov" ? 70 : 1; // the game's: fov, fov_aim, camera_shake
         }
 
         // Everything but the game's path and the chosen profile.

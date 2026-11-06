@@ -1065,7 +1065,9 @@ namespace ao2::prompts
         }
         return false;
       }
-      uint32_t keyboard = ao2::mouse::KeyboardUser();
+      // By the player's id, not the pad's: a versus match numbers its players
+      // by their places, so with a guest pad 0 can play controller 2.
+      uint32_t keyboard = ao2::mouse::KeyboardPlayerId();
       uint32_t engine = Load32(base, kEngine);
       if (keyboard >= 4 || !engine)
         return false;
@@ -1080,6 +1082,10 @@ namespace ao2::prompts
           continue;
         float x = LoadF32(base, player + uint32_t(origin)), y = LoadF32(base, player + uint32_t(origin) + 4);
         float w = LoadF32(base, player + uint32_t(size)), h = LoadF32(base, player + uint32_t(size) + 4);
+        // Off the screen (Origin 1,0, Size 1,1): the other places of a versus
+        // match, and they stay in GamePlayers after it, also in the campaign.
+        if (x >= 1.0f || y >= 1.0f)
+          continue;
         if (!(w > 0.0f && h > 0.0f && w <= 1.0f && h <= 1.0f) || (w >= 1.0f && h >= 1.0f))
           return false; // not split (yet)
         float *rect = Load32(base, player + uint32_t(controller_id)) == keyboard ? keys : pad;

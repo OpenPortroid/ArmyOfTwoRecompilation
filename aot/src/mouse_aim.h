@@ -41,6 +41,12 @@ namespace ao2::mouse
   // This machine's player is driving a vehicle (at the wheel of the
   // hovercraft - not on a turret, not a vehicle's gunner). Any thread.
   bool Driving();
+  // The player of pad `user` is at the wheel: its triggers are the gas and the
+  // brake, analog. Any thread.
+  bool DrivingUser(uint32_t user);
+  // The controller id (LocalPlayer.ControllerId) of the player with the
+  // keyboard: its pad's, or the one a versus match gave it. Any thread.
+  uint32_t KeyboardPlayerId();
 
   // The game is in the front end: the main menu and its pages, the lobby
   // (the Shell world). Any thread.

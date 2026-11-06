@@ -15,4 +15,8 @@ namespace ao2::versus::rules
   // replay, after the frame's first record): the rules the match's
   // settings say (versus_bots.h VersusSettings) applied to the game.
   void Frame(PPCContext &ctx, uint8_t *base);
+
+  // Any thread: the match of the loaded level has ended (GameInfo.bGameEnded,
+  // as of the last lockstep frame): the scoreboard, its rules count no more.
+  bool Ended();
 } // namespace ao2::versus::rules

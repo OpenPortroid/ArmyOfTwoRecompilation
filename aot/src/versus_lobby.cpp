@@ -199,6 +199,8 @@ extern "C" REX_FUNC(__imp__sub_82A14E08);
 extern "C" REX_FUNC(sub_82A14E08)
 {
   uint32_t lobby = ctx.r3.u32;
+  // It clears +4449 first: only here can the host's StartGame still be seen.
+  ao2::versus::NoteMatchStart(lobby && base[lobby + kStarted]);
   __imp__sub_82A14E08(ctx, base);
   int min = REXCVAR_GET(ao2_versus_min_players);
   uint32_t modes = LoadU32(base, kGameModes);

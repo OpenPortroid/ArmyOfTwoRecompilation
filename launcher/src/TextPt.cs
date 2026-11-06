@@ -190,6 +190,14 @@ namespace AO2Launcher
             p("Depth of field", "Profundidade de campo");
             p("What lies far behind the point you aim at goes out of focus; the focus follows the crosshair.",
               "O que está muito atrás do ponto que você mira sai de foco; o foco acompanha a mira.");
+            p("Field of view", "Campo de visão");
+            p("How wide the view is on foot. The game's is 70°.", "A largura da visão a pé. A do jogo é 70°.");
+            p("Aiming zoom", "Zoom ao mirar");
+            p("How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope.",
+              "Quanto mirar estreita a visão: 1 como no jogo, 0 nada. Não a luneta.");
+            p("Camera shake", "Tremor da câmera");
+            p("How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did.",
+              "Quanto a visão treme: 1 como no jogo, 0 nada. As balas vão para onde iam.");
             p("Shadow resolution", "Resolução das sombras");
             p("Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
               "4096 needs about 150 MB more video memory.",
