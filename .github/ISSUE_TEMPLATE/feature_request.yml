@@ -1,0 +1,14 @@
+name: Feature request
+description: An idea for the port
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What it would make better, and how you handle it today.

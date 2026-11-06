@@ -48,12 +48,21 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - **Updates** (`src\Updates.cs`). On start the launcher asks the GitHub API for the latest release of
   OpenPortroid/ArmyOfTwoRecompilation (off the UI thread, 6 s timeout). The version under Play reads `v1.0 · up to date`,
   or `v1.0 · update available: v1.1`, and then a window offers to update. UPDATE downloads the release's `.zip` to
-  `update.tmp` next to the launcher, unpacks it there, checks it is a release of the port and copies it over the
-  package, with a progress bar for each step; then the new launcher is started. The user's `settings\*.toml` are kept;
-  the running launcher is renamed to `ArmyOfTwoLauncher.exe.old` (a running exe cannot be overwritten) and removed by
-  the next start. Without a release layout (no `armyoftworecomp.exe` next to the launcher) the browser downloads the
-  archive instead. Offline only the version is shown. `Updates.Version` is the package's version: bump it before
-  every release, the tag is `v` + it.
+  `update.tmp` next to the launcher, checks its SHA-256 against the release's `SHA256SUMS.txt`, unpacks it there, checks
+  it is a release of the port and copies it over the package, with a progress bar for each step; then the new launcher
+  is started. The user's `settings\*.toml` are kept; the running launcher is renamed to `ArmyOfTwoLauncher.exe.old` (a
+  running exe cannot be overwritten) and removed by the next start. Without a release layout (no `armyoftworecomp.exe`
+  next to the launcher) the browser downloads the archive instead. Offline only the version is shown.
+  `Updates.Version` is the package's version: bump it before every release, the tag is `v` + it.
+  - A release newer than 1.4.3 without `SHA256SUMS.txt`, or with a file not listed in it, is refused. So upload all three
+    files `make_release.ps1 -Zip` writes, under the names it gives them. Older releases can still be installed from
+    the release list, unchecked. The hash catches a damaged or swapped download; it does not protect against someone who
+    can change the repository's releases, since the file comes from the same place.
+  - Replacing the files is all or nothing: the old files wait in `update.tmp\backup` while the marker
+    `update.tmp\installing` exists. A failure puts them back; after a crash or a power cut the next start does.
+  - The launcher that installs an update is the old one: the checks work from the update after the first release
+    that contains them.
+  - Test: `tools\test_update.ps1` (fake packages and releases in a temporary folder; no game, no network).
 - **What's new.** The first start after an update (`seen_version` in the launcher's ini differs from
   `Updates.Version`) fetches the description of release `v<Version>` from GitHub (`Updates.NotesFor`, markdown: headings,
   bullets, bold and links are reduced to plain lines) and shows it in a window (scroll: wheel, ↑↓, PgUp/PgDn; Enter / Esc /

@@ -1,0 +1,62 @@
+# Checks everything that needs no game files. The game itself is generated from the user's disc, so it is not built
+# here: a green run does not mean the game builds or plays.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  launcher:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse the PowerShell scripts
+        shell: pwsh
+        run: |
+          $bad = 0
+          foreach ($f in git ls-files '*.ps1') {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f).Path, [ref]$null, [ref]$errors)
+            foreach ($e in $errors) { Write-Host "::error file=$f,line=$($e.Extent.StartLineNumber)::$($e.Message)"; $bad++ }
+          }
+          exit [int]($bad -gt 0)
+      - name: Build the launcher
+        shell: cmd
+        run: launcher\build.cmd
+      - name: Test the self-update
+        shell: pwsh
+        run: launcher\tools\test_update.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher
+          path: launcher/bin/ArmyOfTwoLauncher.exe
+          retention-days: 14
+
+  cpp:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply sdk_changes to the SDK
+        shell: pwsh
+        run: sdk_changes\apply.ps1
+      - name: Build and run the tests
+        shell: cmd
+        run: tools\ci\cpp_tests.cmd
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: failed-shaders
+          path: out/ci/shaders_failed
+          if-no-files-found: ignore
+          retention-days: 14

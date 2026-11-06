@@ -52,6 +52,7 @@
 #include "coop.h"
 #include "debug_menu.h"
 #include "ea_server.h"
+#include "invite_checks.h"
 #include "log_files.h"
 #include "steam_net.h"
 #include "ui_text.h"
@@ -168,6 +169,12 @@ namespace
     a.s_addr = ip;
     inet_ntop(AF_INET, &a, buf, sizeof(buf));
     return buf;
+  }
+
+  bool IsVirtualText(const std::string &ip)
+  {
+    in_addr a = {};
+    return inet_pton(AF_INET, ip.c_str(), &a) == 1 && ao2::steam::IsVirtual(a.s_addr);
   }
 
   // This PC (a Steam player's virtual address is another PC).
@@ -556,6 +563,8 @@ namespace
     // (GAMEQ / GAME), when its own process runs none.
     ao2::ea::HostedGame remote_game;
     Clock::time_point remote_game_seen;
+    uint32_t game_query_ip = 0; // the server last asked: only its answer counts
+    ao2::invite_checks::RateLimit invite_rate{ao2::invite_checks::kInviteBurst, ao2::invite_checks::kInviteBurstWindow};
     // The EA server before an accepted invite pointed the game at the
     // inviter's: put back once the inviter hosts nothing and this game is in
     // the menus (else a game hosted later goes to the inviter's server).
@@ -755,6 +764,10 @@ namespace
     Address server;
     if (!ao2::ea::FindHostedGame(LocalName(), &local) && ServerAddress(&server))
     {
+      {
+        std::lock_guard lock(st.mutex);
+        st.game_query_ip = server.ip;
+      }
       SendTo(server, Build("GAMEQ", {{"name", LocalName()}, {"iid", InstanceId()}}));
     }
   }
@@ -773,15 +786,19 @@ namespace
     auto now = Clock::now();
     if (type == "HELLO" || type == "HERE")
     {
-      std::string name = Get(f, "name");
+      std::string name = ao2::invite_checks::CleanText(Get(f, "name"), ao2::invite_checks::kMaxNameBytes);
       if (name.empty())
       {
         return;
       }
       {
         std::lock_guard lock(st.mutex);
+        if (st.peers.size() >= ao2::invite_checks::kMaxPeers && !st.peers.contains(from))
+        {
+          return;
+        }
         Peer &p = st.peers[from];
-        std::string build = Get(f, "build");
+        std::string build = ao2::invite_checks::CleanText(Get(f, "build"), ao2::invite_checks::kMaxFieldBytes);
         if (!p.name.empty() && p.build == BuildHash() && build != p.build && now - p.seen < kPeerTimeout)
         {
           // Another game behind the same address (a second copy on that PC,
@@ -797,7 +814,7 @@ namespace
         p.address = from;
         p.name = name;
         p.build = build;
-        p.state = Get(f, "state", "menu");
+        p.state = ao2::invite_checks::CleanText(Get(f, "state", "menu"), ao2::invite_checks::kMaxFieldBytes);
         p.hosting = Get(f, "hosting") == "1";
         p.seen = now;
       }
@@ -836,9 +853,13 @@ namespace
       game.players = std::atoi(Get(f, "players", "1").c_str());
       if (game.session_id && game.xnaddr.size() == 36)
       {
+        // What this player's own invites will carry: only from the server it asked.
         std::lock_guard lock(st.mutex);
-        st.remote_game = game;
-        st.remote_game_seen = now;
+        if (from.ip == st.game_query_ip)
+        {
+          st.remote_game = game;
+          st.remote_game_seen = now;
+        }
       }
     }
     else if (type == "INVITE")
@@ -848,28 +869,25 @@ namespace
       ReceivedInvite inv;
       inv.id = id;
       inv.from = from;
-      inv.name = Get(f, "name", "?");
+      inv.name = ao2::invite_checks::CleanText(Get(f, "name"), ao2::invite_checks::kMaxNameBytes);
+      if (inv.name.empty())
+      {
+        inv.name = "?";
+      }
       inv.inviter_xuid = std::strtoull(Get(f, "xuid").c_str(), nullptr, 16);
       inv.session_id = std::strtoull(Get(f, "session").c_str(), nullptr, 16);
       inv.xnaddr = Unhex(Get(f, "xnaddr"));
       inv.is_private = Get(f, "private") == "1";
       inv.playgroup = Get(f, "playgroup") == "1";
-      inv.build = Get(f, "build");
-      // The inviter's lobby server; a loopback address means the inviter's
-      // own PC (unless both run on this one).
-      Address server;
-      if (!ParseAddress(Get(f, "server"), &server) || (IsLoopback(server.ip) && !IsLoopback(from.ip)) ||
-          (ao2::steam::IsVirtual(from.ip) && !ao2::steam::IsVirtual(server.ip)))
-      {
-        server.ip = from.ip;
-      }
-      inv.server_ip = IpString(server.ip);
-      inv.server_here = server.ip == ao2::steam::SelfAddress() && server.ip != 0;
+      inv.build = ao2::invite_checks::CleanText(Get(f, "build"), ao2::invite_checks::kMaxFieldBytes);
+      // The inviter's lobby server (invite_checks.h says which it may be).
+      uint32_t server_ip = ao2::invite_checks::ChooseInviteServer(Get(f, "server"), from.ip, ao2::steam::IsVirtual);
+      inv.server_ip = IpString(server_ip);
+      inv.server_here = server_ip == ao2::steam::SelfAddress() && server_ip != 0;
       inv.received = now;
       if (inv.xnaddr.size() != 36 || !inv.session_id)
       {
-        Log("invite from %s without a session, ignored", inv.name.c_str());
-        return;
+        return; // not logged: anybody can send these, and the log would grow with them
       }
       // The inviter's XNADDR as this machine reaches it (ina, inaOnline and
       // abOnline[0..3], see ea_server.cpp RewriteXnAddr).
@@ -885,7 +903,22 @@ namespace
         {
           return; // a resend
         }
+        if (!st.invite_rate.Allow(now))
+        {
+          return; // a flood: not even logged, the log would grow with it
+        }
         std::erase_if(st.received, [&](const ReceivedInvite &r) { return r.from == from; });
+        // Several ports of one address must not push the other players' invites out.
+        auto same_ip = [&](const ReceivedInvite &r) { return r.from.ip == from.ip; };
+        if (size_t(std::count_if(st.received.begin(), st.received.end(), same_ip)) >=
+            ao2::invite_checks::kMaxInvitesPerIp)
+        {
+          st.received.erase(std::find_if(st.received.begin(), st.received.end(), same_ip));
+        }
+        if (st.received.size() >= ao2::invite_checks::kMaxReceivedInvites)
+        {
+          st.received.erase(st.received.begin());
+        }
         st.received.push_back(inv);
       }
       Log("invite %u from %s (%s), session %016llx, server %s", id, inv.name.c_str(), IpString(from.ip).c_str(),
@@ -1167,6 +1200,9 @@ namespace
     char session[32], xuid[32];
     std::snprintf(session, sizeof(session), "%016llx", (unsigned long long)game.session_id);
     std::snprintf(xuid, sizeof(xuid), "%016llx", (unsigned long long)game.host_xuid);
+    // As a number: the receiver looks no name up, and without one it takes this PC for the server.
+    Address server;
+    std::string server_text = ServerAddress(&server) ? IpString(server.ip) : std::string();
     s.packet = Build("INVITE", {{"id", std::to_string(s.id)},
                                 {"name", LocalName()},
                                 {"xuid", xuid},
@@ -1174,7 +1210,7 @@ namespace
                                 {"xnaddr", Hex(game.xnaddr)},
                                 {"private", game.is_private ? "1" : "0"},
                                 {"playgroup", game.playgroup ? "1" : "0"},
-                                {"server", rex::cvar::GetFlagByName("net_title_server_ip")},
+                                {"server", server_text},
                                 {"build", BuildHash()}});
     s.next_send = Clock::now();
     Log("inviting %s (%s:%u) to game %u, session %s", name.c_str(), IpString(to.ip).c_str(), to.port, game.gid,
@@ -1255,6 +1291,23 @@ namespace
   // Notices (no input, drawn over the picture in the game's look, ui_theme.h)
   // -------------------------------------------------------------------------
 
+  // The address the invite came from, and the server it connects to when that is another machine: a name in a packet
+  // proves nothing, so this is what the player can tell a stranger by. Steam players' addresses mean nothing to them.
+  std::string InviteOrigin(const ReceivedInvite &inv)
+  {
+    std::string out;
+    if (!ao2::steam::IsVirtual(inv.from.ip))
+    {
+      out = IpString(inv.from.ip);
+    }
+    if (!inv.server_here && inv.server_ip != IpString(inv.from.ip))
+    {
+      out += (out.empty() ? "" : "  ·  ") + std::string(Tr("game server")) + " " +
+             (IsVirtualText(inv.server_ip) ? std::string("Steam") : inv.server_ip);
+    }
+    return out;
+  }
+
   // A notice's animation clock: ImGui time of its first frame. Shared, as
   // the notice's std::function is copied for each frame.
   struct NoticeClock
@@ -1284,6 +1337,8 @@ namespace
       std::string name;
       bool is_private = false;
       bool other_build = false;
+      std::string origin;
+      bool other_server = false;
       Clock::time_point received;
       {
         std::lock_guard lock(st.mutex);
@@ -1291,6 +1346,9 @@ namespace
         {
           return false;
         }
+        const ReceivedInvite &newest = st.received.back();
+        origin = InviteOrigin(newest);
+        other_server = !newest.server_here && newest.server_ip != IpString(newest.from.ip);
         name = st.received.back().name;
         is_private = st.received.back().is_private;
         other_build = OtherBuild(st.received.back().build);
@@ -1349,10 +1407,19 @@ namespace
         ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kRed, a),
                  Tr("has a different version of the game"));
       }
+      else if (other_server && !origin.empty())
+      {
+        // Sender and server do not fit next to the sentence; the card's title says it is an invite.
+        ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a), origin.c_str());
+      }
       else
       {
-        ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a),
-                 is_private ? Tr("invites you to a private co-op game") : Tr("invites you to a co-op game"));
+        std::string line = is_private ? Tr("invites you to a private co-op game") : Tr("invites you to a co-op game");
+        if (!origin.empty())
+        {
+          line += "  ·  " + origin;
+        }
+        ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a), line.c_str());
       }
 
       float kx = tx, ky = mn.y + 86.0f * s, kh = 22.0f * s;
@@ -1783,8 +1850,12 @@ namespace
           ui::Text(dl, FontKind::kHeading, ImVec2(mn.x + 20.0f * s, mn.y + 14.0f * s), ui::Fade(ui::kText, a),
                    inv.name.c_str());
           std::string sub = std::string(inv.is_private ? Tr("invites you to a private co-op game")
-                                                       : Tr("invites you to a co-op game")) +
-                            "  ·  " + IpString(inv.from.ip);
+                                                       : Tr("invites you to a co-op game"));
+          std::string origin = InviteOrigin(inv);
+          if (!origin.empty())
+          {
+            sub += "  ·  " + origin;
+          }
           ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, mn.y + 48.0f * s), ui::Fade(ui::kMuted, a),
                    sub.c_str());
           if (OtherBuild(inv.build))

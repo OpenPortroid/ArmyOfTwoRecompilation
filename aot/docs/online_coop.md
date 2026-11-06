@@ -100,6 +100,14 @@ reasons and the lockstep frame state.
 
 ### Invites (`src/coop_invite.cpp`)
 
+Presence packets are plain UDP: players share no secret, so a packet proves nothing about who sent it, and its name can
+be anybody's. `src/invite_checks.h` limits what one can do (test: `tools/invite_checks_test.cpp`): text fields are cut and
+stripped of control characters, the server in an invite is a number that is never looked up and must fit the sender (no
+loopback from another PC, only Steam addresses over Steam, no local address from outside the network), the lists and new
+invites are limited in number, and a `GAME` answer counts only from the server asked. An invite naming a third machine's
+server is legitimate, so it is not refused: the invite card shows the sender's address and that server before the player
+accepts. Connecting to a server the player accepted is still connecting to whatever is there.
+
 On the console Live carries the invite: the host's guide (XShowGameInviteUI)
 sends it, the partner's guide accepts it and the title gets
 `XN_LIVE_INVITE_ACCEPTED` (0x02000002); its notification pump

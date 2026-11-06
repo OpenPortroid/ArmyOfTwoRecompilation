@@ -37,10 +37,16 @@ Found a bug or have a suggestion? Please open an [issue](https://github.com/Open
    `TU_12K222C_0000004000000.00000000000G1`. DLC packages are optional.
 4. Press Install. The files are copied to `assets\`.
 
+Don't have the files on a PC yet? See [Getting the game files from your Xbox 360](aot/docs/dumping.md).
+
 Saves: `Documents\armyoftworecomp_tu2`. The launcher offers new versions by itself; or extract the new package over
 the old one (settings and saves are kept).
 
 On the first runs shaders are compiled, so there are short stutters.
+
+Builds of this port are published only on the [Releases](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/releases)
+page of this repository. Be careful with copies from anywhere else: a program you run from another site may not be
+what it says it is, and a package with game files in it is not ours.
 
 ## What the port adds
 
@@ -138,6 +144,49 @@ File|Contents
 `mapping.toml`|Key and gamepad bindings, mouse sensitivity and inversion, split-screen players and devices
 `online.toml`|Co-op and versus settings, versus bots (`ao2_versus_bots*`), gamertag
 
+## FAQ
+
+**Where do I get the game? The launcher asks for an ISO I don't have.**
+The port contains no game files and this project cannot provide them. You need your own copy of the European Xbox 360
+release and Title Update 2: [how to copy them from your console](aot/docs/dumping.md).
+
+**I started `armyoftworecomp.exe` and got an error about `game_data_root`.**
+Start `ArmyOfTwoLauncher.exe` instead. It opens the install screen if the game is not installed yet.
+
+**Does the US version work?**
+No, and it is not planned: the launcher only accepts the European disc (title `4541084C`) with its Title Update 2.
+
+**Does it run on Linux or Steam Deck?**
+Not officially ([#44](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/44)).
+
+**My antivirus says the launcher is a virus.**
+That is a false positive ([#14](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/14)): the launcher is
+unsigned, downloads and unpacks its own updates and reads the keyboard and gamepad, which is what such programs look
+for. The source is in this repository, so you can read it and build it yourself. Download only from the Releases page.
+Releases after 1.4.3 list the SHA-256 of their files in `SHA256SUMS.txt`.
+
+**The frame rate is low.**
+In Options → Graphics, lower the render resolution and turn off ambient occlusion and anti-aliasing first. The first
+runs also stutter while shaders compile.
+
+**The game crashes when it starts.**
+Update to the latest version, and check that Windows has a working default playback device: a game that cannot open an
+audio device has crashed before. If it still crashes, please report it with the logs (below).
+
+**Co-op shows that the versions differ, or the game goes out of sync.**
+Both players need the same version of the port (both on the AVX1 version if one has no AVX2), the same DLC, the same
+game language and, in versus, the same bot settings.
+
+**Will The 40th Day and The Devil's Cartel be ported?**
+The 40th Day is in development and comes out once its campaign can be finished in online co-op; The Devil's Cartel
+follows. There are no dates.
+
+**How do I report a bug?**
+[Open an issue](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/new/choose). Logs help the most: in the
+launcher, Settings → Advanced, enter `--log_to_files=true` in Extra arguments and run the game until the problem happens.
+Then attach the newest `logs\armyoftworecomp_NNN.log` and `logs\launcher.log` from the game folder (Advanced can open
+that folder), and any `crash_*.txt` next to the game. Please never attach game files.
+
 ## Building
 
 Needed: Visual Studio 2022 Build Tools, LLVM/Clang, CMake, Ninja, Git, and the game files with `default.xexp` from
@@ -169,7 +218,12 @@ Folder|Contents
    next to the game.
 4. Launcher: `launcher\build.cmd`.
 
-Release package: `aot\tools\make_release.ps1 [-Zip]` (needs the release, `compat` and launcher builds).
+Release package: `aot\tools\make_release.ps1 [-Zip]` (needs the release, `compat` and launcher builds). `-Zip` also
+writes `SHA256SUMS.txt`: upload it with the zip and `avx1-version.aot`, or launchers refuse the release.
+
+Checks without the game's files, also run by GitHub Actions: `launcher\tools\test_update.ps1` (the launcher's
+self-update) and `tools\ci\cpp_tests.cmd` (the shader translator, texture conversion and lobby server, built against the
+SDK with `sdk_changes` applied). They do not build the game, which is generated from your copy.
 Renderer notes: [aot/docs/native_renderer.md](aot/docs/native_renderer.md).
 
 ## Special Thanks

@@ -1,0 +1,68 @@
+name: Bug report
+description: Something in the port does not work
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [FAQ](https://github.com/OpenPortroid/ArmyOfTwoRecompilation#faq) first. **Never attach game files.**
+  - type: input
+    id: version
+    attributes:
+      label: Port version
+      description: Shown under the Play button in the launcher. Please update to the latest version first.
+      placeholder: v1.4.3
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Where it happens
+      options:
+        - Installing or updating
+        - Launcher
+        - Campaign, solo
+        - Campaign, online co-op
+        - Campaign, split-screen
+        - Versus
+        - Menus
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead. Screenshots and videos help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      description: The level or checkpoint, and the steps. Does it happen every time?
+    validations:
+      required: true
+  - type: dropdown
+    id: original
+    attributes:
+      label: Does the original game do this on Xbox 360?
+      options:
+        - I don't know
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: PC
+      description: Windows version, CPU, GPU and driver version, and the settings you changed (render resolution, FPS cap).
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >
+        In the launcher, Settings → Advanced, enter --log_to_files=true in Extra arguments and run the game until the
+        problem happens. Attach the newest logs\armyoftworecomp_NNN.log and logs\launcher.log from the game folder, and
+        any crash_*.txt next to the game. In co-op or versus, the other player's logs too, if you can.

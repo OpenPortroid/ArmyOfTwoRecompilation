@@ -60,12 +60,20 @@ Copy-Item "$repo\tools\dist\README_release.txt" "$Out\README.txt" -Force
 $bad = Get-ChildItem $Out -Recurse -File | Where-Object { $_.Name -match '\.(xex|xexp|xxx|bik|dxbc|iso)$' -or $_.Name -eq "pipelines.bin" }
 if ($bad) { throw "game files in the package: $($bad.FullName -join ', ')" }
 
+# The version the launcher will report: the release asset's name and its line in SHA256SUMS.txt depend on it.
+$updates = Get-Content "$root\launcher\src\Updates.cs" -Raw
+if ($updates -notmatch 'const string Version = "([^"]+)"') { throw "no Version in launcher\src\Updates.cs" }
+$version = $Matches[1]
+$zipPath = $null
 if ($Zip) {
-  $zipPath = "$Out.zip"
+  # Upload it under this name: the launcher looks the asset's name up in SHA256SUMS.txt.
+  $zipPath = Join-Path (Split-Path $Out) "ArmyOfTwo-v$version.zip"
   Remove-Item $zipPath -ErrorAction SilentlyContinue
   Push-Location (Split-Path $Out)
   & "$env:WINDIR\System32\tar.exe" -a -c -f $zipPath (Split-Path $Out -Leaf)
+  $tarExit = $LASTEXITCODE
   Pop-Location
+  if ($tarExit -ne 0) { throw "tar failed: $tarExit" }
 }
 $size = (Get-ChildItem $Out -Recurse | Measure-Object Length -Sum).Sum / 1MB
 "release: $Out ({0:N0} MB)" -f $size
@@ -87,5 +95,16 @@ if ($LASTEXITCODE -ne 0) { throw "tar failed: $LASTEXITCODE" }
 Move-Item "$aot.zip" $aot
 Remove-Item $stage -Recurse -Force
 "AVX1 build: $aot ({0:N0} MB)" -f ((Get-Item $aot).Length / 1MB)
+
+# SHA256SUMS.txt, a release asset too: launchers refuse a release newer than 1.4.3 without it
+# (Updates.ExpectedHash). The format of sha256sum, so `sha256sum -c` checks it as well.
+if ($Zip) {
+  $sums = Join-Path (Split-Path $Out) "SHA256SUMS.txt"
+  $lines = foreach ($f in $zipPath, $aot) {
+    "{0} *{1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant(), (Split-Path $f -Leaf)
+  }
+  [IO.File]::WriteAllText($sums, (($lines -join "`n") + "`n"))
+  "Upload with the release: $zipPath, $aot, $sums"
+}
 
 exit 0

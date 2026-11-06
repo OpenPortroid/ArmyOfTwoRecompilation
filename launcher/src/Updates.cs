@@ -26,6 +26,20 @@ namespace AO2Launcher
             public string Date;     // "2026-10-21" (when published); "" when unknown
             public string Body;     // the release description (markdown); "" when none
             public string Avx1Url;  // the avx1-version.aot asset (the game for CPUs without AVX2), null when none
+            public string SumsUrl;  // the SHA256SUMS.txt asset, null when none
+        }
+
+        // The release asset with the SHA-256 of the others (aot\tools\make_release.ps1), as sha256sum writes it.
+        public const string SumsAsset = "SHA256SUMS.txt";
+
+        // The last version released without SHA256SUMS.txt: older ones can still be installed from the release
+        // list, a newer one without the file is refused.
+        const string LastVersionWithoutSums = "1.4.3";
+
+        static string SumsOf(string releaseJson)
+        {
+            Match m = Regex.Match(releaseJson, "\"browser_download_url\"\\s*:\\s*\"([^\"]+/" + Regex.Escape(SumsAsset) + ")\"");
+            return m.Success ? m.Groups[1].Value : null;
         }
 
         // The release asset with the game built for CPUs without AVX2 (x86-64-v2): a zip with armyoftworecomp.exe.
@@ -110,6 +124,7 @@ namespace AO2Launcher
                         Date = date.Success ? date.Groups[1].Value : "",
                         Body = JsonString(p, "body") ?? "",
                         Avx1Url = Avx1Of(p),
+                        SumsUrl = SumsOf(p),
                     });
                 }
                 return list;
@@ -126,6 +141,11 @@ namespace AO2Launcher
             if (Override != null)
             {
                 return new Release { Version = Override.TrimStart('v', 'V'), Url = ReleasesPage };
+            }
+            if (ReleasesFile != null)
+            {
+                var list = All();
+                return list == null || list.Count == 0 ? null : list[0];
             }
             try
             {
@@ -153,6 +173,7 @@ namespace AO2Launcher
                     Version = tag.Groups[1].Value.TrimStart('v', 'V'),
                     Url = zip.Success ? zip.Groups[1].Value : "https://github.com/" + Repo + "/releases/tag/" + tag.Groups[1].Value,
                     Avx1Url = Avx1Of(json),
+                    SumsUrl = SumsOf(json),
                 };
             }
             catch
@@ -274,6 +295,14 @@ namespace AO2Launcher
         // Self-update: the release archive is downloaded to update.tmp next to the launcher, unpacked
         // there, checked, and only then copied over the package. The running launcher cannot be
         // overwritten but can be renamed: it becomes ArmyOfTwoLauncher.exe.old, removed on the next start.
+        //
+        // The archive's SHA-256 is checked against the release's SHA256SUMS.txt. That catches a damaged or
+        // swapped download, not a release replaced by someone with access to the repository.
+        //
+        // Replacing the files is all or nothing. While the marker exists, the old files wait in the backup folder
+        // and created.txt lists the files that are new. A failure puts the old package back; after a crash or a
+        // power cut the next start of the launcher does (RecoverInterrupted). The launcher is copied last and
+        // the marker goes right after it, so a launcher of the new version always has a complete package.
 
         public static string Dir
         {
@@ -288,6 +317,21 @@ namespace AO2Launcher
         static string OldExe
         {
             get { return Path.Combine(Dir, "ArmyOfTwoLauncher.exe.old"); }
+        }
+
+        static string Marker
+        {
+            get { return Path.Combine(TempDir, "installing"); }
+        }
+
+        static string BackupDir
+        {
+            get { return Path.Combine(TempDir, "backup"); }
+        }
+
+        static string CreatedList
+        {
+            get { return Path.Combine(TempDir, "created.txt"); }
         }
 
         // The package can update itself: the release has an archive and the launcher sits next to the game
@@ -318,7 +362,8 @@ namespace AO2Launcher
             }
             try
             {
-                if (Directory.Exists(TempDir))
+                // With the marker the folder holds the only copy of the old files.
+                if (Directory.Exists(TempDir) && !File.Exists(Marker))
                 {
                     Directory.Delete(TempDir, true);
                 }
@@ -328,16 +373,175 @@ namespace AO2Launcher
             }
         }
 
-        // Downloads the release archive; progress(done, total bytes; total -1 when unknown). Returns the file.
-        public static string Download(Release r, Action<long, long> progress, Func<bool> cancel)
+        // Puts the old package back if an update was cut off: call before anything else at the launcher's start.
+        public static void RecoverInterrupted()
         {
-            return DownloadFile(r.Url, "update.zip", progress, cancel);
+            try
+            {
+                if (!File.Exists(Marker) || InstallerRunning())
+                {
+                    return;
+                }
+                Log.Write("an update was interrupted: restoring the previous version");
+                RestoreBackup();
+                Log.Write("the previous version is restored");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("restoring the previous version", ex);
+            }
         }
 
-        // Downloads the release's avx1-version.aot; progress as in Download. Returns the file.
+        // The marker holds the process id of the launcher that is installing: a second launcher started
+        // meanwhile must not undo its work.
+        static bool InstallerRunning()
+        {
+            int pid;
+            System.Diagnostics.Process self = System.Diagnostics.Process.GetCurrentProcess();
+            if (!int.TryParse(File.ReadAllText(Marker).Trim(), out pid) || pid == self.Id)
+            {
+                return false;
+            }
+            try
+            {
+                // By name too: after a crash another program may have got the same id.
+                using (System.Diagnostics.Process p = System.Diagnostics.Process.GetProcessById(pid))
+                {
+                    return string.Equals(p.ProcessName, self.ProcessName, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch (ArgumentException)
+            {
+                return false; // no such process
+            }
+        }
+
+        // Removes the update's new files and moves the old ones back. Every file is tried; the marker stays when
+        // one could not be restored, so the next start tries again.
+        static void RestoreBackup()
+        {
+            string dir = Dir;
+            Exception failed = null;
+            if (File.Exists(CreatedList))
+            {
+                foreach (string rel in File.ReadAllLines(CreatedList))
+                {
+                    try
+                    {
+                        if (rel.Length > 0 && File.Exists(Path.Combine(dir, rel)))
+                        {
+                            File.Delete(Path.Combine(dir, rel));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        failed = ex;
+                    }
+                }
+            }
+            if (Directory.Exists(BackupDir))
+            {
+                string backupFull = Path.GetFullPath(BackupDir) + Path.DirectorySeparatorChar;
+                foreach (string bk in Directory.GetFiles(BackupDir, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        string dst = Path.Combine(dir, Path.GetFullPath(bk).Substring(backupFull.Length));
+                        Directory.CreateDirectory(Path.GetDirectoryName(dst));
+                        if (File.Exists(dst))
+                        {
+                            File.Delete(dst);
+                        }
+                        File.Move(bk, dst);
+                    }
+                    catch (Exception ex)
+                    {
+                        failed = ex;
+                    }
+                }
+            }
+            if (failed != null)
+            {
+                throw new IOException("could not restore the previous version: " + failed.Message, failed);
+            }
+            File.Delete(Marker);
+            CleanUp();
+        }
+
+        // Downloads the release archive and checks it; progress(done, total bytes; total -1 when unknown).
+        // Returns the file.
+        public static string Download(Release r, Action<long, long> progress, Func<bool> cancel)
+        {
+            return DownloadChecked(r, r.Url, "update.zip", progress, cancel);
+        }
+
+        // Downloads the release's avx1-version.aot and checks it; progress as in Download. Returns the file.
         public static string DownloadAvx1(Release r, Action<long, long> progress, Func<bool> cancel)
         {
-            return DownloadFile(r.Avx1Url, Avx1Asset, progress, cancel);
+            return DownloadChecked(r, r.Avx1Url, Avx1Asset, progress, cancel);
+        }
+
+        static string DownloadChecked(Release r, string url, string name, Action<long, long> progress, Func<bool> cancel)
+        {
+            // Before the download: a release that cannot be checked is refused at once.
+            string expected = ExpectedHash(r, url);
+            string file = DownloadFile(url, name, progress, cancel);
+            if (expected != null)
+            {
+                string actual = Sha256(file);
+                if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(file);
+                    throw new IOException("the download is damaged or was changed (SHA-256 " + actual + ", expected " + expected + ")");
+                }
+            }
+            return file;
+        }
+
+        // The SHA-256 the release's SHA256SUMS.txt gives for this asset; null for an old release without the file.
+        static string ExpectedHash(Release r, string url)
+        {
+            if (r.SumsUrl == null)
+            {
+                if (Newer(r.Version, LastVersionWithoutSums))
+                {
+                    throw new IOException("release v" + r.Version + " has no " + SumsAsset + ": it cannot be checked");
+                }
+                Log.Write("release v{0} is older than {1}: not checked", r.Version, SumsAsset);
+                return null;
+            }
+            string asset = Uri.UnescapeDataString(url.Substring(url.LastIndexOf('/') + 1));
+            string sums = DownloadFile(r.SumsUrl, SumsAsset, (done, total) => { }, () => false);
+            string expected = FindHash(File.ReadAllLines(sums), asset);
+            File.Delete(sums);
+            if (expected == null)
+            {
+                throw new IOException(SumsAsset + " of release v" + r.Version + " has no " + asset);
+            }
+            return expected;
+        }
+
+        // "<hash> <name>" or "<hash> *<name>", as sha256sum writes them.
+        static string FindHash(string[] lines, string asset)
+        {
+            foreach (string line in lines)
+            {
+                Match m = Regex.Match(line, "^([0-9a-fA-F]{64})\\s+\\*?(.+?)\\s*$");
+                if (m.Success && string.Equals(m.Groups[2].Value, asset, StringComparison.OrdinalIgnoreCase))
+                {
+                    return m.Groups[1].Value;
+                }
+            }
+            return null;
+        }
+
+        static string Sha256(string file)
+        {
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (FileStream st = File.OpenRead(file))
+            {
+                return BitConverter.ToString(sha.ComputeHash(st)).Replace("-", "").ToLowerInvariant();
+            }
         }
 
         static string DownloadFile(string url, string name, Action<long, long> progress, Func<bool> cancel)
@@ -379,8 +583,14 @@ namespace AO2Launcher
             return file;
         }
 
+        static bool IsLauncher(string rel)
+        {
+            return string.Equals(rel, "ArmyOfTwoLauncher.exe", StringComparison.OrdinalIgnoreCase);
+        }
+
         // Unpacks the archive and copies it over the package; progress(0..1). The user's settings\*.toml
-        // (key bindings, edited options) are kept; everything else is replaced.
+        // (key bindings, edited options) are kept; everything else is replaced. On a failure the package stays as
+        // it was and the exception's message says so.
         public static void Install(string zipFile, Action<double> progress)
         {
             string dir = Dir;
@@ -436,42 +646,69 @@ namespace AO2Launcher
                 throw new IOException("the archive is not a release of the port");
             }
 
-            foreach (string rel in files)
+            // The launcher last: see the comment at the top of this part.
+            files.Sort((a, b) => IsLauncher(a).CompareTo(IsLauncher(b)));
+            Directory.CreateDirectory(BackupDir);
+            File.WriteAllText(Marker, System.Diagnostics.Process.GetCurrentProcess().Id.ToString());
+            try
             {
-                string src = Path.Combine(stage, rel);
-                string dst = Path.Combine(dir, rel);
-                long len = new FileInfo(src).Length;
-                bool userSettings = rel.StartsWith("settings" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
-                    rel.EndsWith(".toml", StringComparison.OrdinalIgnoreCase);
-                if (!(userSettings && File.Exists(dst)))
+                foreach (string rel in files)
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(dst));
-                    if (string.Equals(rel, "ArmyOfTwoLauncher.exe", StringComparison.OrdinalIgnoreCase) &&
-                        string.Equals(rel, exeName, StringComparison.OrdinalIgnoreCase))
+                    string src = Path.Combine(stage, rel);
+                    string dst = Path.Combine(dir, rel);
+                    long len = new FileInfo(src).Length;
+                    bool userSettings = rel.StartsWith("settings" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
+                        rel.EndsWith(".toml", StringComparison.OrdinalIgnoreCase);
+                    if (!(userSettings && File.Exists(dst)))
                     {
-                        if (File.Exists(OldExe))
+                        Directory.CreateDirectory(Path.GetDirectoryName(dst));
+                        if (IsLauncher(rel) && string.Equals(rel, exeName, StringComparison.OrdinalIgnoreCase))
                         {
-                            File.Delete(OldExe);
+                            if (File.Exists(OldExe))
+                            {
+                                File.Delete(OldExe);
+                            }
+                            File.Move(dst, OldExe);
+                            try
+                            {
+                                File.Copy(src, dst, true);
+                            }
+                            catch
+                            {
+                                // Never leave the package without its launcher.
+                                if (File.Exists(dst))
+                                {
+                                    File.Delete(dst);
+                                }
+                                File.Move(OldExe, dst);
+                                throw;
+                            }
                         }
-                        File.Move(dst, OldExe);
-                        try
+                        else
                         {
+                            if (File.Exists(dst))
+                            {
+                                string bk = Path.Combine(BackupDir, rel);
+                                Directory.CreateDirectory(Path.GetDirectoryName(bk));
+                                File.Move(dst, bk);
+                            }
+                            else
+                            {
+                                File.AppendAllText(CreatedList, rel + "\r\n");
+                            }
                             File.Copy(src, dst, true);
                         }
-                        catch
-                        {
-                            // Never leave the package without its launcher.
-                            File.Move(OldExe, dst);
-                            throw;
-                        }
                     }
-                    else
-                    {
-                        File.Copy(src, dst, true);
-                    }
+                    done += len;
+                    progress((double)done / total);
                 }
-                done += len;
-                progress((double)done / total);
+                File.Delete(Marker);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("installing the update", ex);
+                RestoreBackup();
+                throw new IOException("the previous version is restored: " + ex.Message, ex);
             }
             progress(1);
             // The archive and the unpacked copy are not needed any more (the running launcher's .old stays
