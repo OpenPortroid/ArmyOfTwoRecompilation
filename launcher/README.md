@@ -6,8 +6,8 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - The look (`src\Skin.cs`): the art behind rounded panels of dark glass, one cold accent, sentence case in Segoe UI. The cover,
   the logo and the blur under the main screen's dock are baked into cached backdrops, so a repaint takes a few milliseconds
   (`--bench=<file>` measures it per screen).
-- Two screens. **Main**: the art and logo, the dock with the profile, how to play (Solo: no host search; Co-op: the host search;
-  Split-Screen) and Play, Settings, Exit. **Settings**: the Graphics, Controls, Keyboard, Gamepad, Split-Screen, Network, Advanced,
+- Two screens. **Main**: the art and logo, the dock with the profile, what Play does (the host search, then join or host;
+  split-screen is chosen in the game) and Play, Settings, Exit. **Settings**: the Graphics, Controls, Keyboard, Gamepad, Split-Screen, Network, Advanced,
   Profiles and Achievements sections at the left, the rows in the middle, a picture (`res\preview.jpg`), the row's value and
   its description at the right; Back returns to the main screen. A section longer than the panel scrolls (wheel, or by moving
   the selection).
@@ -19,10 +19,9 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   button of `padbind_*` (plus the sticks swapped / inverted). Enter or a click waits for the key or mouse button (with
   Shift / Ctrl / Alt: a combination; a modifier let go alone binds itself), → or + adds one more key, Delete or × clears;
   a gamepad row takes ←→ or a press on an Xbox controller. All bindings go to the game as flags (`none` = nothing bound).
-- **Split-Screen**: on/off, both gamertags (player 1's is the Network page's name, `--user_gamertag_2`) and each player's
-  devices (`--input_player1/2`: keyboard, gamepad N, any gamepad, or keyboard + a pad), picked from a drop-down list of
-  the keyboard and the gamepads connected now (Enter / a click opens it). The connected controllers are listed by name (`src\Devices.cs`: HID joysticks / gamepads through Raw Input). On, Play starts the game at once without
-  the host search; off, every device is player 1's and nobody else signs in (`--max_local_users=1`).
+- **Split-Screen**: both gamertags (player 1's is the Network page's name, `--user_gamertag_2`). The devices are not
+  chosen here (`--input_player1/2=auto --input_share_pads`): every device is player 1's and nobody else signs in until the game's
+  Campaign Mode → Splitscreen window, where each player presses a button on their device, or a versus lobby's Guest Sign-In.
 - Game files are not changed: settings go to the game as command line flags, which take precedence over
   `settings\*.toml`. The launcher keeps its own settings in `ArmyOfTwoLauncher.ini` next to itself
   (in `%APPDATA%\ArmyOfTwoLauncher` when that folder is read-only).

@@ -16,9 +16,6 @@ namespace AO2Launcher
         string captureMod;      // a modifier key held alone (bound when it is let go without another key)
         int captureShown = -1;  // seconds left, as drawn
 
-        List<string> pads = new List<string>(); // names of the connected game controllers
-        DateTime padsAt = DateTime.MinValue;
-
         const string BindDesc = "Enter or click: press the new key or mouse button (hold Shift / Ctrl / Alt for a combination). " +
                                 "→ or +: add one more key. Delete or ×: clear. Waiting stops after a few seconds.";
         const string PadBindDesc = "←→: choose the gamepad control that presses this button in the game. Enter or click: press it " +
@@ -90,68 +87,10 @@ namespace AO2Launcher
             return rows;
         }
 
-        // The devices a player can have: the keyboard, every gamepad connected now (and the one chosen, if it is not),
-        // any gamepad, and the keyboard with one of them.
-        string[] InputValues(string current)
-        {
-            var v = new List<string> { "keyboard" };
-            for (int i = 1; i <= Math.Min(4, pads.Count); i++)
-            {
-                v.Add("pad" + i);
-            }
-            v.Add("pads");
-            for (int i = 1; i <= Math.Min(4, pads.Count); i++)
-            {
-                v.Add("keyboard,pad" + i);
-            }
-            v.Add("keyboard,pads");
-            if (!v.Contains(current) && current.Length > 0)
-            {
-                v.Add(current);
-            }
-            return v.ToArray();
-        }
-
-        string InputName(string v)
-        {
-            bool kb = v.StartsWith("keyboard,");
-            string pad = kb ? v.Substring(9) : v;
-            if (v == "keyboard") return L.T("KEYBOARD + MOUSE");
-            if (pad == "pads") return L.T(kb ? "KEYBOARD + ANY PAD" : "ANY GAMEPAD");
-            int n;
-            if (pad.Length == 4 && pad.StartsWith("pad") && int.TryParse(pad.Substring(3), out n))
-            {
-                string name = n <= pads.Count ? pads[n - 1] : L.T("not connected");
-                return kb ? L.F("KEYBOARD + PAD {0}", n) + " · " + name : L.F("GAMEPAD {0}", n) + " · " + name;
-            }
-            return v;
-        }
-
-        // A device row: its choices follow the connected gamepads.
-        Row InputRow(string label, string key, string desc, Func<bool> on)
-        {
-            var r = new Row { Kind = RowKind.Choice, Label = label, Key = key, Enabled = on, Desc = desc, Drop = true };
-            r.Values = InputValues(S[key]);
-            r.Name = i => InputName(r.Values[i]);
-            return r;
-        }
-
-        void RefreshInputRows()
-        {
-            foreach (Row r in AllRows().Where(r => r.Drop && r != profileRow))
-            {
-                r.Values = InputValues(S[r.Key]);
-            }
-        }
-
         List<Row> SplitRows()
         {
-            Func<bool> on = () => S.Bool("split_screen");
             return new List<Row>
             {
-                Toggle("Split-screen", "split_screen",
-                    "Two players on one PC, each with their own half of the screen. On Play the game starts at once, without " +
-                    "looking for a network host. Off: every device controls player 1."),
                 new Row
                 {
                     Kind = RowKind.Text, Label = "Player 1 name", Key = "gamertag", MaxLen = 15,
@@ -160,7 +99,7 @@ namespace AO2Launcher
                 },
                 new Row
                 {
-                    Kind = RowKind.Text, Label = "Player 2 name", Key = "gamertag2", MaxLen = 15, Enabled = on,
+                    Kind = RowKind.Text, Label = "Player 2 name", Key = "gamertag2", MaxLen = 15,
                     Placeholder = () =>
                     {
                         string p1 = S["gamertag"].Trim().Length > 0 ? S["gamertag"].Trim() : Environment.MachineName;
@@ -169,71 +108,9 @@ namespace AO2Launcher
                     Desc = "Gamertag of player 2 (up to 15 characters); their own profile and settings. " +
                            "Empty: player 1's name with (1) after it."
                 },
-                InputRow("Player 1 controls", "p1_input",
-                    "The devices of player 1. Gamepads are numbered in the order the game finds them (usually the order " +
-                    "they were connected): if the players' pads turn out swapped, swap them here. " +
-                    "Any gamepad: every gamepad the other player does not have.", on),
-                InputRow("Player 2 controls", "p2_input",
-                    "The devices of player 2. The mouse aims for whoever has the keyboard. " +
-                    "Any gamepad: every gamepad the other player does not have.", on),
-                new Row { Kind = RowKind.Info, Text = SplitInfo },
+                new Row { Kind = RowKind.Info, Text = () => L.T("In the game: Campaign Mode → Splitscreen. A window opens: each player presses a button on their " +
+                    "device, and it is theirs. A key or the mouse gives the keyboard and mouse, a gamepad button that gamepad.") },
             };
-        }
-
-        // The connected controllers, what is wrong with the choice, and how to start.
-        string SplitInfo()
-        {
-            var lines = new List<string>();
-            lines.Add(pads.Count == 0
-                ? L.T("No gamepads connected.")
-                : L.T("Connected:") + " " + string.Join(",  ", pads.Select((n, i) => L.F("gamepad {0} - {1}", i + 1, n))));
-            if (S.Bool("split_screen"))
-            {
-                List<string> p1 = Bindings.Split(S["p1_input"]), p2 = Bindings.Split(S["p2_input"]);
-                if (p1.Contains("keyboard") && p2.Contains("keyboard"))
-                {
-                    lines.Add(L.T("Both players have the keyboard: it goes to player 1."));
-                }
-                foreach (string t in p1.Intersect(p2).Where(t => t.StartsWith("pad") && t != "pads"))
-                {
-                    lines.Add(L.F("Both players have gamepad {0}: it goes to player 1.", t.Substring(3)));
-                }
-                if (p1.Contains("pads") && p2.Contains("pads"))
-                {
-                    lines.Add(L.T("Any gamepad for both players: they all go to player 1."));
-                }
-                foreach (string t in p1.Concat(p2).Distinct().Where(t => t.Length == 4 && t.StartsWith("pad") && char.IsDigit(t[3])))
-                {
-                    int n = t[3] - '0';
-                    if (n > pads.Count)
-                    {
-                        lines.Add(L.F("Gamepad {0} is not connected.", n));
-                    }
-                }
-                lines.Add(L.T("In the game: Campaign Mode → Splitscreen; player 2 signs in with their device when asked."));
-            }
-            return string.Join("\n", lines);
-        }
-
-        // The controller list, every 2 s while the split-screen page is shown.
-        void RefreshPads()
-        {
-            if (screen != UiScreen.Settings || !tabs[tab].Any(r => r.Key == "p1_input") || DateTime.UtcNow < padsAt)
-            {
-                return;
-            }
-            padsAt = DateTime.UtcNow.AddSeconds(2);
-            List<string> now = Devices.Gamepads();
-            if (!now.SequenceEqual(pads))
-            {
-                pads = now;
-                RefreshInputRows();
-                if (dropRow != null)
-                {
-                    OpenDrop(dropRow); // the list changed under it
-                }
-                LayoutRows();
-            }
         }
 
         // ------------------------------------------------------------------
@@ -288,7 +165,6 @@ namespace AO2Launcher
         // Timer: the countdown, and waiting stops after a while.
         void TickCapture()
         {
-            RefreshPads();
             if (capturing == null)
             {
                 return;
@@ -533,7 +409,6 @@ namespace AO2Launcher
 
         void OpenDrop(Row r)
         {
-            RefreshInputRows();
             dropRow = r;
             dropSel = Math.Max(0, Array.IndexOf(r.Values, S[r.Key]));
             LayoutRows(false);
@@ -592,10 +467,7 @@ namespace AO2Launcher
                 {
                     SelectionBar(g, ir);
                 }
-                string v = dropRow.Values[i];
-                bool connected = !(v.EndsWith("pad1") || v.EndsWith("pad2") || v.EndsWith("pad3") || v.EndsWith("pad4")) ||
-                                 v[v.Length - 1] - '0' <= pads.Count;
-                Color c = !connected ? TextOff : lit ? PaperHi : TextLight;
+                Color c = lit ? PaperHi : TextLight;
                 if (i == current)
                 {
                     DrawText(g, "✓", fLabel, c, new RectangleF(ir.X + 10, ir.Y, 20, ir.Height), fmt);

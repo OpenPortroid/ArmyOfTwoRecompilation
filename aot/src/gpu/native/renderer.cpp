@@ -5656,6 +5656,13 @@ float4 ps(float4 pos : SV_Position, uint sample : SV_SampleIndex) : SV_Target {
   if (stencil_bit != 0u && (raw & stencil_bit) == 0u) { discard; }
   PsOut o;
   o.depth = dst_format == 1u ? Decode20e4(raw >> 8) : float(raw >> 8) / 16777215.0;
+#if SRC_DEPTH
+  // On the console 1x and 4x are the same memory, so a surface of the same format
+  // gets the same value: the host's 32-bit float, not one rounded to the 24 bits of
+  // the EDRAM cell. Rounded up, a draw of the same surface fails its depth test
+  // (split-screen: the tile row the two views share goes 1x -> 4x -> 1x).
+  if (src_format == dst_format) { o.depth = d; }
+#endif
   return o;
 #else
   return UnpackColor(raw, dst_format);

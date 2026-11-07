@@ -20,6 +20,15 @@
 #include "log_files.h"
 #include "ue3_reflect.h"
 
+namespace ao2::split_join
+{
+  // split_join.cpp
+  extern uint32_t g_cause_event;
+  extern uint32_t g_login_status;
+  bool OnCauseEvent(PPCContext &ctx, uint8_t *base); // true: the function does not run
+  void OnLoginStatus(PPCContext &ctx, uint8_t *base);
+}
+
 REXCVAR_DEFINE_BOOL(ao2_script_trace, false, "Debug",
                     "Debug: log the UnrealScript functions run in the main menu to script_trace.log");
 
@@ -138,6 +147,16 @@ extern "C" REX_FUNC(sub_82445C30)
   if (REXCVAR_GET(ao2_script_trace))
   {
     Trace(base, ctx.r3.u32, ctx.r4.u32);
+  }
+  // FFrame +4: its Node, the function.
+  const uint32_t function = LoadU32(base, ctx.r4.u32 + 4);
+  if (function == ao2::split_join::g_login_status)
+  {
+    ao2::split_join::OnLoginStatus(ctx, base);
+  }
+  else if (function == ao2::split_join::g_cause_event && ao2::split_join::OnCauseEvent(ctx, base))
+  {
+    return;
   }
   __imp__sub_82445C30(ctx, base);
 }

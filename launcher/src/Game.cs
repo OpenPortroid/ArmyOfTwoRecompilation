@@ -300,24 +300,16 @@ namespace AO2Launcher
             }
             a.Add("--ao2_coop_input_margin_ms=" + s.Int("input_margin"));
 
-            // Split-screen: the players' devices and the second one's name. Off, every device is player 1's
-            // and nobody else signs in.
-            if (s.Bool("split_screen"))
+            // Split-screen: every device is player 1's and nobody else is signed in until the game's own
+            // window (Campaign Mode → Splitscreen) or a versus guest gives player 2 a device.
+            a.Add("--max_local_users=2");
+            a.Add("--input_player1=auto");
+            a.Add("--input_player2=auto");
+            a.Add("--input_share_pads");
+            string tag2 = s["gamertag2"].Trim();
+            if (tag2.Length > 0)
             {
-                a.Add("--max_local_users=2");
-                a.Add("--input_player1=" + s["p1_input"]);
-                a.Add("--input_player2=" + s["p2_input"]);
-                string tag2 = s["gamertag2"].Trim();
-                if (tag2.Length > 0)
-                {
-                    a.Add("--user_gamertag_2=" + tag2);
-                }
-            }
-            else
-            {
-                a.Add("--max_local_users=1");
-                a.Add("--input_player1=keyboard,pads");
-                a.Add("--input_player2=none");
+                a.Add("--user_gamertag_2=" + tag2);
             }
 
             // Bindings: all of them, so the launcher's page is what the game uses. A flag needs a value:

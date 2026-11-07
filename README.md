@@ -119,20 +119,21 @@ Details: [aot/docs/online_coop.md](aot/docs/online_coop.md).
 
 ## Split-screen
 
-- Two players on one PC: in the launcher, Settings → Split-Screen, turn it on, enter both gamertags and pick each
-  player's devices from the list of connected ones: the keyboard and mouse, a specific gamepad, any gamepad, or the
-  keyboard plus a pad. Play then starts the game at once, without the host search.
+- Two players on one PC: in the game, Campaign Mode → Splitscreen. A window opens with the two players: player 1
+  presses a button, then player 2, and what each pressed is theirs: a key or a mouse button gives the keyboard and
+  mouse, a gamepad button that gamepad. Esc or B goes back. The launcher's Settings → Split-Screen page has the gamertags.
 - Player 2 signs in with their own profile and saves while a device is assigned to them.
 - The mouse aims and drives for the player who has the keyboard.
 - Button prompts follow each player: keys in the keyboard player's half of the screen, Xbox buttons in the other's;
   a prompt they share shows both.
-- Without the launcher: `input_player1`, `input_player2`, `user_gamertag_2` and `max_local_users` in
-  `settings\mapping.toml`.
+- Without the launcher: `input_player1`, `input_player2`, `input_share_pads`, `user_gamertag_2` and `max_local_users`
+  in `settings\mapping.toml` (the devices for versus; the campaign's window overrides them).
 - Versus in split-screen: in the Custom Match lobby press Y (Guest Sign-In), then A: player 2 joins as player 1's
   guest, on the same team, and the match is played on a split screen; bots fill the other places. Not in ranked
-  matches, as on the console (`ao2_versus_guest` in `settings\online.toml`). The guest plays with player 2's devices,
-  or, with one gamepad and the devices left automatic, with that gamepad while player 1 keeps the keyboard and
-  mouse; it returns to player 1 after the match.
+  matches, as on the console (`ao2_versus_guest` in `settings\online.toml`). The same window as in the campaign opens:
+  each player presses a button on their device. The devices go back to player 1 after the match. Players on different
+  teams each have their own aggro meter on their part of the screen, and the match timer stands on the line
+  between the parts.
 
 ## Settings
 

@@ -36,12 +36,7 @@ namespace AO2Launcher
             p("The list of achievements comes from the game's files: start the game once to see it here.",
               "A lista de conquistas vem dos arquivos do jogo: inicie o jogo uma vez para vê-la aqui.");
             p("Launcher", "Launcher");
-            p("Solo", "Sozinho");
-            p("Co-op", "Cooperativo");
-            p("The campaign on this PC, with the game playing your partner.", "A campanha neste PC, com o jogo controlando seu parceiro.");
             p("Looks for a host on the local network: joins it if there is one, otherwise you host.", "Procura um anfitrião na rede local: entra se houver um, senão você hospeda.");
-            p("Two players on one PC, each with their own half of the screen.", "Dois jogadores em um PC, cada um com sua metade da tela.");
-            p("Starting the game", "Iniciando o jogo");
             p("Installation", "Instalação");
             p("Settings", "Configurações");
             p("BACK", "VOLTAR");
@@ -320,11 +315,6 @@ namespace AO2Launcher
             p("Gamepad layout", "Layout do controle");
             p("Return every gamepad button to the console layout.", "Voltar todos os botões do controle ao layout do console.");
             p("Default gamepad layout restored", "Layout padrão do controle restaurado");
-            p("Split-screen", "Tela dividida");
-            p("Two players on one PC, each with their own half of the screen. On Play the game starts at once, without " +
-              "looking for a network host. Off: every device controls player 1.",
-              "Dois jogadores em um PC, cada um com sua metade da tela. Em Jogar, o jogo começa na hora, sem " +
-              "procurar um anfitrião na rede. Desligado: todos os dispositivos controlam o jogador 1.");
             p("Player 1 name", "Nome do jogador 1");
             p("Player 2 name", "Nome do jogador 2");
             p("Gamertag of player 1 (up to 15 characters), the same as Network → Player name. Empty: the computer's name.",
@@ -333,41 +323,12 @@ namespace AO2Launcher
               "Empty: player 1's name with (1) after it.",
               "Gamertag do jogador 2 (até 15 caracteres); com perfil e configurações próprios. " +
               "Vazio: o nome do jogador 1 com (1) depois.");
-            p("Player 1 controls", "Controles do jogador 1");
-            p("Player 2 controls", "Controles do jogador 2");
-            p("The devices of player 1. Gamepads are numbered in the order the game finds them (usually the order " +
-              "they were connected): if the players' pads turn out swapped, swap them here. " +
-              "Any gamepad: every gamepad the other player does not have.",
-              "Os dispositivos do jogador 1. Os controles são numerados na ordem em que o jogo os encontra (normalmente a ordem " +
-              "em que foram conectados): se os controles dos jogadores saírem trocados, troque-os aqui. " +
-              "Qualquer controle: todos os controles que o outro jogador não tem.");
-            p("The devices of player 2. The mouse aims for whoever has the keyboard. " +
-              "Any gamepad: every gamepad the other player does not have.",
-              "Os dispositivos do jogador 2. O mouse mira para quem estiver com o teclado. " +
-              "Qualquer controle: todos os controles que o outro jogador não tem.");
-            p("KEYBOARD + MOUSE", "TECLADO + MOUSE");
-            p("ANY GAMEPAD", "QUALQUER CONTROLE");
-            p("GAMEPAD 1", "CONTROLE 1");
-            p("GAMEPAD 2", "CONTROLE 2");
-            p("GAMEPAD 3", "CONTROLE 3");
-            p("GAMEPAD 4", "CONTROLE 4");
-            p("KEYBOARD + ANY PAD", "TECLADO + CONTR.");
-            p("KEYBOARD + PAD 1", "TECLADO + CONTR. 1");
-            p("KEYBOARD + PAD 2", "TECLADO + CONTR. 2");
-            p("GAMEPAD {0}", "CONTROLE {0}");
-            p("KEYBOARD + PAD {0}", "TECLADO + CONTR. {0}");
-            p("not connected", "não conectado");
-            p("Game controller", "Controle de jogo");
-            p("No gamepads connected.", "Nenhum controle conectado.");
-            p("Connected:", "Conectados:");
-            p("gamepad {0} - {1}", "controle {0} - {1}");
-            p("Both players have the keyboard: it goes to player 1.", "Os dois jogadores estão com o teclado: ele fica com o jogador 1.");
-            p("Both players have gamepad {0}: it goes to player 1.", "Os dois jogadores estão com o controle {0}: ele fica com o jogador 1.");
-            p("Any gamepad for both players: they all go to player 1.", "Qualquer controle para os dois jogadores: todos ficam com o jogador 1.");
-            p("Gamepad {0} is not connected.", "O controle {0} não está conectado.");
-            p("In the game: Campaign Mode → Splitscreen; player 2 signs in with their device when asked.",
-              "No jogo: Modo Campanha → Tela dividida; o jogador 2 entra com o dispositivo dele quando o jogo pedir.");
-            p("Starting split-screen", "Iniciando tela dividida");
+            p("Two players on one PC: in the game, Campaign Mode → Splitscreen.",
+              "Dois jogadores em um PC: no jogo, Modo Campanha → Tela dividida.");
+            p("In the game: Campaign Mode → Splitscreen. A window opens: each player presses a button on their " +
+              "device, and it is theirs. A key or the mouse gives the keyboard and mouse, a gamepad button that gamepad.",
+              "No jogo: Modo Campanha → Tela dividida. Uma janela se abre: cada jogador aperta um botão no seu " +
+              "dispositivo, e ele passa a ser dele. Uma tecla ou o mouse dá o teclado e o mouse; um botão de controle, esse controle.");
             p("Player name", "Nome do jogador");
             p("The name your partner sees (up to 15 characters). Empty: the computer's name.",
               "O nome que seu parceiro vê (até 15 caracteres). Vazio: o nome do computador.");

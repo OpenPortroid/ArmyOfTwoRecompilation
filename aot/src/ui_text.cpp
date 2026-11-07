@@ -65,6 +65,17 @@ namespace
        "A ACCEPTÉ  ·  CONNEXION", "HA ACEPTADO  ·  CONECTANDO", "HA ACCETTATO  ·  IN CONNESSIONE"},
       {"DECLINED THE INVITE", "ОТКЛОНИЛ ПРИГЛАШЕНИЕ", "HAT ABGELEHNT", "A REFUSÉ", "HA RECHAZADO", "HA RIFIUTATO"},
 
+      // --- The campaign's split-screen: who plays with what ---
+      {"SPLIT-SCREEN", "РАЗДЕЛЁННЫЙ ЭКРАН", "SPLITSCREEN", "ÉCRAN PARTAGÉ", "PANTALLA DIVIDIDA", "SCHERMO CONDIVISO"},
+      {"Each player presses a button on their device: the keyboard or a gamepad.", "Каждый игрок нажимает кнопку на своём устройстве: клавиатуре или геймпаде.", "Jeder Spieler drückt eine Taste auf seinem Gerät: Tastatur oder Controller.", "Chaque joueur appuie sur un bouton de son périphérique : clavier ou manette.", "Cada jugador pulsa un botón en su dispositivo: teclado o mando.", "Ogni giocatore preme un tasto sul proprio dispositivo: tastiera o controller."},
+      {"PLAYER 1", "ИГРОК 1", "SPIELER 1", "JOUEUR 1", "JUGADOR 1", "GIOCATORE 1"},
+      {"Keyboard and mouse", "Клавиатура и мышь", "Tastatur und Maus", "Clavier et souris", "Teclado y ratón", "Tastiera e mouse"},
+      {"Gamepad %u", "Геймпад %u", "Controller %u", "Manette %u", "Mando %u", "Controller %u"},
+      {"Press any button", "Нажмите любую кнопку", "Beliebige Taste drücken", "Appuyez sur un bouton", "Pulsa cualquier botón", "Premi un tasto"},
+      {"Waiting for player 1", "Ждём игрока 1", "Warten auf Spieler 1", "En attente du joueur 1", "Esperando al jugador 1", "In attesa del giocatore 1"},
+      {"Back", "Назад", "Zurück", "Retour", "Atrás", "Indietro"},
+      {"Connect a gamepad for player 2.", "Подключите геймпад для игрока 2.", "Schließe einen Controller für Spieler 2 an.", "Branchez une manette pour le joueur 2.", "Conecta un mando para el jugador 2.", "Collega un controller per il giocatore 2."},
+
       // --- Invites: the players window ---
       {"in game", "в игре", "im Spiel", "en jeu", "en partida", "in partita"},
       {"in lobby", "в лобби", "in der Lobby", "dans le salon", "en la sala", "nella lobby"},
@@ -514,6 +525,15 @@ namespace
       {"LIST / DECLINE", "LISTA / RECUSAR"},
       {"ACCEPTED THE INVITE  ·  JOINING", "ACEITOU O CONVITE  ·  ENTRANDO"},
       {"DECLINED THE INVITE", "RECUSOU O CONVITE"},
+      {"SPLIT-SCREEN", "TELA DIVIDIDA"},
+      {"Each player presses a button on their device: the keyboard or a gamepad.", "Cada jogador aperta um botão no seu dispositivo: teclado ou controle."},
+      {"PLAYER 1", "JOGADOR 1"},
+      {"Keyboard and mouse", "Teclado e mouse"},
+      {"Gamepad %u", "Controle %u"},
+      {"Press any button", "Aperte qualquer botão"},
+      {"Waiting for player 1", "Aguardando o jogador 1"},
+      {"Back", "Voltar"},
+      {"Connect a gamepad for player 2.", "Conecte um controle para o jogador 2."},
       {"in game", "em jogo"},
       {"in lobby", "no lobby"},
       {"in menu", "no menu"},

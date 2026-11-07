@@ -38,6 +38,10 @@ namespace ao2::menu
   // comes ~0.1 s late; after the menu the buttons still held stay away from the game.
   void OnPadPoll(uint32_t user, uint8_t *state);
 
+  // UI thread: the gamepads with a button down, past the input the menus block
+  // (one bit per the pad's ordinal; `back`: those with B down); 0 without focus.
+  uint32_t PressedPads(uint32_t *back);
+
   // ImGui font setup (ReXApp::OnConfigureFonts): a readable UI font with
   // Cyrillic.
   void ConfigureFonts(ImFontAtlas *atlas);

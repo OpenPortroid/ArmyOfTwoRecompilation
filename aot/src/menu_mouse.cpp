@@ -1049,6 +1049,8 @@ namespace
   constexpr uint32_t kMoveWindow = 300;
   bool g_enter = false, g_esc = false;      // the keys as last seen...
   bool g_enter_menu = false, g_esc_menu = false; // ...and whether a menu was up when they were pressed
+  constexpr uint64_t kEscStartLate = 250;   // ms: more than the chord's wait and its tap together
+  uint64_t g_esc_back_until = 0;            // Esc was back: its Start, still on the way, stays out until then
 
   // The focus goes to a pointed widget the way the pad takes it, one D-pad
   // step at a time: some menus' scripts follow the navigation, not the
@@ -1669,9 +1671,22 @@ namespace ao2::menumouse
         bool menu = KeysMenu(base, scenes);
         g_enter_menu = enter && !g_enter ? menu : g_enter_menu;
         g_esc_menu = esc && !g_esc ? menu : g_esc_menu;
+        g_esc_back_until = esc && !g_esc ? 0 : g_esc_back_until;
       }
       g_enter = enter;
       g_esc = esc;
+      // A short press of Start reaches the game only after it is let go (the
+      // Select + Start chord holds it back, debug_menu.cpp), when Esc no longer
+      // looks pressed here: it would open the pause menu Esc has just closed.
+      if (esc && g_esc_menu)
+      {
+        g_esc_back_until = GetTickCount64() + kEscStartLate;
+      }
+      else if ((buttons & kButtonStart) && GetTickCount64() < g_esc_back_until)
+      {
+        buttons &= uint16_t(~kButtonStart);
+        store_buttons();
+      }
       if ((enter && g_enter_menu) || (esc && g_esc_menu))
       {
         if (enter && g_enter_menu)

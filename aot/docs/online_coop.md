@@ -425,13 +425,33 @@ XUserGetSigninInfo (`sub_82B07E10`) has `XUSER_INFO_FLAG_GUEST` (info +8,
 users 1-3 signed in when the guest sign-in UI opens (`sub_82A209D0`,
 `sub_82A055C8`) guests until their sign-in state is 0 or this PC has been out of every
 lobby and match for 2 s; `versus_guest.log` says when. On the console the guest brings its own controller; here the
-automatic assignment gives the keyboard and the first pad to player 1, so
-with one pad and nobody else signed in the sign-in lends that pad to player
-2 (`rex_input_pad_guest` in rexruntime; the keyboard and mouse stay player
-1's), and the user becomes a guest once the runtime signs it in (its
-250 ms device poll sends XN_SYS_SIGNINCHANGED again). The pad goes back
-after 2 s out of every lobby and match (the Plasma lobby's +2793 / +2794,
-which the guest handler wants set: 0 in the main menu, 1 in the lobby).
+automatic assignment gives every device to player 1 (the launcher's
+`input_share_pads`), so with nobody else signed in the sign-in opens the
+window of `src/split_join.cpp`: each player presses a button on their device
+(`rex_input_split_players`), and the user becomes a guest once the runtime signs
+it in (its 250 ms device poll sends XN_SYS_SIGNINCHANGED again). Closing the
+window leaves no guest. The devices go back after 2 s out of every lobby and
+match (the Plasma lobby's +2793 / +2794, which the guest handler wants set: 0 in
+the main menu, 1 in the lobby).
+
+With two views in the frame the aggro meter is shared (only the lower part draws it, at
+the seam). Players on different teams (`PlayerReplicationInfo.Team`) each get a whole
+screen's meter on their part instead (`src/split_hud.cpp`).
+
+The campaign's split-screen (`src/split_join.cpp`) has no guest. The Splitscreen
+button's sequence counts the signed-in players first
+(`UIAction_GetLoggedInPlayerCount`, "needs two players"), then maps the second
+one (`UIAction_MapSecondController`). The window opens at the count, and player
+2 is signed in with the keyboard for now so that the sequence goes on. Campaign
+Mode's buttons run `causeevent MissionSetup_<button>`, which reaches the script
+function `PlayerController.CauseEvent` of every PlayerController (not
+`ULocalPlayer::Exec`; caught at `UObject::ProcessInternal`, `sub_82445C30`, by
+the FFrame's Node +4, the name in its Locals +16). Splitscreen is held back and a window opens: player 1 presses
+a button, then player 2, and each gets what they pressed on (a key or mouse
+button: the keyboard and mouse; a pad button: that pad;
+`rex_input_split_players`). The command then runs again and goes through once
+player 2 is signed in (up to 600 ms). Another of those buttons or the main menu
+after a level gives the devices back. `split_join.log` says what happened.
 
 The match numbers the local players by their places (a guest on a place
 before the host's makes the guest's LocalPlayer GamePlayers[0] and gives the
@@ -449,8 +469,7 @@ another player has (they swap Origin and Size); laying out again
 functions the main menu runs (`UObject::ProcessInternal`, `sub_82445C30`) to
 `script_trace.log`: two runs side by side found this. Tested on one PC: host
 and guest against two bots (Iraq), then the campaign's split-screen. A guest with
-players of other PCs is not tested yet; the lent pad works (one Bluetooth
-Xbox pad, the test instance with `--ao2_steam=false`).
+players of other PCs is not tested yet.
 
 Steam Input takes the pad: with `ao2_steam` on (SteamAPI_Init as Spacewar,
 480) and Steam Input on for it, SDL lists the Bluetooth Xbox pad but
@@ -465,8 +484,7 @@ A copy of `XInput1_4.dll` under another name is not hooked, so the runtime's
 SDL driver (`UseUnhookedXInput`, `hid_xinput_past_steam`, on by default)
 copies it to `%TEMP%ex_xinput1_4.dll` and points SDL's XInput entry points
 there once SDL's gamepad subsystem is up. With that off, Steam's Spacewar →
-Controller → Disable Steam Input, or `ao2_steam=false`, gives the pad back. `versus_guest.log` lists the runtime's devices, SDL's own counts and
-the last open error when the guest finds no controller. The runtime's SDL
+Controller → Disable Steam Input, or `ao2_steam=false`, gives the pad back. The runtime's SDL
 driver also opens the pads SDL lists whose `SDL_EVENT_GAMEPAD_ADDED` never
 came (it pumps SDL's events only for pads it knows, so it had none).
 

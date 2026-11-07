@@ -59,6 +59,11 @@ Findings on the way (each one was a visible bug):
   destination number format (`copy_dest_number`); (2) resolved textures are pitch x height host resources but
   are sampled with normalized guest UVs (322x182 in a 352-pitch resource, a 4x4 in 32x8): `xe_tex_info.zw` =
   guest size / host size, the translator scales and edge-clamps the UVs.
+- Split-screen, black combed band at the bottom of player 1's view (guest rows 352-359): the two views share the
+  EDRAM tile row 352-368, and clearing player 2's depth through the 4x surface sends it 1x -> 4x -> 1x with player 1's
+  depth in it. The transfer shader went through the cell's 20e4 float, and depth rounded up made the colour passes'
+  GEQUAL test fail (every black pixel's depth had the float's low 3 bits zero). Depth between surfaces of one format
+  now keeps the host's 32-bit value.
 - Display gamma ramp: the game writes a non-linear 256-entry `DC_LUT_30_COLOR` table (16 -> 24/1023, 128 -> 462);
   the present blit applies it (Pm4Consumer keeps the table, `gamma ramp` lines in native_gpu.log).
 - Rect-list extents from vertex data are only valid for vertex shaders exporting the fetched x/y unchanged

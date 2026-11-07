@@ -135,7 +135,7 @@ namespace AO2Launcher
         const int ProfilesTab = 7;
         List<Row>[] tabs;
         UiScreen screen = UiScreen.Main;
-        int mainSel; // 0 = play, 1 = settings
+        int mainSel; // 0 = play, 1 = settings, 2 = exit
         int tab;
         int sel;
         bool searching;
@@ -1248,7 +1248,6 @@ namespace AO2Launcher
             screen = scr;
             sel = s;
             instSel = s;
-            RefreshPads();
             LayoutRows();
             if (ask != null)
             {
@@ -2080,7 +2079,6 @@ namespace AO2Launcher
             tab = t;
             sel = FirstSelectable();
             scroll = 0;
-            padsAt = DateTime.MinValue;
             LayoutRows();
         }
 
@@ -2261,12 +2259,6 @@ namespace AO2Launcher
                 OfferAvx1();
                 return;
             }
-            if (S.Bool("split_screen") || S.Bool("solo"))
-            {
-                // Two players here, or one alone: nobody to look for on the network.
-                StartGame(null);
-                return;
-            }
             searching = true;
             Invalidate();
             string manual = S["host_ip"].Trim();
@@ -2311,9 +2303,7 @@ namespace AO2Launcher
                 ShowToast(L.F("Could not start the game: {0}", ex.Message), true);
                 return;
             }
-            ShowToast(S.Bool("split_screen") ? L.T("Starting split-screen")
-                : S.Bool("solo") ? L.T("Starting the game")
-                : host != null ? L.F("Host found: {0} - joining", host) : L.T("No host found - hosting a game"), false);
+            ShowToast(host != null ? L.F("Host found: {0} - joining", host) : L.T("No host found - hosting a game"), false);
             if (S.Bool("close_on_launch"))
             {
                 Close();
@@ -2337,33 +2327,12 @@ namespace AO2Launcher
             {
                 Close();
             }
-            else
-            {
-                SetPlayMode(i - 3);
-            }
         }
 
-        // How the next game is played: 0 alone (no host search), 1 co-op (the host search), 2 split-screen.
-        int PlayMode
-        {
-            get { return S.Bool("split_screen") ? 2 : S.Bool("solo") ? 0 : 1; }
-        }
-
-        void SetPlayMode(int mode)
-        {
-            S["split_screen"] = mode == 2 ? "1" : "0";
-            S["solo"] = mode == 0 ? "1" : "0";
-            S.Save();
-            LayoutRows();
-        }
-
-        // The main screen's items in order: the three modes (mainSel 3..5), PLAY, SETTINGS, EXIT.
-        static readonly int[] MainOrder = { 3, 4, 5, 0, 1, 2 };
-
+        // The main screen's items: PLAY, SETTINGS, EXIT.
         void MainMove(int dir)
         {
-            int i = Array.IndexOf(MainOrder, mainSel);
-            mainSel = MainOrder[(i + dir + MainOrder.Length) % MainOrder.Length];
+            mainSel = (mainSel + dir + 3) % 3;
             Invalidate();
         }
 
@@ -3136,42 +3105,10 @@ namespace AO2Launcher
             bool install = gameExe != null && !Installed;
             float colX = DockR.X + 288, colW = 590, colY = DockR.Y + 18;
 
-            // Left: the profile. Middle: how to play. Right: Play, Settings, Exit.
+            // Left: the profile. Middle: what Play does. Right: Play, Settings, Exit.
             DrawProfileChip(g);
 
-            string[] modes = { L.T("Solo"), L.T("Co-op"), Sentence(L.T("SPLIT-SCREEN")) };
-            string[] helps =
-            {
-                L.T("The campaign on this PC, with the game playing your partner."),
-                L.T("Looks for a host on the local network: joins it if there is one, otherwise you host."),
-                L.T("Two players on one PC, each with their own half of the screen."),
-            };
-            int mode = PlayMode;
-            FillRound(g, Color.FromArgb(70, 0, 0, 0), new RectangleF(colX, colY, colW, 54), 15);
-            float segW = (colW - 8 - 8) / 3;
-            for (int i = 0; i < 3; i++)
-            {
-                var seg = new RectangleF(colX + 4 + i * (segW + 4), colY + 4, segW, 46);
-                string id = "mode" + i;
-                bool on = i == mode, hv = IsHover(id), lit = Lit(mainSel, 3 + i);
-                if (on)
-                {
-                    FillRound(g, Accent, seg, 11);
-                }
-                else if (hv || lit)
-                {
-                    FillRound(g, Color.FromArgb(34, 255, 255, 255), seg, 11);
-                }
-                if (lit && !IsHover(id))
-                {
-                    OutlineRound(g, on ? PaperHi : Color.FromArgb(170, Accent), seg, 11, 1.5f);
-                }
-                DrawText(g, modes[i], fNav, on ? InkDeep : PaperHi, seg, CenterFmt());
-                int m = i;
-                AddHot(seg, id, () => SetPlayMode(m), 3 + i);
-            }
-
-            var help = new RectangleF(colX + 4, colY + 60, colW - 8, 50);
+            var help = new RectangleF(colX + 4, colY + 8, colW - 8, 100);
             if (gameExe == null)
             {
                 bool hv = IsHover("path");
@@ -3180,7 +3117,8 @@ namespace AO2Launcher
             }
             else
             {
-                DrawText(g, helps[mode], fDesc, Paper, help, StringFormat.GenericDefault);
+                DrawText(g, L.T("Looks for a host on the local network: joins it if there is one, otherwise you host.") + "\n\n" +
+                    L.T("Two players on one PC: in the game, Campaign Mode → Splitscreen."), fDesc, Paper, help, StringFormat.GenericDefault);
             }
 
             float btnX = DockR.Right - 18 - 244;

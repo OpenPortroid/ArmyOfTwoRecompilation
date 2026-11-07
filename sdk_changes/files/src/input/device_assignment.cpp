@@ -29,6 +29,9 @@ REXCVAR_DEFINE_STRING(input_player1, "auto", "Input",
                       "and the keyboard are player 1, pad N is player N (see keyboard_own_player)");
 REXCVAR_DEFINE_STRING(input_player2, "auto", "Input",
                       "Devices of player 2 (split-screen), as input_player1");
+REXCVAR_DEFINE_BOOL(input_share_pads, false, "Input",
+                    "With input_player1 and input_player2 = auto: every gamepad is player 1's and nobody else "
+                    "signs in, until split-screen hands player 2 a gamepad (the second one, or the only one)");
 
 namespace rex::input {
 
@@ -40,12 +43,15 @@ constexpr std::string_view kKeyboardName = "Keyboard and Mouse";
 
 std::atomic<uint32_t> g_keyboard_user{0};
 
-// A guest takes the only gamepad (rex_input_pad_guest): with the automatic
-// assignment the keyboard and that pad are both player 1's.
-std::atomic<bool> g_pad_guest{false};
 std::atomic<uint32_t> g_physical_pads{0};
 std::atomic<bool> g_auto_assignment{true};
 std::atomic<uint32_t> g_generation{0};
+
+// The players of a split-screen (the campaign's, a versus guest's), each with what they pressed on
+// (rex_input_split_players); ahead of every other assignment.
+std::atomic<bool> g_split_on{false};
+std::atomic<uint32_t> g_split_keyboard{kNoUser};
+std::atomic<uint32_t> g_split_pads[2] = {0, 0};
 std::mutex g_names_mutex;
 std::string g_names;  // the devices last assigned, for rex_input_devices
 
@@ -117,6 +123,27 @@ void SlotAssignment::OnDevicesChanged(const std::vector<DeviceInfo>& devices) {
     std::lock_guard<std::mutex> lock(g_names_mutex);
     g_names = names;
   }
+  if (g_split_on.load(std::memory_order_relaxed)) {
+    uint32_t keyboard_user = g_split_keyboard.load(std::memory_order_relaxed);
+    for (const auto& device : devices) {
+      if (device.synthetic) {
+        // The NOP stand-in keeps player 1 connected whatever pad they use.
+        uint32_t user = device.name == kKeyboardName ? keyboard_user : 0;
+        if (user != kNoUser) {
+          users_[user].push_back(device.id);
+        }
+        continue;
+      }
+      uint32_t bit = device.ordinal < 32 ? 1u << device.ordinal : 0;
+      for (uint32_t i = 0; i < 2; ++i) {
+        if (g_split_pads[i].load(std::memory_order_relaxed) & bit) {
+          users_[i].push_back(device.id);
+        }
+      }
+    }
+    g_keyboard_user.store(keyboard_user, std::memory_order_relaxed);
+    return;
+  }
   g_auto_assignment.store(p1 == "auto" && p2 == "auto" && !REXCVAR_GET(keyboard_own_player),
                           std::memory_order_relaxed);
   if (p1 != "auto" || p2 != "auto") {
@@ -152,12 +179,18 @@ void SlotAssignment::OnDevicesChanged(const std::vector<DeviceInfo>& devices) {
     return;
   }
 
+  if (REXCVAR_GET(input_share_pads) && g_auto_assignment.load(std::memory_order_relaxed)) {
+    for (const auto& device : devices) {
+      users_[0].push_back(device.id);
+    }
+    g_keyboard_user.store(0, std::memory_order_relaxed);
+    return;
+  }
+
   // Key off the ordinal rather than list position, so unplugging pad one does
   // not promote pad two to player one.
-  // With keyboard_own_player the first pad is player 2; so is the only one
-  // while a guest has it.
-  bool pad_guest = g_pad_guest.load(std::memory_order_relaxed) && pads == 1;
-  uint32_t first_pad_user = REXCVAR_GET(keyboard_own_player) || pad_guest ? 1 : 0;
+  // With keyboard_own_player the first pad is player 2.
+  uint32_t first_pad_user = REXCVAR_GET(keyboard_own_player) ? 1 : 0;
   for (const auto& device : devices) {
     if (device.synthetic) {
       users_[0].push_back(device.id);
@@ -199,14 +232,14 @@ extern "C" uint32_t rex_input_keyboard_user() {
   return rex::input::KeyboardUser();
 }
 
-extern "C" uint32_t rex_input_pad_guest(uint32_t on) {
+extern "C" void rex_input_split_players(uint32_t on, uint32_t keyboard_user, uint32_t p1_pads,
+                                        uint32_t p2_pads) {
   using namespace rex::input;
-  bool applies = g_auto_assignment.load(std::memory_order_relaxed) &&
-                 g_physical_pads.load(std::memory_order_relaxed) == 1;
-  if (g_pad_guest.exchange(on != 0, std::memory_order_relaxed) != (on != 0)) {
-    g_generation.fetch_add(1, std::memory_order_release);
-  }
-  return applies;
+  g_split_keyboard.store(keyboard_user, std::memory_order_relaxed);
+  g_split_pads[0].store(p1_pads, std::memory_order_relaxed);
+  g_split_pads[1].store(p2_pads, std::memory_order_relaxed);
+  g_split_on.store(on != 0, std::memory_order_relaxed);
+  g_generation.fetch_add(1, std::memory_order_release);
 }
 
 extern "C" uint32_t rex_input_gamepads() {

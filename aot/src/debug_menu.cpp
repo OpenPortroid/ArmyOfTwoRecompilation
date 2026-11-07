@@ -3028,6 +3028,24 @@ namespace ao2::menu
     return Blocking();
   }
 
+  uint32_t PressedPads(uint32_t *back)
+  {
+    using Fn = uint32_t (*)(uint32_t *);
+    static Fn fn = []() -> Fn {
+      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
+      return runtime ? reinterpret_cast<Fn>(GetProcAddress(runtime, "rex_input_pressed_pads")) : nullptr;
+    }();
+    *back = 0;
+    if (!fn || !g_window || !g_window->HasFocus())
+    {
+      return 0;
+    }
+    g_pad_reading = true;
+    uint32_t pressed = fn(back);
+    g_pad_reading = false;
+    return pressed;
+  }
+
   void OnPadPoll(uint32_t user, uint8_t *state)
   {
     if (user >= 4 || Blocking())

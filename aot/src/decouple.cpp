@@ -407,6 +407,10 @@ namespace ao2::versus_guest
 {
   void Frame(uint8_t *base); // versus_guest.cpp
 }
+namespace ao2::split_join
+{
+  void Frame(uint8_t *base); // split_join.cpp
+}
 
 // UGameEngine::Tick(this, DeltaSeconds): on a render-only frame only the
 // viewport draw (the call at its end).
@@ -431,6 +435,7 @@ extern "C" REX_FUNC(sub_82777738)
     g_world_steps++;
     g_world_step_ms = g_last_draw_ms;
     ao2::versus_guest::Frame(base);
+    ao2::split_join::Frame(base);
     ao2::tickprof::Begin();
     __imp__sub_82777738(ctx, base);
     double ms = NowMs() - start;

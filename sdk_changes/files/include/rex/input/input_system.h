@@ -50,6 +50,9 @@ class InputSystem : public system::IInputSystem {
   /// Every physical pad merged, whoever it is assigned to and without the
   /// player's button remap; returns how many there are.
   uint32_t ReadPads(X_INPUT_GAMEPAD* out);
+  /// The gamepads with a button or trigger down, one bit per ordinal; `back`:
+  /// those of them with B down.
+  uint32_t PressedPads(uint32_t* back);
 
  private:
   /// Re-enumerates every driver and notifies the assignment when the set
@@ -89,7 +92,7 @@ constexpr uint32_t kNoUser = 0xFFFFFFFF;
 /// kNoUser.
 uint32_t KeyboardUser();
 
-/// Bumped when the devices must be assigned again (rex_input_pad_guest).
+/// Bumped when the devices must be assigned again (rex_input_split_players).
 uint32_t AssignmentGeneration();
 
 /// Create a default InputSystem with SDL + NOP drivers.
@@ -105,11 +108,14 @@ extern "C" uint32_t rex_input_last_input();
 /// KeyboardUser for the game, by name (GetProcAddress): 0xFFFFFFFF = nobody.
 extern "C" uint32_t rex_input_keyboard_user();
 
-/// Guest sign-in with one gamepad (the automatic assignment, which gives the
-/// keyboard and the pad to player 1): `on` hands the pad to player 2, the
-/// keyboard and mouse stay player 1's; 0 gives it back. Returns 1 when the
-/// assignment is the automatic one with exactly one gamepad.
-extern "C" uint32_t rex_input_pad_guest(uint32_t on);
+/// A split-screen (the campaign's, a versus guest's): while `on`, the keyboard and mouse are
+/// keyboard_user's (kNoUser: nobody's) and player 1 and 2 have the gamepads of
+/// their masks (a bit per ordinal); other gamepads play nobody.
+extern "C" void rex_input_split_players(uint32_t on, uint32_t keyboard_user, uint32_t p1_pads,
+                                        uint32_t p2_pads);
+
+/// InputSystem::PressedPads for the game's own screens, by name (GetProcAddress).
+extern "C" uint32_t rex_input_pressed_pads(uint32_t* back);
 
 /// InputSystem::ReadPads for the game's own screens, by name (GetProcAddress):
 /// `triggers` holds left and right, `thumbs` lx, ly, rx, ry. A driver still asks

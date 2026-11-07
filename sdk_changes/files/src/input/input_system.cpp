@@ -271,6 +271,31 @@ void InputSystem::SetActiveCallback(std::function<bool()> callback) {
   }
 }
 
+uint32_t InputSystem::PressedPads(uint32_t* back) {
+  constexpr uint16_t kButtonB = 0x2000;
+  std::lock_guard<std::mutex> lock(mutex_);
+  RefreshDevices();
+  uint32_t pressed = 0;
+  *back = 0;
+  for (size_t i = 0; i < devices_.size(); i++) {
+    if (devices_[i].synthetic || devices_[i].ordinal >= 32) {
+      continue;
+    }
+    X_INPUT_STATE state = {};
+    if (device_owners_[i]->GetDeviceState(devices_[i].id, &state) != X_ERROR_SUCCESS) {
+      continue;
+    }
+    uint32_t bit = 1u << devices_[i].ordinal;
+    if (state.gamepad.buttons || state.gamepad.left_trigger > 64 || state.gamepad.right_trigger > 64) {
+      pressed |= bit;
+    }
+    if (state.gamepad.buttons & kButtonB) {
+      *back |= bit;
+    }
+  }
+  return pressed;
+}
+
 void InputSystem::SetDeviceAssignment(std::unique_ptr<DeviceAssignment> assignment) {
   std::lock_guard<std::mutex> lock(mutex_);
   assignment_ = std::move(assignment);
@@ -295,7 +320,7 @@ void InputSystem::RefreshDevices() {
   // Carry forward ordinals already handed out, so a device keeps its guest user
   // when another pad is unplugged.
   bool changed = seen.size() != devices_.size();
-  // A guest took or gave back a pad (rex_input_pad_guest).
+  // The players got other devices (rex_input_split_players).
   static std::atomic<uint32_t> assigned_generation{0};
   uint32_t generation = AssignmentGeneration();
   changed |= assigned_generation.exchange(generation, std::memory_order_relaxed) != generation;
@@ -630,6 +655,12 @@ std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode) {
 
 extern "C" uint32_t rex_input_last_input() {
   return static_cast<uint32_t>(rex::input::GetLastInput());
+}
+
+extern "C" uint32_t rex_input_pressed_pads(uint32_t* back) {
+  rex::input::InputSystem* input = rex::input::g_input_system;
+  *back = 0;
+  return input ? input->PressedPads(back) : 0;
 }
 
 extern "C" uint32_t rex_input_read_pads(uint16_t* buttons, uint8_t* triggers, int16_t* thumbs) {

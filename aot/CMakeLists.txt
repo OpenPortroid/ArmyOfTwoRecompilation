@@ -80,6 +80,8 @@ set(ARMYOFTWORECOMP_SOURCES
     src/aim_assist.cpp
     src/versus_bots.cpp
     src/versus_guest.cpp
+    src/split_join.cpp
+    src/split_hud.cpp
     src/versus_lobby.cpp
     src/versus_rules.cpp
     src/steam_net.cpp

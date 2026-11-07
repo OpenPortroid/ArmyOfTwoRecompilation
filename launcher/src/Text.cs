@@ -130,12 +130,7 @@ namespace AO2Launcher
 
             // --- Title bar, main screen ---
             a("Launcher", "Лаунчер", "Lanceur", "Launcher", "Lanzador", "Launcher");
-            a("Solo", "Один", "Solo", "Allein", "Solo", "Da solo");
-            a("Co-op", "Кооператив", "Coop", "Koop", "Cooperativo", "Cooperativa");
-            a("The campaign on this PC, with the game playing your partner.", "Кампания на этом ПК, напарником управляет игра.", "La campagne sur ce PC, le jeu contrôle votre partenaire.", "Die Kampagne auf diesem PC, das Spiel steuert deinen Partner.", "La campaña en este PC, el juego controla a tu compañero.", "La campagna su questo PC, il gioco controlla il tuo compagno.");
             a("Looks for a host on the local network: joins it if there is one, otherwise you host.", "Лаунчер ищет хост в локальной сети: если найдёт, вы подключитесь, если нет, станете хостом.", "Cherche un hôte sur le réseau local : le rejoint s'il y en a un, sinon vous hébergez.", "Sucht einen Host im lokalen Netz: tritt ihm bei, wenn es einen gibt, sonst bist du der Host.", "Busca un anfitrión en la red local: se une si lo hay; si no, tú eres el anfitrión.", "Cerca un host nella rete locale: se c'è si unisce, altrimenti sei tu l'host.");
-            a("Two players on one PC, each with their own half of the screen.", "Два игрока на одном ПК, у каждого своя половина экрана.", "Deux joueurs sur un PC, chacun avec sa moitié d'écran.", "Zwei Spieler an einem PC, jeder mit seiner Bildschirmhälfte.", "Dos jugadores en un PC, cada uno con su mitad de pantalla.", "Due giocatori su un PC, ognuno con la propria metà dello schermo.");
-            a("Starting the game", "Запуск игры", "Démarrage du jeu", "Spiel wird gestartet", "Iniciando el juego", "Avvio del gioco");
             a("Installation", "Установка", "Installation", "Installation", "Instalación", "Installazione");
             a("Settings", "Настройки", "Paramètres", "Einstellungen", "Ajustes", "Impostazioni");
             a("BACK", "НАЗАД", "RETOUR", "ZURÜCK", "ATRÁS", "INDIETRO");
@@ -753,19 +748,6 @@ namespace AO2Launcher
             a("Default gamepad layout restored", "Раскладка геймпада по умолчанию восстановлена", "Disposition de la manette rétablie",
               "Standard-Controllerbelegung wiederhergestellt", "Distribución del mando restablecida",
               "Disposizione del controller ripristinata");
-            a("Split-screen", "Разделённый экран", "Écran partagé", "Splitscreen", "Pantalla dividida", "Schermo condiviso");
-            a("Two players on one PC, each with their own half of the screen. On Play the game starts at once, without " +
-              "looking for a network host. Off: every device controls player 1.",
-              "Двое игроков на одном ПК, у каждого своя половина экрана. По «Играть» игра запускается сразу, без " +
-              "поиска хоста в сети. Выкл.: все устройства управляют игроком 1.",
-              "Deux joueurs sur un PC, chacun avec sa moitié de l'écran. Jouer lance le jeu tout de suite, sans " +
-              "chercher d'hôte sur le réseau. Désactivé : tous les périphériques contrôlent le joueur 1.",
-              "Zwei Spieler an einem PC, jeder mit seiner Bildschirmhälfte. Spielen startet das Spiel sofort, ohne " +
-              "einen Host im Netzwerk zu suchen. Aus: alle Geräte steuern Spieler 1.",
-              "Dos jugadores en un PC, cada uno con su mitad de la pantalla. Jugar inicia el juego enseguida, sin " +
-              "buscar un anfitrión en la red. Desactivado: todos los dispositivos controlan al jugador 1.",
-              "Due giocatori su un PC, ognuno con la sua metà dello schermo. Gioca avvia subito il gioco, senza " +
-              "cercare un host in rete. Disattivato: tutti i dispositivi controllano il giocatore 1.");
             a("Player 1 name", "Имя игрока 1", "Nom du joueur 1", "Name von Spieler 1", "Nombre del jugador 1", "Nome giocatore 1");
             a("Player 2 name", "Имя игрока 2", "Nom du joueur 2", "Name von Spieler 2", "Nombre del jugador 2", "Nome giocatore 2");
             a("Gamertag of player 1 (up to 15 characters), the same as Network → Player name. Empty: the computer's name.",
@@ -786,82 +768,24 @@ namespace AO2Launcher
               "Vacío: el nombre del jugador 1 con (1) detrás.",
               "Gamertag del giocatore 2 (fino a 15 caratteri); il suo profilo e le sue impostazioni. " +
               "Vuoto: il nome del giocatore 1 seguito da (1).");
-            a("Player 1 controls", "Управление игрока 1", "Commandes du joueur 1", "Steuerung von Spieler 1",
-              "Controles del jugador 1", "Comandi del giocatore 1");
-            a("Player 2 controls", "Управление игрока 2", "Commandes du joueur 2", "Steuerung von Spieler 2",
-              "Controles del jugador 2", "Comandi del giocatore 2");
-            a("The devices of player 1. Gamepads are numbered in the order the game finds them (usually the order " +
-              "they were connected): if the players' pads turn out swapped, swap them here. " +
-              "Any gamepad: every gamepad the other player does not have.",
-              "Устройства игрока 1. Геймпады нумеруются в том порядке, в каком их находит игра (обычно в порядке " +
-              "подключения): если геймпады игроков перепутались, поменяйте их здесь. " +
-              "Любой геймпад — все геймпады, которых нет у другого игрока.",
-              "Les périphériques du joueur 1. Les manettes sont numérotées dans l'ordre où le jeu les trouve (en général l'ordre " +
-              "de branchement) : si les manettes des joueurs sont inversées, échangez-les ici. " +
-              "N'importe quelle manette : toutes celles que l'autre joueur n'a pas.",
-              "Die Geräte von Spieler 1. Controller werden in der Reihenfolge nummeriert, in der das Spiel sie findet (meist die " +
-              "Reihenfolge des Anschließens): Sind die Controller vertauscht, hier tauschen. " +
-              "Beliebiger Controller: jeder, den der andere Spieler nicht hat.",
-              "Los dispositivos del jugador 1. Los mandos se numeran en el orden en que el juego los encuentra (normalmente el " +
-              "orden de conexión): si los mandos de los jugadores salen cambiados, cámbialos aquí. " +
-              "Cualquier mando: todos los que no tiene el otro jugador.",
-              "I dispositivi del giocatore 1. I controller sono numerati nell'ordine in cui il gioco li trova (di solito l'ordine " +
-              "di collegamento): se i controller dei giocatori risultano scambiati, scambiali qui. " +
-              "Qualsiasi controller: tutti quelli che l'altro giocatore non ha.");
-            a("The devices of player 2. The mouse aims for whoever has the keyboard. " +
-              "Any gamepad: every gamepad the other player does not have.",
-              "Устройства игрока 2. Мышь целится за того, у кого клавиатура. " +
-              "Любой геймпад — все геймпады, которых нет у другого игрока.",
-              "Les périphériques du joueur 2. La souris vise pour celui qui a le clavier. " +
-              "N'importe quelle manette : toutes celles que l'autre joueur n'a pas.",
-              "Die Geräte von Spieler 2. Die Maus zielt für den, der die Tastatur hat. " +
-              "Beliebiger Controller: jeder, den der andere Spieler nicht hat.",
-              "Los dispositivos del jugador 2. El ratón apunta para quien tiene el teclado. " +
-              "Cualquier mando: todos los que no tiene el otro jugador.",
-              "I dispositivi del giocatore 2. Il mouse mira per chi ha la tastiera. " +
-              "Qualsiasi controller: tutti quelli che l'altro giocatore non ha.");
-            a("KEYBOARD + MOUSE", "КЛАВ. + МЫШЬ", "CLAVIER + SOURIS", "TASTATUR + MAUS", "TECLADO + RATÓN", "TASTIERA + MOUSE");
-            a("ANY GAMEPAD", "ЛЮБОЙ ГЕЙМПАД", "TOUTE MANETTE", "JEDER CONTROLLER", "CUALQUIER MANDO", "QUALSIASI CONTROLLER");
-            a("GAMEPAD 1", "ГЕЙМПАД 1", "MANETTE 1", "CONTROLLER 1", "MANDO 1", "CONTROLLER 1");
-            a("GAMEPAD 2", "ГЕЙМПАД 2", "MANETTE 2", "CONTROLLER 2", "MANDO 2", "CONTROLLER 2");
-            a("GAMEPAD 3", "ГЕЙМПАД 3", "MANETTE 3", "CONTROLLER 3", "MANDO 3", "CONTROLLER 3");
-            a("GAMEPAD 4", "ГЕЙМПАД 4", "MANETTE 4", "CONTROLLER 4", "MANDO 4", "CONTROLLER 4");
-            a("KEYBOARD + ANY PAD", "КЛАВ. + ЛЮБОЙ", "CLAVIER + MANETTE", "TASTATUR + CONTR.", "TECLADO + MANDO", "TASTIERA + CONTR.");
-            a("KEYBOARD + PAD 1", "КЛАВ. + ГЕЙМПАД 1", "CLAVIER + MANETTE 1", "TASTATUR + CONTR. 1", "TECLADO + MANDO 1",
-              "TASTIERA + CONTR. 1");
-            a("KEYBOARD + PAD 2", "КЛАВ. + ГЕЙМПАД 2", "CLAVIER + MANETTE 2", "TASTATUR + CONTR. 2", "TECLADO + MANDO 2",
-              "TASTIERA + CONTR. 2");
-            a("GAMEPAD {0}", "ГЕЙМПАД {0}", "MANETTE {0}", "CONTROLLER {0}", "MANDO {0}", "CONTROLLER {0}");
-            a("KEYBOARD + PAD {0}", "КЛАВ. + ГЕЙМПАД {0}", "CLAVIER + MANETTE {0}", "TASTATUR + CONTR. {0}", "TECLADO + MANDO {0}",
-              "TASTIERA + CONTR. {0}");
-            a("not connected", "не подключён", "non branchée", "nicht angeschlossen", "no conectado", "non collegato");
-            a("Game controller", "Игровой контроллер", "Manette de jeu", "Gamecontroller", "Mando de juego", "Controller di gioco");
-            a("No gamepads connected.", "Геймпады не подключены.", "Aucune manette branchée.", "Keine Controller angeschlossen.",
-              "No hay mandos conectados.", "Nessun controller collegato.");
-            a("Connected:", "Подключены:", "Branchées :", "Angeschlossen:", "Conectados:", "Collegati:");
-            a("gamepad {0} - {1}", "геймпад {0} — {1}", "manette {0} - {1}", "Controller {0} - {1}", "mando {0} - {1}",
-              "controller {0} - {1}");
-            a("Both players have the keyboard: it goes to player 1.", "Клавиатура у обоих игроков — она достанется игроку 1.",
-              "Les deux joueurs ont le clavier : il revient au joueur 1.", "Beide Spieler haben die Tastatur: sie geht an Spieler 1.",
-              "Los dos jugadores tienen el teclado: será del jugador 1.", "Entrambi i giocatori hanno la tastiera: va al giocatore 1.");
-            a("Both players have gamepad {0}: it goes to player 1.", "Геймпад {0} у обоих игроков — он достанется игроку 1.",
-              "Les deux joueurs ont la manette {0} : elle revient au joueur 1.", "Beide Spieler haben Controller {0}: er geht an Spieler 1.",
-              "Los dos jugadores tienen el mando {0}: será del jugador 1.", "Entrambi i giocatori hanno il controller {0}: va al giocatore 1.");
-            a("Any gamepad for both players: they all go to player 1.", "«Любой геймпад» у обоих — все геймпады достанутся игроку 1.",
-              "Toute manette pour les deux joueurs : elles reviennent toutes au joueur 1.",
-              "Jeder Controller für beide Spieler: alle gehen an Spieler 1.",
-              "Cualquier mando para los dos jugadores: todos serán del jugador 1.",
-              "Qualsiasi controller per entrambi: vanno tutti al giocatore 1.");
-            a("Gamepad {0} is not connected.", "Геймпад {0} не подключён.", "La manette {0} n'est pas branchée.",
-              "Controller {0} ist nicht angeschlossen.", "El mando {0} no está conectado.", "Il controller {0} non è collegato.");
-            a("In the game: Campaign Mode → Splitscreen; player 2 signs in with their device when asked.",
-              "В игре: «Кампания» → «Разделенный экран»; игрок 2 входит со своего устройства, когда игра попросит.",
-              "Dans le jeu : Mode Campagne → Écran partagé ; le joueur 2 se connecte avec son périphérique quand le jeu le demande.",
-              "Im Spiel: Kampagnenmodus → Splitscreen; Spieler 2 meldet sich mit seinem Gerät an, wenn das Spiel fragt.",
-              "En el juego: Modo Campaña → Pantalla dividida; el jugador 2 inicia sesión con su dispositivo cuando se le pida.",
-              "Nel gioco: Modalità Campagna → Schermo condiviso; il giocatore 2 accede con il suo dispositivo quando richiesto.");
-            a("Starting split-screen", "Запуск на разделённом экране", "Lancement en écran partagé", "Splitscreen wird gestartet",
-              "Iniciando pantalla dividida", "Avvio a schermo condiviso");
+            a("Two players on one PC: in the game, Campaign Mode → Splitscreen.",
+              "Двое игроков на одном ПК: в игре «Кампания» → «Разделенный экран».",
+              "Deux joueurs sur un PC : dans le jeu, Mode Campagne → Écran partagé.",
+              "Zwei Spieler an einem PC: im Spiel Kampagnenmodus → Splitscreen.",
+              "Dos jugadores en un PC: en el juego, Modo Campaña → Pantalla dividida.",
+              "Due giocatori su un PC: nel gioco, Modalità Campagna → Schermo condiviso.");
+            a("In the game: Campaign Mode → Splitscreen. A window opens: each player presses a button on their " +
+              "device, and it is theirs. A key or the mouse gives the keyboard and mouse, a gamepad button that gamepad.",
+              "В игре: «Кампания» → «Разделенный экран». Откроется окно: каждый игрок нажимает кнопку на своём " +
+              "устройстве, и оно достаётся ему. Клавиша или мышь — клавиатура и мышь, кнопка геймпада — этот геймпад.",
+              "Dans le jeu : Mode Campagne → Écran partagé. Une fenêtre s'ouvre : chaque joueur appuie sur un bouton de son " +
+              "périphérique, qui devient le sien. Une touche ou la souris donne le clavier et la souris, un bouton de manette cette manette.",
+              "Im Spiel: Kampagnenmodus → Splitscreen. Ein Fenster öffnet sich: Jeder Spieler drückt eine Taste auf seinem " +
+              "Gerät, und es gehört ihm. Taste oder Maus: Tastatur und Maus, Controller-Taste: dieser Controller.",
+              "En el juego: Modo Campaña → Pantalla dividida. Se abre una ventana: cada jugador pulsa un botón en su " +
+              "dispositivo, y es suyo. Una tecla o el ratón dan el teclado y el ratón; un botón de mando, ese mando.",
+              "Nel gioco: Modalità Campagna → Schermo condiviso. Si apre una finestra: ogni giocatore preme un tasto sul proprio " +
+              "dispositivo, che diventa suo. Un tasto o il mouse danno tastiera e mouse, un tasto del controller quel controller.");
 
             // --- Network ---
             a("Player name", "Имя игрока", "Nom du joueur", "Spielername", "Nombre del jugador", "Nome giocatore");

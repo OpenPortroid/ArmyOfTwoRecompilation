@@ -18,15 +18,12 @@
 // out of every lobby and match for 2 s (below).
 //
 // On the console the guest signs in with a controller of its own. Here the
-// automatic device assignment gives the keyboard and the first gamepad to
-// player 1, so with one gamepad nobody else has a controller: the guest
-// sign-in then hands that pad to player 2 (rexruntime's
-// rex_input_pad_guest; the keyboard and mouse stay player 1's). The runtime
-// signs user 2 in a moment later (it looks at the devices every 250 ms) and
-// sends XN_SYS_SIGNINCHANGED again: the user is a guest from then on. The
-// pad goes back to player 1 once this PC has been out of every lobby and
-// match (the Plasma lobby's +2793 / +2794, which the guest handler wants
-// set) for 2 s.
+// automatic device assignment gives everything to player 1, so with nobody else
+// signed in the guest sign-in opens the window where each player presses a button on
+// their device (split_join.cpp). The runtime then signs user 1 in (it looks at the
+// devices every 250 ms) and sends XN_SYS_SIGNINCHANGED again: the user is a guest from
+// then on. The devices go back to player 1 once this PC has been out of every lobby and
+// match (the Plasma lobby's +2793 / +2794, which the guest handler wants set) for 2 s.
 //
 // The match puts the local players in the order of their places and
 // numbers them so, and they stay so after the match: a guest on a place
@@ -61,8 +58,14 @@
 
 REXCVAR_DEFINE_BOOL(ao2_versus_guest, true, "Online",
                     "Versus split-screen: Guest Sign-In (Y in the lobby) takes the second local player into the "
-                    "match as the host player's guest - its own controller (input_player2), or the only gamepad "
-                    "while the keyboard and mouse stay player 1's");
+                    "match as the host player's guest - each player presses a button on their device in a window, "
+                    "unless a second player already has a controller (input_player2)");
+
+namespace ao2::split_join
+{
+  void OpenForGuest(void (*on_cancel)()); // split_join.cpp
+  void CloseGuest();
+}
 
 namespace
 {
@@ -74,7 +77,7 @@ namespace
 
   std::atomic<uint32_t> g_guests{0};  // users 1-3 signed in as guests
   std::atomic<uint32_t> g_pending{0}; // users that become guests when they sign in
-  std::atomic<bool> g_pad_lent{false};
+  std::atomic<bool> g_window_used{false}; // the devices window was opened for a guest
   // Game thread: GamePlayers and their ControllerIds at the guest sign-in
   // (count 0: nothing to put back).
   struct SavedPlayers
@@ -106,63 +109,6 @@ namespace
     uint32_t v;
     std::memcpy(&v, base + addr, 4);
     return std::byteswap(v);
-  }
-
-  // rexruntime's rex_input_pad_guest (1 when one gamepad is shared the
-  // automatic way); 0 from a runtime without it.
-  uint32_t PadGuest(uint32_t on)
-  {
-    using Fn = uint32_t (*)(uint32_t);
-    static Fn fn = []() -> Fn {
-      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
-      return runtime ? reinterpret_cast<Fn>(GetProcAddress(runtime, "rex_input_pad_guest")) : nullptr;
-    }();
-    return fn ? fn(on) : 0;
-  }
-
-  uint32_t Gamepads()
-  {
-    using Fn = uint32_t (*)();
-    static Fn fn = []() -> Fn {
-      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
-      return runtime ? reinterpret_cast<Fn>(GetProcAddress(runtime, "rex_input_gamepads")) : nullptr;
-    }();
-    return fn ? fn() : 0;
-  }
-
-  // The runtime's devices, by name (for the log).
-  std::string Devices()
-  {
-    using Fn = uint32_t (*)(char *, uint32_t);
-    static Fn fn = []() -> Fn {
-      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
-      return runtime ? reinterpret_cast<Fn>(GetProcAddress(runtime, "rex_input_devices")) : nullptr;
-    }();
-    using Counts = uint32_t (*)();
-    static Counts counts = []() -> Counts {
-      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
-      return runtime ? reinterpret_cast<Counts>(GetProcAddress(runtime, "rex_input_sdl_counts")) : nullptr;
-    }();
-    char names[512] = {};
-    if (fn)
-    {
-      fn(names, sizeof(names));
-    }
-    using Error = uint32_t (*)(char *, uint32_t);
-    static Error error = []() -> Error {
-      HMODULE runtime = GetModuleHandleW(L"rexruntime.dll");
-      return runtime ? reinterpret_cast<Error>(GetProcAddress(runtime, "rex_input_sdl_error")) : nullptr;
-    }();
-    char why[160] = {};
-    if (error)
-    {
-      error(why, sizeof(why));
-    }
-    uint32_t sdl = counts ? counts() : 0;
-    char tail[256];
-    std::snprintf(tail, sizeof(tail), "; SDL: %s, %u joysticks, %u gamepads%s%s", sdl >> 31 ? "up" : "not up",
-                  (sdl >> 16) & 0x7FFF, sdl & 0xFFFF, why[0] ? ", open failed: " : "", why);
-    return std::string(names) + tail;
   }
 
   constexpr uint32_t kEngine = 0x831EFCBC; // GEngine
@@ -317,11 +263,11 @@ namespace
     }
   }
 
-  // Once no lobby or match has been there for 2 s: the lent pad goes back
-  // to player 1 and GamePlayers to its order and ControllerIds.
+  // Once no lobby or match has been there for 2 s: the devices go back to
+  // player 1 and GamePlayers to its order and ControllerIds.
   void BackInMenus(uint8_t *base)
   {
-    if (!g_pad_lent.load(std::memory_order_relaxed) && !g_saved.count && !g_guests.load(std::memory_order_relaxed))
+    if (!g_window_used.load(std::memory_order_relaxed) && !g_saved.count && !g_guests.load(std::memory_order_relaxed))
     {
       return;
     }
@@ -344,11 +290,11 @@ namespace
       return;
     }
     RestorePlayers(base);
-    if (g_pad_lent.exchange(false))
+    if (g_window_used.exchange(false))
     {
-      PadGuest(0);
+      ao2::split_join::CloseGuest();
       g_pending.fetch_and(~2u);
-      Log("gives the gamepad back to player 1 (out of the lobby)", 1, g_guests.load());
+      Log("gives the devices back to player 1 (out of the lobby)", 1, g_guests.load());
     }
     // With a controller of its own a guest stayed one for good, also in the
     // campaign's split-screen.
@@ -402,7 +348,7 @@ extern "C" REX_FUNC(sub_82B07E10)
 namespace
 {
   // The guest sign-in UI is opening: users 1-3 signed in now are guests;
-  // with none, player 2 gets the only gamepad and is a guest once signed in.
+  // with none, the players pick their devices and user 1 is a guest once signed in.
   void GuestsSignIn(PPCContext &ctx, uint8_t *base)
   {
     if (!REXCVAR_GET(ao2_versus_guest))
@@ -435,22 +381,13 @@ namespace
     {
       return;
     }
-    if (PadGuest(1))
-    {
-      g_pad_lent = true;
-      g_pending.fetch_or(2u);
-      Log("takes the only gamepad (the keyboard and mouse stay player 1's)", 1, g_guests.load());
-    }
-    else
-    {
-      PadGuest(0);
-      char what[768];
-      std::snprintf(what, sizeof(what),
-                    "guest sign-in: no other player has a controller (%u gamepads; one is lent only with "
-                    "input_player1 / input_player2 = auto; devices: %s)",
-                    Gamepads(), Devices().c_str());
-      Log(what, 0, g_guests.load());
-    }
+    g_window_used = true;
+    g_pending.fetch_or(2u);
+    Log("guest sign-in: the players pick their devices", 1, g_guests.load());
+    ao2::split_join::OpenForGuest([]() {
+      g_pending.fetch_and(~2u);
+      Log("guest sign-in: window closed, no guest", 1, g_guests.load());
+    });
   }
 } // namespace
 
