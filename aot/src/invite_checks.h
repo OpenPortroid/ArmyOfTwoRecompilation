@@ -147,6 +147,48 @@ namespace ao2::invite_checks
     return out;
   }
 
+  // The settings both PCs of a lockstep game must share, each as "key:value" in a text with spaces between them. What
+  // differs, as "key mine/theirs" with ", " between: empty when they agree or `theirs` is empty (a build without them).
+  inline std::string SettingsDifference(std::string_view mine, std::string_view theirs)
+  {
+    auto next = [](std::string_view &text) {
+      size_t space = text.find(' ');
+      std::string_view item = text.substr(0, space);
+      text = space == std::string_view::npos ? std::string_view() : text.substr(space + 1);
+      return item;
+    };
+    std::string out;
+    if (theirs.empty())
+    {
+      return out;
+    }
+    while (!mine.empty())
+    {
+      std::string_view item = next(mine);
+      size_t colon = item.find(':');
+      if (colon == std::string_view::npos)
+      {
+        continue;
+      }
+      std::string_view key = item.substr(0, colon + 1), value = item.substr(colon + 1), other = "?";
+      for (std::string_view rest = theirs; !rest.empty();)
+      {
+        std::string_view their_item = next(rest);
+        if (their_item.starts_with(key))
+        {
+          other = their_item.substr(key.size());
+          break;
+        }
+      }
+      if (value != other)
+      {
+        out += out.empty() ? "" : ", ";
+        out += std::string(key.substr(0, colon)) + " " + std::string(value) + "/" + std::string(other);
+      }
+    }
+    return out;
+  }
+
   // At most `limit` events in any `window`.
   class RateLimit
   {

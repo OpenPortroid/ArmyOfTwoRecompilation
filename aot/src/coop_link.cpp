@@ -39,7 +39,7 @@ namespace
 {
   using clock = std::chrono::steady_clock;
 
-  constexpr uint16_t kPort = 1002;
+  using ao2::coop::link::kPort;
   constexpr uint16_t kGamePort = 1000;
   constexpr uint32_t kMagic = 0x414F324C; // "AO2L"
   constexpr auto kRemoteSkipLifetime = std::chrono::milliseconds(1500);

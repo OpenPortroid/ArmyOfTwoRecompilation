@@ -2,15 +2,17 @@
 //
 // The game's online play (ea_server.cpp, coop_invite.cpp, the VDP game
 // traffic) talks IPv4 to fixed ports: the lobby server TCP 18480 / 18485 /
-// 13505, the game UDP 1000, the presence service UDP ao2_invite_port. Over
-// Steam it keeps doing that on a virtual LAN on this PC's loopback:
+// 13505, the game UDP 1000, the link to the partner UDP 1002 (coop_link.cpp),
+// the presence service UDP ao2_invite_port. Over Steam it keeps doing that on
+// a virtual LAN on this PC's loopback:
 //
 // - Every Steam player has an address in 127.64.0.0/10 made from the
 //   SteamID (IsVirtual / VirtualIp), the same on every PC; Windows takes the
 //   whole 127/8 as loopback, nothing has to be set up.
 // - For every Steam player it knows (a peer) this bridge binds the peer's
-//   address on those ports: UDP 1000 and the presence port, TCP listeners on
-//   the lobby server's ports. Windows lets a socket bound to one address
+//   address on those ports: UDP 1000, the link's and the presence port, TCP
+//   listeners on the lobby server's ports. A UDP port without such a socket
+//   would land in this game's own socket on 0.0.0.0. Windows lets a socket bound to one address
 //   share a port with the game's own socket bound to all of them (0.0.0.0).
 //   What the game sends to a peer's address lands here and goes to that
 //   player through Steam: UDP as ISteamNetworkingMessages (channel 0, the
@@ -35,7 +37,9 @@
 // server list in the players window. A player that enters it (the list's
 // JOIN, or Steam's "Join game" / a lobby invite: GameLobbyJoinRequested) is
 // sent the game's invite by the host (ao2::invite::InviteAddress), and its
-// game accepts it without asking (TakeAutoAccept).
+// game accepts it without asking (TakeAutoAccept). A joined lobby is left once
+// its game is over for this player, or was never entered: it would keep a
+// place of the host's lobby taken (UpdateJoinedLobby).
 //
 // The list shows each lobby's mission, mode, free places and ping: the host
 // puts its ping location (ISteamNetworkingUtils, "loc") in the lobby, the
@@ -48,6 +52,7 @@
 #include "steam_net.h"
 
 #include "coop_invite.h"
+#include "coop_link.h"
 #include "ea_server.h"
 #include "log_files.h"
 #include "ui_text.h"
@@ -399,7 +404,7 @@ namespace
       p.id = id;
       p.ip = VirtualIp(id);
       p.name = SteamFriends()->GetFriendPersonaName(CSteamID(id));
-      for (uint16_t port : {kGamePort, PresencePort()})
+      for (uint16_t port : {kGamePort, ao2::coop::link::kPort, PresencePort()})
       {
         Udp(p, port);
       }
@@ -1106,7 +1111,14 @@ namespace
       {
         return;
       }
+      {
+        // A game hosted now goes on until the invite takes this player away:
+        // no new lobby for it meanwhile (UpdateHosting).
+        std::lock_guard lock(shared().mutex);
+        hold_hosting_ = shared().hosting.on;
+      }
       Leave();
+      joining_ = true;
       Log("joining lobby %llx", (unsigned long long)id);
       join_call_.Set(SteamMatchmaking()->JoinLobby(CSteamID(id)), this, &Session::OnJoined);
     }
@@ -1136,6 +1148,52 @@ namespace
       shared().own_lobby = own;
     }
 
+    // A lobby joined holds a place of the host's lobby: left once this
+    // player's game is over (some grace: a versus party moving to its match),
+    // or when its game was never entered. A session under way at the join is
+    // another game's, so only one that starts afterwards counts. Leaving does
+    // not disturb a join still going on: that runs through the invite.
+    void UpdateJoinedLobby(const ao2::steam::Hosting &h, Clock::time_point now)
+    {
+      if (!lobby_ || own_lobby_)
+      {
+        return;
+      }
+      if (h.session && !joined_session_before_)
+      {
+        joined_session_seen_ = true;
+      }
+      joined_session_before_ = h.session;
+      const char *why = nullptr;
+      if (!joined_session_seen_)
+      {
+        if ((!h.session || hold_hosting_) && now - joined_since_ > std::chrono::seconds(30))
+        {
+          why = "its game was not entered";
+        }
+      }
+      else if (h.session)
+      {
+        joined_session_ended_ = {};
+      }
+      else
+      {
+        if (joined_session_ended_ == Clock::time_point{})
+        {
+          joined_session_ended_ = now;
+        }
+        if (now - joined_session_ended_ > std::chrono::seconds(10))
+        {
+          why = "its game is over here";
+        }
+      }
+      if (why)
+      {
+        Log("lobby %llx: %s", (unsigned long long)lobby_, why);
+        Leave();
+      }
+    }
+
     // The lobby of the game this player hosts: made, kept up to date, left.
     void UpdateHosting()
     {
@@ -1146,6 +1204,11 @@ namespace
       }
       hosting_build_ = h.build;
       auto now = Clock::now();
+      UpdateJoinedLobby(h, now);
+      if (!h.on || (!joining_ && !lobby_))
+      {
+        hold_hosting_ = false; // the hosted game is over, or the join did not work out
+      }
       if (!h.on)
       {
         // A few seconds' grace (the game between its own screens).
@@ -1156,6 +1219,10 @@ namespace
         return;
       }
       hosting_seen_ = now;
+      if (joining_ || hold_hosting_)
+      {
+        return;
+      }
       if (!own_lobby_ && !creating_)
       {
         Leave();
@@ -1208,6 +1275,13 @@ namespace
         Log("lobby not created (%d)", io_failure ? -1 : int(e->m_eResult));
         return;
       }
+      if (joining_ || lobby_)
+      {
+        // Another lobby was chosen while this one was being made.
+        Log("lobby %llx created, not needed any more", (unsigned long long)e->m_ulSteamIDLobby);
+        SteamMatchmaking()->LeaveLobby(CSteamID(e->m_ulSteamIDLobby));
+        return;
+      }
       SetLobby(e->m_ulSteamIDLobby, true);
       Log("lobby %llx created", (unsigned long long)lobby_);
       UpdateHosting();
@@ -1215,6 +1289,7 @@ namespace
 
     void OnJoined(LobbyEnter_t *e, bool io_failure)
     {
+      joining_ = false;
       if (io_failure || e->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess)
       {
         Log("lobby %llx not joined (%d)", (unsigned long long)e->m_ulSteamIDLobby,
@@ -1231,7 +1306,14 @@ namespace
         return;
       }
       SetLobby(e->m_ulSteamIDLobby, false);
-      CSteamID owner = SteamMatchmaking()->GetLobbyOwner(CSteamID(lobby_));
+      joined_since_ = Clock::now();
+      joined_session_seen_ = false;
+      joined_session_ended_ = {};
+      {
+        std::lock_guard lock(shared().mutex);
+        joined_session_before_ = shared().hosting.session;
+      }
+      CSteamID owner =SteamMatchmaking()->GetLobbyOwner(CSteamID(lobby_));
       lobby_host_ = owner.ConvertToUint64();
       int members = SteamMatchmaking()->GetNumLobbyMembers(CSteamID(lobby_));
       for (int i = 0; i < members; ++i)
@@ -1292,6 +1374,12 @@ namespace
     bool own_lobby_ = false;
     uint64_t lobby_host_ = 0; // the joined lobby's host (its owner at the join)
     bool creating_ = false;
+    bool joining_ = false;      // JoinLobby asked, its answer not in yet
+    bool hold_hosting_ = false; // a game hosted when the join started: no lobby for it
+    Clock::time_point joined_since_;
+    bool joined_session_before_ = false; // the session state last seen (UpdateJoinedLobby)
+    bool joined_session_seen_ = false;   // a session started since the lobby was joined
+    Clock::time_point joined_session_ended_;
     Clock::time_point hosting_seen_;
     Clock::time_point next_friends_;
     CCallResult<Session, LobbyCreated_t> create_call_;

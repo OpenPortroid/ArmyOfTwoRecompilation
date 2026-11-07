@@ -46,6 +46,7 @@ namespace ao2::steam
     bool is_private = false;
     bool versus = false;
     bool in_game = false; // the match runs (no joining it)
+    bool session = false; // this game is in a network game, hosted or not, also with `on` false
     int players = 1;
     int max = 2;
     std::string name;

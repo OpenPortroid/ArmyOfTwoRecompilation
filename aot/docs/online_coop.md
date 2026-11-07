@@ -146,6 +146,12 @@ Here a presence service in every game (UDP 18491, text packets
 - A second game behind a player's address (a test copy, another build) does
   not take over the entry of the player with this build.
 
+- `HELLO` / `HERE` also carry `sync`, the settings that must match in a
+  lockstep game (`SharedSettings`: `ao2_coop_input_margin_ms`, the shared LOD,
+  `ao2_coop_god_mode` and the co-op fixes). In the lobby a player with this
+  build but other values gets a banner naming them, as `key mine/theirs`. It
+  warns and changes nothing.
+
 `invite.log` (with `log_to_files`) shows players found, invites and answers.
 
 ### Over Steam (`src/steam_net.cpp`)
@@ -165,6 +171,10 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   Extraction), free places and ping, the lowest ping first: the host puts its
   ping location (`ISteamNetworkingUtils`) in the lobby as `loc`, the others
   estimate the ping from it without connecting.
+- A lobby joined is left 10 s after this player's network game ends, or after
+  30 s when its game was never entered: it would keep a place of the host's
+  lobby taken. Joining another lobby while hosting makes no new lobby for the
+  hosted game until the join fails or that game ends.
 - **Public game** (the game's quick match, `GLST` with `FILTER-NOT-PRIVATE=1`
   from the PC's own game) gets an empty list at once, so the game hosts a
   public game; its Steam lobby is in everyone's server list. With
@@ -184,7 +194,7 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   lobby is involved, so a private game can be joined this way too.
 - Traffic: every Steam player gets an address in 127.64.0.0/10 made from its
   SteamID, the same on every PC. For each known player the bridge binds that
-  address on UDP 1000, UDP 18491 and TCP 18480 / 18485 / 13505 (next to the
+  address on UDP 1000, UDP 1002 (the link, `src/coop_link.cpp`), UDP 18491 and TCP 18480 / 18485 / 13505 (next to the
   game's own sockets on 0.0.0.0), carries UDP as ISteamNetworkingMessages
   (4-byte header: source and destination port) and each TCP connection as a
   P2P connection on the same virtual port, and on the far side passes it on

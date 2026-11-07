@@ -110,6 +110,15 @@ REXCVAR_DEFINE_STRING(ao2_invite_accept_key, "F6", "Online", "Key that accepts t
 REXCVAR_DECLARE(std::string, ao2_debug_menu_key);
 REXCVAR_DECLARE(bool, ao2_coop_server);
 REXCVAR_DECLARE(std::string, ao2_coop_host);
+// What a lockstep game needs the same on both PCs (SharedSettings).
+REXCVAR_DECLARE(int32_t, ao2_coop_input_margin_ms);
+REXCVAR_DECLARE(bool, ao2_coop_force_lod);
+REXCVAR_DECLARE(double, ao2_coop_lod_scale);
+REXCVAR_DECLARE(bool, ao2_coop_god_mode);
+REXCVAR_DECLARE(bool, ao2_coop_ragdoll_pool_fix);
+REXCVAR_DECLARE(bool, ao2_coop_whole_level_visibility);
+REXCVAR_DECLARE(bool, ao2_coop_isolate_buoyancy_rand);
+REXCVAR_DECLARE(bool, ao2_coop_block_streaming);
 
 extern "C" REX_FUNC(sub_82B07E10);
 
@@ -503,6 +512,7 @@ namespace
     std::string name;
     std::string state; // menu / lobby / game
     std::string build; // BuildHash of its game; empty = an older build
+    std::string sync;  // SharedSettings of its game; empty = an older build
     bool hosting = false;
     Clock::time_point seen;
   };
@@ -641,6 +651,21 @@ namespace
     return base && ao2::coop::OnlineLockstep(base) ? "game" : ao2::coop::network_session ? "lobby" : "menu";
   }
 
+  // The local settings that desync a lockstep game when they differ between
+  // the PCs (the F1 menu's bot and versus settings go through the lockstep
+  // itself, ao2_decouple and ao2_sim_hz through the link): "key:value" items,
+  // within invite_checks::kMaxFieldBytes.
+  std::string SharedSettings()
+  {
+    char text[ao2::invite_checks::kMaxFieldBytes + 1];
+    std::snprintf(text, sizeof(text), "margin:%d lod:%d scale:%.2f god:%d pool:%d vis:%d wave:%d block:%d",
+                  REXCVAR_GET(ao2_coop_input_margin_ms), REXCVAR_GET(ao2_coop_force_lod) ? 1 : 0,
+                  REXCVAR_GET(ao2_coop_lod_scale), REXCVAR_GET(ao2_coop_god_mode) ? 1 : 0,
+                  REXCVAR_GET(ao2_coop_ragdoll_pool_fix) ? 1 : 0, REXCVAR_GET(ao2_coop_whole_level_visibility) ? 1 : 0,
+                  REXCVAR_GET(ao2_coop_isolate_buoyancy_rand) ? 1 : 0, REXCVAR_GET(ao2_coop_block_streaming) ? 1 : 0);
+    return text;
+  }
+
   // What this game is doing, for the other players' lists.
   Fields Presence()
   {
@@ -651,7 +676,8 @@ namespace
             {"iid", InstanceId()},
             {"hosting", hosting ? "1" : "0"},
             {"state", st},
-            {"build", BuildHash()}};
+            {"build", BuildHash()},
+            {"sync", SharedSettings()}};
   }
 
   // HELLO to the broadcast addresses, the configured and the known players.
@@ -664,7 +690,9 @@ namespace
     steam.on = MyHostedGame(&hosted);
     steam.is_private = hosted.is_private;
     steam.versus = hosted.playgroup || hosted.max_players > 2;
-    steam.in_game = OwnState() == "game";
+    std::string own_state = OwnState();
+    steam.in_game = own_state == "game";
+    steam.session = own_state != "menu";
     steam.players = hosted.players;
     steam.max = hosted.max_players;
     steam.map = hosted.map;
@@ -814,6 +842,7 @@ namespace
         p.address = from;
         p.name = name;
         p.build = build;
+        p.sync = ao2::invite_checks::CleanText(Get(f, "sync"), ao2::invite_checks::kMaxFieldBytes);
         p.state = ao2::invite_checks::CleanText(Get(f, "state", "menu"), ao2::invite_checks::kMaxFieldBytes);
         p.hosting = Get(f, "hosting") == "1";
         p.seen = now;
@@ -1004,23 +1033,57 @@ namespace
     return out;
   }
 
+  // The same for the settings of players with this build (another build gets
+  // the warning above), as "name (key mine/theirs, ...)".
+  std::vector<std::string> LobbySettingsMismatches()
+  {
+    std::vector<std::string> out;
+    if (OwnState() != "lobby")
+    {
+      return out;
+    }
+    std::string mine = SharedSettings();
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    for (const auto &[addr, p] : st.peers)
+    {
+      std::string difference = ao2::invite_checks::SettingsDifference(mine, p.sync);
+      if (p.state != "menu" && !OtherBuild(p.build) && !difference.empty())
+      {
+        out.push_back(p.name + " (" + difference + ")");
+      }
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+  }
+
   std::atomic<bool> g_banner_shown{false};
 
   // Presence thread: puts the banner up when there is something to warn
   // about; it takes itself down (fading out) once there is none.
   void VersionBanner()
   {
-    if (g_banner_shown || LobbyMismatches().empty())
+    if (g_banner_shown)
+    {
+      return;
+    }
+    std::vector<std::string> settings_differ = LobbySettingsMismatches();
+    if (LobbyMismatches().empty() && settings_differ.empty())
     {
       return;
     }
     g_banner_shown = true;
-    Log("in the lobby with another build: banner");
+    Log("in the lobby with another build or other settings: banner");
+    for (const std::string &who : settings_differ)
+    {
+      Log("settings differ (this game's / theirs): %s", who.c_str());
+    }
     struct Anim
     {
       double start = -1.0;
       double gone = -1.0; // when the mismatch went away (fading out)
       std::vector<std::string> who;
+      bool settings = false; // `who` differ in their settings, not their build
       double checked = -1.0;
     };
     auto anim = std::make_shared<Anim>();
@@ -1038,6 +1101,11 @@ namespace
       {
         anim->checked = now;
         std::vector<std::string> who = LobbyMismatches();
+        bool settings = who.empty();
+        if (settings)
+        {
+          who = LobbySettingsMismatches();
+        }
         if (who.empty())
         {
           if (anim->gone < 0.0)
@@ -1048,6 +1116,7 @@ namespace
         else
         {
           anim->who = std::move(who);
+          anim->settings = settings;
           anim->gone = -1.0;
         }
       }
@@ -1072,10 +1141,13 @@ namespace
       }
       char mine[64];
       std::snprintf(mine, sizeof(mine), Tr("Yours: %s"), ShortBuild(BuildHash()).c_str());
-      std::string line = who + "  ·  " + mine;
-      const char *hint = Tr("Co-op needs the same version on both PCs, otherwise the game desyncs.");
-      float text_w = std::max({ui::CapsSize(FontKind::kLabel, Tr("GAME VERSIONS DIFFER")).x,
-                               ui::TextSize(FontKind::kBody, line.c_str()).x, ui::TextSize(FontKind::kSmall, hint).x});
+      std::string line = anim->settings ? who : who + "  ·  " + mine;
+      const char *title = anim->settings ? Tr("ONLINE SETTINGS DIFFER") : Tr("GAME VERSIONS DIFFER");
+      const char *hint = anim->settings
+                             ? Tr("Co-op needs the same online settings on both PCs (yours/theirs), otherwise the game desyncs.")
+                             : Tr("Co-op needs the same version on both PCs, otherwise the game desyncs.");
+      float text_w = std::max({ui::CapsSize(FontKind::kLabel, title).x, ui::TextSize(FontKind::kBody, line.c_str()).x,
+                               ui::TextSize(FontKind::kSmall, hint).x});
       ImVec2 size(std::min(std::max(560.0f * s, text_w + 96.0f * s), vp->Size.x - 32.0f * s), 92.0f * s);
       float top = vp->Pos.y + vp->Size.y * 0.05f;
       ImVec2 mn(vp->Pos.x + (vp->Size.x - size.x) * 0.5f, top - (1.0f - drop) * (top - vp->Pos.y + size.y));
@@ -1088,7 +1160,7 @@ namespace
       WarningSign(dl, ImVec2(mn.x + 40.0f * s, mn.y + size.y * 0.5f), 17.0f * s, ui::Fade(ui::kRed, a), 2.5f * s);
       float tx = mn.x + 76.0f * s;
       dl->PushClipRect(mn, ImVec2(mx.x - 12.0f * s, mx.y), true);
-      ui::Caps(dl, FontKind::kLabel, ImVec2(tx, mn.y + 12.0f * s), ui::Fade(ui::kRed, a), Tr("GAME VERSIONS DIFFER"));
+      ui::Caps(dl, FontKind::kLabel, ImVec2(tx, mn.y + 12.0f * s), ui::Fade(ui::kRed, a), title);
       ui::Text(dl, FontKind::kBody, ImVec2(tx, mn.y + 32.0f * s), ui::Fade(ui::kText, a), line.c_str());
       ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 62.0f * s), ui::Fade(ui::kMuted, a), hint);
       dl->PopClipRect();

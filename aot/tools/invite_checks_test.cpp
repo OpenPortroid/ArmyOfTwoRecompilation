@@ -88,6 +88,17 @@ namespace
     Check(CleanText("\xF0\x9F\x98\x80", 3).empty(), "one character over the limit");
   }
 
+  void TestSettings()
+  {
+    Check(SettingsDifference("a:1 b:2", "a:1 b:2").empty(), "the same settings");
+    Check(SettingsDifference("a:1 b:2", "").empty(), "a build without them");
+    Check(SettingsDifference("a:1 b:2", "b:2 a:1").empty(), "any order");
+    Check(SettingsDifference("a:1 b:2", "a:1 b:3") == "b 2/3", "one differs");
+    Check(SettingsDifference("a:1 b:2", "a:5 b:3") == "a 1/5, b 2/3", "two differ");
+    Check(SettingsDifference("a:1 b:2", "a:1") == "b 2/?", "one missing");
+    Check(SettingsDifference("ab:1", "a:1 abc:1") == "ab 1/?", "a whole key only");
+  }
+
   void TestRate()
   {
     using Clock = RateLimit::Clock;
@@ -106,6 +117,7 @@ int main()
   TestParse();
   TestServer();
   TestText();
+  TestSettings();
   TestRate();
   if (g_failures)
   {

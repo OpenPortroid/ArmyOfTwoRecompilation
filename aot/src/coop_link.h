@@ -5,6 +5,10 @@
 
 namespace ao2::coop::link
 {
+  // The link's UDP port; a second game on one PC takes one of the next few.
+  // The Steam bridge (steam_net.cpp) carries it like the game's own ports.
+  inline constexpr uint16_t kPort = 1002;
+
   // Receives what the partner sent and says hello once a second (any game
   // thread; cheap when there is nothing to do).
   void Pump();
