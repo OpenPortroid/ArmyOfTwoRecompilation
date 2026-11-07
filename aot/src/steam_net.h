@@ -27,6 +27,7 @@ namespace ao2::steam
   // For the server list (translated): a lobby's mission and mode.
   std::string MissionName(const std::string &map, bool versus);
   const char *ModeName(bool versus, int game_type);
+  const char *DifficultyName(int difficulty); // "" when unknown
 
   // The Steam players this game knows (friends in the game, lobby members,
   // whoever reached it): their virtual addresses, for the presence service's
@@ -53,6 +54,7 @@ namespace ao2::steam
     std::string build;
     std::string map;    // ea::HostedGame map / game_type / mode
     int game_type = -1;
+    int difficulty = -1; // co-op: 0 Recruit, 1 Contractor, 2 Professional
     std::string mode;
   };
   void SetHosting(const Hosting &hosting);
@@ -60,6 +62,8 @@ namespace ao2::steam
   // An invite from `ip` comes from a lobby this player chose to join (the
   // list's JOIN, a friend's "Join game"): accepted without asking. Once.
   bool TakeAutoAccept(uint32_t ip);
+  // How many such invites were accepted so far (a join that went through).
+  uint32_t AutoAccepted();
 
   // The server list (Steam lobbies of this game, worldwide), the lowest
   // ping first.
@@ -70,6 +74,7 @@ namespace ao2::steam
     std::string build;
     std::string map;
     int game_type = -1;
+    int difficulty = -1;
     bool versus = false;
     bool is_private = false;
     bool in_game = false;

@@ -82,6 +82,8 @@ set(ARMYOFTWORECOMP_SOURCES
     src/versus_bots.cpp
     src/versus_guest.cpp
     src/split_join.cpp
+    src/lobby_visibility.cpp
+    src/game_browser.cpp
     src/split_hud.cpp
     src/versus_lobby.cpp
     src/versus_rules.cpp

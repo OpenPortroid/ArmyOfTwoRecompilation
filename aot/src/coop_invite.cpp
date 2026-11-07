@@ -97,6 +97,11 @@
 #include <rex/runtime.h>
 #include <rex/system/kernel_state.h>
 
+namespace ao2::lobby_visibility
+{
+  int PrivateOverride(); // lobby_visibility.cpp: -1 the game's own, 0 public, 1 private
+}
+
 REXCVAR_DEFINE_BOOL(ao2_invites, true, "Online",
                     "Invites to a co-op game (Private Co-op): the game's invite / friends buttons open the "
                     "players window; other players on the LAN / VPN and in ao2_friends are found automatically.");
@@ -629,7 +634,7 @@ namespace
 
   // The lobby game this player hosts: on this process's server, or as the
   // server's presence service last told (GAME).
-  bool MyHostedGame(ao2::ea::HostedGame *out)
+  bool MyHostedGameAsGame(ao2::ea::HostedGame *out)
   {
     if (ao2::ea::FindHostedGame(LocalName(), out))
     {
@@ -643,6 +648,21 @@ namespace
       return true;
     }
     return false;
+  }
+
+  // The game this player hosts, private as picked in Create Co-op Game / Create
+  // Match (lobby_visibility.cpp) rather than as the game made it.
+  bool MyHostedGame(ao2::ea::HostedGame *out)
+  {
+    if (!MyHostedGameAsGame(out))
+    {
+      return false;
+    }
+    if (int picked = ao2::lobby_visibility::PrivateOverride(); picked >= 0)
+    {
+      out->is_private = picked != 0;
+    }
+    return true;
   }
 
   // -------------------------------------------------------------------------
@@ -717,6 +737,7 @@ namespace
     steam.max = hosted.max_players;
     steam.map = hosted.map;
     steam.game_type = hosted.game_type;
+    steam.difficulty = hosted.difficulty;
     steam.mode = hosted.mode;
     steam.name = LocalName();
     steam.build = BuildHash();
@@ -2264,7 +2285,7 @@ namespace
       if (!hosting && !peers.empty())
       {
         ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y + 2.0f * s), ui::Fade(ui::kMuted, a),
-                 Tr("To invite, create a game: Campaign Mode → Private Co-op Game."));
+                 Tr("To invite, create a game: Campaign Mode → Create Co-op Game."));
         y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
       }
 

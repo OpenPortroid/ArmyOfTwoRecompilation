@@ -98,10 +98,13 @@ and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind
 - Works over LAN or a virtual network (Radmin VPN, ZeroTier, Tailscale).
 - Both players start the game from the launcher. The launcher looks for a host on the local network and picks the
   role. Over the internet, enter the host's IP in the launcher's Settings → Network.
-- Public Co-op: Campaign Mode → Public Co-op Game.
-- Private Co-op (recommended), with invites: the lobby's Invite button opens the Players window with the players
-  found on the network (also the F1 menu's Invites tab); the partner accepts the invite with F6. Unlike Public
-  Co-op, it keeps checkpoints, so you can continue the game later.
+- Create a game: Campaign Mode → Create Co-op Game, then pick Private (invites only) or Public (also in the server
+  list, F1 → Online → Servers, where anyone can join). The lobby's Invite button opens the Players window with the
+  players found on the network (also the F1 menu's Invites tab); the partner accepts the invite with F6. It keeps
+  checkpoints, so you can continue the game later.
+- Find a game: Campaign Mode → Search Co-op Game opens the list of public games (host, mission, difficulty,
+  players, ping): join one, Quick Join the one with the lowest ping, or create your own. Versus' Quick Match opens
+  the same list of matches. Without Steam both run the game's own search.
 - Both players need the same version of the port (both on the AVX1 version if one of them has no AVX2), the same
   DLC and the same game language.
 - Allow the game through Windows Firewall once on both PCs: the launcher's Settings → Network → Windows Firewall.
@@ -110,8 +113,8 @@ Details: [aot/docs/online_coop.md](aot/docs/online_coop.md).
 
 ## Versus
 
-- Versus works over the same networks as co-op: choose Versus in the main menu. A Custom Match takes invites as
-  Private Co-op does.
+- Versus works over the same networks as co-op: choose Versus in the main menu. Create Match asks Private or Public as
+  Create Co-op Game does and takes invites the same way.
 - A match can start with fewer than 4 players: bots fill the empty places. They carry hostages to the extraction,
   destroy depots, buy weapons and armor, lift their partner up walls and take cover under fire.
 - Bot settings are in `settings\online.toml` (`ao2_versus_bots`, `ao2_versus_bots_buy` and the other

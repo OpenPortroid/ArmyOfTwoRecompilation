@@ -16,7 +16,7 @@ and their own game files in `assets/`. Settings live in
 | `ao2_coop_host` | empty | host's IP address |
 | `net_gamertag` | a name | a name |
 
-1. Host: *Campaign Mode → Public Co-op Game*, pick map and difficulty → "Finding
+1. Host: *Campaign Mode → Search Co-op Game*, pick map and difficulty → "Finding
    a game session…" → the lobby opens.
 2. Partner: the same menu (map/difficulty do not matter) → joins the host's game.
 3. Host: *Start Game*.
@@ -38,9 +38,24 @@ and D3DCompiler, settings, shader cache, game files, `Host co-op.bat` /
 `tools/make_dist.ps1` (launchers and README in `tools/dist/`); it keeps the build's PDB in
 `C:\aot2\dist\symbols\` for crash dumps from that PC.
 
-### Private Co-op Game (invites)
+### Create Co-op Game (invites)
 
-1. Host: *Campaign Mode → Private Co-op Game* → the lobby → *Invite*: the
+*Create Co-op Game* (the disc's Private Co-op Game) and Versus' *Create Match*
+(the disc's Custom Match) first ask who finds the game (`src/lobby_visibility.cpp`):
+**Private** - by invitation only, a friends-only Steam lobby; **Public** - also
+in everyone's server list (F1 → Online → Servers). The game hosts the same way
+either time; the pick stands in for its `B-U-Private` in the Steam lobby, the
+invites and the Players window, until Search Co-op Game or Quick Match is chosen.
+*Search Co-op Game* (the disc's Public Co-op Game) and Versus' *Quick Match*
+open, while Steam runs, a list of the public Steam lobbies of their mode
+(`src/game_browser.cpp`: host, mission, difficulty or game type, players, ping;
+the lobby data's `difficulty` is the game's `B-U-Difficulty`) instead of the
+game's own search: a lobby is joined as in F1 → Online → Servers, *Create*
+runs Create Co-op Game / Create Match as Public. Without Steam the game's
+search runs.
+The new names are written into the localization at start (`game_language.cpp`).
+
+1. Host: *Campaign Mode → Create Co-op Game* → Private or Public → the lobby → *Invite*: the
    **Players** window opens (instead of the Xbox guide) with everyone running
    the game on the LAN / VPN → *Invite* next to the partner.
 2. Partner (anywhere in the game): a notice "<host> invites you…" → **F6**
@@ -175,10 +190,10 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   30 s when its game was never entered: it would keep a place of the host's
   lobby taken. Joining another lobby while hosting makes no new lobby for the
   hosted game until the join fails or that game ends.
-- **Public game** (the game's quick match, `GLST` with `FILTER-NOT-PRIVATE=1`
-  from the PC's own game) gets an empty list at once, so the game hosts a
-  public game; its Steam lobby is in everyone's server list. With
-  `ao2_public_game_search = true` it searches first. A search that finds
+- **Search Co-op Game / Quick Match** (the game's quick match, `GLST` with
+  `FILTER-NOT-PRIVATE=1` from the PC's own game) searches first
+  (`ao2_public_game_search`, on by default; off: an empty list at once, so the
+  game hosts a public game whose Steam lobby is in everyone's server list). A search that finds
   nothing on the PC's own server asks Steam
   (`ea::SetQuickMatchHook` → `steam::QuickMatch`): the open lobby of the same
   `B-U-Mode` and build with the lowest ping is joined and its invite accepted

@@ -241,8 +241,8 @@ PS3Player1ProfileManagementWarning_Message="При возврате в меню 
 [Shell_Campaign]
 SinglePlayer="Одиночная игра"
 Splitscreen="Разделенный экран"
-HostOpenGame="Открытая игра"
-HostPrivateGame="Закрытая игра"
+HostOpenGame="Найти игру"
+HostPrivateGame="Создать игру"
 Join="Присоединиться к игре"
 [Shell_SinglePlayer]
 NewCampaign="Новая кампания"
@@ -313,7 +313,7 @@ EnteringGameSetup_Title="Настройка игры"
 EnteringReadyRoom_Message="Переход в комнату ожидания..."
 ReadyRoom=Комната ожидания
 [Shell_Versus]
-CustomMatch="Свой матч"
+CustomMatch="Создать матч"
 QuickMatch="Быстрый матч"
 Leaderboards="Таблицы лидеров"
 ;OBSOLETE

@@ -62,10 +62,11 @@ REXCVAR_DEFINE_BOOL(ao2_coop_server, false, "Online",
                     "The partner connects with ao2_coop_host = this computer's IP (VPN/LAN/public).");
 REXCVAR_DEFINE_STRING(ao2_coop_host, "", "Online",
                       "Online co-op partner: IP address of the player who runs ao2_coop_server.");
-REXCVAR_DEFINE_BOOL(ao2_public_game_search, false, "Online",
-                    "Public game looks for an open game first (on this PC's server, then over Steam) and "
-                    "hosts only when there is none. Off: it hosts at once, a public game everyone sees in "
-                    "the server list (F1 > Online > Servers).");
+REXCVAR_DEFINE_BOOL(ao2_public_game_search, true, "Online",
+                    "Search Co-op Game / Quick Match look for an open game first (on this PC's server, then "
+                    "over Steam) and host only when there is none. Off: they host at once, a public game "
+                    "everyone sees in the server list (F1 > Online > Servers); Create Co-op Game > Public "
+                    "does that too.");
 #endif
 
 namespace ao2::ea
@@ -808,11 +809,12 @@ namespace ao2::ea
               found.push_back(Summary(g, tid));
             }
           }
-          // Public game from this PC's own game: by default no search at all,
-          // the list comes back empty and the game hosts a public game (a
-          // Steam lobby everyone sees in the server list). With
-          // ao2_public_game_search: games on this server, then elsewhere (the
-          // hook sends it there through an invite; the list stays unanswered).
+          // Public game (Search Co-op Game, Quick Match) from this PC's own
+          // game, ao2_public_game_search: games on this server, then elsewhere
+          // (the hook sends it there through an invite; the list stays
+          // unanswered). Without it no search at all: the list comes back
+          // empty and the game hosts a public game (a Steam lobby everyone
+          // sees in the server list).
           bool own_quick = not_private && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G";
           if (own_quick && !PublicGameSearch())
           {
@@ -1323,6 +1325,8 @@ namespace ao2::ea
       out->map = Get(g.fields, "B-U-Map");
       std::string type = Get(g.fields, "B-U-GameType");
       out->game_type = type.empty() ? -1 : std::atoi(type.c_str());
+      std::string difficulty = Get(g.fields, "B-U-Difficulty");
+      out->difficulty = difficulty.empty() ? -1 : std::atoi(difficulty.c_str());
       out->mode = Get(g.fields, "B-U-Mode");
       return out->session_id != 0 && out->xnaddr.size() == 36;
     }

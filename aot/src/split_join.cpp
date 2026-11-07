@@ -516,6 +516,8 @@ namespace ao2::split_join
   uint32_t g_cause_event = 0;
   uint32_t g_login_status = 0;
 
+  std::string CauseEventName(const uint8_t *base, uint32_t frame) { return EventName(base, frame); }
+
   // Game thread, every world step (UGameEngine::Tick, decouple.cpp).
   void Frame(uint8_t *base)
   {

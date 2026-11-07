@@ -253,6 +253,21 @@ namespace ao2::console
 {
   void Poll(PPCContext &ctx, uint8_t *base)
   {
+    // The port's own commands (menu events of its windows: split_join.cpp,
+    // lobby_visibility.cpp) also run in a network session's menus (versus is
+    // connected in all of them), not in the lockstep.
+    if (!ao2::coop::OnlineLockstep(base))
+    {
+      std::vector<std::string> queued;
+      {
+        std::lock_guard lock(g_queue_mutex);
+        queued.swap(g_queue);
+      }
+      for (const std::string &line : queued)
+      {
+        Exec(ctx, base, line);
+      }
+    }
     if (ao2::coop::InNetworkGame(base))
     {
       // console.txt in a network game: a checkpoint load goes to both machines through the lockstep
@@ -327,16 +342,6 @@ namespace ao2::console
         start_done = true;
         Exec(ctx, base, "checkpoint " + checkpoint);
       }
-    }
-
-    std::vector<std::string> queued;
-    {
-      std::lock_guard lock(g_queue_mutex);
-      queued.swap(g_queue);
-    }
-    for (const std::string &line : queued)
-    {
-      Exec(ctx, base, line);
     }
 
     // console.txt, checked a few times per second.

@@ -118,6 +118,21 @@ namespace ao2::steam
     return m;
   }
 
+  const char *DifficultyName(int difficulty)
+  {
+    switch (difficulty)
+    {
+    case 0:
+      return Tr("Recruit");
+    case 1:
+      return Tr("Contractor");
+    case 2:
+      return Tr("Professional");
+    default:
+      return "";
+    }
+  }
+
   // The list's mode: co-op, or the versus game type (UIDataProvider_AO2MPGameTypes).
   const char *ModeName(bool versus, int game_type)
   {
@@ -303,6 +318,7 @@ namespace
     uint32_t self_ip = 0;
     ao2::steam::Hosting hosting;
     std::map<uint32_t, Clock::time_point> auto_accept; // host address -> until
+    uint32_t auto_accepted = 0;                        // invites taken so (AutoAccepted)
     std::vector<ao2::steam::Lobby> lobbies;
     bool refresh = false;
     bool refreshing = false;
@@ -1053,6 +1069,8 @@ namespace
       l.map = SteamMatchmaking()->GetLobbyData(id, "map");
       const char *type = SteamMatchmaking()->GetLobbyData(id, "gametype");
       l.game_type = *type ? std::atoi(type) : -1;
+      const char *difficulty = SteamMatchmaking()->GetLobbyData(id, "difficulty");
+      l.difficulty = *difficulty ? std::atoi(difficulty) : -1;
       l.versus = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "mode"), "versus") == 0;
       l.is_private = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "private"), "1") == 0;
       l.in_game = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "state"), "game") == 0;
@@ -1250,6 +1268,7 @@ namespace
         set("players", std::to_string(h.players));
         set("map", h.map);
         set("gametype", h.game_type >= 0 ? std::to_string(h.game_type) : "");
+        set("difficulty", h.difficulty >= 0 ? std::to_string(h.difficulty) : "");
         set("umode", h.mode);
         set("state", h.in_game ? "game" : "lobby");
         // Where this PC is, for the others' ping (ready once the relays answered).
@@ -1539,11 +1558,18 @@ namespace ao2::steam
     }
     bool live = Clock::now() < it->second;
     shared().auto_accept.erase(it);
+    shared().auto_accepted += live ? 1 : 0;
     if (live && shared().quick == Shared::Quick::kJoining)
     {
       shared().quick = Shared::Quick::kAccepted;
     }
     return live;
+  }
+
+  uint32_t AutoAccepted()
+  {
+    std::lock_guard lock(shared().mutex);
+    return shared().auto_accepted;
   }
 
   void RefreshLobbies()
@@ -1662,6 +1688,7 @@ namespace ao2::steam
   uint32_t SelfAddress() { return 0; }
   void SetHosting(const Hosting &) {}
   bool TakeAutoAccept(uint32_t) { return false; }
+  uint32_t AutoAccepted() { return 0; }
   void RefreshLobbies() {}
   bool Refreshing() { return false; }
   std::vector<Lobby> Lobbies() { return {}; }

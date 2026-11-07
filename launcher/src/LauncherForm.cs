@@ -1752,7 +1752,7 @@ namespace AO2Launcher
                     Kind = RowKind.Info,
                     Text = () => L.T("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
                                      "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
-                                     "the first player's game has started. Then both, in the game: Campaign Mode → Public Co-op Game.")
+                                     "the first player's game has started. Then both, in the game: Campaign Mode → Search Co-op Game.")
                 },
             };
 

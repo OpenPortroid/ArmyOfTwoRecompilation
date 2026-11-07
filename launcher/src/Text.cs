@@ -845,23 +845,23 @@ namespace AO2Launcher
             // The menu names as the game shows them in each language.
             a("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
               "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
-              "the first player's game has started. Then both, in the game: Campaign Mode → Public Co-op Game.",
+              "the first player's game has started. Then both, in the game: Campaign Mode → Search Co-op Game.",
               "Роль выбирается сама: по кнопке «Играть» лаунчер ищет хост в локальной сети. Если находит, вы " +
               "подключаетесь к нему, иначе становитесь хостом. Второй игрок жмёт «Играть» через несколько секунд " +
-              "после того, как запустилась игра первого. Затем оба в игре: Кампания → Открытая игра.",
+              "после того, как запустилась игра первого. Затем оба в игре: Кампания → Найти игру.",
               "Le rôle est choisi automatiquement : avec Jouer, le lanceur cherche un hôte sur le réseau local. S'il " +
               "en trouve un, vous le rejoignez, sinon vous devenez l'hôte. Le second joueur appuie sur Jouer quelques " +
               "secondes après le lancement du jeu du premier. Puis tous les deux, dans le jeu : Mode campagne → " +
-              "Partie publique coop.",
+              "Chercher partie coop.",
               "Die Rolle wird automatisch gewählt: Bei Spielen sucht der Launcher einen Host im lokalen Netz. Wird " +
               "einer gefunden, trittst du bei, sonst wirst du Host. Der zweite Spieler drückt Spielen ein paar " +
-              "Sekunden nach dem Start des Spiels des ersten. Dann beide im Spiel: Kampagnenmodus → Öffentl. Coop-Spiel.",
+              "Sekunden nach dem Start des Spiels des ersten. Dann beide im Spiel: Kampagnenmodus → Coop-Spiel suchen.",
               "El papel se elige solo: al pulsar Jugar, el lanzador busca un anfitrión en la red local. Si lo " +
               "encuentra, te unes; si no, eres el anfitrión. El segundo jugador pulsa Jugar unos segundos después de " +
-              "que se inicie el juego del primero. Luego ambos, en el juego: Modo campaña → Partida Coop. Pública.",
+              "que se inicie el juego del primero. Luego ambos, en el juego: Modo campaña → Buscar partida coop.",
               "Il ruolo si sceglie da solo: con Gioca il launcher cerca un host nella rete locale. Se lo trova ti " +
               "unisci, altrimenti diventi l'host. Il secondo giocatore preme Gioca qualche secondo dopo l'avvio del " +
-              "gioco del primo. Poi entrambi, nel gioco: Modalità campagna → Partita co-op pubblica.");
+              "gioco del primo. Poi entrambi, nel gioco: Modalità campagna → Cerca partita co-op.");
 
             // --- Advanced ---
             a("God mode (cheat)", "Бессмертие (чит)", "Mode dieu (triche)", "Gottmodus (Cheat)", "Modo dios (truco)",

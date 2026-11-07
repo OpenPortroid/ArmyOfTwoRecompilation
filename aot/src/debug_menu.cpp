@@ -2572,6 +2572,8 @@ namespace
         join_failed_ = false;
         ao2::steam::JoinLobby(id);
       };
+      // Co-op games or versus matches, as the chips on the right pick.
+      std::erase_if(all, [&](const ao2::steam::Lobby &l) { return l.versus != servers_versus_; });
       auto open = [](const ao2::steam::Lobby &l) {
         return !l.joined && !l.in_game && l.players < l.max && !ao2::invite::IsOtherBuild(l.build);
       };
@@ -2601,6 +2603,22 @@ namespace
         servers_refreshed_ = now;
         ao2::steam::RefreshLobbies();
       }
+      // The mode: co-op or versus.
+      {
+        const char *labels[2] = {Tr("CO-OP"), Tr("VERSUS")};
+        float cw[2] = {ChipWidth(labels[0]) + 12.0f * s, ChipWidth(labels[1]) + 12.0f * s};
+        float cx = x1 - cw[0] - cw[1] - 8.0f * s;
+        for (int i = 0; i < 2; ++i)
+        {
+          char id[16];
+          std::snprintf(id, sizeof(id), "srvmode%d", i);
+          if (Chip(id, ImVec2(cx, y), ImVec2(cw[i], bh), labels[i], servers_versus_ == (i == 1), live, a))
+          {
+            servers_versus_ = i == 1;
+          }
+          cx += cw[i] + 8.0f * s;
+        }
+      }
       y += bh + 10.0f * s;
       if (joining_ || join_failed_)
       {
@@ -2622,7 +2640,8 @@ namespace
       const float action_w = 150.0f * s;
       const float cols[5] = {x0 + 20.0f * s, x0 + w * 0.32f, x0 + w * 0.52f, x0 + w * 0.66f, x0 + w * 0.76f};
       const float col_end[5] = {cols[1], cols[2], cols[3], cols[4], x1 - action_w - 20.0f * s};
-      const char *heads[5] = {Tr("HOST"), Tr("MISSION"), Tr("MODE"), Tr("PLAYERS"), Tr("PING")};
+      const char *heads[5] = {Tr("HOST"), Tr(servers_versus_ ? "MAP" : "MISSION"),
+                              Tr(servers_versus_ ? "MODE" : "DIFFICULTY"), Tr("PLAYERS"), Tr("PING")};
       for (int c = 0; c < 5; ++c)
       {
         ui::Caps(dl, FontKind::kLabel, ImVec2(cols[c], y), ui::Fade(ui::kMuted, 0.8f * a), heads[c]);
@@ -2634,7 +2653,9 @@ namespace
         float eh = 120.0f * s;
         ImVec2 mn(x0, y), mx(x1, y + eh);
         ui::Frame(dl, mn, mx, ui::Fade(ui::kWhite, 0.08f * a), 1.0f * s);
-        const char *line1 = refreshing ? Tr("Looking for games...") : Tr("No games over Steam right now.");
+        const char *line1 = refreshing        ? Tr("Looking for games...")
+                            : servers_versus_ ? Tr("No public matches right now.")
+                                              : Tr("No public co-op games right now.");
         const char *line2 = Tr("Create a Public game in the game: it shows here for everyone.");
         ImVec2 s1 = ui::TextSize(FontKind::kBody, line1), s2 = ui::TextSize(FontKind::kSmall, line2);
         ui::Text(dl, FontKind::kBody, ImVec2((x0 + x1 - s1.x) * 0.5f, y + eh * 0.5f - s1.y - 2.0f * s),
@@ -2685,7 +2706,15 @@ namespace
         }
         dl->PopClipRect();
         cell(1, ui::kText, ao2::steam::MissionName(l.map, l.versus));
-        cell(2, ui::kText, ao2::steam::ModeName(l.versus, l.game_type));
+        if (l.versus)
+        {
+          cell(2, ui::kText, ao2::steam::ModeName(true, l.game_type));
+        }
+        else
+        {
+          const char *difficulty = ao2::steam::DifficultyName(l.difficulty);
+          cell(2, ui::kText, *difficulty ? difficulty : "\xE2\x80\x94");
+        }
         bool full = l.players >= l.max;
         cell(3, !full && !l.in_game ? ui::kText : ui::kMuted,
              std::to_string(std::min(l.players, l.max)) + " / " + std::to_string(l.max));
@@ -3011,6 +3040,7 @@ namespace
     float mark_w_ = -1.0f, mark_width_target_ = 0.0f; // ... and its width
     // Online: the games list's refresh, the join under way.
     double servers_refreshed_ = -100.0;
+    bool servers_versus_ = false;   // the games list shows versus matches (else co-op games)
     char code_text_[24] = {};       // the host's code (Join with code)
     bool code_bad_ = false;         // ... was not a code
     bool code_wait_ = false;        // ... asked for here: closed once invited
@@ -3360,6 +3390,18 @@ namespace ao2::menu
     uint32_t pressed = fn(back);
     g_pad_reading = false;
     return pressed;
+  }
+
+  uint16_t PadButtons(int16_t *stick_x)
+  {
+    *stick_x = 0;
+    PadRead pad;
+    if (!g_window || !g_window->HasFocus() || !ReadPads(pad))
+    {
+      return 0;
+    }
+    *stick_x = pad.thumbs[0];
+    return pad.buttons;
   }
 
   void OnPadPoll(uint32_t user, uint8_t *state)

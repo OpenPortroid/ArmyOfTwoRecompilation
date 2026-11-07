@@ -42,6 +42,11 @@ namespace ao2::menu
   // (one bit per the pad's ordinal; `back`: those with B down); 0 without focus.
   uint32_t PressedPads(uint32_t *back);
 
+  // UI thread: every gamepad's buttons together (XINPUT_GAMEPAD bits: 0x1 up, 0x2 down,
+  // 0x4 left, 0x8 right, 0x1000 A, 0x2000 B, ...) and the left stick's x (`stick_x`);
+  // 0 without a pad or without focus. For a port window (the menu's own read).
+  uint16_t PadButtons(int16_t *stick_x);
+
   // ImGui font setup (ReXApp::OnConfigureFonts): a readable UI font with
   // Cyrillic.
   void ConfigureFonts(ImFontAtlas *atlas);

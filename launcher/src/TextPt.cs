@@ -351,10 +351,10 @@ namespace AO2Launcher
               "Grava o coop_debug.log na pasta do jogo, necessário para investigar dessincronizações. Custa um pouco de desempenho.");
             p("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
               "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
-              "the first player's game has started. Then both, in the game: Campaign Mode → Public Co-op Game.",
+              "the first player's game has started. Then both, in the game: Campaign Mode → Search Co-op Game.",
               "O papel é escolhido automaticamente: ao clicar em Jogar, o launcher procura um anfitrião na rede local. Se encontrar " +
               "um, você entra nele; se não, você vira o anfitrião. O segundo jogador clica em Jogar alguns segundos depois de " +
-              "o jogo do primeiro ter iniciado. Depois, os dois, no jogo: Modo Campanha → Jogo Coop Público.");
+              "o jogo do primeiro ter iniciado. Depois, os dois, no jogo: Modo Campanha → Buscar Jogo Coop.");
             p("God mode (cheat)", "Modo deus (cheat)");
             p("The player takes no damage. Has no effect in online co-op.",
               "O jogador não sofre dano. Não tem efeito no coop online.");

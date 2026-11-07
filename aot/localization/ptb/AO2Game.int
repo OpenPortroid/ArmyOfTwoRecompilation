@@ -236,8 +236,8 @@ PS3Player1ProfileManagementWarning_Message="Ao voltar ao menu de gerenciamento d
 [Shell_Campaign]
 SinglePlayer="Um Jogador"
 Splitscreen="Tela Dividida"
-HostOpenGame="Jogo Coop Público"
-HostPrivateGame="Jogo Coop Privado"
+HostOpenGame="Buscar Jogo Coop"
+HostPrivateGame="Criar Jogo Coop"
 Join="Entrar em Jogo Coop"
 [Shell_SinglePlayer]
 NewCampaign="Nova Campanha"
@@ -308,7 +308,7 @@ EnteringGameSetup_Title="Configuração do Jogo"
 EnteringReadyRoom_Message="Entrando na tela da sala de espera..."
 ReadyRoom=Sala de Espera
 [Shell_Versus]
-CustomMatch="Partida Personalizada"
+CustomMatch="Criar Partida"
 QuickMatch="Partida Rápida"
 Leaderboards="Rankings"
 FriendsOnly="Só Amigos"

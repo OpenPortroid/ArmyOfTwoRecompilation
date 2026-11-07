@@ -27,7 +27,7 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - **Co-op: the role is chosen automatically.** On Play the launcher looks for a host on the local network for
   about a second (UDP broadcast, port 18490; works over Radmin VPN too). If one answers the game starts as the
   partner (`--ao2_coop_host=<ip>`), otherwise as the host (`--ao2_coop_server`). The second player presses Play a
-  few seconds after the first player's game has started, then both go to Campaign Mode → Public Co-op Game.
+  few seconds after the first player's game has started, then both go to Campaign Mode → Search Co-op Game.
   If the host is not found (over the internet, for example), enter its address in Network → Host IP.
 - Controls. Main screen: ←→/↑↓/Tab select, Enter/Space press, Esc quit; gamepad: D-pad/stick, A/Start, B quit.
   Settings: ↑↓ row, ←→ value, Tab/Shift+Tab/PageUp/PageDown/Q/E tabs, Enter/Space select, Esc back;

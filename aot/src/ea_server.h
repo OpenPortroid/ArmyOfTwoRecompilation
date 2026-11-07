@@ -43,6 +43,7 @@ namespace ao2::ea
     int max_players = 2;    // MAX-PLAYERS (4: versus)
     std::string map;        // B-U-Map (versus M01_map_world..., "Any"; co-op its level)
     int game_type = -1;     // B-U-GameType (versus: 0 Warzone, 1 Bounties, 2 Extraction)
+    int difficulty = -1;    // B-U-Difficulty (co-op: 0 Recruit, 1 Contractor, 2 Professional)
     std::string mode;       // B-U-Mode (what a quick match filters on: FILTER-ATTR-U-Mode)
   };
   bool FindHostedGame(const std::string &host_name, HostedGame *out);

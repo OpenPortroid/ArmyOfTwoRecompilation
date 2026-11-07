@@ -405,6 +405,163 @@ namespace ao2::lang
                     files);
       return files;
     }
+
+    // ---------------------------------------------------------------------
+    // Create / Search in place of the disc's Private / Public Co-op Game and
+    // Custom Match (lobby_visibility.cpp asks private or public on Create).
+    // Our languages have them in localization\<dir>\AO2Game.int; the disc's
+    // get them here, in Coalesced.<lang> and (English) in the downloadable
+    // content's DLC<n>__AO2Game.int, which the game reads over Coalesced.
+    // ---------------------------------------------------------------------
+
+    struct MenuName
+    {
+      const char *section, *key;          // the key and its _PS3 / _Xbox360 twins
+      const char *en, *de, *fr, *es, *it; // UTF-8, Latin-1 letters only
+    };
+    constexpr MenuName kMenuNames[] = {
+        {"[Shell_Campaign]", "HostPrivateGame", "Create Co-op Game", "Coop-Spiel erstellen", "Créer partie coop",
+         "Crear partida coop", "Crea partita co-op"},
+        {"[Shell_Campaign]", "HostOpenGame", "Search Co-op Game", "Coop-Spiel suchen", "Chercher partie coop",
+         "Buscar partida coop", "Cerca partita co-op"},
+        {"[Shell_Versus]", "CustomMatch", "Create Match", "Spiel erstellen", "Créer une partie", "Crear partida",
+         "Crea partita"},
+    };
+
+    const char *MenuNameIn(const MenuName &name, std::string_view code)
+    {
+      return code == "de"   ? name.de
+             : code == "fr" ? name.fr
+             : code == "es" ? name.es
+             : code == "it" ? name.it
+                            : name.en;
+    }
+
+    // One .int's text (Latin-1) with the new names in `code` (en, de, fr, es, it).
+    std::string RenameMenus(const std::string &text, std::string_view code, int &renamed)
+    {
+      std::string out;
+      out.reserve(text.size());
+      std::string section;
+      size_t pos = 0;
+      while (pos < text.size())
+      {
+        size_t nl = text.find('\n', pos);
+        size_t end = nl == std::string::npos ? text.size() : nl;
+        std::string line = text.substr(pos, end - pos);
+        pos = nl == std::string::npos ? text.size() : nl + 1;
+        bool cr = !line.empty() && line.back() == '\r';
+        size_t eq = line.find('=');
+        if (!line.empty() && line.front() == '[')
+        {
+          section = Trim(line);
+        }
+        else if (eq != std::string::npos && line.front() != ';')
+        {
+          std::string key = Trim(std::string_view(line).substr(0, eq));
+          for (const char *twin : {"_PS3", "_Xbox360"})
+          {
+            if (key.ends_with(twin))
+              key.resize(key.size() - std::strlen(twin));
+          }
+          for (const MenuName &name : kMenuNames)
+          {
+            if (section == name.section && key == name.key)
+            {
+              line = line.substr(0, eq + 1) + '"' + ToCodePage(MenuNameIn(name, code), 1252) + '"' + (cr ? "\r" : "");
+              ++renamed;
+            }
+          }
+        }
+        out += line;
+        if (nl != std::string::npos)
+          out += '\n';
+      }
+      return out;
+    }
+
+    // Coalesced.<lang> with the new names in `code`; each file keeps its size
+    // (Xbox360TOC.txt, as keyboard_prompts' rewrite): as it was when they do not fit.
+    std::string RenameMenusInCoalesced(const std::string &data, std::string_view code, int &renamed)
+    {
+      if (data.size() < 4)
+        return data;
+      uint32_t count = ReadBe32(data, 0);
+      std::string out = data.substr(0, 4);
+      size_t at = 4;
+      for (uint32_t i = 0; i < count; ++i)
+      {
+        if (at + 4 > data.size())
+          return data;
+        int32_t n = int32_t(ReadBe32(data, at));
+        size_t bytes = n < 0 ? size_t(-int64_t(n)) * 2 : size_t(n);
+        if (at + 4 + bytes > data.size())
+          return data;
+        std::string_view str(data.data() + at + 4, bytes);
+        out.append(data, at, 4);
+        bool menus = (i & 1) && n > 1 && str.back() == '\0' &&
+                     (str.find("[Shell_Campaign]") != std::string_view::npos ||
+                      str.find("[Shell_Versus]") != std::string_view::npos);
+        int here = 0;
+        std::string text = menus ? RenameMenus(std::string(str.substr(0, bytes - 1)), code, here) : std::string();
+        if (here && text.size() <= bytes - 1)
+        {
+          text.resize(bytes - 1, '\n');
+          out += text;
+          out += '\0';
+          renamed += here;
+        }
+        else
+        {
+          if (here)
+            REXLOG_WARN("game_language: the menu names do not fit, kept as they are");
+          out += str;
+        }
+        at += 4 + bytes;
+      }
+      return at == data.size() ? out : data;
+    }
+
+    // English: the downloadable content's DLC<n>__AO2Game.int with the new
+    // names, under overlay_root\<package folder> (as OwnContent).
+    int RenameMenusInContent(const fs::path &content_dir, const fs::path &overlay_root)
+    {
+      int files = 0;
+      std::error_code ec;
+      for (auto it = fs::recursive_directory_iterator(content_dir, fs::directory_options::skip_permission_denied, ec);
+           it != fs::recursive_directory_iterator(); it.increment(ec))
+      {
+        if (ec)
+          break;
+        if (it->is_directory(ec))
+        {
+          if (it.depth() >= 1)
+            it.disable_recursion_pending();
+          continue;
+        }
+        std::string lower = ToLower(it->path().filename().string());
+        if (!it->is_regular_file(ec) || !lower.starts_with("dlc") || !lower.ends_with("__ao2game.int"))
+          continue;
+        std::string text;
+        int renamed = 0;
+        if (!ReadFile(it->path(), text))
+          continue;
+        text = RenameMenus(text, "en", renamed);
+        if (!renamed)
+          continue;
+        fs::path out_dir = overlay_root / it->path().parent_path().filename();
+        fs::create_directories(out_dir, ec);
+        fs::path out = out_dir / it->path().filename();
+        std::string existing;
+        if (!(ReadFile(out, existing) && existing == text))
+        {
+          std::ofstream file(out, std::ios::binary | std::ios::trunc);
+          file.write(text.data(), std::streamsize(text.size()));
+        }
+        ++files;
+      }
+      return files;
+    }
   } // namespace
 
   const char *Code()
@@ -474,7 +631,7 @@ namespace ao2::lang
       if (std::strcmp(Code(), t.code) == 0)
         own = &t;
     bool prompts = ao2::prompts::Enabled();
-    if ((!own && !prompts) || !runtime || !runtime->file_system())
+    if (!runtime || !runtime->file_system())
       return;
     if (Russian())
       ao2::cyrillic::Install(game_data_root, user_data_root);
@@ -487,7 +644,7 @@ namespace ao2::lang
     fs::create_directories(target, ec);
 
     // The overlay replaces the whole folder: every file of it is there.
-    int rewritten = 0;
+    int rewritten = 0, renamed_menus = 0;
     for (const auto &entry : fs::directory_iterator(source, ec))
     {
       if (!entry.is_regular_file())
@@ -505,6 +662,13 @@ namespace ao2::lang
         data = OwnCoalesced(data, *own, own_dir);
       if (prompts && lower.starts_with("coalesced."))
         data = ao2::prompts::RewriteLocalization(data, english && !own, rewritten);
+      // The disc's languages: Create / Search Co-op Game, Create Match (ours have them).
+      static const std::pair<const char *, const char *> kMenuLanguages[] = {
+          {"coalesced.int", "en"}, {"coalesced.deu", "de"}, {"coalesced.fra", "fr"},
+          {"coalesced.esn", "es"}, {"coalesced.ita", "it"}};
+      for (const auto &[file_name, code] : kMenuLanguages)
+        if (lower == file_name && !(english && own))
+          data = RenameMenusInCoalesced(data, code, renamed_menus);
 
       fs::path out = target / name;
       std::string existing;
@@ -519,12 +683,10 @@ namespace ao2::lang
       }
     }
 
-    if (own)
-    {
-      fs::path overlays = user_data_root / "localization" / "content";
-      if (OwnContent(ao2::dlc::Dir(), overlays, *own, own_dir))
-        rex::cvar::SetFlagByName("content_overlay_root", overlays.string());
-    }
+    fs::path overlays = user_data_root / "localization" / "content";
+    if (own ? OwnContent(ao2::dlc::Dir(), overlays, *own, own_dir) != 0
+            : std::strcmp(Code(), "en") == 0 && RenameMenusInContent(ao2::dlc::Dir(), overlays) != 0)
+      rex::cvar::SetFlagByName("content_overlay_root", overlays.string());
 
     auto device = std::make_unique<rex::filesystem::HostPathDevice>(kMount, target, true);
     if (!device->Initialize() || !runtime->file_system()->RegisterDevice(std::move(device)))
@@ -532,7 +694,7 @@ namespace ao2::lang
       REXLOG_WARN("game_language: cannot mount {}", target.string());
       return;
     }
-    REXLOG_INFO("game_language: {}, {} strings without the controller's words ({})", own ? own->name : "English",
-                rewritten, target.string());
+    REXLOG_INFO("game_language: {}, {} strings without the controller's words, {} menu names ({})",
+                own ? own->name : "English", rewritten, renamed_menus, target.string());
   }
 } // namespace ao2::lang

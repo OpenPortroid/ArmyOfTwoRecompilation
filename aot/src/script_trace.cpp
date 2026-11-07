@@ -28,6 +28,10 @@ namespace ao2::split_join
   bool OnCauseEvent(PPCContext &ctx, uint8_t *base); // true: the function does not run
   void OnLoginStatus(PPCContext &ctx, uint8_t *base);
 }
+namespace ao2::lobby_visibility
+{
+  bool OnCauseEvent(PPCContext &ctx, uint8_t *base); // lobby_visibility.cpp; true: held back
+}
 
 REXCVAR_DEFINE_BOOL(ao2_script_trace, false, "Debug",
                     "Debug: log the UnrealScript functions run in the main menu to script_trace.log");
@@ -154,7 +158,8 @@ extern "C" REX_FUNC(sub_82445C30)
   {
     ao2::split_join::OnLoginStatus(ctx, base);
   }
-  else if (function == ao2::split_join::g_cause_event && ao2::split_join::OnCauseEvent(ctx, base))
+  else if (function == ao2::split_join::g_cause_event &&
+           (ao2::split_join::OnCauseEvent(ctx, base) || ao2::lobby_visibility::OnCauseEvent(ctx, base)))
   {
     return;
   }
