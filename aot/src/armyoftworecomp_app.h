@@ -21,6 +21,7 @@
 #include "debug_tools.h"
 #include "dlc_folder.h"
 #include "coop_invite.h"
+#include "coop_net_status.h"
 #include "ea_server.h"
 #include "game_cvars.h"
 #include "hang_watchdog.h"
@@ -111,6 +112,8 @@ public:
     ao2::invite::Start();
     // Steam (Spacewar): friends, lobbies and the traffic through its relays.
     ao2::steam::Start();
+    // Online co-op: the connection overlay and a dropped partner's rejoin.
+    ao2::coop::status::Start();
 
     if (window())
     {

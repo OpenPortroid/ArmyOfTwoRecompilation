@@ -22,6 +22,7 @@
 #include <rex/ppc.h>
 
 #include "coop.h"
+#include "coop_net_status.h"
 #include "decouple.h"
 #include "frame_spikes.h"
 
@@ -87,5 +88,6 @@ extern "C" REX_FUNC(sub_82A30DE8)
     StoreF64(base, delta_addr, std::min(measured, kMaxDeltaSeconds));
   }
   CoopDebugSyncTick(self, base, tick_ms);
+  ao2::coop::status::OnSyncTick(base, self);
   CoopNetAfterSyncTick(ctx, base);
 }

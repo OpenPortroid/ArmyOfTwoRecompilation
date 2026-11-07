@@ -11,6 +11,13 @@
 // (ao2_decouple, ao2_sim_hz - decouple.cpp): each side sends its own with
 // every hello.
 //
+// And the connection quality (coop_net_status.cpp): five times a second a
+// Quality message with a time stamp of the sender's and the echo of the last
+// stamp it got (and how long it held it), so each side measures the round
+// trip itself; how many frames the sender waited for its partner; and its
+// input delay margin wish with the lockstep frame it holds from
+// (coop_input_delay.cpp takes the larger wish on both machines).
+//
 // UDP port kPort (the same program as the game, so the firewall rule of
 // "Allow through firewall" covers it). The partner's address is the one the
 // game sends its own traffic to (sendto, VDP port 1000); replies go back to
@@ -21,6 +28,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#include <algorithm>
 #include <atomic>
 #include <bit>
 #include <chrono>
@@ -49,6 +57,8 @@ namespace
     kHello = 0,
     kSkipMovie = 1,
     kSettings = 2, // SettingsMessage
+    kQuality = 3,  // QualityMessage
+    kBye = 4,      // this game's network session is over (left on purpose)
   };
 
   struct Message
@@ -70,6 +80,27 @@ namespace
   constexpr uint32_t kSettingsDecouple = 1;
   constexpr uint32_t kSettingsServer = 2;
 
+  // A Message followed by the connection quality (older builds ignore it).
+  struct QualityMessage
+  {
+    Message header;
+    uint32_t stamp;      // the sender's clock, ms (never 0)
+    uint32_t echo;       // the last stamp the sender got from us (0: none)
+    uint32_t echo_hold;  // ms it held that stamp before sending this
+    uint32_t extra_ms;   // input delay margin wish
+    uint32_t from_frame; // ... from this lockstep frame on
+    uint32_t waits;      // frames waited for the partner in the last second
+  };
+  constexpr auto kQualityPeriod = std::chrono::milliseconds(200);
+
+  // What a received packet is read into (the largest message).
+  union Packet
+  {
+    Message header;
+    SettingsMessage settings;
+    QualityMessage quality;
+  };
+
   std::mutex g_mutex;
   SOCKET g_socket = INVALID_SOCKET;
   bool g_failed = false;
@@ -85,6 +116,24 @@ namespace
   std::atomic<uint64_t> g_local_settings{0}; // flags << 32 | sim_hz
   std::atomic<uint64_t> g_partner_settings{0};
   std::atomic<uint32_t> g_self_id{0};
+
+  // Connection quality.
+  clock::time_point g_last_quality;
+  uint32_t g_echo = 0;          // the partner's last stamp (under g_mutex)
+  clock::time_point g_echo_got; // ... when it came
+  std::atomic<int32_t> g_ping{-1};           // ms, smoothed
+  std::atomic<int64_t> g_heard{0};           // clock ticks of the partner's last message
+  std::atomic<uint64_t> g_local_extra{0};    // extra_ms << 32 | from_frame
+  std::atomic<uint64_t> g_partner_extra{0};  // bit 63 = received, extra_ms << 32 | from_frame
+  std::atomic<int32_t> g_local_waits{0};
+  std::atomic<int32_t> g_partner_waits{-1};
+  std::atomic<bool> g_partner_bye{false};
+
+  uint32_t NowMs()
+  {
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(clock::now().time_since_epoch()).count();
+    return uint32_t(ms);
+  }
 
   FILE *Log()
   {
@@ -190,6 +239,52 @@ namespace
   }
 
   // Under g_mutex.
+  void SendQuality()
+  {
+    auto now = clock::now();
+    uint32_t hold =
+        g_echo ? uint32_t(std::chrono::duration_cast<std::chrono::milliseconds>(now - g_echo_got).count()) : 0;
+    uint64_t extra = g_local_extra.load(std::memory_order_relaxed);
+    QualityMessage m{{htonl(kMagic), htonl(g_self), htonl(kQuality), 0},
+                     htonl(NowMs() | 1),
+                     htonl(g_echo),
+                     htonl(hold),
+                     htonl(uint32_t(extra >> 32)),
+                     htonl(uint32_t(extra)),
+                     htonl(uint32_t(g_local_waits.load(std::memory_order_relaxed)))};
+    for (const sockaddr_in &p : g_peers)
+    {
+      sendto(g_socket, reinterpret_cast<const char *>(&m), sizeof(m), 0, reinterpret_cast<const sockaddr *>(&p),
+             sizeof(p));
+    }
+  }
+
+  // Under g_mutex.
+  void OnQuality(const QualityMessage &q)
+  {
+    g_echo = ntohl(q.stamp);
+    g_echo_got = clock::now();
+    if (uint32_t echo = ntohl(q.echo))
+    {
+      int64_t rtt = int64_t(NowMs() - echo) - int64_t(ntohl(q.echo_hold));
+      if (rtt >= 0 && rtt < 10000)
+      {
+        int32_t old = g_ping.load(std::memory_order_relaxed);
+        // Smoothed (a quarter of each sample); a jump up is taken at once.
+        int32_t ping = old < 0 || rtt > 2 * old ? int32_t(rtt) : int32_t((3 * int64_t(old) + rtt + 2) / 4);
+        g_ping.store(ping, std::memory_order_relaxed);
+      }
+    }
+    uint32_t extra_ms = std::min<uint32_t>(ntohl(q.extra_ms), 1000);
+    uint64_t extra = 1ull << 63 | uint64_t(extra_ms) << 32 | ntohl(q.from_frame);
+    if (g_partner_extra.exchange(extra, std::memory_order_relaxed) != extra)
+    {
+      Logf("partner input margin wish: +%u ms from frame %u", extra_ms, ntohl(q.from_frame));
+    }
+    g_partner_waits.store(int32_t(std::min<uint32_t>(ntohl(q.waits), 10000)), std::memory_order_relaxed);
+  }
+
+  // Under g_mutex.
   void PumpLocked()
   {
     if (!Open())
@@ -206,11 +301,12 @@ namespace
     }
     for (;;)
     {
-      SettingsMessage packet;
-      Message &m = packet.header;
+      Packet any;
+      SettingsMessage &packet = any.settings;
+      Message &m = any.header;
       sockaddr_in from{};
       int from_len = sizeof(from);
-      int n = recvfrom(g_socket, reinterpret_cast<char *>(&packet), sizeof(packet), 0,
+      int n = recvfrom(g_socket, reinterpret_cast<char *>(&any), sizeof(any), 0,
                        reinterpret_cast<sockaddr *>(&from), &from_len);
       if (n < 0)
       {
@@ -221,7 +317,13 @@ namespace
         continue;
       }
       AddPeer(from);
+      g_heard.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
       uint32_t seq = ntohl(m.seq);
+      if (ntohl(m.type) == kQuality && n == int(sizeof(QualityMessage)))
+      {
+        OnQuality(any.quality);
+        continue;
+      }
       if (ntohl(m.type) == kSettings && n == int(sizeof(packet)))
       {
         uint64_t settings = 1ull << 63 | uint64_t(ntohl(packet.flags) & 0x7FFF) << 48 |
@@ -236,6 +338,10 @@ namespace
       {
         continue;
       }
+      if (ntohl(m.type) == kBye && !g_partner_bye.exchange(true, std::memory_order_relaxed))
+      {
+        Logf("partner's network session is over (from %s)", Text(from));
+      }
       if (ntohl(m.type) == kSkipMovie && seq != g_last_remote_seq)
       {
         g_last_remote_seq = seq;
@@ -244,6 +350,11 @@ namespace
       }
     }
     auto now = clock::now();
+    if (!g_peers.empty() && ao2::coop::network_session.load(std::memory_order_relaxed) && now - g_last_quality >= kQualityPeriod)
+    {
+      g_last_quality = now;
+      SendQuality();
+    }
     if (!g_peers.empty() && now - g_last_hello > std::chrono::seconds(1))
     {
       g_last_hello = now;
@@ -310,6 +421,86 @@ namespace ao2::coop::link
     out->server = flags & kSettingsServer;
     out->sim_hz = int32_t((v >> 32) & 0xFFFF);
     return true;
+  }
+
+  int32_t PingMs()
+  {
+    return g_ping.load(std::memory_order_relaxed);
+  }
+
+  int64_t PartnerSilentMs()
+  {
+    int64_t t = g_heard.load(std::memory_order_relaxed);
+    if (!t)
+    {
+      return -1;
+    }
+    auto since = clock::now() - clock::time_point(clock::duration(t));
+    return std::chrono::duration_cast<std::chrono::milliseconds>(since).count();
+  }
+
+  uint32_t GamePeer()
+  {
+    return g_game_peer.load(std::memory_order_relaxed);
+  }
+
+  void ProposeExtraMs(int32_t extra_ms, uint32_t from_frame)
+  {
+    g_local_extra.store(uint64_t(uint32_t(std::max(extra_ms, 0))) << 32 | from_frame, std::memory_order_relaxed);
+  }
+
+  bool PartnerExtraMs(int32_t *extra_ms, uint32_t *from_frame)
+  {
+    uint64_t v = g_partner_extra.load(std::memory_order_relaxed);
+    if (!(v >> 63))
+    {
+      return false;
+    }
+    *extra_ms = int32_t((v >> 32) & 0x7FFFFFFF);
+    *from_frame = uint32_t(v);
+    return true;
+  }
+
+  void SetLocalWaits(int32_t waits)
+  {
+    g_local_waits.store(waits, std::memory_order_relaxed);
+  }
+
+  int32_t PartnerWaits()
+  {
+    return g_partner_waits.load(std::memory_order_relaxed);
+  }
+
+  void SendBye()
+  {
+    std::lock_guard lock(g_mutex);
+    if (g_socket == INVALID_SOCKET)
+    {
+      return;
+    }
+    for (int i = 0; i < 3; ++i)
+    {
+      SendAll(kBye, 0);
+    }
+    Logf("bye sent to %zu address(es)", g_peers.size());
+  }
+
+  bool PartnerSaidBye()
+  {
+    return g_partner_bye.load(std::memory_order_relaxed);
+  }
+
+  void ResetQuality()
+  {
+    std::lock_guard lock(g_mutex);
+    g_partner_bye.store(false, std::memory_order_relaxed);
+    g_echo = 0;
+    g_ping.store(-1, std::memory_order_relaxed);
+    g_heard.store(0, std::memory_order_relaxed);
+    g_local_extra.store(0, std::memory_order_relaxed);
+    g_partner_extra.store(0, std::memory_order_relaxed);
+    g_local_waits.store(0, std::memory_order_relaxed);
+    g_partner_waits.store(-1, std::memory_order_relaxed);
   }
 
   bool SettingsAreMine(const SimSettings &mine, const SimSettings &partner)

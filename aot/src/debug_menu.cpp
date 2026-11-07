@@ -55,6 +55,7 @@
 #include "coop.h"
 #include "coop_cmd.h"
 #include "coop_invite.h"
+#include "coop_net_status.h"
 #include "dlc_folder.h"
 #include "gpu/native/overlay.h"
 #include "graphics_menu.h"
@@ -3102,6 +3103,7 @@ namespace
       {
         ao2::perf::Draw();
       }
+      ao2::coop::status::DrawHud();
       DrawNotice();
     }
   };
@@ -3181,7 +3183,8 @@ namespace
   // the overlay or a notice is on.
   void SyncPerfDialog()
   {
-    bool on = ao2::perf::GetMode() != ao2::perf::kOff || g_notice_on.load(std::memory_order_relaxed);
+    bool on = ao2::perf::GetMode() != ao2::perf::kOff || g_notice_on.load(std::memory_order_relaxed) ||
+              ao2::coop::status::HudWanted();
     if (on && !g_perf_dialog)
     {
       g_perf_dialog = std::make_unique<PerfDialog>(g_perf_drawer.get());
@@ -3213,14 +3216,14 @@ namespace
     {
       ao2::gpu::overlay::Clear(ao2::gpu::overlay::kMenuLayer);
     }
-    g_frames_wanted = g_perf_dialog || g_own_drawer->HasDialogs() || g_notice_on;
+    g_frames_wanted = g_perf_dialog || g_own_drawer->HasDialogs() || g_notice_on || ao2::coop::status::HudWanted();
   }
 
   // Native renderer, at each present (GPU thread).
   void RequestOwnFrame()
   {
     bool wanted = g_frames_wanted.load(std::memory_order_relaxed) || ao2::perf::GetMode() != ao2::perf::kOff ||
-                  g_notice_on.load(std::memory_order_relaxed);
+                  g_notice_on.load(std::memory_order_relaxed) || ao2::coop::status::HudWanted();
     if (!wanted || g_frame_queued.exchange(true))
     {
       return;

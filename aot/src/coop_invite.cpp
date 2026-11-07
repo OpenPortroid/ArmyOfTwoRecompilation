@@ -106,6 +106,12 @@ REXCVAR_DEFINE_STRING(ao2_friends, "", "Online",
                       "Players to look for besides the local networks: IP addresses (or ip:port), comma "
                       "separated - e.g. a friend's Radmin VPN / public address.");
 REXCVAR_DEFINE_STRING(ao2_invite_accept_key, "F6", "Online", "Key that accepts the invite on the screen.");
+REXCVAR_DEFINE_BOOL(ao2_coop_rejoin, true, "Online",
+                    "Online co-op: after the partner's game dropped out (no connection, or out of sync), the host's "
+                    "next co-op lobby invites that partner by itself and the partner's game accepts by itself");
+REXCVAR_DEFINE_INT32(ao2_coop_rejoin_minutes, 5, "Online",
+                     "Online co-op: how long after a drop the host's game re-invites the partner (ao2_coop_rejoin)")
+    .range(1, 60);
 
 REXCVAR_DECLARE(std::string, ao2_debug_menu_key);
 REXCVAR_DECLARE(bool, ao2_coop_server);
@@ -584,6 +590,20 @@ namespace
     std::string inviter_name;
     bool inviter_hosted = false;     // seen hosting since the switch
     Clock::time_point inviter_ended; // since when it hosts nothing (zero: it hosts)
+    // The co-op game this player is in (TrackGame, every second while it runs).
+    bool game_host = false;  // ... hosted here
+    bool game_coop = false;  // ... a two-player co-op game (not versus)
+    Clock::time_point game_seen;
+    // After the partner dropped out (OnPartnerLost): the host's next co-op
+    // lobby invites it, the partner's game accepts the host's invite.
+    struct Rejoin
+    {
+      bool on = false;
+      bool host = false; // this game hosted the lost game
+      Address partner;   // its presence address
+      std::string name;
+      Clock::time_point until, next_invite;
+    } rejoin;
   };
 
   State &state()
@@ -807,6 +827,8 @@ namespace
   void ShowInviteNotice();
   void ShowAnswerNotice(const std::string &who, bool accepted);
   void Answer(const ReceivedInvite &inv, bool accept);
+  void TrackGame();
+  void PumpRejoin();
 
   void OnPacket(const Address &from, const std::string &type, const Fields &f)
   {
@@ -955,6 +977,22 @@ namespace
       if (ao2::steam::TakeAutoAccept(from.ip))
       {
         Log("its Steam lobby was joined here: accepted");
+        Answer(inv, true);
+        return;
+      }
+      bool rejoin = false;
+      {
+        std::lock_guard lock(st.mutex);
+        if (st.rejoin.on && !st.rejoin.host && st.rejoin.partner.ip == from.ip && now < st.rejoin.until &&
+            !inv.playgroup && !OtherBuild(inv.build))
+        {
+          st.rejoin.on = false;
+          rejoin = true;
+        }
+      }
+      if (rejoin)
+      {
+        Log("the host of the dropped game invites again: accepted (rejoin)");
         Answer(inv, true);
         return;
       }
@@ -1213,6 +1251,8 @@ namespace
         next_steam_hosting = now + std::chrono::seconds(1);
         UpdateSteamHosting();
         RestoreOwnServer();
+        TrackGame();
+        PumpRejoin();
       }
       VersionBanner();
       for (const auto &[to, packet] : resend)
@@ -1565,6 +1605,119 @@ namespace
       ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 10.0f * s), ui::Fade(ui::kText, a), who.c_str());
       ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 44.0f * s), ui::Fade(accepted ? ui::kText : ui::kMuted, a),
                accepted ? Tr("ACCEPTED THE INVITE  ·  JOINING") : Tr("DECLINED THE INVITE"));
+      return true;
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Rejoining a dropped co-op game
+  // -------------------------------------------------------------------------
+
+  // Every second: what kind of game this player is in, for OnPartnerLost.
+  void TrackGame()
+  {
+    if (OwnState() != "game")
+    {
+      return;
+    }
+    ao2::ea::HostedGame game;
+    bool host = MyHostedGame(&game);
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    st.game_host = host;
+    st.game_coop = host ? !game.playgroup && game.max_players <= 2 : !(st.have_accepted && st.accepted.playgroup);
+    st.game_seen = Clock::now();
+  }
+
+  // Every second: the host's new co-op lobby invites the lost partner (again
+  // every 10 s, until it is in or the time is up).
+  void PumpRejoin()
+  {
+    auto &st = state();
+    auto now = Clock::now();
+    Address to;
+    std::string name;
+    {
+      std::lock_guard lock(st.mutex);
+      if (!st.rejoin.on)
+      {
+        return;
+      }
+      if (now >= st.rejoin.until || !REXCVAR_GET(ao2_coop_rejoin))
+      {
+        st.rejoin.on = false;
+        Log("rejoin: over");
+        return;
+      }
+      if (!st.rejoin.host || now < st.rejoin.next_invite)
+      {
+        return;
+      }
+      to = st.rejoin.partner;
+      name = st.rejoin.name;
+    }
+    ao2::ea::HostedGame game;
+    if (OwnState() != "lobby" || !MyHostedGame(&game) || game.playgroup || game.max_players > 2)
+    {
+      return;
+    }
+    {
+      std::lock_guard lock(st.mutex);
+      if (game.players >= game.max_players)
+      {
+        st.rejoin.on = false;
+        Log("rejoin: the lobby is full, %s is back", name.c_str());
+        return;
+      }
+      st.rejoin.next_invite = now + std::chrono::seconds(10);
+    }
+    std::string error;
+    Log("rejoin: inviting %s again", name.c_str());
+    if (!Invite(to, name, &error))
+    {
+      Log("rejoin: not invited: %s", error.c_str());
+    }
+  }
+
+  void ShowRejoinNotice(const std::string &who, bool host, bool desync)
+  {
+    constexpr float kLife = 14.0f, kOut = 0.35f;
+    auto clock = std::make_shared<NoticeClock>();
+    ao2::menu::SetNotice([clock, who, host, desync]() {
+      namespace ui = ao2::ui;
+      using ui::FontKind;
+      float since = clock->Since();
+      if (since > kLife)
+      {
+        return false;
+      }
+      ImDrawList *dl = ImGui::GetForegroundDrawList();
+      const ImGuiViewport *vp = ImGui::GetMainViewport();
+      float s = ui::Scale();
+      float in = ui::EaseOutBack(since / 0.45f);
+      float out = ui::EaseOutCubic((since - (kLife - kOut)) / kOut);
+      float a = ui::Clamp01(since / 0.2f) * (1.0f - out);
+      ImU32 accent = ui::kRed;
+      ImVec2 size(600.0f * s, 104.0f * s);
+      float top = vp->Pos.y + vp->Size.y * 0.05f;
+      float hidden = top - vp->Pos.y + size.y;
+      ImVec2 mn(vp->Pos.x + (vp->Size.x - size.x) * 0.5f, top - (1.0f - in) * hidden - out * 30.0f * s);
+      ImVec2 mx(mn.x + size.x, mn.y + size.y);
+
+      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.97f * a));
+      ui::Frame(dl, mn, mx, ui::Fade(accent, 0.45f * a), 1.0f * s);
+      ui::Bar(dl, mn, mx, ui::Fade(accent, a));
+      float pulse = 0.6f + 0.4f * std::sin(since * 4.0f);
+      WarningSign(dl, ImVec2(mn.x + 44.0f * s, mn.y + size.y * 0.5f), 20.0f * s, ui::Fade(accent, pulse * a),
+                  2.5f * s);
+
+      float tx = mn.x + 80.0f * s;
+      std::string heading = std::string(desync ? Tr("Out of sync with") : Tr("Connection lost with")) + " " + who;
+      ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 10.0f * s), ui::Fade(ui::kText, a), heading.c_str());
+      const char *line1 = host ? Tr("Host a co-op game again: the partner is invited") : Tr("When the host hosts a co-op game again,");
+      const char *line2 = host ? Tr("and rejoins it by themselves.") : Tr("this game accepts its invite by itself.");
+      ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 46.0f * s), ui::Fade(ui::kMuted, a), line1);
+      ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 70.0f * s), ui::Fade(ui::kMuted, a), line2);
       return true;
     });
   }
@@ -2355,6 +2508,43 @@ namespace ao2::invite
   bool IsOtherBuild(const std::string &build)
   {
     return OtherBuild(build);
+  }
+
+  void OnPartnerLost(uint32_t ip, bool desync)
+  {
+    auto &st = state();
+    auto now = Clock::now();
+    std::string name;
+    bool host;
+    {
+      std::lock_guard lock(st.mutex);
+      if (!g_started || !REXCVAR_GET(ao2_coop_rejoin) || !ip || !st.game_coop ||
+          now - st.game_seen > std::chrono::seconds(15))
+      {
+        Log("partner lost (%s): no rejoin (%s)", IpString(ip).c_str(),
+            !st.game_coop ? "not a co-op game" : "off or no game");
+        return;
+      }
+      host = st.game_host;
+      name = Tr("partner");
+      for (const auto &[addr, p] : st.peers)
+      {
+        if (addr.ip == ip)
+        {
+          name = p.name;
+          break;
+        }
+      }
+      st.rejoin.on = true;
+      st.rejoin.host = host;
+      st.rejoin.partner = {ip, Port()};
+      st.rejoin.name = name;
+      st.rejoin.until = now + std::chrono::minutes(REXCVAR_GET(ao2_coop_rejoin_minutes));
+      st.rejoin.next_invite = now;
+    }
+    Log("partner %s (%s) lost%s: %s", name.c_str(), IpString(ip).c_str(), desync ? " (out of sync)" : "",
+        host ? "the next co-op lobby invites it" : "the host's next invite is accepted");
+    ShowRejoinNotice(name, host, desync);
   }
 
   void InviteAddress(uint32_t ip, const std::string &name)

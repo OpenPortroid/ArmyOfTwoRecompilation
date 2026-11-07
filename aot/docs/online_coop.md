@@ -375,6 +375,39 @@ game: `ao2::coop::InNetworkGame` is true from EA's game manager starting
 level intro movie skipped on one machine before the lockstep started
 desynced the game.
 
+### Connection quality, adaptive delay and rejoin (`src/coop_net_status.cpp`)
+
+The link (`src/coop_link.cpp`) sends a `Quality` message five times a second
+during a network session: a time stamp, the echo of the partner's last one
+and how long it was held (so each side measures its own round trip over the
+same route as the game's traffic), the frames the sender waited for its
+partner in the last second, and its input margin wish.
+
+- **Overlay** (`ao2_coop_net_hud`: 0 off, 1 only on trouble (default), 2
+  always), top right in the frame rate overlay's layer: ping, input delay in
+  frames (+ the adaptive margin), waits per second here and at the partner;
+  warnings for a partner silent over 1.5 s, checksums out of step for 30+
+  frames (frame sync +308; the game leaves at 600) and 10+ waits a second.
+- **Adaptive margin** (`ao2_coop_input_auto`, on by default,
+  `src/coop_input_delay.cpp`): 6+ waits in a second on this PC while the
+  partner waits too (when only one PC waits, the other is just slower) wish
+  for 8 ms more, at most 64 ms, no more often than every 3 s; 15 s with at
+  most one wait a second, 8 ms less. A wish holds from a lockstep frame 120
+  frames ahead and goes to the partner with that frame; both PCs use the
+  larger wish from its frame on, so the margin stays the same on both, as
+  `SharedSettings` asks of `ao2_coop_input_margin_ms`. `coop_delay.log` has
+  each wish and each change in force.
+- **Rejoin** (`ao2_coop_rejoin`, `ao2_coop_rejoin_minutes` = 5): a game
+  that ends its network session says `bye` over the link. When a session
+  ends within 5 s of the lockstep running and the partner had been silent
+  for 3 s without a bye (a crash, a lost connection), or the checksums had
+  been out of step for 300+ frames, the game puts up a notice and
+  `ao2::invite::OnPartnerLost` takes over: the host's next two-player co-op
+  lobby invites the partner's address (again every 10 s until it is in),
+  and the partner's game accepts an invite from the host's address by itself.
+  Not for versus. `coop_net.log` shows each session's end and the decision;
+  `invite.log` the rejoin.
+
 ### SDK fixes this needed
 
 - `WSAWaitForMultipleEvents` passed `fWaitAll` as the NT wait type (inverted:

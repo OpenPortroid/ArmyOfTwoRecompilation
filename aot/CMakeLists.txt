@@ -110,6 +110,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/actor_profile.cpp
     src/hang_watchdog.cpp
     src/coop_link.cpp
+    src/coop_net_status.cpp
     src/coop_cmd.cpp
     src/gpu/occlusion_wait.cpp
     src/pgo.cpp
