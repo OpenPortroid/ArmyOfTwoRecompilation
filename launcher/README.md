@@ -4,12 +4,11 @@
 Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itself).
 
 - The look (`src\Skin.cs`): the art behind rounded panels of dark glass, one cold accent, sentence case in Segoe UI. The cover,
-  the logo and the blur under the main screen's dock are baked into cached backdrops, so a repaint takes a few milliseconds
+  the logo and the shading of the main screen are baked into cached backdrops, so a repaint takes a few milliseconds
   (`--bench=<file>` measures it per screen).
-- Two screens. **Main**: the art and logo, the dock with the profile, what Play does (the host search, then join or host;
-  split-screen is chosen in the game) and Play, Settings, Exit. **Settings**: the Graphics, Controls, Keyboard, Gamepad, Split-Screen, Network, Advanced,
-  Profiles and Achievements sections at the left, the rows in the middle, a picture (`res\preview.jpg`), the row's value and
-  its description at the right; Back returns to the main screen. A section longer than the panel scrolls (wheel, or by moving
+- Two screens. **Main**: the art and logo, the profile at the left, Play, Settings, Exit in the middle and links to Discord and the project on GitHub at the right.
+  Play looks for a host, then joins or hosts; split-screen is chosen in the game. **Settings**: the Graphics, Controls, Keyboard, Gamepad, Split-Screen, Network, Advanced,
+  Profiles and Achievements sections at the left, the rows in the middle, the row's description at the right; Back returns to the main screen. A section longer than the panel scrolls (wheel, or by moving
   the selection).
 - **Achievements** (`src\Achievements.cs`): the current profile's achievements by section (as the game's own
   Achievements page has them), icons, gamerscore and when each was earned. The names, descriptions and icons are the
@@ -47,7 +46,7 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
   `aot\tools\make_release.ps1 [-Zip]` builds the release package without game files.
 
 - **Updates** (`src\Updates.cs`). On start the launcher asks the GitHub API for the latest release of
-  OpenPortroid/ArmyOfTwoRecompilation (off the UI thread, 6 s timeout). The version under Play reads `v1.0 · up to date`,
+  OpenPortroid/ArmyOfTwoRecompilation (off the UI thread, 6 s timeout). The version at the top right reads `v1.0 · up-to-date`,
   or `v1.0 · update available: v1.1`, and then a window offers to update. UPDATE downloads the release's `.zip` to
   `update.tmp` next to the launcher, checks its SHA-256 against the release's `SHA256SUMS.txt`, unpacks it there, checks
   it is a release of the port and copies it over the package, with a progress bar for each step; then the new launcher

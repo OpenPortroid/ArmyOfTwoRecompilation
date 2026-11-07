@@ -13,31 +13,32 @@
 // under ImGui's keeps key presses and mouse movement from the mouse aiming and
 // cutscene skip listeners. Key releases still pass, so no key stays held.
 //
-// A full screen overlay in the launcher's look (ui_theme.h) with six tabs:
+// A full screen overlay in the launcher's look (ui_theme.h) with seven tabs:
 // - Graphics: the Options screen's Graphics page settings (graphics_menu.h),
 //   applied at once and saved as the page saves them (the render resolution
-//   too: the page waits for its Accept), and the field of view and mouse
-//   sensitivity (saved too); a column beside them tells what
-//   the hovered row does, with the frame rate (perf_overlay.h).
-// - The tabs carry badges: achievements unlocked, an invite waiting, the
-//   cheats on.
-// - Achievements: every achievement with its unlock (achievements.h).
-// - Invites: the players window's content (coop_invite.h); the menu opens on
-//   it while an invite waits for an answer.
-// - Cheats: god mode, infinite ammo, Unlock All, the bonus weapons (cheats.cpp).
-// - Checkpoints: the files in AO2Game/Checkpoints and in the extracted DLC
-//   packages (Kiev 09_*, Miami alternate ending 10_*; the name of each,
-//   then its level), loaded with the console's "checkpoint <name> <difficulty>"
-//   (console_cmd.cpp). The loaded checkpoint becomes the profile's current
-//   one when the game saves it.
+//   too: the page waits for its Accept), and the menu's own scale.
+// - Controls: mouse, aiming, camera and the pad's vibration, applied at once
+//   and saved, also for the launcher where it passes the value at every start.
+// - Sound: the volumes (audio_settings.cpp).
+// - Online: the players window's content (coop_invite.h; the menu opens on it
+//   while an invite waits for an answer), joining with a code, the servers.
 // - Versus: the match's rules (versus_rules.cpp: round length, cash goal,
 //   friendly fire, respawn price and how much dearer each respawn gets) and
 //   the bots of its empty places (versus_bots.cpp): on or off, buying,
 //   infinite ammo, a difficulty (presets of the aim error, reaction, turn
-//   speed and range) and those values one by one; saved to
+//   speed and range, or those values one by one); saved to
 //   settings/online.toml as they change. In a match every machine sends its
 //   settings and the match plays by the host's (coop_cmd.cpp); the tab says
 //   whose they are.
+// - Debug: the checkpoints, the files in AO2Game/Checkpoints and in the
+//   extracted DLC packages (Kiev 09_*, Miami alternate ending 10_*; the name of
+//   each, then its level), loaded with the console's "checkpoint <name>
+//   <difficulty>" (console_cmd.cpp; the loaded checkpoint becomes the profile's
+//   current one when the game saves it), and the cheats: god mode, infinite
+//   ammo, Unlock All, the bonus weapons (cheats.cpp).
+// - Achievements: every achievement with its unlock (achievements.h).
+// - The tabs carry badges: achievements unlocked, an invite waiting, the
+//   cheats on.
 // - F2 (ao2_fps_overlay_key): the frame rate overlay's mode (perf_overlay.h).
 //
 // Online co-op is a lockstep simulation (coop.h): there both go through the
@@ -76,6 +77,7 @@
 #include <map>
 #include <mutex>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -111,6 +113,16 @@ REXCVAR_DECLARE(double, ao2_fov_aim);
 REXCVAR_DECLARE(double, ao2_camera_shake);
 REXCVAR_DECLARE(double, ao2_mouse_sensitivity);
 REXCVAR_DECLARE(double, ao2_mouse_zoom_sensitivity);
+REXCVAR_DECLARE(double, ao2_mouse_stick_sensitivity);
+REXCVAR_DECLARE(bool, ao2_mouse_invert_y);
+REXCVAR_DECLARE(bool, ao2_aim_assist);
+REXCVAR_DECLARE(bool, ao2_toggle_aim);
+REXCVAR_DECLARE(double, ao2_pad_vibration);
+REXCVAR_DECLARE(double, ao2_volume_master);
+REXCVAR_DECLARE(double, ao2_volume_music);
+REXCVAR_DECLARE(double, ao2_volume_effects);
+REXCVAR_DECLARE(double, ao2_volume_voices);
+REXCVAR_DECLARE(double, ao2_achievement_sound);
 REXCVAR_DECLARE(int32_t, ao2_start_difficulty);
 REXCVAR_DECLARE(std::string, ao2_invite_accept_key);
 REXCVAR_DECLARE(bool, ao2_versus_bots);
@@ -120,7 +132,6 @@ REXCVAR_DECLARE(double, ao2_versus_bots_miss);
 REXCVAR_DECLARE(int32_t, ao2_versus_bots_reaction);
 REXCVAR_DECLARE(double, ao2_versus_bots_turn);
 REXCVAR_DECLARE(double, ao2_versus_bots_range);
-REXCVAR_DECLARE(double, ao2_versus_bots_buy_share);
 REXCVAR_DECLARE(int32_t, ao2_versus_round_minutes);
 REXCVAR_DECLARE(int32_t, ao2_versus_cash_goal);
 REXCVAR_DECLARE(int32_t, ao2_versus_friendly_fire);
@@ -500,8 +511,9 @@ namespace
     float r = size.y * 0.32f;
     float rest = flat ? 0.0f : 0.07f;
     dl->AddRectFilled(pos, mx, ui::Fade(ui::kWhite, ((held ? 0.16f : rest) + 0.08f * h) * (1.0f - o) * a), r);
-    dl->AddRectFilled(pos, mx, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, 0.45f * h), o * a), r);
-    ImU32 text = enabled ? ui::Mix(ui::Mix(ui::kText, ui::kAccentLight, h), ui::kInk, o) : ui::kMuted;
+    dl->AddRectFilled(pos, mx, ui::Fade(ui::Mix(ui::kAccent, ui::kAccentLight, 0.45f * h), o * a * (enabled ? 1.0f : 0.6f)), r);
+    // Dark on the accent, also when it cannot be changed (a chosen rule during a match).
+    ImU32 text = ui::Mix(enabled ? ui::Mix(ui::kText, ui::kAccentLight, h) : ui::kMuted, ui::kInk, o);
     ImVec2 ts = ui::TextSize(FontKind::kSmall, label);
     dl->PushClipRect(pos, mx, true);
     ui::Text(dl, FontKind::kSmall, ImVec2(pos.x + (size.x - ts.x) * 0.5f, pos.y + (size.y - ts.y) * 0.5f - 1.0f * ui::Scale()),
@@ -581,20 +593,26 @@ namespace
     dl->AddCircleFilled(knob, r - 3.0f * s, ui::Fade(enabled ? ui::kAccentLight : ui::kMuted, a), 28);
   }
 
-  // The sections, in the sidebar's order. Online's two pages show under it
-  // while one of the three is open.
+  // The sections, in the bar's order.
   enum Tab
   {
-    kTabSettings,
-    kTabOnline, // the partners: Steam friends, the LAN, a VPN
-    kTabCode,
-    kTabServers,
+    kTabGraphics,
+    kTabControls,
+    kTabSound,
+    kTabOnline,
     kTabVersus,
     kTabDebug,
     kTabAchievements,
     kTabCount,
   };
-  // The Debug section's pages (chips over its content).
+  // The Online section's pages (chips over its content).
+  enum OnlinePage
+  {
+    kOnlinePlayers, // the partners: Steam friends, the LAN, a VPN
+    kOnlineCode,
+    kOnlineServers,
+  };
+  // The Debug section's pages.
   enum DebugPage
   {
     kPageCheckpoints,
@@ -609,7 +627,7 @@ namespace
     auto P = [&](float x, float y) { return ImVec2(c.x + x * s, c.y + y * s); };
     switch (tab)
     {
-    case kTabSettings: // sliders
+    case kTabGraphics: // sliders
       for (int k = 0; k < 3; ++k)
       {
         float y = -5.0f + 5.0f * float(k), kx = k == 0 ? -3.0f : (k == 1 ? 4.0f : -1.0f);
@@ -625,18 +643,22 @@ namespace
       dl->PathArcTo(P(5, 8), 4.8f * s, 3.14159f, 6.28318f, 12);
       dl->PathStroke(col, ImDrawFlags_None, t);
       break;
-    case kTabCode: // a key
-      dl->AddCircle(P(-4, 0), 4.0f * s, col, 16, t);
-      dl->AddLine(P(0, 0), P(9, 0), col, t);
-      dl->AddLine(P(6, 0), P(6, 4), col, t);
-      dl->AddLine(P(9, 0), P(9, 3), col, t);
+    case kTabControls: // a gamepad
+      dl->AddRect(P(-9, -5), P(9, 6), col, 5.0f * s, ImDrawFlags_None, t);
+      dl->AddLine(P(-6, 0.5f), P(-2, 0.5f), col, t);
+      dl->AddLine(P(-4, -1.5f), P(-4, 2.5f), col, t);
+      dl->AddCircleFilled(P(4.5f, 0.5f), 1.5f * s, col);
       break;
-    case kTabServers: // two racks
-      dl->AddRect(P(-8, -8), P(8, -1), col, 2.0f * s, ImDrawFlags_None, t);
-      dl->AddRect(P(-8, 1), P(8, 8), col, 2.0f * s, ImDrawFlags_None, t);
-      dl->AddCircleFilled(P(4.5f, -4.5f), 1.3f * s, col);
-      dl->AddCircleFilled(P(4.5f, 4.5f), 1.3f * s, col);
+    case kTabSound: // a speaker
+    {
+      ImVec2 pts[6] = {P(-8, -3), P(-4, -3), P(1, -7), P(1, 7), P(-4, 3), P(-8, 3)};
+      dl->AddPolyline(pts, 6, col, ImDrawFlags_Closed, t);
+      dl->PathArcTo(P(1, 0), 4.0f * s, -0.9f, 0.9f, 8);
+      dl->PathStroke(col, ImDrawFlags_None, t);
+      dl->PathArcTo(P(1, 0), 7.5f * s, -0.9f, 0.9f, 10);
+      dl->PathStroke(col, ImDrawFlags_None, t);
       break;
+    }
     case kTabVersus: // crossed blades
       dl->AddLine(P(-7, 7), P(7, -7), col, t);
       dl->AddLine(P(7, 7), P(-7, -7), col, t);
@@ -660,26 +682,25 @@ namespace
     }
   }
 
-  constexpr const char *kTabNames[kTabCount] = {"Settings", "Online", "Join with code", "Servers",
-                                                "Versus",   "Debug",  "Achievements"};
-  // The sidebar: the sections in order, their keys (0: none) and whether
-  // they are Online's pages.
+  constexpr const char *kTabNames[kTabCount] = {"Graphics", "Controls", "Sound",       "Online",
+                                                "Versus",   "Debug",    "Achievements"};
+  // The bar: the sections in order and their keys.
   struct SideItem
   {
     int tab, key;
-    bool sub;
   };
-  constexpr SideItem kSide[] = {{kTabSettings, 1, false}, {kTabOnline, 2, false}, {kTabCode, 0, true},
-                                {kTabServers, 0, true},   {kTabVersus, 3, false}, {kTabDebug, 4, false},
-                                {kTabAchievements, 5, false}};
+  constexpr SideItem kSide[] = {{kTabGraphics, 1}, {kTabControls, 2}, {kTabSound, 3},       {kTabOnline, 4},
+                                {kTabVersus, 5},   {kTabDebug, 6}, {kTabAchievements, 7}};
+  constexpr const char *kOnlinePageNames[] = {"Players", "Join with code", "Servers"};
   constexpr const char *kPageNames[] = {"Checkpoints", "Cheats"};
-  int g_last_tab = kTabSettings; // the tab the menu opens on (the last one shown)
+  int g_last_tab = kTabGraphics; // the tab the menu opens on (the last one shown)
   int g_last_page = kPageCheckpoints;
+  int g_last_online_page = kOnlinePlayers;
 
   constexpr ImU32 kBadgeGold = IM_COL32(227, 185, 90, 255);
   constexpr ImU32 kPending = IM_COL32(255, 190, 80, 255); // "after restart"
 
-  // The Graphics tab's field of view and mouse rows (fov.cpp, mouse_aim.cpp):
+  // The Controls and Sound tabs' rows (fov.cpp, mouse_aim.cpp, audio_settings.cpp):
   // saved once let go, to settings/`file` and the launcher's `launcher_key`
   // (the launcher passes the sensitivities at every start: unsaved there, they
   // were back to its values in the next game).
@@ -693,24 +714,109 @@ namespace
     const char *cvar;
     const char *file;
     const char *launcher_key;
+    double reset = 1.0; // what Reset to defaults sets
+    double shown = 1.0; // the value's text is the value times this
   };
-  const SliderRow kSliders[] = {
-      {"Field of view", 40.0, 130.0, "%.0f\xC2\xB0", [] { return REXCVAR_GET(ao2_fov); },
-       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }, "ao2_fov", "hardware.toml", "fov"},
-      {"Aiming zoom", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_fov_aim); },
-       [](double v) { REXCVAR_SET(ao2_fov_aim, std::round(v * 100.0) / 100.0); }, "ao2_fov_aim", "hardware.toml",
-       "fov_aim"},
-      {"Camera shake", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_camera_shake); },
-       [](double v) { REXCVAR_SET(ao2_camera_shake, std::round(v * 100.0) / 100.0); }, "ao2_camera_shake",
-       "hardware.toml", "camera_shake"},
+  double Hundredths(double v)
+  {
+    return std::round(v * 100.0) / 100.0;
+  }
+  const SliderRow kMouseSliders[] = {
       {"Sensitivity", 0.1, 10.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_sensitivity); },
-       [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, std::round(v * 100.0) / 100.0); }, "ao2_mouse_sensitivity",
-       "mapping.toml", "mouse_sens"},
+       [](double v) { REXCVAR_SET(ao2_mouse_sensitivity, Hundredths(v)); }, "ao2_mouse_sensitivity", "mapping.toml",
+       "mouse_sens", 2.0},
       {"Zoomed sensitivity", 0.1, 3.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_zoom_sensitivity); },
-       [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, std::round(v * 100.0) / 100.0); },
-       "ao2_mouse_zoom_sensitivity", "mapping.toml", "mouse_zoom"},
+       [](double v) { REXCVAR_SET(ao2_mouse_zoom_sensitivity, Hundredths(v)); }, "ao2_mouse_zoom_sensitivity",
+       "mapping.toml", "mouse_zoom"},
+      {"Mouse in vehicles and turrets", 0.25, 3.0, "%.2f", [] { return REXCVAR_GET(ao2_mouse_stick_sensitivity); },
+       [](double v) { REXCVAR_SET(ao2_mouse_stick_sensitivity, Hundredths(v)); }, "ao2_mouse_stick_sensitivity",
+       "mapping.toml", "stick_sens"},
   };
-  constexpr int kSliderInfo = 100; // tip_ of the first slider row
+  const SliderRow kCameraSliders[] = {
+      {"Field of view", 40.0, 130.0, "%.0f\xC2\xB0", [] { return REXCVAR_GET(ao2_fov); },
+       [](double v) { REXCVAR_SET(ao2_fov, std::round(v)); }, "ao2_fov", "hardware.toml", "fov", 70.0},
+      {"Aiming zoom", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_fov_aim); },
+       [](double v) { REXCVAR_SET(ao2_fov_aim, Hundredths(v)); }, "ao2_fov_aim", "hardware.toml", "fov_aim"},
+      {"Camera shake", 0.0, 1.0, "%.2f", [] { return REXCVAR_GET(ao2_camera_shake); },
+       [](double v) { REXCVAR_SET(ao2_camera_shake, Hundredths(v)); }, "ao2_camera_shake", "hardware.toml",
+       "camera_shake"},
+  };
+  const SliderRow kPadSliders[] = {
+      {"Vibration", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_pad_vibration); },
+       [](double v) { REXCVAR_SET(ao2_pad_vibration, Hundredths(v)); }, "ao2_pad_vibration", "mapping.toml", nullptr,
+       1.0, 100.0},
+  };
+  const SliderRow kSoundSliders[] = {
+      {"Master volume", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_volume_master); },
+       [](double v) { REXCVAR_SET(ao2_volume_master, Hundredths(v)); }, "ao2_volume_master", "hardware.toml", nullptr,
+       1.0, 100.0},
+      {"Music", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_volume_music); },
+       [](double v) { REXCVAR_SET(ao2_volume_music, Hundredths(v)); }, "ao2_volume_music", "hardware.toml", nullptr,
+       1.0, 100.0},
+      {"Sound effects", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_volume_effects); },
+       [](double v) { REXCVAR_SET(ao2_volume_effects, Hundredths(v)); }, "ao2_volume_effects", "hardware.toml", nullptr,
+       1.0, 100.0},
+      {"Voices", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_volume_voices); },
+       [](double v) { REXCVAR_SET(ao2_volume_voices, Hundredths(v)); }, "ao2_volume_voices", "hardware.toml", nullptr,
+       1.0, 100.0},
+      {"Achievement sound", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_achievement_sound); },
+       [](double v) { REXCVAR_SET(ao2_achievement_sound, Hundredths(v)); }, "ao2_achievement_sound", "hardware.toml",
+       nullptr, 0.4, 100.0},
+  };
+
+  // The Controls tab's switches; off is the default of them all.
+  struct ToggleRow
+  {
+    const char *label;
+    bool (*get)();
+    void (*set)(bool);
+    const char *cvar;
+    const char *launcher_key;
+  };
+  const ToggleRow kAimToggles[] = {
+      {"Invert Y axis", [] { return REXCVAR_GET(ao2_mouse_invert_y); }, [](bool on) { REXCVAR_SET(ao2_mouse_invert_y, on); },
+       "ao2_mouse_invert_y", "invert_y"},
+      {"Aim assist", [] { return REXCVAR_GET(ao2_aim_assist); }, [](bool on) { REXCVAR_SET(ao2_aim_assist, on); },
+       "ao2_aim_assist", "aim_assist"},
+      {"Toggle aim", [] { return REXCVAR_GET(ao2_toggle_aim); }, [](bool on) { REXCVAR_SET(ao2_toggle_aim, on); },
+       "ao2_toggle_aim", "toggle_aim"},
+  };
+
+  void SaveToggle(const ToggleRow &row)
+  {
+    ao2::gfxmenu::SaveValue(row.cvar, row.get() ? "true" : "false", "mapping.toml", row.launcher_key);
+  }
+
+  // What Reset effects sets: the launcher's defaults.
+  const std::pair<const char *, const char *> kEffectDefaults[] = {
+      {"Anisotropic filtering", "Off"}, {"Anti-aliasing", "Off"}, {"Ambient occlusion", "Off"},
+      {"Motion blur", "Off"},           {"Depth of field", "Off"}, {"Shadow resolution", "Auto"},
+  };
+
+  int SettingOf(const char *label)
+  {
+    for (int i = 0; i < ao2::gfxmenu::SettingCount(); ++i)
+    {
+      if (std::strcmp(ao2::gfxmenu::SettingLabel(i), label) == 0)
+      {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // Picks the choice called `name` of the setting, unless it is the chosen one.
+  void PickNamed(const char *label, const char *name)
+  {
+    int setting = SettingOf(label);
+    for (int c = 0; setting >= 0 && c < ao2::gfxmenu::ChoiceCount(setting); ++c)
+    {
+      if (std::strcmp(ao2::gfxmenu::ChoiceName(setting, c), name) == 0 && ao2::gfxmenu::Chosen(setting) != c)
+      {
+        ao2::gfxmenu::Pick(setting, c);
+      }
+    }
+  }
 
   void SaveSlider(const SliderRow &sr)
   {
@@ -819,12 +925,8 @@ namespace
       {"Firing range", 1500.0, 8000.0, "%.0f", [] { return REXCVAR_GET(ao2_versus_bots_range); },
        [](double v) { REXCVAR_SET(ao2_versus_bots_range, std::round(v / 50.0) * 50.0); }, "ao2_versus_bots_range",
        "online.toml", nullptr},
-      {"Cash per purchase", 0.0, 1.0, "%.0f%%", [] { return REXCVAR_GET(ao2_versus_bots_buy_share); },
-       [](double v) { REXCVAR_SET(ao2_versus_bots_buy_share, std::round(v * 20.0) / 20.0); },
-       "ao2_versus_bots_buy_share", "online.toml", nullptr},
   };
   constexpr int kBotReactionRow = 1;
-  constexpr int kBotShareRow = 4;
 
   // What a Graphics tab row does (English, through Tr), by its label.
   const char *RowHelp(const char *label)
@@ -847,6 +949,17 @@ namespace
         {"Camera shake", "How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did."},
         {"Sensitivity", "How fast the mouse turns the camera."},
         {"Zoomed sensitivity", "How fast the mouse turns while aiming, against the normal speed."},
+        {"Mouse in vehicles and turrets", "How fast the mouse turns where it acts as the right stick."},
+        {"Invert Y axis", "Moving the mouse up looks down."},
+        {"Aim assist", "While aiming, the camera starts on the nearest target and shots are pulled onto targets."},
+        {"Toggle aim", "One press of the aim button starts aiming, the next one stops it."},
+        {"Vibration", "How strongly the gamepad vibrates. 0 turns it off."},
+        {"Menu scale", "The size of this menu. Applies when you let go of the slider."},
+        {"Master volume", "Everything the game plays, movies too."},
+        {"Music", "The music, also during missions."},
+        {"Sound effects", "Weapons, explosions, footsteps and the world around you."},
+        {"Voices", "Characters' lines, in the game and in its scenes."},
+        {"Achievement sound", "The sound of an achievement's notice."},
     };
     auto it = kHelp.find(label);
     return it != kHelp.end() ? Tr(it->second) : "";
@@ -864,8 +977,8 @@ namespace
   const char *kDifficulties[] = {"Recruit", "Contractor", "Professional"};
 
   // The menu: a full screen overlay in the launcher's look (ui_theme.h), as
-  // the achievements and players windows: a panel with a title, a sidebar of
-  // sections (a click, 1-5, Tab / Shift+Tab; Online's pages unfold under it),
+  // the achievements and players windows: a panel with a title, a bar of
+  // sections (a click, 1-7, Tab / Shift+Tab),
   // the section's content and a footer; the content slides in. Esc, F1 and
   // Close play it out.
   class DebugMenu final : public rex::ui::ImGuiDialog
@@ -879,8 +992,10 @@ namespace
       missions_ = ScanCheckpoints(g_checkpoint_dir, g_content_dir);
       difficulty_ = std::clamp(REXCVAR_GET(ao2_start_difficulty), 0, 2);
       // An invite waiting for an answer (its notice says the menu key lists it).
-      tab_ = ao2::invite::HasPendingInvite() ? kTabOnline : g_last_tab;
+      bool invite = ao2::invite::HasPendingInvite();
+      tab_ = invite ? kTabOnline : g_last_tab;
       page_ = g_last_page;
+      online_page_ = invite ? int(kOnlinePlayers) : g_last_online_page;
       g_pad_mode = g_open_by_pad;
       pad_focus_first_ = g_pad_mode;
     }
@@ -984,11 +1099,16 @@ namespace
                     ui::Fade(ui::kInk, 0.05f * (1.0f - float(k) / 13.0f) * a), r + o, ImDrawFlags_None, 2.0f * s);
       }
       dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kPanel, 0.95f * a), r);
-      dl->AddRectFilledMultiColor(ImVec2(x0 + r, y0 + 1.0f * s), ImVec2(x1 - r, y0 + 150.0f * s), ui::Fade(ui::kWhite, 0.035f * a),
-                                  ui::Fade(ui::kWhite, 0.035f * a), ui::Fade(ui::kWhite, 0.0f), ui::Fade(ui::kWhite, 0.0f));
+      // The sheet's sheen: thin layers, rounded as the sheet, so it has no edges of its own.
+      constexpr int kSheenLayers = 24;
+      for (int k = 1; k <= kSheenLayers; ++k)
+      {
+        dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y0 + r + (150.0f * s - r) * float(k) / float(kSheenLayers)),
+                          ui::Fade(ui::kWhite, 0.035f * a / float(kSheenLayers)), r, ImDrawFlags_RoundCornersTop);
+      }
       dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), ui::Fade(ui::kWhite, 0.12f * a), r, ImDrawFlags_None, 1.0f * s);
 
-      // --- The sections: keys 1-5, Tab through all of them ---
+      // --- The sections: keys 1-7, Tab through all of them ---
       if (live && !io.WantTextInput)
       {
         for (const SideItem &it : kSide)
@@ -1197,6 +1317,7 @@ namespace
       // the side it was picked on ---
       float t = ui::EaseOutCubic(float(now - tab_changed_) / 0.3f);
       float ca = a * ui::Clamp01(float(now - tab_changed_) / 0.18f);
+      content_alpha_ = ca;
       float shift = (1.0f - t) * 24.0f * s * float(tab_dir_);
       float content_x = cx0;
       float y = y0 + 24.0f * s;
@@ -1207,31 +1328,20 @@ namespace
       dl->PushClipRect(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, content_y1 + 4.0f * s), true);
       switch (tab_)
       {
-      case kTabSettings:
-        tip_ = -1;
-        Scrolling("settings", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
+      case kTabGraphics:
+        tip_ = nullptr;
+        Scrolling("graphics", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawGraphics(o, w, ca, live); });
+        break;
+      case kTabControls:
+        tip_ = nullptr;
+        Scrolling("controls", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawControls(o, w, ca, live); });
+        break;
+      case kTabSound:
+        tip_ = nullptr;
+        Scrolling("sound", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawSound(o, w, ca, live); });
         break;
       case kTabOnline:
-      {
-        bool keep = true;
-        Scrolling("online", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawPartners(o, w, ca, live, keep); });
-        if (!keep)
-        {
-          BeginClose(); // an invite accepted: the game goes on to join it
-        }
-      }
-        break;
-      case kTabCode:
-        Scrolling("code", cmn, cmx, false, [&](ImVec2 o, float w) {
-          if (!SteamUp(o.x, o.x + w, o.y, ca))
-          {
-            return o.y + 80.0f * s;
-          }
-          return DrawCode(o.x, o.x + w, o.y, ca, live);
-        });
-        break;
-      case kTabServers:
-        Scrolling("servers", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawServers(o, w, ca, live); });
+        DrawOnline(cmn, cmx, ca, live);
         break;
       case kTabVersus:
         Scrolling("versus", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawVersus(o, w, ca, live); });
@@ -1248,7 +1358,7 @@ namespace
 
       // Over the content, the tip over both.
       DrawPadFocus(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, content_y1 + 4.0f * s), ca, live);
-      if (tab_ == kTabSettings)
+      if (tab_ == kTabGraphics || tab_ == kTabControls || tab_ == kTabSound)
       {
         DrawTip(ca);
       }
@@ -1261,6 +1371,7 @@ namespace
     {
       g_last_tab = tab_;
       g_last_page = page_;
+      g_last_online_page = online_page_;
       // The drawer's other windows navigate no more, the pad's keys are up.
       ImGuiIO &io = GetIO();
       io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -1515,56 +1626,195 @@ namespace
         float bottom = draw(o, w);
         ImGui::SetCursorScreenPos(ImVec2(o.x, bottom));
         ImGui::Dummy(ImVec2(1.0f, 4.0f * s));
+        // What is scrolled past fades into the sheet instead of being cut.
+        const float fade = 28.0f * s;
+        ImDrawList *dl = ImGui::GetWindowDrawList();
+        float wx0 = ImGui::GetWindowPos().x, wx1 = wx0 + w, wy0 = ImGui::GetWindowPos().y, wy1 = wy0 + ImGui::GetWindowHeight();
+        float above = ui::Clamp01(ImGui::GetScrollY() / fade), below = ui::Clamp01((ImGui::GetScrollMaxY() - ImGui::GetScrollY()) / fade);
+        ImU32 clear = ui::Fade(ui::kPanel, 0.0f);
+        if (above > 0.0f)
+        {
+          ImU32 top = ui::Fade(ui::kPanel, content_alpha_ * above);
+          dl->AddRectFilledMultiColor(ImVec2(wx0, wy0), ImVec2(wx1, wy0 + fade), top, top, clear, clear);
+        }
+        if (below > 0.0f)
+        {
+          ImU32 low = ui::Fade(ui::kPanel, content_alpha_ * below);
+          dl->AddRectFilledMultiColor(ImVec2(wx0, wy1 - fade), ImVec2(wx1, wy1), clear, clear, low, low);
+        }
       }
       ImGui::EndChild();
       ImGui::PopStyleColor(4);
       ImGui::PopStyleVar(3);
     }
 
-    // --- Graphics: the Options page's settings (graphics_menu.h), applied at
-    // once, and the quick settings' field of view and mouse.
-    float DrawGraphics(ImVec2 o, float w, float a, bool live)
+    // --- The settings tabs' rows.
+
+    static float RowHeight()
+    {
+      return 60.0f * ui::Scale();
+    }
+    static float RowLabelWidth()
+    {
+      return 290.0f * ui::Scale();
+    }
+
+    // The rows of a section share one rounded back, with hairlines between them.
+    void RowGroup(float x0, float x1, float y, int rows, float a)
+    {
+      float s = ui::Scale(), row_h = RowHeight();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      ImVec2 mn(x0, y), mx(x1, y + row_h * float(rows));
+      float gr = 16.0f * s;
+      dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.035f * a), gr);
+      dl->AddRect(mn, mx, ui::Fade(ui::kWhite, 0.07f * a), gr, ImDrawFlags_None, 1.0f * s);
+      for (int i = 1; i < rows; ++i)
+      {
+        float ly = y + row_h * float(i);
+        dl->AddLine(ImVec2(x0 + 20.0f * s, ly), ImVec2(x1 - 20.0f * s, ly), ui::Fade(ui::kWhite, 0.07f * a), 1.0f * s);
+      }
+    }
+
+    // A row's back, label and note; the hovered one's help (RowHelp of `help`) shows as a tip.
+    void RowBase(float x0, float x1, float y, const char *id, const char *help, const char *label, const char *note,
+                 float a, bool live)
+    {
+      float s = ui::Scale(), row_h = RowHeight();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      ImVec2 mn(x0, y), mx(x1, y + row_h);
+      bool hovered = Hovering(mn, mx, live);
+      if (hovered)
+      {
+        tip_ = help;
+      }
+      float h = Eased(id, hovered);
+      if (h > 0.01f)
+      {
+        dl->AddRectFilled(ImVec2(mn.x + 4.0f * s, mn.y + 4.0f * s), ImVec2(mx.x - 4.0f * s, mx.y - 4.0f * s),
+                          ui::Fade(ui::kWhite, 0.05f * h * a), 12.0f * s);
+      }
+      float ty = mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
+      if (note)
+      {
+        ty -= ui::FontSize(FontKind::kSmall) * 0.5f;
+        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, ty + ui::FontSize(FontKind::kBody) + 1.0f * s),
+                 ui::Fade(kPending, a), note);
+      }
+      ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 20.0f * s, ty), ui::Fade(ui::kText, a), label);
+    }
+
+    // The choices, right aligned on a track, narrowed to fit when there are many. The one
+    // clicked, -1: none.
+    int RowChoices(float x0, float x1, float y, const char *id, const std::vector<const char *> &names, int chosen,
+                   float a, bool live)
+    {
+      float s = ui::Scale(), row_h = RowHeight();
+      const float chip_h = 36.0f * s, gap = 2.0f * s, track = 3.0f * s, edge = 12.0f * s;
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      int n = int(names.size());
+      std::vector<float> widths(n);
+      float total = 0.0f;
+      for (int c = 0; c < n; ++c)
+      {
+        widths[c] = ChipWidth(names[c]);
+        total += widths[c] + (c ? gap : 0.0f);
+      }
+      float room = x1 - edge - 2.0f * track - (x0 + RowLabelWidth());
+      if (total > room)
+      {
+        std::fill(widths.begin(), widths.end(), (room - gap * float(n - 1)) / float(n));
+        total = room;
+      }
+      float cx = x1 - edge - track - total, cy = y + (row_h - chip_h) * 0.5f;
+      dl->AddRectFilled(ImVec2(cx - track, cy - track), ImVec2(cx + total + track, cy + chip_h + track),
+                        ui::Fade(ui::kInk, 0.55f * a), chip_h * 0.32f + track);
+      int clicked = -1;
+      ImGui::PushID(id);
+      for (int c = 0; c < n; ++c)
+      {
+        std::string cid = std::to_string(c);
+        if (Chip(cid.c_str(), ImVec2(cx, cy), ImVec2(widths[c], chip_h), names[c], c == chosen, live, a, true))
+        {
+          clicked = c;
+        }
+        cx += widths[c] + gap;
+      }
+      ImGui::PopID();
+      return clicked;
+    }
+
+    // A slider and its value's text, right aligned; true when moved.
+    bool RowSliderControl(float x0, float x1, float y, const char *id, double &value, double lo, double hi,
+                          const char *text, float a, bool live)
+    {
+      float s = ui::Scale(), row_h = RowHeight();
+      ImDrawList *dl = ImGui::GetWindowDrawList();
+      float value_w = 84.0f * s;
+      float sw = std::min(460.0f * s, x1 - 20.0f * s - value_w - (x0 + RowLabelWidth()));
+      float sx = x1 - 20.0f * s - value_w - sw;
+      bool moved = Slider(id, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, value, lo, hi, a, live);
+      ImVec2 ts = ui::TextSize(FontKind::kBody, text);
+      ui::Text(dl, FontKind::kBody, ImVec2(x1 - 20.0f * s - ts.x, y + (row_h - ts.y) * 0.5f - 1.0f * s),
+               ui::Fade(ui::kAccentLight, a), text);
+      return moved;
+    }
+
+    // A section of slider rows, applied as they move, saved once let go.
+    template <size_t N>
+    float SliderSection(float x0, float x1, float y, const char *title, const SliderRow (&rows)[N], float a, bool live)
     {
       float s = ui::Scale();
+      y = Section(ImGui::GetWindowDrawList(), x0, x1, y, Tr(title), a);
+      RowGroup(x0, x1, y, int(N), a);
+      for (const SliderRow &sr : rows)
+      {
+        RowBase(x0, x1, y, sr.label, sr.label, Tr(sr.label), nullptr, a, live);
+        double v = sr.get();
+        char text[32];
+        std::snprintf(text, sizeof(text), sr.format, v * sr.shown);
+        if (RowSliderControl(x0, x1, y, sr.label, v, sr.lo, sr.hi, text, a, live))
+        {
+          sr.set(v);
+          slider_dirty_.insert(&sr);
+        }
+        if (slider_dirty_.count(&sr) && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !g_pad_lr_held)
+        {
+          slider_dirty_.erase(&sr);
+          SaveSlider(sr);
+        }
+        y += RowHeight();
+      }
+      return y + 26.0f * s;
+    }
+
+    template <size_t N>
+    void ResetSliders(const SliderRow (&rows)[N])
+    {
+      for (const SliderRow &sr : rows)
+      {
+        sr.set(sr.reset);
+        SaveSlider(sr);
+      }
+    }
+
+    // An outlined button under a tab's rows; true when clicked.
+    bool ResetButton(const char *id, const char *english, float x0, float &y, float a, bool live)
+    {
+      float s = ui::Scale();
+      std::string text = Upper(Tr(english));
+      float bw = ui::CapsSize(FontKind::kLabel, text.c_str()).x + 40.0f * s;
+      bool clicked = ui::Button(id, ImVec2(x0, y), ImVec2(bw, 40.0f * s), text.c_str(), ui::ButtonStyle::kOutline, live, a);
+      y += 40.0f * s + 8.0f * s;
+      return clicked;
+    }
+
+    // --- Graphics: the Options page's settings (graphics_menu.h), applied at
+    // once, and the menu's scale.
+    float DrawGraphics(ImVec2 o, float w, float a, bool live)
+    {
+      float s = ui::Scale(), row_h = RowHeight();
       ImDrawList *dl = ImGui::GetWindowDrawList();
       float x0 = o.x, x1 = o.x + w, y = o.y;
-      const float row_h = 60.0f * s, chip_h = 36.0f * s, gap = 2.0f * s, track = 3.0f * s, edge = 12.0f * s;
-      const float label_w = 290.0f * s;
-      // The rows of a section share one rounded back, with hairlines between them.
-      auto group = [&](float yy, int rows) {
-        ImVec2 mn(x0, yy), mx(x1, yy + row_h * float(rows));
-        float gr = 16.0f * s;
-        dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.035f * a), gr);
-        dl->AddRect(mn, mx, ui::Fade(ui::kWhite, 0.07f * a), gr, ImDrawFlags_None, 1.0f * s);
-        for (int i = 1; i < rows; ++i)
-        {
-          float ly = yy + row_h * float(i);
-          dl->AddLine(ImVec2(x0 + 20.0f * s, ly), ImVec2(x1 - 20.0f * s, ly), ui::Fade(ui::kWhite, 0.07f * a), 1.0f * s);
-        }
-      };
-      // A row's back, label and note; the hovered one's help shows as a tip.
-      auto row = [&](const char *id, int info, const char *label, const char *note, float &yy) {
-        ImVec2 mn(x0, yy), mx(x1, yy + row_h);
-        bool hovered = Hovering(mn, mx, live);
-        if (hovered)
-        {
-          tip_ = info;
-        }
-        float h = Eased(id, hovered);
-        if (h > 0.01f)
-        {
-          dl->AddRectFilled(ImVec2(mn.x + 4.0f * s, mn.y + 4.0f * s), ImVec2(mx.x - 4.0f * s, mx.y - 4.0f * s),
-                            ui::Fade(ui::kWhite, 0.05f * h * a), 12.0f * s);
-        }
-        float ty = mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
-        if (note)
-        {
-          ty -= ui::FontSize(FontKind::kSmall) * 0.5f;
-          ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 20.0f * s, ty + ui::FontSize(FontKind::kBody) + 1.0f * s),
-                   ui::Fade(kPending, a), note);
-        }
-        ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 20.0f * s, ty), ui::Fade(ui::kText, a), label);
-      };
 
       for (int section = 0; section < 2; ++section)
       {
@@ -1574,7 +1824,7 @@ namespace
         {
           in_section += ao2::gfxmenu::SettingSection(i) == section ? 1 : 0;
         }
-        group(y, in_section);
+        RowGroup(x0, x1, y, in_section, a);
         for (int i = 0; i < ao2::gfxmenu::SettingCount(); ++i)
         {
           if (ao2::gfxmenu::SettingSection(i) != section)
@@ -1583,83 +1833,101 @@ namespace
           }
           std::string id = "setting" + std::to_string(i);
           bool restart = ao2::gfxmenu::WaitsForRestart(i);
-          row(id.c_str(), i, Tr(ao2::gfxmenu::SettingLabel(i)), restart ? Tr("After restart") : nullptr, y);
-          // The choices, right aligned; narrowed to fit when there are many.
-          int n = ao2::gfxmenu::ChoiceCount(i), chosen = ao2::gfxmenu::Chosen(i);
-          std::vector<float> widths(n);
-          float total = 0.0f;
-          for (int c = 0; c < n; ++c)
+          RowBase(x0, x1, y, id.c_str(), ao2::gfxmenu::SettingLabel(i), Tr(ao2::gfxmenu::SettingLabel(i)),
+                  restart ? Tr("After restart") : nullptr, a, live);
+          std::vector<const char *> names;
+          for (int c = 0; c < ao2::gfxmenu::ChoiceCount(i); ++c)
           {
-            widths[c] = ChipWidth(Tr(ao2::gfxmenu::ChoiceName(i, c)));
-            total += widths[c] + (c ? gap : 0.0f);
+            names.push_back(Tr(ao2::gfxmenu::ChoiceName(i, c)));
           }
-          float room = x1 - edge - 2.0f * track - (x0 + label_w);
-          if (total > room)
+          int clicked = RowChoices(x0, x1, y, id.c_str(), names, ao2::gfxmenu::Chosen(i), a, live);
+          if (clicked >= 0)
           {
-            std::fill(widths.begin(), widths.end(), (room - gap * float(n - 1)) / float(n));
-            total = room;
+            ao2::gfxmenu::Pick(i, clicked);
           }
-          float cx = x1 - edge - track - total, cy = y + (row_h - chip_h) * 0.5f;
-          dl->AddRectFilled(ImVec2(cx - track, cy - track), ImVec2(cx + total + track, cy + chip_h + track),
-                            ui::Fade(ui::kInk, 0.55f * a), chip_h * 0.32f + track);
-          ImGui::PushID(id.c_str());
-          for (int c = 0; c < n; ++c)
-          {
-            std::string cid = std::to_string(c);
-            if (Chip(cid.c_str(), ImVec2(cx, cy), ImVec2(widths[c], chip_h), Tr(ao2::gfxmenu::ChoiceName(i, c)),
-                     c == chosen, live, a, true))
-            {
-              ao2::gfxmenu::Pick(i, c);
-            }
-            cx += widths[c] + gap;
-          }
-          ImGui::PopID();
           y += row_h;
         }
         y += 26.0f * s;
       }
 
-      // Field of view (fov.cpp) and mouse (mouse_aim.cpp): saved once the
-      // slider is let go (not each frame of the drag).
-      y = Section(dl, x0, x1, y, Tr("View and mouse"), a);
-      group(y, int(std::size(kSliders)));
-      for (int k = 0; k < int(std::size(kSliders)); ++k)
+      // The menu's scale: only once let go, the menu would change under the slider.
+      y = Section(dl, x0, x1, y, Tr("Menu"), a);
+      RowGroup(x0, x1, y, 1, a);
+      RowBase(x0, x1, y, "menu_scale", "Menu scale", Tr("Menu scale"), nullptr, a, live);
+      double scale = menu_scale_ >= 0.0 ? menu_scale_ : std::clamp(REXCVAR_GET(ao2_menu_scale), 1.0, 1.6);
+      char text[32];
+      std::snprintf(text, sizeof(text), "%.0f%%", scale * 100.0);
+      if (RowSliderControl(x0, x1, y, "menu_scale", scale, 1.0, 1.6, text, a, live))
       {
-        const SliderRow &sr = kSliders[k];
-        row(sr.label, kSliderInfo + k, Tr(sr.label), nullptr, y);
-        double v = sr.get();
-        char text[32];
-        std::snprintf(text, sizeof(text), sr.format, v);
-        float value_w = 84.0f * s;
-        float sw = std::min(460.0f * s, x1 - 20.0f * s - value_w - (x0 + label_w));
-        float sx = x1 - 20.0f * s - value_w - sw;
-        if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live))
-        {
-          sr.set(v);
-          slider_dirty_[k] = true;
-        }
-        if (slider_dirty_[k] && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !g_pad_lr_held)
-        {
-          slider_dirty_[k] = false;
-          SaveSlider(sr);
-        }
-        ImVec2 ts = ui::TextSize(FontKind::kBody, text);
-        ui::Text(dl, FontKind::kBody, ImVec2(x1 - 20.0f * s - ts.x, y + (row_h - ts.y) * 0.5f - 1.0f * s),
-                 ui::Fade(ui::kAccentLight, a), text);
-        y += row_h;
+        menu_scale_ = std::round(scale * 20.0) / 20.0;
       }
-      y += 16.0f * s;
-      std::string reset = Upper(Tr("Game's field of view"));
-      float bw = ui::CapsSize(FontKind::kLabel, reset.c_str()).x + 40.0f * s;
-      if (ui::Button("reset_fov", ImVec2(x0, y), ImVec2(bw, 40.0f * s), reset.c_str(), ui::ButtonStyle::kOutline, live,
-                     a))
+      if (menu_scale_ >= 0.0 && !ImGui::IsMouseDown(ImGuiMouseButton_Left) && !g_pad_lr_held)
       {
-        REXCVAR_SET(ao2_fov, 70.0);
-        REXCVAR_SET(ao2_fov_aim, 1.0);
-        SaveSlider(kSliders[0]);
-        SaveSlider(kSliders[1]);
+        REXCVAR_SET(ao2_menu_scale, menu_scale_);
+        std::snprintf(text, sizeof(text), "%g", menu_scale_);
+        ao2::gfxmenu::SaveValue("ao2_menu_scale", text, "hardware.toml", nullptr);
+        menu_scale_ = -1.0;
       }
-      return y + 40.0f * s + 8.0f * s;
+      y += row_h + 26.0f * s;
+
+      if (ResetButton("reset_effects", "Reset effects", x0, y, a, live))
+      {
+        for (const auto &[label, name] : kEffectDefaults)
+        {
+          PickNamed(label, name);
+        }
+      }
+      return y;
+    }
+
+    // --- Controls: mouse, aiming, camera, the pad.
+    float DrawControls(ImVec2 o, float w, float a, bool live)
+    {
+      float s = ui::Scale();
+      float x0 = o.x, x1 = o.x + w, y = o.y;
+      y = SliderSection(x0, x1, y, "Mouse", kMouseSliders, a, live);
+
+      y = Section(ImGui::GetWindowDrawList(), x0, x1, y, Tr("Aiming"), a);
+      RowGroup(x0, x1, y, int(std::size(kAimToggles)), a);
+      for (const ToggleRow &row : kAimToggles)
+      {
+        RowBase(x0, x1, y, row.label, row.label, Tr(row.label), nullptr, a, live);
+        int clicked = RowChoices(x0, x1, y, row.cvar, {Tr("Off"), Tr("On")}, row.get() ? 1 : 0, a, live);
+        if (clicked >= 0 && (clicked == 1) != row.get())
+        {
+          row.set(clicked == 1);
+          SaveToggle(row);
+        }
+        y += RowHeight();
+      }
+      y += 26.0f * s;
+
+      y = SliderSection(x0, x1, y, "Camera", kCameraSliders, a, live);
+      y = SliderSection(x0, x1, y, "Gamepad", kPadSliders, a, live);
+      if (ResetButton("reset_controls", "Reset to defaults", x0, y, a, live))
+      {
+        ResetSliders(kMouseSliders);
+        ResetSliders(kCameraSliders);
+        ResetSliders(kPadSliders);
+        for (const ToggleRow &row : kAimToggles)
+        {
+          row.set(false);
+          SaveToggle(row);
+        }
+      }
+      return y;
+    }
+
+    // --- Sound: the volumes (audio_settings.cpp).
+    float DrawSound(ImVec2 o, float w, float a, bool live)
+    {
+      float x0 = o.x, x1 = o.x + w, y = o.y;
+      y = SliderSection(x0, x1, y, "Volume", kSoundSliders, a, live);
+      if (ResetButton("reset_sound", "Reset to defaults", x0, y, a, live))
+      {
+        ResetSliders(kSoundSliders);
+      }
+      return y;
     }
 
     // The hovered settings row's help (RowHelp) by the mouse, or by the pad's focus, after a
@@ -1672,11 +1940,7 @@ namespace
         tip_shown_ = tip_;
         tip_since_ = now;
       }
-      const char *label = tip_ >= kSliderInfo && tip_ < kSliderInfo + int(std::size(kSliders))
-                              ? kSliders[tip_ - kSliderInfo].label
-                          : tip_ >= 0 && tip_ < ao2::gfxmenu::SettingCount() ? ao2::gfxmenu::SettingLabel(tip_)
-                                                                             : nullptr;
-      const char *help = label ? RowHelp(label) : "";
+      const char *help = tip_ ? RowHelp(tip_) : "";
       float t = ui::Clamp01(float(now - tip_since_ - 0.35) / 0.15f);
       if (!*help || t <= 0.0f)
       {
@@ -2016,6 +2280,8 @@ namespace
       y = Section(dl, x0, x1, y, Tr("Difficulty"), a);
       int preset = BotPresetOf(REXCVAR_GET(ao2_versus_bots_miss), REXCVAR_GET(ao2_versus_bots_reaction),
                                REXCVAR_GET(ao2_versus_bots_turn), REXCVAR_GET(ao2_versus_bots_range));
+      // Custom opens the values one by one, and is what values of no preset are.
+      const bool custom_on = bot_custom_ || preset < 0;
       const float bh = 36.0f * s;
       float cx = x0;
       for (int i = 0; i < int(std::size(kBotPresets)); ++i)
@@ -2023,8 +2289,9 @@ namespace
         const BotPreset &p = kBotPresets[i];
         const char *name = Tr(p.name);
         float cw = ChipWidth(name) + 24.0f * s;
-        if (Chip(p.name, ImVec2(cx, y), ImVec2(cw, bh), name, i == preset, live, a))
+        if (Chip(p.name, ImVec2(cx, y), ImVec2(cw, bh), name, !custom_on && i == preset, live, a))
         {
+          bot_custom_ = false;
           REXCVAR_SET(ao2_versus_bots_miss, p.miss);
           REXCVAR_SET(ao2_versus_bots_reaction, p.reaction);
           REXCVAR_SET(ao2_versus_bots_turn, p.turn);
@@ -2036,13 +2303,19 @@ namespace
         }
         cx += cw + 6.0f * s;
       }
-      if (preset < 0)
       {
         const char *custom = Tr("Custom");
         float cw = ChipWidth(custom) + 24.0f * s;
-        Chip("custom", ImVec2(cx, y), ImVec2(cw, bh), custom, true, false, a);
+        if (Chip("custom", ImVec2(cx, y), ImVec2(cw, bh), custom, custom_on, live, a))
+        {
+          bot_custom_ = true;
+        }
       }
       y += bh + 28.0f * s;
+      if (!custom_on)
+      {
+        return y;
+      }
 
       // The values one by one, saved once the slider is let go.
       y = Section(dl, x0, x1, y, Tr("Fine tuning"), a);
@@ -2056,15 +2329,13 @@ namespace
                                                                    1.0f * s),
                  ui::Fade(ui::kText, a), Tr(sr.label));
         double v = sr.get();
-        double shown = k == kBotReactionRow ? v * kMsPerLockstepFrame : k == kBotShareRow ? v * 100.0 : v;
+        double shown = k == kBotReactionRow ? v * kMsPerLockstepFrame : v;
         char text[32];
         std::snprintf(text, sizeof(text), sr.format, shown);
         float value_w = 80.0f * s;
         float sw = std::min(420.0f * s, x1 - 12.0f * s - value_w - (x0 + label_w));
         float sx = x1 - 12.0f * s - value_w - sw;
-        // Cash per purchase goes in twentieths: its own step, a smaller one would round back.
-        if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live,
-                   k == kBotShareRow ? 0.05 : 0.0))
+        if (Slider(sr.label, ImVec2(sx, y + (row_h - 28.0f * s) * 0.5f), sw, v, sr.lo, sr.hi, a, live))
         {
           sr.set(v);
           bot_slider_dirty_[k] = true;
@@ -2479,26 +2750,64 @@ namespace
 
     // --- Debug: the checkpoints or the cheats, picked with the chips over
     // them.
-    void DrawDebug(ImVec2 mn, ImVec2 mx, float a, bool live)
+    // A section's pages as a row of chips; returns the top of what is under them.
+    template <size_t N>
+    ImVec2 PageChips(const char *const (&names)[N], int &page, ImVec2 mn, float a, bool live)
     {
       float s = ui::Scale();
       const float ch = 34.0f * s, gap = 8.0f * s;
       float cx = mn.x;
-      page_ = std::clamp(page_, 0, int(std::size(kPageNames)) - 1);
-      for (int p = 0; p < int(std::size(kPageNames)); ++p)
+      page = std::clamp(page, 0, int(N) - 1);
+      for (int p = 0; p < int(N); ++p)
       {
-        const char *label = Tr(kPageNames[p]);
+        const char *label = Tr(names[p]);
         float cw = ChipWidth(label) + 12.0f * s;
         char id[16];
         std::snprintf(id, sizeof(id), "page%d", p);
-        if (Chip(id, ImVec2(cx, mn.y), ImVec2(cw, ch), label, page_ == p, live, a) && page_ != p)
+        if (Chip(id, ImVec2(cx, mn.y), ImVec2(cw, ch), label, page == p, live, a) && page != p)
         {
-          page_ = p;
+          page = p;
           fresh_ = true;
         }
         cx += cw + gap;
       }
-      ImVec2 cmn(mn.x, mn.y + ch + 20.0f * s);
+      return ImVec2(mn.x, mn.y + ch + 20.0f * s);
+    }
+
+    void DrawOnline(ImVec2 mn, ImVec2 mx, float a, bool live)
+    {
+      float s = ui::Scale();
+      ImVec2 cmn = PageChips(kOnlinePageNames, online_page_, mn, a, live);
+      switch (online_page_)
+      {
+      case kOnlinePlayers:
+      {
+        bool keep = true;
+        Scrolling("online", cmn, mx, false, [&](ImVec2 o, float w) { return DrawPartners(o, w, a, live, keep); });
+        if (!keep)
+        {
+          BeginClose(); // an invite accepted: the game goes on to join it
+        }
+        break;
+      }
+      case kOnlineCode:
+        Scrolling("code", cmn, mx, false, [&](ImVec2 o, float w) {
+          if (!SteamUp(o.x, o.x + w, o.y, a))
+          {
+            return o.y + 80.0f * s;
+          }
+          return DrawCode(o.x, o.x + w, o.y, a, live);
+        });
+        break;
+      default:
+        Scrolling("servers", cmn, mx, false, [&](ImVec2 o, float w) { return DrawServers(o, w, a, live); });
+        break;
+      }
+    }
+
+    void DrawDebug(ImVec2 mn, ImVec2 mx, float a, bool live)
+    {
+      ImVec2 cmn = PageChips(kPageNames, page_, mn, a, live);
       switch (page_)
       {
       case kPageCheckpoints:
@@ -2712,10 +3021,14 @@ namespace
     bool close_requested_ = false;
     double badges_time_ = 0.0;
     int ach_got_ = 0, ach_total_ = 0;
-    int tip_ = -1, tip_shown_ = -1; // the settings row hovered (kSliderInfo + n: a slider), the one tipped
+    const char *tip_ = nullptr, *tip_shown_ = nullptr; // the settings row hovered (its label), the one tipped
     double tip_since_ = 0.0;
-    int page_ = kPageCheckpoints;   // the Debug section's page
-    bool slider_dirty_[4] = {}; // a slider moved and not yet saved (kSliders)
+    int page_ = kPageCheckpoints;      // the Debug section's page
+    int online_page_ = kOnlinePlayers; // the Online section's page
+    bool bot_custom_ = false;          // the bots' Custom difficulty picked (the values may still be a preset's)
+    float content_alpha_ = 1.0f;       // the content's alpha this frame
+    double menu_scale_ = -1.0;         // the menu scale's slider while held, -1: not moved
+    std::set<const SliderRow *> slider_dirty_; // sliders moved and not yet saved
     bool bot_slider_dirty_[std::size(kBotSliders)] = {}; // the same for kBotSliders
     bool rule_custom_[std::size(kRuleRows)] = {};        // Custom picked (the value may still be a choice's)
     char rule_text_[std::size(kRuleRows)][16] = {};      // their fields' text

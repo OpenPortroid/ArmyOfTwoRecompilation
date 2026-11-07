@@ -18,7 +18,7 @@ if not exist bin mkdir bin
   -r:"%FW%\System.Drawing.dll" -r:"%FW%\System.Windows.Forms.dll" ^
   -r:"%FW%\System.IO.Compression.dll" -r:"%FW%\System.IO.Compression.FileSystem.dll" ^
   -resource:res\bg.jpg,AO2Launcher.bg.jpg -resource:res\bg_dim.jpg,AO2Launcher.bg_dim.jpg ^
-  -resource:res\logo.png,AO2Launcher.logo.png -resource:res\preview.jpg,AO2Launcher.preview.jpg -resource:res\app.ico,AO2Launcher.app.ico ^
+  -resource:res\logo.png,AO2Launcher.logo.png -resource:res\app.ico,AO2Launcher.app.ico ^
   src\*.cs
 if errorlevel 1 exit /b 1
 echo Built bin\ArmyOfTwoLauncher.exe

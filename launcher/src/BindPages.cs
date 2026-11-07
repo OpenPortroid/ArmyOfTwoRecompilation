@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace AO2Launcher
@@ -226,10 +227,21 @@ namespace AO2Launcher
             return true;
         }
 
-        const int WM_KEYUP = 0x101, WM_SYSKEYUP = 0x105;
+        const int WM_KEYUP = 0x101, WM_SYSKEYUP = 0x105, WM_NCCALCSIZE = 0x83, WM_STYLECHANGING = 0x7C;
 
         protected override void WndProc(ref Message m)
         {
+            if (m.Msg == WM_NCCALCSIZE && m.WParam != IntPtr.Zero)
+            {
+                m.Result = IntPtr.Zero; // the whole window is the client area
+                return;
+            }
+            if (m.Msg == WM_STYLECHANGING && (int)m.WParam.ToInt64() == GWL_STYLE)
+            {
+                // WinForms sets the style from CreateParams again when the form is shown: the caption stays
+                // (STYLESTRUCT: styleOld, styleNew).
+                Marshal.WriteInt32(m.LParam, 4, Marshal.ReadInt32(m.LParam, 4) | WS_CAPTION);
+            }
             if (capturing != null && !capturing.Pad && captureMod != null && (m.Msg == WM_KEYUP || m.Msg == WM_SYSKEYUP))
             {
                 string name = Bindings.KeyName((Keys)(m.WParam.ToInt64() & 0xFFFF));

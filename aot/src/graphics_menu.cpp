@@ -1897,7 +1897,9 @@ namespace ao2::gfxmenu
       if (launcher_key && !launcher.empty() &&
           std::filesystem::exists(std::u8string(launcher.begin(), launcher.end())))
       {
-        SetFileKey(std::filesystem::path(std::u8string(launcher.begin(), launcher.end())), launcher_key, value);
+        // The launcher's switches are 1 and 0.
+        SetFileKey(std::filesystem::path(std::u8string(launcher.begin(), launcher.end())), launcher_key,
+                   value == "true" ? "1" : (value == "false" ? "0" : value));
       }
     }
     catch (const std::exception &e)

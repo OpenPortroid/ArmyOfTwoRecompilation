@@ -78,6 +78,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/cheats.cpp
     src/ui_blur.cpp
     src/aim_assist.cpp
+    src/audio_settings.cpp
     src/versus_bots.cpp
     src/versus_guest.cpp
     src/split_join.cpp

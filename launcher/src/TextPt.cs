@@ -36,7 +36,6 @@ namespace AO2Launcher
             p("The list of achievements comes from the game's files: start the game once to see it here.",
               "A lista de conquistas vem dos arquivos do jogo: inicie o jogo uma vez para vê-la aqui.");
             p("Launcher", "Launcher");
-            p("Looks for a host on the local network: joins it if there is one, otherwise you host.", "Procura um anfitrião na rede local: entra se houver um, senão você hospeda.");
             p("Installation", "Instalação");
             p("Settings", "Configurações");
             p("BACK", "VOLTAR");
@@ -52,6 +51,7 @@ namespace AO2Launcher
             p("Fullscreen", "Tela cheia");
             p("Window {0}", "Janela {0}");
             p("{0} · up to date", "{0} · atualizado");
+            p("{0} · up-to-date", "{0} · atualizado");
             p("{0} · update available: {1}", "{0} · atualização disponível: {1}");
             p("UPDATE AVAILABLE", "ATUALIZAÇÃO DISPONÍVEL");
             p("Version {0} is out, you have {1}. Update now?",
@@ -323,8 +323,6 @@ namespace AO2Launcher
               "Empty: player 1's name with (1) after it.",
               "Gamertag do jogador 2 (até 15 caracteres); com perfil e configurações próprios. " +
               "Vazio: o nome do jogador 1 com (1) depois.");
-            p("Two players on one PC: in the game, Campaign Mode → Splitscreen.",
-              "Dois jogadores em um PC: no jogo, Modo Campanha → Tela dividida.");
             p("In the game: Campaign Mode → Splitscreen. A window opens: each player presses a button on their " +
               "device, and it is theirs. A key or the mouse gives the keyboard and mouse, a gamepad button that gamepad.",
               "No jogo: Modo Campanha → Tela dividida. Uma janela se abre: cada jogador aperta um botão no seu " +

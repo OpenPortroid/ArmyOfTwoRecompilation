@@ -272,12 +272,10 @@ namespace AO2Launcher
                 tx = 118;
             }
 
-            Caps(g, "ARMY OF TWO", fTitle, PaperHi, new RectangleF(tx, 0, 300, 44), 0, StringAlignment.Near);
             if (withBack)
             {
-                float tw = CapsWidth(g, "ARMY OF TWO", fTitle, 0);
                 var fmt = new StringFormat { LineAlignment = StringAlignment.Center };
-                DrawText(g, L.T(caption), fTitleSub, Color.FromArgb(176, 188, 204), new RectangleF(tx + tw + 12, 0, 300, 44), fmt);
+                DrawText(g, L.T(caption), fTitle, PaperHi, new RectangleF(tx, 0, 300, 44), fmt);
             }
             DrawWindowButtons(g);
         }
@@ -333,10 +331,10 @@ namespace AO2Launcher
             OutlineRound(g, modal ? Color.FromArgb(70, 255, 255, 255) : Hairline, r, 16);
         }
 
-        // The current row: a faint lift and a paper bar on the left.
+        // The current row: a faint lift.
         void SelectionBar(Graphics g, RectangleF rr)
         {
-            FillRound(g, Color.FromArgb(46, Accent), rr, 10);
+            FillRound(g, Color.FromArgb(24, 255, 255, 255), rr, 10);
         }
 
         void SectionHeader(Graphics g, string text, float x, float y, float w)
@@ -400,6 +398,124 @@ namespace AO2Launcher
             {
                 AddHot(r, id, click);
             }
+            return r.X;
+        }
+
+        // GitHub's mark in a 16 x 16 box (absolute and relative cubic curves).
+        const string GitHubMarkPath =
+            "M8 0c4.42 0 8 3.58 8 8c0 3.435-2.2 6.49-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 " +
+            "0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 " +
+            "0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 " +
+            "1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55" +
+            "-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 " +
+            ".67.01 1.3.01 1.49 0 .21-.15.45-.55.38C2.2 14.49 0 11.435 0 8c0-4.42 3.58-8 8-8Z";
+
+        // Discord's mark in a 24 x 24 box.
+        const string DiscordMarkPath =
+            "M20.317 4.37C18.761 3.656 17.119 3.146 15.432 2.855C15.4 2.849 15.369 2.864 15.353 2.892C15.142 3.267 14.909 3" +
+            ".756 14.745 4.141C12.9 3.865 11.065 3.865 9.258 4.141C9.095 3.748 8.852 3.267 8.641 2.892C8.625 2.864 8.593 2." +
+            "85 8.562 2.855C6.875 3.146 5.233 3.655 3.677 4.37C3.664 4.375 3.652 4.385 3.645 4.397C0.533 9.046 -0.319 13.58" +
+            " 0.099 18.058C0.102 18.08 0.113 18.1 0.13 18.114C2.183 19.622 4.172 20.537 6.123 21.143C6.154 21.153 6.188 21." +
+            "142 6.208 21.116C6.669 20.485 7.081 19.82 7.433 19.122C7.443 19.102 7.444 19.08 7.436 19.059C7.428 19.039 7.41" +
+            "2 19.023 7.392 19.016C6.739 18.768 6.118 18.466 5.52 18.124C5.498 18.11 5.483 18.087 5.482 18.062C5.48 18.036 " +
+            "5.492 18.011 5.512 17.996C5.638 17.902 5.764 17.804 5.884 17.704C5.906 17.686 5.936 17.682 5.962 17.694C9.889 " +
+            "19.487 14.142 19.487 18.023 17.694C18.049 17.682 18.079 17.685 18.101 17.703C18.222 17.802 18.347 17.902 18.47" +
+            "4 17.996C18.495 18.011 18.506 18.036 18.505 18.061C18.504 18.087 18.49 18.11 18.468 18.123C17.869 18.473 17.24" +
+            "3 18.771 16.595 19.015C16.574 19.023 16.558 19.039 16.55 19.059C16.543 19.079 16.544 19.102 16.554 19.122C16.9" +
+            "14 19.82 17.326 20.484 17.779 21.115C17.798 21.141 17.832 21.153 17.863 21.143C19.824 20.537 21.813 19.621 23." +
+            "865 18.114C23.883 18.101 23.895 18.081 23.897 18.059C24.397 12.882 23.059 8.385 20.348 4.398C20.342 4.385 20.3" +
+            "3 4.375 20.317 4.37ZM8.02 15.331C6.837 15.331 5.863 14.245 5.863 12.912C5.863 11.579 6.819 10.493 8.02 10.493C" +
+            "9.231 10.493 10.196 11.589 10.177 12.912C10.177 14.246 9.221 15.331 8.02 15.331ZM15.995 15.331C14.812 15.331 1" +
+            "3.838 14.246 13.838 12.912C13.838 11.579 14.793 10.493 15.995 10.493C17.206 10.493 18.171 11.589 18.152 12.912" +
+            "C18.152 14.246 17.206 15.331 15.995 15.331Z";
+
+        const string DiscordInvite = "https://discord.gg/BPeTWvqde";
+
+        static readonly Dictionary<string, GraphicsPath> marks = new Dictionary<string, GraphicsPath>();
+
+        // A mark from its path (M, C, c and Z only).
+        static GraphicsPath Mark(string svg)
+        {
+            GraphicsPath path;
+            if (marks.TryGetValue(svg, out path))
+            {
+                return path;
+            }
+            path = new GraphicsPath();
+            var nums = new List<float>();
+            char cmd = 'M';
+            float x = 0, y = 0;
+            Action flush = () =>
+            {
+                if (cmd == 'M' && nums.Count == 2)
+                {
+                    path.StartFigure();
+                    x = nums[0];
+                    y = nums[1];
+                }
+                bool rel = cmd == 'c';
+                for (int i = 0; (cmd == 'c' || cmd == 'C') && i + 5 < nums.Count; i += 6)
+                {
+                    float ox = rel ? x : 0, oy = rel ? y : 0;
+                    path.AddBezier(x, y, ox + nums[i], oy + nums[i + 1], ox + nums[i + 2], oy + nums[i + 3], ox + nums[i + 4], oy + nums[i + 5]);
+                    x = ox + nums[i + 4];
+                    y = oy + nums[i + 5];
+                }
+                if (cmd == 'Z')
+                {
+                    path.CloseFigure();
+                }
+                nums.Clear();
+            };
+            foreach (System.Text.RegularExpressions.Match m in
+                     System.Text.RegularExpressions.Regex.Matches(svg, @"[MCcZ]|-?\d*\.?\d+"))
+            {
+                if (char.IsLetter(m.Value[0]))
+                {
+                    flush();
+                    cmd = m.Value[0];
+                }
+                else
+                {
+                    nums.Add(float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture));
+                }
+            }
+            flush();
+            marks[svg] = path;
+            return path;
+        }
+
+        // A round label with a mark (`box` units square) and a name, ending at `right`; opens `url`. Returns its left.
+        float LinkChip(Graphics g, float right, float cy, string text, string svg, float box, string url)
+        {
+            const float icon = 16, h = 32, padX = 12, gap = 8;
+            float tw = g.MeasureString(text, fSmall).Width;
+            float w = padX + icon + gap + tw + padX;
+            var r = new RectangleF(right - w, cy - h / 2, w, h);
+            string id = "link " + url;
+            FillRound(g, IsHover(id) ? Color.FromArgb(230, InkRaise) : Color.FromArgb(178, InkDeep), r, h / 2);
+            GraphicsState state = g.Save();
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TranslateTransform(r.X + padX, cy - icon / 2);
+            g.ScaleTransform(icon / box, icon / box);
+            using (var b = new SolidBrush(PaperHi))
+            {
+                g.FillPath(b, Mark(svg));
+            }
+            g.Restore(state);
+            var fmt = new StringFormat { LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
+            DrawText(g, text, fSmall, PaperHi, new RectangleF(r.X + padX + icon + gap, r.Y, tw + 2, h), fmt);
+            AddHot(r, id, () =>
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(url);
+                }
+                catch (Exception e)
+                {
+                    Log.Error("could not open " + url, e);
+                }
+            });
             return r.X;
         }
 

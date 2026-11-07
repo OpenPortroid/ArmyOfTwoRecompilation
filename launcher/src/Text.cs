@@ -130,7 +130,6 @@ namespace AO2Launcher
 
             // --- Title bar, main screen ---
             a("Launcher", "Лаунчер", "Lanceur", "Launcher", "Lanzador", "Launcher");
-            a("Looks for a host on the local network: joins it if there is one, otherwise you host.", "Лаунчер ищет хост в локальной сети: если найдёт, вы подключитесь, если нет, станете хостом.", "Cherche un hôte sur le réseau local : le rejoint s'il y en a un, sinon vous hébergez.", "Sucht einen Host im lokalen Netz: tritt ihm bei, wenn es einen gibt, sonst bist du der Host.", "Busca un anfitrión en la red local: se une si lo hay; si no, tú eres el anfitrión.", "Cerca un host nella rete locale: se c'è si unisce, altrimenti sei tu l'host.");
             a("Installation", "Установка", "Installation", "Installation", "Instalación", "Installazione");
             a("Settings", "Настройки", "Paramètres", "Einstellungen", "Ajustes", "Impostazioni");
             a("BACK", "НАЗАД", "RETOUR", "ZURÜCK", "ATRÁS", "INDIETRO");
@@ -152,6 +151,7 @@ namespace AO2Launcher
 
             // --- Updates ---
             a("{0} · up to date", "{0} · актуальная версия", "{0} · à jour", "{0} · aktuell", "{0} · actualizado", "{0} · aggiornato");
+            a("{0} · up-to-date", "{0} · актуальная", "{0} · à jour", "{0} · aktuell", "{0} · actualizado", "{0} · aggiornato");
             a("{0} · update available: {1}", "{0} · доступно обновление: {1}", "{0} · mise à jour disponible : {1}",
               "{0} · Update verfügbar: {1}", "{0} · actualización disponible: {1}", "{0} · aggiornamento disponibile: {1}");
             a("UPDATE AVAILABLE", "ДОСТУПНО ОБНОВЛЕНИЕ", "MISE À JOUR DISPONIBLE", "UPDATE VERFÜGBAR", "ACTUALIZACIÓN DISPONIBLE",
@@ -768,12 +768,6 @@ namespace AO2Launcher
               "Vacío: el nombre del jugador 1 con (1) detrás.",
               "Gamertag del giocatore 2 (fino a 15 caratteri); il suo profilo e le sue impostazioni. " +
               "Vuoto: il nome del giocatore 1 seguito da (1).");
-            a("Two players on one PC: in the game, Campaign Mode → Splitscreen.",
-              "Двое игроков на одном ПК: в игре «Кампания» → «Разделенный экран».",
-              "Deux joueurs sur un PC : dans le jeu, Mode Campagne → Écran partagé.",
-              "Zwei Spieler an einem PC: im Spiel Kampagnenmodus → Splitscreen.",
-              "Dos jugadores en un PC: en el juego, Modo Campaña → Pantalla dividida.",
-              "Due giocatori su un PC: nel gioco, Modalità Campagna → Schermo condiviso.");
             a("In the game: Campaign Mode → Splitscreen. A window opens: each player presses a button on their " +
               "device, and it is theirs. A key or the mouse gives the keyboard and mouse, a gamepad button that gamepad.",
               "В игре: «Кампания» → «Разделенный экран». Откроется окно: каждый игрок нажимает кнопку на своём " +

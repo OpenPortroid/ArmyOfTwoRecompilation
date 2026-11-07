@@ -45,6 +45,7 @@
 // replayed (the input delay) - so the picture follows the mouse at once.
 // Only the drawn view changes (interp_camera.cpp); the simulation catches up
 // by itself. Not in cutscenes (the controller's cinematic mode).
+#include "audio_settings.h"
 #include "autopilot.h"
 #include "cheats.h"
 #include "console_cmd.h"
@@ -1460,6 +1461,7 @@ extern "C" REX_FUNC(sub_82A95F70)
   {
     return;
   }
+  ao2::audio_settings::Tick(ctx, base);
   ao2::cheats::Tick(ctx, base);
   ao2::ui_blur::Tick(ctx, base);
   ao2::coop::ForceLod(ctx, base);

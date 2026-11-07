@@ -15,6 +15,7 @@ namespace AO2Launcher
         public static string Current = Version;
         public const string Repo = "OpenPortroid/ArmyOfTwoRecompilation";
         public static readonly string ReleasesPage = "https://github.com/" + Repo + "/releases/latest";
+        public static readonly string ProjectPage = "https://github.com/" + Repo;
 
         // Debug: --latest=<tag> takes this as the latest release instead of asking GitHub.
         public static string Override;
