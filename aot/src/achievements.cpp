@@ -17,9 +17,11 @@
 //
 // The unlock notice is the port's own (the SDK's toast is off: with the
 // native renderer nothing draws it): a toast in the notices' overlay layer
-// (debug_menu.h SetToast). A gold medallion with the icon pops in at the
-// bottom of the screen, bursts, unfolds into a card with the name, a shine
-// runs over it, and it folds back. Unlocks that come together queue up.
+// (debug_menu.h SetToast), in the look of the Xbox 360's: a green glass ball
+// with the icon rises at the bottom of the screen and pops, a charcoal pill
+// opens out of it to both sides with "Achievement unlocked", the name and the
+// score, a shine runs over it, and it closes again. Unlocks that come together
+// queue up.
 // Each toast plays a short soft tone as it shows (ao2_achievement_sound),
 // synthesized here and played with PlaySound beside the game's audio.
 // ao2_achievement_notices off (the launcher's switch): neither.
@@ -346,6 +348,11 @@ namespace
   constexpr float kLife = 6.2f; // seconds on screen
   constexpr ImU32 kGold = IM_COL32(236, 192, 96, 255);
   constexpr ImU32 kGoldLight = IM_COL32(255, 232, 170, 255);
+  // The toast's console palette: charcoal pill, green ball.
+  constexpr ImU32 kXPill = IM_COL32(32, 34, 36, 255);
+  constexpr ImU32 kXBall = IM_COL32(26, 44, 14, 255);
+  constexpr ImU32 kXGreen = IM_COL32(139, 195, 40, 255);
+  constexpr ImU32 kXGreenLight = IM_COL32(190, 236, 96, 255);
 
   struct Toast
   {
@@ -410,14 +417,6 @@ namespace
       dl->PrimWriteIdx(static_cast<ImDrawIdx>(v + 3));
       dl->PrimWriteIdx(static_cast<ImDrawIdx>(v + 1));
     }
-  }
-
-  // A four-pointed sparkle.
-  void Sparkle(ImDrawList *dl, ImVec2 c, float r, ImU32 col)
-  {
-    float w = r * 0.28f;
-    dl->AddQuadFilled(ImVec2(c.x, c.y - r), ImVec2(c.x + w, c.y), ImVec2(c.x, c.y + r), ImVec2(c.x - w, c.y), col);
-    dl->AddQuadFilled(ImVec2(c.x - r, c.y), ImVec2(c.x, c.y - w), ImVec2(c.x + r, c.y), ImVec2(c.x, c.y + w), col);
   }
 
   // --- The unlock sound ---
@@ -568,122 +567,105 @@ namespace
     float s = ui::Scale();
     float now = float(ImGui::GetTime());
 
-    // Medallion in, card unfolds, text in ... text out, card folds, medallion out.
+    // As on the console: the green ball rises and pops, the pill opens out of it to both sides, the text fades
+    // in ... the text fades, the pill closes round the ball, the ball drops out.
     float pop = ui::EaseOutBack(Seg(t, 0.0f, 0.45f));
-    float unfold = ui::EaseOutCubic(Seg(t, 0.35f, 0.55f)) * (1.0f - EaseInCubic(Seg(t, kLife - 0.75f, 0.45f)));
-    float text_a = Seg(t, 0.65f, 0.35f) * (1.0f - Seg(t, kLife - 0.95f, 0.25f));
+    float unfold = ui::EaseOutCubic(Seg(t, 0.4f, 0.5f)) * (1.0f - EaseInCubic(Seg(t, kLife - 0.8f, 0.45f)));
+    float text_a = Seg(t, 0.75f, 0.3f) * (1.0f - Seg(t, kLife - 1.0f, 0.25f));
     float out = EaseInCubic(Seg(t, kLife - 0.32f, 0.32f));
-    float a = ui::Clamp01(t / 0.15f) * (1.0f - out);
+    float a = ui::Clamp01(t / 0.12f) * (1.0f - out);
 
     const char *caption = ao2::text::Tr("ACHIEVEMENT UNLOCKED");
+    char name[160];
+    std::snprintf(name, sizeof(name), "%s", info.label.c_str());
     char score[16];
-    std::snprintf(score, sizeof(score), "%u G", info.gamerscore);
+    std::snprintf(score, sizeof(score), "%uG", info.gamerscore);
 
-    float R = 38.0f * s; // the medallion's radius
-    float h = 2.0f * R + 8.0f * s;
-    float text_w = std::max(ui::TextSize(FontKind::kHeading, info.label.c_str()).x,
-                            ui::CapsSize(FontKind::kLabel, caption).x + 90.0f * s);
-    float full_w = std::clamp(h + text_w + 60.0f * s, 420.0f * s, vp->Size.x * 0.7f);
+    float R = 33.0f * s; // the ball's radius
+    float h = 2.0f * R + 6.0f * s;
+    float name_w = ui::TextSize(FontKind::kBody, name).x + 10.0f * s + ui::TextSize(FontKind::kBody, score).x;
+    float text_w = std::max(name_w, ui::CapsSize(FontKind::kHeading, caption).x);
+    float full_w = std::clamp(h + text_w + 34.0f * s, 380.0f * s, vp->Size.x * 0.7f);
     float w = h + (full_w - h) * unfold;
     float cx = vp->Pos.x + vp->Size.x * 0.5f;
-    float bottom = vp->Pos.y + vp->Size.y * 0.88f + out * 40.0f * s;
+    float bottom = vp->Pos.y + vp->Size.y * 0.9f + ((1.0f - Seg(t, 0.0f, 0.3f)) * 22.0f + out * 36.0f) * s;
+    // The pill grows from the ball: the ball stays at the left end of the pill, which is centred while open.
     ImVec2 mn(cx - w * 0.5f, bottom - h);
     ImVec2 mx(cx + w * 0.5f, bottom);
     float round = h * 0.5f;
-    ImVec2 c(mn.x + h * 0.5f, mn.y + h * 0.5f); // the medallion's centre
+    ImVec2 c(mn.x + h * 0.5f, mn.y + h * 0.5f);
 
-    // The card: a soft shadow, a navy pill, a gold hairline that breathes.
+    // The pill: a soft shadow, charcoal glass with a gloss on its upper half and a pale rim.
     if (unfold > 0.0f)
     {
       float ca = a * ui::Clamp01(unfold * 3.0f);
       for (int i = 3; i >= 1; --i)
       {
-        float g = float(i) * 5.0f * s;
-        dl->AddRectFilled(ImVec2(mn.x - g, mn.y - g + 6.0f * s), ImVec2(mx.x + g, mx.y + g + 6.0f * s),
-                          ui::Fade(IM_COL32(0, 0, 0, 255), 0.09f * ca), round + g);
+        float g = float(i) * 4.0f * s;
+        dl->AddRectFilled(ImVec2(mn.x - g, mn.y - g + 5.0f * s), ImVec2(mx.x + g, mx.y + g + 5.0f * s),
+                          ui::Fade(IM_COL32(0, 0, 0, 255), 0.10f * ca), round + g);
       }
-      dl->AddRectFilled(mn, mx, ui::Fade(ui::kPanel, 0.96f * ca), round);
-      float breathe = 0.5f + 0.5f * std::sin(now * 3.0f);
-      dl->AddRect(mn, mx, ui::Fade(kGold, (0.35f + 0.35f * breathe) * ca), round, ImDrawFlags_None, 1.5f * s);
+      dl->AddRectFilled(mn, mx, ui::Fade(kXPill, 0.97f * ca), round);
+      dl->PushClipRect(mn, ImVec2(mx.x, mn.y + h * 0.48f), true);
+      dl->AddRectFilled(mn, mx, ui::Fade(ui::kWhite, 0.09f * ca), round);
+      dl->PopClipRect();
+      dl->AddRect(mn, mx, ui::Fade(ui::kWhite, 0.22f * ca), round, ImDrawFlags_None, 1.0f * s);
 
       dl->PushClipRect(mn, mx, true);
-      // A shine runs over it once the card is open, and once more later.
-      for (float at : {0.85f, 3.2f})
+      // A shine runs over the pill once it is open.
+      float k = Seg(t, 0.95f, 0.8f);
+      if (k > 0.0f && k < 1.0f)
       {
-        float k = Seg(t, at, 0.9f);
-        if (k > 0.0f && k < 1.0f)
-        {
-          float bw = 90.0f * s;
-          float x = mn.x - bw + (w + 2.0f * bw) * ui::EaseOutCubic(k);
-          Shine(dl, x - bw * 0.5f, x + bw * 0.5f, mn.y, mx.y, 30.0f * s, ui::Fade(kGoldLight, 0.22f * ca));
-        }
+        float bw = 70.0f * s;
+        float x = mn.x - bw + (w + 2.0f * bw) * ui::EaseOutCubic(k);
+        Shine(dl, x - bw * 0.5f, x + bw * 0.5f, mn.y, mx.y, 24.0f * s, ui::Fade(ui::kWhite, 0.14f * ca));
       }
-      // The text slides out of the medallion.
+      // The text: the caption, then the name with its score in green.
       if (text_a > 0.0f)
       {
-        float slide = (1.0f - ui::EaseOutCubic(Seg(t, 0.65f, 0.5f))) * 18.0f * s;
-        float tx = mn.x + h + 10.0f * s - slide;
+        float tx = mn.x + h + 2.0f * s;
         float ta = a * text_a;
-        ui::Caps(dl, FontKind::kLabel, ImVec2(tx, mn.y + 16.0f * s), ui::Fade(kGold, ta), caption);
-        ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 38.0f * s), ui::Fade(ui::kText, ta), info.label.c_str());
-        // The gamerscore: a gold pill at the right of the caption line.
-        ImVec2 ss = ui::TextSize(FontKind::kSmall, score);
-        ImVec2 pmx(mx.x - round * 0.6f, mn.y + 16.0f * s + ss.y);
-        ImVec2 pmn(pmx.x - ss.x - 16.0f * s, mn.y + 12.0f * s);
-        float pr = (pmx.y - pmn.y) * 0.5f;
-        dl->AddRectFilled(pmn, pmx, ui::Fade(kGold, 0.16f * ta), pr);
-        dl->AddRect(pmn, pmx, ui::Fade(kGold, 0.6f * ta), pr, ImDrawFlags_None, 1.0f * s);
-        ui::Text(dl, FontKind::kSmall, ImVec2(pmn.x + 8.0f * s, pmn.y + 2.0f * s), ui::Fade(kGoldLight, ta), score);
+        ui::Caps(dl, FontKind::kHeading, ImVec2(tx, mn.y + 12.0f * s), ui::Fade(ui::kWhite, ta), caption);
+        ui::Text(dl, FontKind::kBody, ImVec2(tx, mn.y + 40.0f * s), ui::Fade(ui::kMuted, ta), name);
+        float nx = tx + ui::TextSize(FontKind::kBody, name).x + 10.0f * s;
+        ui::Text(dl, FontKind::kBody, ImVec2(nx, mn.y + 40.0f * s), ui::Fade(kXGreenLight, ta), score);
       }
       dl->PopClipRect();
     }
 
-    // The burst as the medallion lands: a ring spreading out, sparks flying.
-    float burst = Seg(t, 0.25f, 0.9f);
-    if (burst > 0.0f && burst < 1.0f)
-    {
-      float e = ui::EaseOutCubic(burst);
-      dl->AddCircle(c, R * (1.0f + 0.9f * e), ui::Fade(kGoldLight, (1.0f - burst) * 0.8f * a), 48,
-                    (3.0f - 2.0f * burst) * s);
-      std::minstd_rand rng(info.id * 2654435761u + 1);
-      for (int i = 0; i < 10; ++i)
-      {
-        float ang = 6.2831853f * (float(i) + float(rng() % 100) / 100.0f) / 10.0f;
-        float dist = R * (1.05f + (0.7f + float(rng() % 60) / 100.0f) * e);
-        ImVec2 p(c.x + std::cos(ang) * dist, c.y + std::sin(ang) * dist);
-        Sparkle(dl, p, (4.0f + float(rng() % 4)) * s * (1.0f - burst * 0.6f),
-                ui::Fade(i % 2 ? kGold : kGoldLight, (1.0f - burst) * a));
-      }
-    }
-
-    // The medallion: a pulsing glow, the gold rim, the icon inside, two arcs turning.
+    // The ball: a green flash as it lands, then a glassy ball with the icon in it.
     float r = R * pop * (1.0f - out);
+    float flash = Seg(t, 0.2f, 0.7f);
+    if (flash > 0.0f && flash < 1.0f)
+    {
+      float e = ui::EaseOutCubic(flash);
+      dl->AddCircle(c, R * (1.0f + 0.6f * e), ui::Fade(kXGreenLight, (1.0f - flash) * 0.7f * a), 48,
+                    (3.0f - 2.0f * flash) * s);
+    }
     if (r > 0.5f)
     {
-      float glow = 0.5f + 0.5f * std::sin(now * 4.0f);
+      float glow = 0.5f + 0.5f * std::sin(now * 3.0f);
       for (int i = 3; i >= 1; --i)
       {
-        dl->AddCircleFilled(c, r + float(i) * 4.0f * s, ui::Fade(kGold, (0.05f + 0.04f * glow) * a), 48);
+        dl->AddCircleFilled(c, r + float(i) * 3.0f * s, ui::Fade(kXGreen, (0.05f + 0.03f * glow) * a), 48);
       }
-      dl->AddCircleFilled(c, r, ui::Fade(ui::Mix(ui::kPanel, kGold, 0.25f), a), 48);
-      float ir = (r - 5.0f * s) * 0.72f;
+      dl->AddCircleFilled(c, r, ui::Fade(kXBall, a), 48);
+      float ir = r - 6.0f * s;
       if (rex::ui::ImmediateTexture *icon = IconOf(info))
       {
         dl->AddImageRounded(reinterpret_cast<ImTextureID>(icon), ImVec2(c.x - ir, c.y - ir), ImVec2(c.x + ir, c.y + ir),
-                            ImVec2(0, 0), ImVec2(1, 1), ui::Fade(ui::kWhite, a), ir * 0.25f);
+                            ImVec2(0, 0), ImVec2(1, 1), ui::Fade(ui::kWhite, a), ir);
       }
       else
       {
-        ui::Check(dl, c, ir * 1.2f, 4.0f * s, ui::Fade(kGoldLight, a));
+        ui::Check(dl, c, ir * 1.1f, 4.0f * s, ui::Fade(ui::kWhite, a));
       }
-      dl->AddCircle(c, r, ui::Fade(kGold, a), 48, 3.0f * s);
-      dl->AddCircle(c, r - 5.0f * s, ui::Fade(kGoldLight, 0.35f * a), 48, 1.0f * s);
-      float turn = now * 2.2f;
-      for (float off : {0.0f, 3.14159f})
-      {
-        dl->PathArcTo(c, r + 4.0f * s, turn + off, turn + off + 0.9f, 16);
-        dl->PathStroke(ui::Fade(kGoldLight, 0.8f * a), ImDrawFlags_None, 2.0f * s);
-      }
+      // The gloss on the ball's upper half and the green rim.
+      dl->PushClipRect(ImVec2(c.x - r, c.y - r), ImVec2(c.x + r, c.y - r * 0.1f), true);
+      dl->AddCircleFilled(c, ir, ui::Fade(ui::kWhite, 0.14f * a), 48);
+      dl->PopClipRect();
+      dl->AddCircle(c, r - 1.5f * s, ui::Fade(kXGreen, a), 48, 3.0f * s);
+      dl->AddCircle(c, r, ui::Fade(kXGreenLight, 0.5f * a), 48, 1.0f * s);
     }
     return true;
   }
