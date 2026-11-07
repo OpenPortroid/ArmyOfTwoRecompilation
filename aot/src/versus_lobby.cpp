@@ -33,8 +33,10 @@
 #include "versus_bots.h"
 #include "versus_rules.h"
 
+#include <algorithm>
 #include <array>
 #include <bit>
+#include <utility>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -253,7 +255,11 @@ namespace
   {
     bool used[kCharacters + 1] = {};
     bool taken[4] = {};
-    uint32_t seed = 0x2545F491u;
+    // The players by id: the slots' order differs between the machines, and a seed mixed in slot order gave the
+    // bots other characters on each PC (versus traces 2026-11-07: AO2MPPlayerChar12 / 3 on one, 16 / 13 on the
+    // other) - other meshes and ragdolls, so a bot that went down moved differently and the game went out of sync.
+    std::pair<uint32_t, uint32_t> present[4];
+    uint32_t count = 0;
     for (uint32_t slot = 2; slot <= 5; ++slot)
     {
       uint32_t player = LoadU32(base, list + 4 * slot);
@@ -264,7 +270,13 @@ namespace
       uint32_t id = LoadU32(base, player + 4), type = LoadU32(base, player + kType);
       taken[id & 3] |= id < 4;
       used[type <= kCharacters ? type : 0] = true;
-      seed = Mix(seed ^ (id * 0x9E3779B1u + type));
+      present[count++] = {id, type};
+    }
+    std::sort(present, present + count);
+    uint32_t seed = 0x2545F491u;
+    for (uint32_t i = 0; i < count; ++i)
+    {
+      seed = Mix(seed ^ (present[i].first * 0x9E3779B1u + present[i].second));
     }
     for (uint32_t id = 0; id < 4; ++id)
     {
