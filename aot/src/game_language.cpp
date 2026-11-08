@@ -684,6 +684,10 @@ namespace ao2::lang
     }
 
     fs::path overlays = user_data_root / "localization" / "content";
+    // The folder is rebuilt for this language: files another language left
+    // there (Russian DLC<n>__Subtitles.int, ...) would replace the English text.
+    fs::remove_all(overlays, ec);
+    ec.clear();
     if (own ? OwnContent(ao2::dlc::Dir(), overlays, *own, own_dir) != 0
             : std::strcmp(Code(), "en") == 0 && RenameMenusInContent(ao2::dlc::Dir(), overlays) != 0)
       rex::cvar::SetFlagByName("content_overlay_root", overlays.string());
