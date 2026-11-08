@@ -1,6 +1,7 @@
 param(
   [string]$Out = "",   # default: <repo>\dist\release\ArmyOfTwo
-  [switch]$Zip         # also pack <Out>.zip
+  [switch]$Zip,        # also pack <Out>.zip
+  [switch]$NoAvx1      # no avx1-version.aot (and no armyoftworecomp_compat.exe needed): a test build
 )
 # Builds the public release package: only our own programs, no game files.
 # Unlike make_dist.ps1 there are no assets and no shader cache (both derive
@@ -18,10 +19,12 @@ $crt = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio\2022\*\VC\Redist
 if (-not $crt) { throw "Visual C++ redistributable folder not found" }
 $launcher = "$root\launcher\bin\ArmyOfTwoLauncher.exe"
 # armyoftworecomp_compat.exe: the same game for CPUs without AVX2 (build.cmd compat), packed as avx1-version.aot.
-foreach ($f in "$build\armyoftworecomp.exe", "$build\armyoftworecomp_compat.exe", "$build\rexruntime.dll", "$build\ao2_install.exe", $launcher) {
+$needed = @("$build\armyoftworecomp.exe", "$build\rexruntime.dll", "$build\ao2_install.exe", $launcher)
+if (-not $NoAvx1) { $needed += "$build\armyoftworecomp_compat.exe" }
+foreach ($f in $needed) {
   if (-not (Test-Path $f)) { throw "not built: $f" }
 }
-if ((Get-Item "$build\armyoftworecomp_compat.exe").LastWriteTime -lt (Get-Item "$build\armyoftworecomp.exe").LastWriteTime.AddHours(-1)) {
+if (-not $NoAvx1 -and (Get-Item "$build\armyoftworecomp_compat.exe").LastWriteTime -lt (Get-Item "$build\armyoftworecomp.exe").LastWriteTime.AddHours(-1)) {
   throw "armyoftworecomp_compat.exe is older than armyoftworecomp.exe - run build.cmd compat"
 }
 
@@ -88,6 +91,11 @@ $size = (Get-ChildItem $Out -Recurse | Measure-Object Length -Sum).Sum / 1MB
 # releases that have it - upload it with every release.
 $aot = Join-Path (Split-Path $Out) "avx1-version.aot"
 $stage = Join-Path (Split-Path $Out) "avx1-stage"
+if ($NoAvx1) {
+  # A stale one next to the package would pass for this build's.
+  Remove-Item $aot -ErrorAction SilentlyContinue
+  "AVX1 build: none (-NoAvx1)"
+} else {
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force $stage | Out-Null
 Copy-Item "$build\armyoftworecomp_compat.exe" "$stage\armyoftworecomp.exe" -Force
@@ -99,16 +107,18 @@ if ($LASTEXITCODE -ne 0) { throw "tar failed: $LASTEXITCODE" }
 Move-Item "$aot.zip" $aot
 Remove-Item $stage -Recurse -Force
 "AVX1 build: $aot ({0:N0} MB)" -f ((Get-Item $aot).Length / 1MB)
+}
 
 # SHA256SUMS.txt, a release asset too: launchers refuse a release newer than 1.4.3 without it
 # (Updates.ExpectedHash). The format of sha256sum, so `sha256sum -c` checks it as well.
 if ($Zip) {
   $sums = Join-Path (Split-Path $Out) "SHA256SUMS.txt"
-  $lines = foreach ($f in $zipPath, $aot) {
+  $assets = if ($NoAvx1) { @($zipPath) } else { @($zipPath, $aot) }
+  $lines = foreach ($f in $assets) {
     "{0} *{1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant(), (Split-Path $f -Leaf)
   }
   [IO.File]::WriteAllText($sums, (($lines -join "`n") + "`n"))
-  "Upload with the release: $zipPath, $aot, $sums"
+  "Upload with the release: $($assets -join ', '), $sums"
 }
 
 exit 0
