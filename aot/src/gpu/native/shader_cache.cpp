@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <filesystem>
 
+#include <windows.h>
+
 #include <d3dcompiler.h>
 #include <fmt/format.h>
 
@@ -56,7 +58,10 @@ namespace ao2::gpu
 
   ShaderCache::ShaderCache()
   {
-    uint32_t threads = std::clamp(std::thread::hardware_concurrency() / 4, 2u, 6u);
+    // Below normal priority: on a loading screen (the shader manifest's
+    // shaders, renderer.cpp) they take every idle core, in game they give way
+    // to its threads.
+    uint32_t threads = std::clamp(std::thread::hardware_concurrency() / 2, 2u, 8u);
     for (uint32_t i = 0; i < threads; ++i)
     {
       workers_.emplace_back([this] { WorkerMain(); });
@@ -78,18 +83,21 @@ namespace ao2::gpu
 
   void ShaderCache::WorkerMain()
   {
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    SetThreadDescription(GetCurrentThread(), L"Shader compiler");
     for (;;)
     {
       Job job;
       {
         std::unique_lock lock(jobs_mutex_);
-        jobs_cv_.wait(lock, [this] { return stop_ || !jobs_.empty(); });
-        if (jobs_.empty())
+        jobs_cv_.wait(lock, [this] { return stop_ || !jobs_.empty() || !background_jobs_.empty(); });
+        auto &queue = !jobs_.empty() ? jobs_ : background_jobs_;
+        if (queue.empty())
         {
           return;
         }
-        job = std::move(jobs_.front());
-        jobs_.pop_front();
+        job = std::move(queue.front());
+        queue.pop_front();
       }
       Compile(job);
       {
@@ -170,7 +178,7 @@ namespace ao2::gpu
   }
 
   const CompiledShader *ShaderCache::Get(xenos::ShaderType type, const uint32_t *dwords, uint32_t dword_count,
-                                         uint64_t hash, uint64_t modification)
+                                         uint64_t hash, uint64_t modification, bool background)
   {
     Shader *shader = GetShader(type, dwords, dword_count, hash);
     if (!shader)
@@ -181,7 +189,23 @@ namespace ao2::gpu
     auto it = compiled_.find(key);
     if (it != compiled_.end())
     {
-      return it->second.get();
+      CompiledShader *out = it->second.get();
+      if (!background && out->background && out->pending())
+      {
+        // A draw waits for it now: ahead of the rest of the prewarm.
+        std::lock_guard lock(jobs_mutex_);
+        out->background = false;
+        for (auto job = background_jobs_.begin(); job != background_jobs_.end(); ++job)
+        {
+          if (job->out == out)
+          {
+            jobs_.push_back(std::move(*job));
+            background_jobs_.erase(job);
+            break;
+          }
+        }
+      }
+      return out;
     }
     auto owned = std::make_unique<CompiledShader>();
     CompiledShader *out = owned.get();
@@ -241,7 +265,8 @@ namespace ao2::gpu
     {
       std::lock_guard lock(jobs_mutex_);
       ++pending_count_;
-      jobs_.push_back(std::move(job));
+      out->background = background;
+      (background ? background_jobs_ : jobs_).push_back(std::move(job));
     }
     jobs_cv_.notify_one();
     return out;

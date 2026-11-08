@@ -54,6 +54,7 @@
 #include "../../perf_overlay.h"
 #include "pm4.h"
 #include "shader_cache.h"
+#include "shader_capture.h"
 #include "texture_loader.h"
 #include "../../cyrillic_fonts.h"
 #include "../../aspect_ratio.h"
@@ -516,9 +517,30 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       uint32_t prewarm_created = 0;
       std::chrono::steady_clock::time_point prewarm_start;
       bool prewarm_logged = false;
+      // Shader manifest (see "Shader manifest" below).
+      bool manifest_loaded = false;
+      // Microcode hash -> the variants (type, modification) to compile.
+      std::unordered_map<uint64_t, std::vector<std::pair<uint8_t, uint64_t>>, FastHash> manifest_variants;
+      // Vertex shaders by FetchMaskedHash: their hash and the fetch dwords the
+      // D3D writes when it binds them (index, value as in guest memory).
+      struct ManifestFetchPatch
+      {
+        uint64_t hash;
+        std::vector<std::pair<uint16_t, uint32_t>> dwords;
+      };
+      std::unordered_map<uint64_t, std::vector<ManifestFetchPatch>, FastHash> manifest_vs_patches;
+      std::vector<StoredPipeline> manifest_pipelines;  // shaders not created by the game yet
+      std::unordered_set<uint64_t> manifest_pipeline_ids;  // all of them
+      std::unordered_set<uint64_t> manifest_queued_pipelines;
+      std::unordered_set<uint64_t> prewarm_available;  // shader ids in prewarm_shaders
+      std::unordered_set<uint64_t> manifest_captured;  // microcode hashes
+      uint32_t manifest_hits = 0, manifest_variants_queued = 0, manifest_misses_vs = 0, manifest_misses_ps = 0;
+      uint64_t manifest_log_frame = 0;
+      bool manifest_dirty = false;
       std::mutex pso_mutex;
       std::condition_variable pso_cv;
-      std::deque<PsoJob> pso_jobs;
+      std::deque<PsoJob> pso_jobs, pso_background_jobs; // the second after the first (prewarm)
+      std::unordered_set<PipelineKey, PipelineKeyHash> pso_background_keys; // GPU thread
       std::vector<std::pair<PipelineKey, ComPtr<ID3D12PipelineState>>> pso_done;
       std::unordered_set<PipelineKey, PipelineKeyHash> pso_queued;
       bool pso_thread_started = false;
@@ -3060,7 +3082,8 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
     }
 
     void RecordPipeline(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *ps);
-    void QueuePipeline(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *ps);
+    void QueuePipeline(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *ps,
+                       bool background = false);
     void BuildPipelineDesc(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *ps,
                            D3D12_GRAPHICS_PIPELINE_STATE_DESC &d);
 
@@ -3278,9 +3301,24 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       sp.ps_modification = ps ? ps->modification : 0;
       sp.key = key;
       sp.key.vs = sp.key.ps = nullptr;
-      if (!g.stored_pipelines.insert(StoredPipelineId(sp)).second)
+      uint64_t id = StoredPipelineId(sp);
+      if (!g.stored_pipelines.insert(id).second)
       {
         return;
+      }
+      if (g.manifest_pipeline_ids.count(id) && !g.manifest_queued_pipelines.count(id))
+      {
+        // Listed, but not prepared: the game did not create one of its shaders
+        // with this microcode (or not yet).
+        if (!g.manifest_captured.count(sp.vs_hash))
+        {
+          ++g.manifest_misses_vs;
+        }
+        if (sp.ps_hash && !g.manifest_captured.count(sp.ps_hash))
+        {
+          ++g.manifest_misses_ps;
+        }
+        g.manifest_dirty = true;
       }
       RecordShader(vs);
       if (ps)
@@ -3327,8 +3365,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
           {
             break;
           }
-          if (g.stored_shaders.insert(StoredShaderId(st.type, st.hash, st.modification)).second)
+          uint64_t id = StoredShaderId(st.type, st.hash, st.modification);
+          if (g.stored_shaders.insert(id).second)
           {
+            g.prewarm_available.insert(id);
             g.prewarm_shaders.push_back(std::move(st));
           }
         }
@@ -3360,6 +3400,214 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
                 g.prewarm_pipelines.size());
     }
 
+    // ------------------------------------------------------------ Shader manifest
+
+    // pipelines.bin holds the game's microcode, so it is not shipped: on the
+    // very first launch it is empty, and every shader compiled at its first
+    // draw (stutters, objects missing for a moment). shader_manifest.bin, made
+    // from it by tools/make_shader_manifest.py, is shipped instead: only
+    // microcode hashes, their variants and the pipeline states (no code of the
+    // game). The game creates the shaders of a package while loading it
+    // (shader_capture.cpp); those the manifest lists are translated and
+    // compiled, and their pipelines created, during the loading screen.
+    // Vertex shaders are found by their hash without the vertex fetches, which
+    // the D3D rewrites for the vertex declaration only when it binds them: the
+    // manifest has the bound fetch dwords (vertex formats, strides, offsets),
+    // and the result must have the listed hash.
+    constexpr uint32_t kManifestMagic = 0x4D324F41; // "AO2M"
+    constexpr uint32_t kManifestVersion = 2;
+    constexpr const char *kManifestPath = "shader_manifest.bin";
+
+    void LoadManifest()
+    {
+      g.manifest_loaded = true;
+      FILE *f = std::fopen(kManifestPath, "rb");
+      if (!f)
+      {
+        return;
+      }
+      uint32_t header[3] = {};
+      bool valid = std::fread(header, sizeof(header), 1, f) == 1 && header[0] == kManifestMagic &&
+                   header[1] == kManifestVersion;
+      // Another pipeline key layout: the shader variants are still good.
+      bool pipelines = valid && header[2] == sizeof(PipelineKey);
+      size_t variants = 0;
+      while (valid)
+      {
+        int tag = std::fgetc(f);
+        if (tag == 'H')
+        {
+          int type = std::fgetc(f);
+          uint64_t hash, modification;
+          if (type == EOF || std::fread(&hash, 8, 1, f) != 1 || std::fread(&modification, 8, 1, f) != 1)
+          {
+            break;
+          }
+          g.manifest_variants[hash].emplace_back(uint8_t(type), modification);
+          ++variants;
+        }
+        else if (tag == 'V')
+        {
+          uint64_t hash, masked;
+          uint16_t count;
+          if (std::fread(&hash, 8, 1, f) != 1 || std::fread(&masked, 8, 1, f) != 1 || std::fread(&count, 2, 1, f) != 1)
+          {
+            break;
+          }
+          State::ManifestFetchPatch patch{hash, {}};
+          patch.dwords.resize(count);
+          bool ok = true;
+          for (auto &[index, value] : patch.dwords)
+          {
+            ok = ok && std::fread(&index, 2, 1, f) == 1 && std::fread(&value, 4, 1, f) == 1;
+          }
+          if (!ok)
+          {
+            break;
+          }
+          g.manifest_vs_patches[masked].push_back(std::move(patch));
+        }
+        else if (tag == 'P')
+        {
+          uint64_t hashes[4];
+          if (std::fread(hashes, sizeof(hashes), 1, f) != 1)
+          {
+            break;
+          }
+          State::StoredPipeline sp;
+          if (!pipelines)
+          {
+            std::fseek(f, long(header[2]), SEEK_CUR);
+            continue;
+          }
+          if (std::fread(&sp.key, sizeof(sp.key), 1, f) != 1)
+          {
+            break;
+          }
+          sp.vs_hash = hashes[0];
+          sp.vs_modification = hashes[1];
+          sp.ps_hash = hashes[2];
+          sp.ps_modification = hashes[3];
+          sp.key.vs = sp.key.ps = nullptr;
+          if (g.manifest_pipeline_ids.insert(StoredPipelineId(sp)).second)
+          {
+            g.manifest_pipelines.push_back(sp);
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
+      std::fclose(f);
+      NativeLog("shader manifest: %zu shader variants (%zu microcodes), %zu pipelines%s\n", variants,
+                g.manifest_variants.size(), g.manifest_pipelines.size(),
+                valid && !pipelines ? " (pipelines skipped: other key layout)" : "");
+    }
+
+    // Takes the shaders the game created: the variants the manifest lists go
+    // to the prewarm list (translated there within its time budget, compiled
+    // on the shader cache's workers), and the pipelines whose shaders are all
+    // known follow.
+    void ManifestStep()
+    {
+      bool added = false;
+      if (!g.manifest_loaded)
+      {
+        LoadManifest();
+        added = true; // pipelines whose shaders are all in pipelines.bin
+      }
+      static std::vector<capture::Captured> captured;
+      captured.clear();
+      capture::Drain(captured);
+      // Vertex shaders: as the D3D binds them.
+      size_t created = captured.size();
+      for (size_t i = 0; i < created; ++i)
+      {
+        auto it = captured[i].masked_hash ? g.manifest_vs_patches.find(captured[i].masked_hash)
+                                          : g.manifest_vs_patches.end();
+        if (it == g.manifest_vs_patches.end())
+        {
+          continue;
+        }
+        for (const auto &patch : it->second)
+        {
+          std::vector<uint32_t> bound = captured[i].dwords;
+          bool fits = true;
+          for (const auto &[index, value] : patch.dwords)
+          {
+            fits = fits && index < bound.size();
+            if (fits)
+            {
+              bound[index] = value;
+            }
+          }
+          if (fits && patch.hash != captured[i].hash &&
+              HashDwords(bound.data(), uint32_t(bound.size())) == patch.hash)
+          {
+            captured.push_back({patch.hash, 0, std::move(bound)});
+          }
+        }
+      }
+      for (auto &c : captured)
+      {
+        auto it = g.manifest_variants.find(c.hash);
+        if (it == g.manifest_variants.end())
+        {
+          continue;
+        }
+        ++g.manifest_hits;
+        g.manifest_captured.insert(c.hash);
+        for (const auto &[type, modification] : it->second)
+        {
+          if (!g.prewarm_available.insert(StoredShaderId(type, c.hash, modification)).second)
+          {
+            continue; // already from pipelines.bin
+          }
+          g.prewarm_shaders.push_back({type, c.hash, modification, c.dwords});
+          ++g.manifest_variants_queued;
+          added = true;
+        }
+      }
+      if (added || !captured.empty())
+      {
+        g.manifest_dirty = true;
+      }
+      if (added && !g.manifest_pipelines.empty())
+      {
+        size_t kept = 0;
+        for (const auto &sp : g.manifest_pipelines)
+        {
+          bool ready = g.prewarm_available.count(StoredShaderId(uint8_t(xenos::ShaderType::kVertex), sp.vs_hash,
+                                                                sp.vs_modification)) &&
+                       (!sp.ps_hash || g.prewarm_available.count(StoredShaderId(uint8_t(xenos::ShaderType::kPixel),
+                                                                                sp.ps_hash, sp.ps_modification)));
+          if (!ready)
+          {
+            g.manifest_pipelines[kept++] = sp;
+            continue;
+          }
+          uint64_t id = StoredPipelineId(sp);
+          g.manifest_queued_pipelines.insert(id);
+          if (!g.stored_pipelines.count(id))
+          {
+            g.prewarm_pipelines.push_back(sp); // not already from pipelines.bin
+          }
+        }
+        g.manifest_pipelines.resize(kept);
+      }
+      // A line now and then while something changes (not every frame).
+      if (g.manifest_dirty && g.frame_number - g.manifest_log_frame >= 300)
+      {
+        g.manifest_dirty = false;
+        g.manifest_log_frame = g.frame_number;
+        NativeLog("shader manifest: game created %u shaders, %u listed -> %u variants queued, %zu pipelines "
+                  "waiting; to translate %zu; used but not prepared: %u (vs not seen), %u (ps not seen)\n",
+                  capture::SeenCount(), g.manifest_hits, g.manifest_variants_queued, g.manifest_pipelines.size(),
+                  g.prewarm_shaders.size() - g.prewarm_shader_pos, g.manifest_misses_vs, g.manifest_misses_ps);
+      }
+    }
+
     void PsoThreadMain()
     {
       for (;;)
@@ -3367,9 +3615,10 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         State::PsoJob job;
         {
           std::unique_lock lock(g.pso_mutex);
-          g.pso_cv.wait(lock, [] { return !g.pso_jobs.empty(); });
-          job = g.pso_jobs.front();
-          g.pso_jobs.pop_front();
+          g.pso_cv.wait(lock, [] { return !g.pso_jobs.empty() || !g.pso_background_jobs.empty(); });
+          auto &queue = !g.pso_jobs.empty() ? g.pso_jobs : g.pso_background_jobs;
+          job = queue.front();
+          queue.pop_front();
         }
         ComPtr<ID3D12PipelineState> pso;
         if (FAILED(g.device->CreateGraphicsPipelineState(&job.desc, IID_PPV_ARGS(&pso))))
@@ -3395,11 +3644,13 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       {
         LoadStorage();
       }
+      ManifestStep();
       {
         std::lock_guard lock(g.pso_mutex);
         for (auto &done : g.pso_done)
         {
           g.pso_queued.erase(done.first);
+          g.pso_background_keys.erase(done.first);
           if (g.pipelines.find(done.first) != g.pipelines.end())
           {
             continue;
@@ -3436,13 +3687,14 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       auto budget = std::chrono::microseconds(3000);
       while (g.prewarm_shader_pos < g.prewarm_shaders.size() && std::chrono::steady_clock::now() - start < budget)
       {
-        const auto &st = g.prewarm_shaders[g.prewarm_shader_pos++];
+        auto &st = g.prewarm_shaders[g.prewarm_shader_pos++];
         const CompiledShader *cs = shaders.Get(xenos::ShaderType(st.type), st.dwords.data(),
-                                               uint32_t(st.dwords.size()), st.hash, st.modification);
+                                               uint32_t(st.dwords.size()), st.hash, st.modification, true);
         if (cs)
         {
           g.prewarm_compiled[StoredShaderId(st.type, st.hash, st.modification)] = cs;
         }
+        st.dwords = {}; // the shader cache has its own copy
       }
       // Pipelines whose shaders are translated and compiled.
       size_t kept = 0;
@@ -3481,18 +3733,36 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         key.ps = ps;
         if (g.pipelines.find(key) == g.pipelines.end())
         {
-          QueuePipeline(key, vs, ps);
+          QueuePipeline(key, vs, ps, true);
         }
       }
       g.prewarm_pipelines.resize(kept);
     }
 
-    // Hands a pipeline to the background thread (once).
-    void QueuePipeline(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *ps)
+    // Hands a pipeline to the background thread (once). `background`: after
+    // those draws wait for (prewarm); queued again without it, it moves ahead.
+    void QueuePipeline(const PipelineKey &key, const CompiledShader *vs, const CompiledShader *ps, bool background)
     {
       if (!g.pso_queued.insert(key).second)
       {
+        if (!background && g.pso_background_keys.erase(key))
+        {
+          std::lock_guard lock(g.pso_mutex);
+          for (auto job = g.pso_background_jobs.begin(); job != g.pso_background_jobs.end(); ++job)
+          {
+            if (job->key == key)
+            {
+              g.pso_jobs.push_back(*job);
+              g.pso_background_jobs.erase(job);
+              break;
+            }
+          }
+        }
         return;
+      }
+      if (background)
+      {
+        g.pso_background_keys.insert(key);
       }
       if (!g.pso_thread_started)
       {
@@ -3504,7 +3774,7 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
       BuildPipelineDesc(key, vs, ps, job.desc);
       {
         std::lock_guard lock(g.pso_mutex);
-        g.pso_jobs.push_back(job);
+        (background ? g.pso_background_jobs : g.pso_jobs).push_back(job);
       }
       g.pso_cv.notify_one();
     }

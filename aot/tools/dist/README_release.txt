@@ -26,8 +26,10 @@ INSTALLATION
    game; the image is not needed afterwards. You can also simply drop the
    files on the launcher window.
 
-During the first sessions the game compiles its shaders: expect short
-stutters and objects missing for a moment. They do not come back.
+On the first launch the game compiles its shaders while the levels load,
+so a loading screen may take a little longer once. Shaders it has not
+prepared yet can still cause a short stutter or an object missing for a
+moment; they do not come back.
 
 UPDATING
 Extract the new archive over the old one. The assets folder, your saves

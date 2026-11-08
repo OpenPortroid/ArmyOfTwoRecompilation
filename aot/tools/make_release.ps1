@@ -6,7 +6,8 @@ param(
 # Unlike make_dist.ps1 there are no assets and no shader cache (both derive
 # from the game): the launcher installs the game from the user's own copy
 # (ao2_install.exe reads the disc image and the TU / DLC packages) and the
-# shader cache is built on the user's PC as they play.
+# shader cache is built on the user's PC: the shipped shader_manifest.bin says
+# which of the shaders the game creates while loading to compile right away.
 $ErrorActionPreference = "Stop"
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
 $root = (Resolve-Path "$repo\..").Path
@@ -55,6 +56,9 @@ foreach ($f in $tracked) {
 robocopy "$repo\localization" "$Out\localization" /E /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy localization failed: $LASTEXITCODE" }
 Copy-Item "$repo\tools\dist\README_release.txt" "$Out\README.txt" -Force
+# Shader manifest: microcode hashes, variants and pipeline states only (no game code), so the
+# first launch compiles the shaders on the loading screens (tools/make_shader_manifest.py).
+Copy-Item "$repo\tools\dist\shader_manifest.bin" "$Out\shader_manifest.bin" -Force
 
 # Nothing of the game may get into the package.
 $bad = Get-ChildItem $Out -Recurse -File | Where-Object { $_.Name -match '\.(xex|xexp|xxx|bik|dxbc|iso)$' -or $_.Name -eq "pipelines.bin" }

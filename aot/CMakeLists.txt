@@ -142,6 +142,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/gpu/native/pm4.cpp
     src/gpu/native/hlsl_translator.cpp
     src/gpu/native/shader_cache.cpp
+    src/gpu/native/shader_capture.cpp
     src/gpu/native/renderer.cpp
     src/gpu/native/overlay.cpp
     src/gpu/native/texture_loader.cpp

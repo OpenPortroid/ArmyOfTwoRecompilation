@@ -34,6 +34,8 @@ namespace ao2::gpu
     // Vertex shaders: fetch exported unchanged as the position, if any.
     HlslShaderTranslator::PositionFetch position_passthrough;
     std::atomic<bool> ready{false};
+    // Queued behind the shaders draws wait for (prewarm); under the job lock.
+    bool background = false;
 
     bool ok() const { return ready.load(std::memory_order_acquire) && !bytecode.empty(); }
     bool pending() const { return !ready.load(std::memory_order_acquire); }
@@ -47,8 +49,11 @@ namespace ao2::gpu
 
     // `dwords` are big-endian (guest memory). Returns nullptr only for empty
     // input; the result may still be compiling (see CompiledShader::ready).
+    // `background`: compiled after every shader a draw is waiting for (a later
+    // Get without it moves it ahead).
     const CompiledShader *Get(rex::graphics::xenos::ShaderType type, const uint32_t *dwords,
-                              uint32_t dword_count, uint64_t hash, uint64_t modification);
+                              uint32_t dword_count, uint64_t hash, uint64_t modification,
+                              bool background = false);
 
     // Returns the analyzed shader (without translating).
     rex::graphics::Shader *GetShader(rex::graphics::xenos::ShaderType type, const uint32_t *dwords,
@@ -93,7 +98,7 @@ namespace ao2::gpu
 
     std::mutex jobs_mutex_;
     std::condition_variable jobs_cv_, idle_cv_;
-    std::deque<Job> jobs_;
+    std::deque<Job> jobs_, background_jobs_;
     std::vector<std::thread> workers_;
     bool stop_ = false;
   };
