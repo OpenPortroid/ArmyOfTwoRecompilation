@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -105,7 +106,10 @@ namespace AO2Launcher
                 profileRow.Values = all.ToArray();
             }
             RefreshAchievements();
+            playSeconds = Playtime.Seconds(S["profile"]);
         }
+
+        long playSeconds; // the time played with the current profile (Playtime)
 
         List<Row> ProfileRows()
         {
@@ -139,7 +143,8 @@ namespace AO2Launcher
                     {
                         Profiles.Summary s = SummaryOf(S["profile"]);
                         return L.F("Last checkpoint: {0}", s.Map ?? L.T("none yet")) + "      " +
-                               L.F("Money: {0}", s.Money >= 0 ? MoneyText(s.Money) : L.T("none yet"));
+                               L.F("Money: {0}", s.Money >= 0 ? MoneyText(s.Money) : L.T("none yet")) + "      " +
+                               L.F("Time played: {0}", Playtime.Format(playSeconds));
                     }
                 },
                 newProfileRow,
@@ -230,30 +235,106 @@ namespace AO2Launcher
             });
         }
 
-        // Under the main screen's buttons, left: the profile the game starts with; a click opens the
-        // Profiles tab.
-        void DrawProfileChip(Graphics g)
+        // Bottom left, mirroring the Discord / GitHub chips, in two rows: the time played (a click opens the
+        // Profiles tab) above, level with Settings / Exit the achievements of the profile the game starts with
+        // (the Achievements tab): the icons of the latest unlocked and the progress.
+        void DrawStatsChips(Graphics g, float cy)
         {
-            var r = new RectangleF(DockR.X + 10, DockR.Y + 10, 262, DockR.Height - 20);
-            bool hv = IsHover("profile");
-            if (hv)
-            {
-                FillRound(g, Color.FromArgb(24, 255, 255, 255), r, 14);
-            }
-            var fmt = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            Profiles.Summary s = SummaryOf(S["profile"]);
-            float x = r.X + 14, w = r.Width - 24;
-            DrawText(g, Sentence(L.T("PROFILE")) + " " + ProfileName(S["profile"]), fSmall, Paper, new RectangleF(x, r.Y + 18, w, 22), fmt);
-            DrawText(g, s.Map ?? L.T("no saves yet"), fHero, PaperHi, new RectangleF(x, r.Y + 40, w, 40), fmt);
-            if (s.Money >= 0)
-            {
-                DrawText(g, MoneyText(s.Money), fNav, Accent, new RectangleF(x, r.Y + 80, w, 24), fmt);
-            }
-            AddHot(r, "profile", () =>
+            const float x = 24;
+            TimeChip(g, x, cy - 40);
+            AchievementChip(g, x, cy);
+        }
+
+        void TimeChip(Graphics g, float left, float cy)
+        {
+            const float icon = 16, h = 32, padX = 12, gap = 8;
+            const string id = "stats_time";
+            string text = Playtime.Format(playSeconds);
+            float tw = g.MeasureString(text, fSmall).Width;
+            var r = new RectangleF(left, cy - h / 2, padX + icon + gap + tw + padX, h);
+            FillRound(g, IsHover(id) ? Color.FromArgb(230, InkRaise) : Color.FromArgb(178, InkDeep), r, h / 2);
+            StatIcon(g, r.X + padX + icon / 2, cy, false, icon / 18f);
+            var fmt = new StringFormat { LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
+            DrawText(g, text, fSmall, PaperHi, new RectangleF(r.X + padX + icon + gap, r.Y, tw + 2, h), fmt);
+            AddHot(r, id, () =>
             {
                 SetScreen(UiScreen.Settings);
                 SetTab(ProfilesTab);
             });
+        }
+
+        void AchievementChip(Graphics g, float left, float cy)
+        {
+            const float h = 32, padX = 10, icon = 22, gap = 4, barW = 72;
+            const string id = "stats_ach";
+            string text = achTotal > 0 ? achGot + " / " + achTotal : "—";
+            float tw = g.MeasureString(text, fSmall).Width;
+            int n = achRecent.Count;
+            float iconsW = n > 0 ? n * icon + (n - 1) * gap : 16;
+            float barX = left + padX + iconsW + 12;
+            var r = new RectangleF(left, cy - h / 2, barX + barW + 8 + tw + padX - left, h);
+            FillRound(g, IsHover(id) ? Color.FromArgb(230, InkRaise) : Color.FromArgb(178, InkDeep), r, h / 2);
+            if (n == 0)
+            {
+                StatIcon(g, left + padX + 8, cy, true, 16f / 18f);
+            }
+            else
+            {
+                GraphicsState st = g.Save();
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                float x = left + padX;
+                foreach (Bitmap b in achRecent)
+                {
+                    var ir = new RectangleF(x, cy - icon / 2, icon, icon);
+                    using (GraphicsPath p = RoundPath(ir, 5))
+                    {
+                        g.SetClip(p, CombineMode.Replace);
+                        g.DrawImage(b, ir);
+                    }
+                    x += icon + gap;
+                }
+                g.Restore(st);
+            }
+            Progress(g, new RectangleF(barX, cy - 2, barW, 4), achTotal > 0 ? (float)achGot / achTotal : 0);
+            var fmt = new StringFormat { LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap };
+            DrawText(g, text, fSmall, PaperHi, new RectangleF(barX + barW + 8, r.Y, tw + 2, h), fmt);
+            AddHot(r, id, () =>
+            {
+                SetScreen(UiScreen.Settings);
+                SetTab(AchievementsTab);
+            });
+        }
+
+        // The chips' icons, drawn as lines around a centre (18 units across): a clock, or a cup.
+        static void StatIcon(Graphics g, float cx, float cy, bool cup, float k)
+        {
+            GraphicsState st = g.Save();
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TranslateTransform(cx, cy);
+            g.ScaleTransform(k, k);
+            using (var pen = new Pen(PaperHi, 1.8f) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+            {
+                if (cup)
+                {
+                    g.DrawLine(pen, -6, -9, 6, -9);
+                    g.DrawLine(pen, -6, -9, -6, -3);
+                    g.DrawLine(pen, 6, -9, 6, -3);
+                    g.DrawBezier(pen, 6, -3, 6, 2, -6, 2, -6, -3);
+                    g.DrawBezier(pen, -6, -7, -11, -7, -11, -1, -5, 0);
+                    g.DrawBezier(pen, 6, -7, 11, -7, 11, -1, 5, 0);
+                    g.DrawLine(pen, 0, 2, 0, 6);
+                    g.DrawLine(pen, -4, 7.5f, 4, 7.5f);
+                }
+                else
+                {
+                    g.DrawEllipse(pen, -9, -9, 18, 18);
+                    g.DrawLine(pen, 0, 0, 0, -5.5f);
+                    g.DrawLine(pen, 0, 0, 4.5f, 2.5f);
+                }
+            }
+            g.Restore(st);
         }
 
         // Debug (--snapshot with --ask=unlock|uninstall|profile): that question open.

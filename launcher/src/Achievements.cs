@@ -231,6 +231,9 @@ namespace AO2Launcher
     {
         readonly List<Row> achievementRows = new List<Row>();
 
+        List<Bitmap> achRecent = new List<Bitmap>(); // the icons of the latest unlocked, newest first
+        int achGot, achTotal; // the current profile's unlocked and all achievements (0 / 0: the list is not there yet)
+
         List<Row> AchievementRows()
         {
             return achievementRows;
@@ -240,6 +243,8 @@ namespace AO2Launcher
         void RefreshAchievements()
         {
             achievementRows.Clear();
+            achGot = achTotal = 0;
+            achRecent = new List<Bitmap>();
             achievementRows.Add(Toggle("Unlock notices", "ach_notices",
                 "Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently."));
             List<Achievements.Entry> all = Achievements.Load(S["profile"]);
@@ -253,6 +258,10 @@ namespace AO2Launcher
                 return;
             }
             int got = all.Count(e => e.Unlocked != null);
+            achGot = got;
+            achTotal = all.Count;
+            achRecent = all.Where(e => e.Unlocked != null && e.Icon != null).OrderByDescending(e => e.Unlocked.Value)
+                .Take(5).Select(e => e.Icon).ToList();
             int score = all.Where(e => e.Unlocked != null).Sum(e => e.Gamerscore);
             int max = all.Sum(e => e.Gamerscore);
             string profile = ProfileName(S["profile"]);

@@ -350,14 +350,14 @@ namespace AO2Launcher
             return p.Length == 2 && int.TryParse(p[0], out w) && int.TryParse(p[1], out h) && w > 0 && h > 0;
         }
 
-        public static void Start(string exe, Settings s, string hostIp)
+        public static Process Start(string exe, Settings s, string hostIp)
         {
             var psi = new ProcessStartInfo(RunExe(exe, s), CommandLine(s, hostIp))
             {
                 WorkingDirectory = Path.GetDirectoryName(exe),
                 UseShellExecute = false,
             };
-            Process.Start(psi);
+            return Process.Start(psi);
         }
 
         // IPv4 addresses of this PC the partner could reach (LAN, Radmin VPN...).

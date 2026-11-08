@@ -1224,6 +1224,10 @@ namespace AO2Launcher
             a("Profile {0}", "Профиль {0}", "Profil {0}", "Profil {0}", "Perfil {0}", "Profilo {0}");
             a("Profile {0}: {1}", "Профиль {0}: {1}", "Profil {0} : {1}", "Profil {0}: {1}", "Perfil {0}: {1}", "Profilo {0}: {1}");
             a("no saves yet", "сохранений пока нет", "pas encore de sauvegarde", "noch keine Spielstände", "aún no hay partidas", "nessun salvataggio");
+            a("Time played", "Время в игре", "Temps de jeu", "Spielzeit", "Tiempo de juego", "Tempo di gioco");
+            a("Time played: {0}", "Время в игре: {0}", "Temps de jeu : {0}", "Spielzeit: {0}", "Tiempo de juego: {0}", "Tempo di gioco: {0}");
+            a("{0} h", "{0} ч", "{0} h", "{0} Std.", "{0} h", "{0} h");
+            a("{0} min", "{0} мин", "{0} min", "{0} Min.", "{0} min", "{0} min");
             a("none yet", "пока нет", "pas encore", "noch keine", "aún no", "ancora nessuno");
             a("Last checkpoint: {0}", "Последний чекпоинт: {0}", "Dernier point de contrôle : {0}", "Letzter Checkpoint: {0}",
               "Último punto de control: {0}", "Ultimo checkpoint: {0}");

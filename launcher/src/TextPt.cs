@@ -505,6 +505,10 @@ namespace AO2Launcher
             p("Profile {0}", "Perfil {0}");
             p("Profile {0}: {1}", "Perfil {0}: {1}");
             p("no saves yet", "ainda sem saves");
+            p("Time played", "Tempo de jogo");
+            p("Time played: {0}", "Tempo de jogo: {0}");
+            p("{0} h", "{0} h");
+            p("{0} min", "{0} min");
             p("none yet", "nenhum ainda");
             p("Last checkpoint: {0}", "Último checkpoint: {0}");
             p("Money: {0}", "Dinheiro: {0}");

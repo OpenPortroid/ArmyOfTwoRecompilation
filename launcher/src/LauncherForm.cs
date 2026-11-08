@@ -133,6 +133,7 @@ namespace AO2Launcher
 
         string[] tabNames = { "GRAPHICS", "CONTROLS", "KEYBOARD", "GAMEPAD", "SPLIT-SCREEN", "NETWORK", "ADVANCED", "PROFILES", "ACHIEVEMENTS" };
         const int ProfilesTab = 7;
+        const int AchievementsTab = 8;
         List<Row>[] tabs;
         UiScreen screen = UiScreen.Main;
         int mainSel; // 0 = play, 1 = settings, 2 = exit
@@ -2321,7 +2322,11 @@ namespace AO2Launcher
             S.Save();
             try
             {
-                Game.Start(gameExe, S, host);
+                System.Diagnostics.Process game = Game.Start(gameExe, S, host);
+                if (game != null)
+                {
+                    Playtime.Track(game.Id, S["profile"]);
+                }
             }
             catch (Exception ex)
             {
@@ -3093,8 +3098,7 @@ namespace AO2Launcher
             bool install = gameExe != null && !Installed;
             float colY = DockR.Y + 18;
 
-            // Left: the profile. In the middle: Play, Settings, Exit.
-            DrawProfileChip(g);
+            // In the middle: Play, Settings, Exit.
 
             if (gameExe == null)
             {
@@ -3119,6 +3123,7 @@ namespace AO2Launcher
             float linkY = set.Y + set.Height / 2;
             float linkX = LinkChip(g, W - 24, linkY, "GitHub", GitHubMarkPath, 16, Updates.ProjectPage);
             LinkChip(g, linkX - 8, linkY, "Discord", DiscordMarkPath, 24, DiscordInvite);
+            DrawStatsChips(g, linkY);
 
             // Top right, up to the window's buttons: the version (click: every release with its patch notes).
             string pn = "v" + Updates.Current;
@@ -3564,6 +3569,25 @@ namespace AO2Launcher
         [STAThread]
         static void Main()
         {
+            // The play time tracker (Playtime.Track): no window, nothing else.
+            string trackPid = null, trackProfile = "";
+            foreach (string a in Environment.GetCommandLineArgs())
+            {
+                if (a.StartsWith("--track="))
+                {
+                    trackPid = a.Substring(8);
+                }
+                else if (a.StartsWith("--track-profile="))
+                {
+                    trackProfile = a.Substring(16);
+                }
+            }
+            int pid;
+            if (trackPid != null && int.TryParse(trackPid, out pid))
+            {
+                Playtime.RunTracker(pid, trackProfile);
+                return;
+            }
             try
             {
                 SetProcessDPIAware();
