@@ -49,11 +49,13 @@
 // lobby is left (VersionBanner).
 #include "coop_invite.h"
 
+#include "console_cmd.h"
 #include "coop.h"
 #include "debug_menu.h"
 #include "ea_server.h"
 #include "invite_checks.h"
 #include "log_files.h"
+#include "menu_mouse.h"
 #include "steam_net.h"
 #include "ui_text.h"
 #include "ui_theme.h"
@@ -119,6 +121,14 @@ REXCVAR_DEFINE_INT32(ao2_coop_rejoin_minutes, 5, "Online",
     .range(1, 60);
 
 REXCVAR_DECLARE(std::string, ao2_debug_menu_key);
+REXCVAR_DECLARE(int32_t, ao2_versus_round_minutes);
+REXCVAR_DECLARE(int32_t, ao2_versus_cash_goal);
+REXCVAR_DECLARE(int32_t, ao2_versus_friendly_fire);
+REXCVAR_DECLARE(int32_t, ao2_versus_respawn_cost);
+REXCVAR_DECLARE(int32_t, ao2_versus_respawn_step);
+REXCVAR_DECLARE(bool, ao2_versus_bots);
+REXCVAR_DECLARE(bool, ao2_versus_bots_buy);
+REXCVAR_DECLARE(bool, ao2_versus_bots_infinite_ammo);
 REXCVAR_DECLARE(bool, ao2_coop_server);
 REXCVAR_DECLARE(std::string, ao2_coop_host);
 // What a lockstep game needs the same on both PCs (SharedSettings).
@@ -525,8 +535,11 @@ namespace
     std::string build; // BuildHash of its game; empty = an older build
     std::string sync;  // SharedSettings of its game; empty = an older build
     bool hosting = false;
+    uint64_t xuid = 0; // its player 1's XUID (Gamer Card -> Steam profile); 0 = an older build
     Clock::time_point seen;
   };
+
+  std::atomic<uint64_t> g_own_xuid{0}; // player 1's XUID, as the game last asked for it (XamUserGetXUID)
 
   enum class SentState
   {
@@ -706,6 +719,42 @@ namespace
     return text;
   }
 
+  // The Plasma lobby's player index of the player with `xuid` (the lobby singleton
+  // 0x831F3024, its slots' list at +4016, slots 2-5: a player each, +4 its index,
+  // +56 its XUID), for KickPlayer (AO2PlasmaController.KickPlayer looks the player
+  // up by that index, sub_82A02D50); -1 when that player is not in the lobby.
+  int LobbyIndexOf(uint64_t xuid)
+  {
+    const uint8_t *base = rex::Runtime::instance() ? rex::Runtime::instance()->virtual_membase() : nullptr;
+    if (!base || !xuid)
+    {
+      return -1;
+    }
+    auto u32 = [&](uint32_t addr) {
+      uint32_t v;
+      std::memcpy(&v, base + addr, 4);
+      return std::byteswap(v);
+    };
+    const uint32_t lobby = u32(0x831F3024);
+    const uint32_t list = lobby ? u32(lobby + 4016) : 0;
+    for (uint32_t slot = 2; list && slot <= 5; ++slot)
+    {
+      const uint32_t player = u32(list + 4 * slot);
+      if (player && (uint64_t(u32(player + 56)) << 32 | u32(player + 60)) == xuid)
+      {
+        return int(u32(player + 4));
+      }
+    }
+    return -1;
+  }
+
+  std::string XuidText(uint64_t xuid)
+  {
+    char text[24];
+    std::snprintf(text, sizeof(text), "%016llx", (unsigned long long)xuid);
+    return xuid ? text : "";
+  }
+
   // What this game is doing, for the other players' lists.
   Fields Presence()
   {
@@ -717,7 +766,8 @@ namespace
             {"hosting", hosting ? "1" : "0"},
             {"state", st},
             {"build", BuildHash()},
-            {"sync", SharedSettings()}};
+            {"sync", SharedSettings()},
+            {"xuid", XuidText(g_own_xuid.load(std::memory_order_relaxed))}};
   }
 
   // HELLO to the broadcast addresses, the configured and the known players.
@@ -741,6 +791,23 @@ namespace
     steam.mode = hosted.mode;
     steam.name = LocalName();
     steam.build = BuildHash();
+    if (steam.versus)
+    {
+      // For the server list's details (game_browser.cpp): r round minutes (0 the
+      // lobby's), c cash goal, f friendly fire (0 half, 1 off, 2 full), p respawn
+      // price (0 the game's), s its step, b bots, u their buying, a their infinite
+      // ammo, d their difficulty (0-2, -1 custom).
+      const int menu = ao2::menumouse::VersusMenu();
+      steam.menu = menu == 1 ? "setup" : menu == 2 ? "ready" : "";
+      char rules[160];
+      std::snprintf(rules, sizeof(rules), "r=%d;c=%d;f=%d;p=%d;s=%d;b=%d;u=%d;a=%d;d=%d",
+                    REXCVAR_GET(ao2_versus_round_minutes), REXCVAR_GET(ao2_versus_cash_goal),
+                    REXCVAR_GET(ao2_versus_friendly_fire), REXCVAR_GET(ao2_versus_respawn_cost),
+                    REXCVAR_GET(ao2_versus_respawn_step), REXCVAR_GET(ao2_versus_bots) ? 1 : 0,
+                    REXCVAR_GET(ao2_versus_bots_buy) ? 1 : 0, REXCVAR_GET(ao2_versus_bots_infinite_ammo) ? 1 : 0,
+                    ao2::menu::BotPreset());
+      steam.rules = rules;
+    }
     ao2::steam::SetHosting(steam);
   }
 
@@ -888,6 +955,7 @@ namespace
         p.sync = ao2::invite_checks::CleanText(Get(f, "sync"), ao2::invite_checks::kMaxFieldBytes);
         p.state = ao2::invite_checks::CleanText(Get(f, "state", "menu"), ao2::invite_checks::kMaxFieldBytes);
         p.hosting = Get(f, "hosting") == "1";
+        p.xuid = std::strtoull(Get(f, "xuid").c_str(), nullptr, 16);
         p.seen = now;
       }
       if (type == "HELLO")
@@ -956,6 +1024,24 @@ namespace
       uint32_t server_ip = ao2::invite_checks::ChooseInviteServer(Get(f, "server"), from.ip, ao2::steam::IsVirtual);
       inv.server_ip = IpString(server_ip);
       inv.server_here = server_ip == ao2::steam::SelfAddress() && server_ip != 0;
+      // The inviter's game may live on the server of this very PC (it joined this PC's server on the LAN, and
+      // names the LAN address of it): over Steam that address was taken for an unreachable one and replaced by
+      // the inviter's own Steam address, where no server runs - the game could not connect. A server on this PC
+      // stays the one the game already uses.
+      uint32_t named = 0;
+      if (ao2::invite_checks::ParseNumericIp(Get(f, "server"), &named) && !ao2::steam::IsVirtual(named))
+      {
+        std::string named_text = IpString(named);
+        for (const auto &mine : ao2::ea::LocalAddresses())
+        {
+          if (mine.ip == named_text)
+          {
+            inv.server_here = true;
+            inv.server_ip = named_text;
+            break;
+          }
+        }
+      }
       inv.received = now;
       if (inv.xnaddr.size() != 36 || !inv.session_id)
       {
@@ -1321,7 +1407,7 @@ namespace
     ao2::ea::HostedGame game;
     if (!MyHostedGame(&game))
     {
-      *error = Tr("Create a game first: Campaign Mode - Private (or Public) Co-op Game.");
+      *error = Tr("Create a game first: Campaign Mode → Create Co-op Game.");
       return false;
     }
     static std::mt19937 rng{std::random_device{}()};
@@ -1735,8 +1821,8 @@ namespace
       float tx = mn.x + 80.0f * s;
       std::string heading = std::string(desync ? Tr("Out of sync with") : Tr("Connection lost with")) + " " + who;
       ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 10.0f * s), ui::Fade(ui::kText, a), heading.c_str());
-      const char *line1 = host ? Tr("Host a co-op game again: the partner is invited") : Tr("When the host hosts a co-op game again,");
-      const char *line2 = host ? Tr("and rejoins it by themselves.") : Tr("this game accepts its invite by itself.");
+      const char *line1 = host ? Tr("Host a co-op game again: your partner is invited") : Tr("When the host starts a co-op game again,");
+      const char *line2 = host ? Tr("and rejoins automatically.") : Tr("this game accepts the invite automatically.");
       ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 46.0f * s), ui::Fade(ui::kMuted, a), line1);
       ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 70.0f * s), ui::Fade(ui::kMuted, a), line2);
       return true;
@@ -2185,7 +2271,7 @@ namespace
         ui::Text(dl, FontKind::kSmall, ImVec2(tx, y + 52.0f * s), ui::Fade(ui::kMuted, a),
                  Tr("Players on the LAN and Radmin VPN are found automatically."));
         ui::Text(dl, FontKind::kSmall, ImVec2(tx, y + 72.0f * s), ui::Fade(ui::kMuted, a),
-                 Tr("Over the internet: the address below or ao2_friends in settings/online.toml."));
+                 Tr("Over the internet: use the address below or add ao2_friends in settings/online.toml."));
         y += rh + 6.0f * s;
       }
       for (size_t i = 0; i < peers.size(); ++i)
@@ -2247,6 +2333,33 @@ namespace
         float bw = 150.0f * s, bh = 34.0f * s;
         ImVec2 bp(mx.x - 12.0f * s - bw, mn.y + (rh - bh) * 0.5f);
         float mid = mn.y + rh * 0.5f;
+        // Left of the invite: the player's Steam profile (overlay) and, in the
+        // lobby this PC hosts, Kick (the game's own: PKickPlayer <lobby index>).
+        float ex = bp.x - 10.0f * s; // the extra buttons' left edge so far
+        const float sbw = 110.0f * s;
+        const int lobby_index = hosting ? LobbyIndexOf(p.xuid) : -1;
+        if (lobby_index > 0)
+        {
+          ex -= sbw;
+          if (ui::Button(("kick" + key).c_str(), ImVec2(ex, bp.y), ImVec2(sbw, bh), Tr("KICK"),
+                         ui::ButtonStyle::kOutline, live && rt >= 1.0f, ra))
+          {
+            Log("kick %s (lobby index %d)", p.name.c_str(), lobby_index);
+            ao2::console::Queue("exec PKickPlayer " + std::to_string(lobby_index));
+          }
+          ex -= 8.0f * s;
+        }
+        const uint64_t steam_id = ao2::steam::IsVirtual(p.address.ip) ? ao2::steam::SteamIdOf(p.address.ip) : 0;
+        if (steam_id)
+        {
+          ex -= sbw;
+          if (ui::Button(("profile" + key).c_str(), ImVec2(ex, bp.y), ImVec2(sbw, bh), Tr("PROFILE"),
+                         ui::ButtonStyle::kOutline, live && rt >= 1.0f, ra))
+          {
+            ao2::steam::OpenProfile(steam_id);
+          }
+          ex -= 8.0f * s;
+        }
         auto right_text = [&](const char *text, ImU32 col, float right) {
           ImVec2 ts = ui::CapsSize(FontKind::kLabel, text);
           ui::Caps(dl, FontKind::kLabel, ImVec2(right - ts.x, mid - ts.y * 0.5f), ui::Fade(col, ra), text);
@@ -2268,7 +2381,7 @@ namespace
             right_text(state == SentState::kDeclined ? Tr("DECLINED")
                        : state == SentState::kAccepted ? Tr("NOT JOINED")
                                                        : Tr("NOT DELIVERED"),
-                       state == SentState::kDeclined ? ui::kRed : ui::kMuted, bp.x - 14.0f * s);
+                       state == SentState::kDeclined ? ui::kRed : ui::kMuted, ex - 4.0f * s);
           }
           if (ui::Button(("invite" + key).c_str(), bp, ImVec2(bw, bh), have ? Tr("AGAIN") : Tr("INVITE"),
                          ui::ButtonStyle::kPrimary, hosting && live && rt >= 1.0f, ra))
@@ -2295,7 +2408,7 @@ namespace
         y += 14.0f * s;
         section(Tr("STEAM"), -1);
         ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kMuted, a),
-                 Tr("Steam friends in the game show above. Games hosted over Steam: the Servers tab."));
+                 Tr("Steam friends who are in the game appear above. For games hosted over Steam, see the Servers tab."));
         y += ui::FontSize(FontKind::kSmall) + 12.0f * s;
         if (hosting && ui::Button("steam_invite", ImVec2(cx0, y), ImVec2(240.0f * s, 34.0f * s),
                                   Tr("INVITE STEAM FRIENDS"), ui::ButtonStyle::kOutline, live, a))
@@ -2614,6 +2727,57 @@ extern "C" REX_FUNC(sub_82B07EB0)
   }
   Log("game asks for the invite UI (user %u)", ctx.r3.u32);
   ao2::invite::ShowPlayers();
+  ctx.r3.u64 = 0; // ERROR_SUCCESS
+}
+
+// XamUserGetXUID(user, &xuid) (sub_82B06FF0): player 1's XUID, for the presence
+// announcements (the other games' Gamer Card -> Steam profile).
+extern "C" REX_FUNC(__imp__sub_82B06FF0);
+extern "C" REX_FUNC(sub_82B06FF0)
+{
+  const uint32_t user = ctx.r3.u32, out = ctx.r4.u32;
+  __imp__sub_82B06FF0(ctx, base);
+  if (user == 0 && out && ctx.r3.u32 == 0)
+  {
+    g_own_xuid.store(Load64(base, out), std::memory_order_relaxed);
+  }
+}
+
+// XamShowGamerCardUIForXUID(user, xuid) (sub_82B07E80): the lobby's and the
+// scoreboards' View Gamer Card. Without Live the player's Steam profile opens in
+// the Steam overlay: the XUID's game is found among the presence peers (their
+// HELLO / HERE carry it), its address is a Steam player's virtual one. Players
+// of this PC (the same XUID but for the user number) are this Steam account.
+extern "C" REX_FUNC(__imp__sub_82B07E80);
+extern "C" REX_FUNC(sub_82B07E80)
+{
+  const uint64_t xuid = ctx.r4.u64;
+  const uint64_t own = g_own_xuid.load(std::memory_order_relaxed);
+  uint32_t ip = 0;
+  if (own && (xuid & ~0xFull) == (own & ~0xFull))
+  {
+    ip = ao2::steam::SelfAddress();
+  }
+  else
+  {
+    std::lock_guard lock(state().mutex);
+    for (const auto &[address, peer] : state().peers)
+    {
+      if (peer.xuid && peer.xuid == xuid && ao2::steam::IsVirtual(address.ip))
+      {
+        ip = address.ip;
+        break;
+      }
+    }
+  }
+  const uint64_t steam_id = ip ? ao2::steam::SteamIdOf(ip) : 0;
+  Log("gamer card of %016llx: %s", (unsigned long long)xuid,
+      steam_id ? "the Steam profile" : "no Steam player for it");
+  if (!steam_id || !ao2::steam::OpenProfile(steam_id))
+  {
+    __imp__sub_82B07E80(ctx, base);
+    return;
+  }
   ctx.r3.u64 = 0; // ERROR_SUCCESS
 }
 

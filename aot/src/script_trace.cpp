@@ -27,6 +27,7 @@ namespace ao2::split_join
   extern uint32_t g_login_status;
   bool OnCauseEvent(PPCContext &ctx, uint8_t *base); // true: the function does not run
   void OnLoginStatus(PPCContext &ctx, uint8_t *base);
+  void AfterCauseEvent(PPCContext &ctx, uint8_t *base);
 }
 namespace ao2::lobby_visibility
 {
@@ -164,4 +165,8 @@ extern "C" REX_FUNC(sub_82445C30)
     return;
   }
   __imp__sub_82445C30(ctx, base);
+  if (function == ao2::split_join::g_cause_event)
+  {
+    ao2::split_join::AfterCauseEvent(ctx, base);
+  }
 }

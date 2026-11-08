@@ -72,6 +72,14 @@ namespace ao2::menu
   // Any thread: a lasting banner in a slot of its own, drawn under the notice
   // and the toast (the co-op lobby's other version warning, coop_invite.cpp).
   void SetBanner(std::function<bool()> draw);
+  // Any thread: a key pressed while a window or the menu had the input, not let go since.
+  bool HeldFromMenu(uint32_t vk);
+  // Any thread: a quiet hint in a slot of its own, drawn under the banner
+  // (the versus Game Setup's note on the F1 menu's match rules, menu_mouse.cpp).
+  void SetHint(std::function<bool()> draw);
+  // Any thread: the bots' difficulty preset the F1 menu's values are (0 Easy,
+  // 1 Normal, 2 Hard), -1 for values of no preset.
+  int BotPreset();
   // UI thread: the immediate drawer of the notices' ImGui drawer, for their
   // textures (null before Attach).
   rex::ui::ImmediateDrawer *NoticeImmediateDrawer();

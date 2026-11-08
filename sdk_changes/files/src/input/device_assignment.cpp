@@ -49,7 +49,7 @@ std::atomic<uint32_t> g_generation{0};
 
 // The players of a split-screen (the campaign's, a versus guest's), each with what they pressed on
 // (rex_input_split_players); ahead of every other assignment.
-std::atomic<bool> g_split_on{false};
+std::atomic<uint32_t> g_split_on{0};  // 2: player 2 stays connected on the NOP stand-in
 std::atomic<uint32_t> g_split_keyboard{kNoUser};
 std::atomic<uint32_t> g_split_pads[2] = {0, 0};
 std::mutex g_names_mutex;
@@ -123,14 +123,18 @@ void SlotAssignment::OnDevicesChanged(const std::vector<DeviceInfo>& devices) {
     std::lock_guard<std::mutex> lock(g_names_mutex);
     g_names = names;
   }
-  if (g_split_on.load(std::memory_order_relaxed)) {
+  if (uint32_t split = g_split_on.load(std::memory_order_relaxed)) {
     uint32_t keyboard_user = g_split_keyboard.load(std::memory_order_relaxed);
     for (const auto& device : devices) {
       if (device.synthetic) {
-        // The NOP stand-in keeps player 1 connected whatever pad they use.
+        // The NOP stand-in keeps player 1 connected whatever pad they use
+        // (split 2: player 2 too, signed in with nothing to press).
         uint32_t user = device.name == kKeyboardName ? keyboard_user : 0;
         if (user != kNoUser) {
           users_[user].push_back(device.id);
+        }
+        if (split == 2 && device.name != kKeyboardName) {
+          users_[1].push_back(device.id);
         }
         continue;
       }
@@ -238,7 +242,7 @@ extern "C" void rex_input_split_players(uint32_t on, uint32_t keyboard_user, uin
   g_split_keyboard.store(keyboard_user, std::memory_order_relaxed);
   g_split_pads[0].store(p1_pads, std::memory_order_relaxed);
   g_split_pads[1].store(p2_pads, std::memory_order_relaxed);
-  g_split_on.store(on != 0, std::memory_order_relaxed);
+  g_split_on.store(on, std::memory_order_relaxed);
   g_generation.fetch_add(1, std::memory_order_release);
 }
 

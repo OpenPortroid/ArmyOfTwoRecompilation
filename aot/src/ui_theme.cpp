@@ -415,15 +415,14 @@ namespace ao2::ui
     dl->AddRectFilled(ImVec2(min.x + 8.0f * s, min.y + inset), ImVec2(min.x + 11.0f * s, max.y - inset), col, 1.5f * s);
   }
 
-  float KeyCap(ImDrawList *dl, ImVec2 pos, float height, const char *key, float alpha)
+  float KeyCap(ImDrawList *dl, ImVec2 pos, float height, const char *key, float alpha, FontKind kind)
   {
     float s = Scale();
-    ImVec2 ts = CapsSize(FontKind::kLabel, key);
+    ImVec2 ts = CapsSize(kind, key);
     float w = std::max(height, ts.x + height * 0.8f);
     ImVec2 max(pos.x + w, pos.y + height);
     dl->AddRectFilled(pos, max, Fade(kAccentLight, alpha), 6.0f * s);
-    Caps(dl, FontKind::kLabel, ImVec2(pos.x + (w - ts.x) * 0.5f, pos.y + (height - ts.y) * 0.5f), Fade(kInk, alpha),
-         key);
+    Caps(dl, kind, ImVec2(pos.x + (w - ts.x) * 0.5f, pos.y + (height - ts.y) * 0.5f), Fade(kInk, alpha), key);
     return w;
   }
 

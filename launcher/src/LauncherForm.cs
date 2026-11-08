@@ -1588,7 +1588,7 @@ namespace AO2Launcher
                     Kind = RowKind.Choice, Label = "Monitor", Key = "monitor",
                     Values = monValues.ToArray(), Name = monName,
                     Enabled = () => monValues.Count > 1,
-                    Desc = "Which monitor the game opens on."
+                    Desc = "The monitor the game opens on."
                 },
                 new Row
                 {
@@ -1626,7 +1626,7 @@ namespace AO2Launcher
                 Toggle("Vertical sync", "vsync",
                     "Frames wait for the monitor's refresh: no tearing, but the frame rate stays at or below the refresh rate " +
                     "and the input lag grows a little."),
-                Toggle("Anisotropic filtering", "aniso", "Sharper textures at an angle (16×). Costs almost no performance.",
+                Toggle("Anisotropic filtering", "aniso", "Sharper textures at oblique angles (16×). Almost no performance cost.",
                     "OFF", "16×"),
                 new Row
                 {
@@ -1646,10 +1646,10 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Choice, Label = "Motion blur", Key = "motion_blur",
                     Values = new[] { "0", "1", "2" }, Names = new[] { "OFF", "LOW", "HIGH" },
-                    Desc = "Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp."
+                    Desc = "Blur from camera movement that looks the same at any frame rate. Your character, close to the camera, stays sharp."
                 },
                 Toggle("Depth of field", "dof",
-                    "What lies far behind the point you aim at goes out of focus; the focus follows the crosshair."),
+                    "Objects far behind the point you aim at go out of focus; the focus follows the crosshair."),
                 new Row
                 {
                     Kind = RowKind.Choice, Label = "Shadow resolution", Key = "shadow_res",
@@ -1661,19 +1661,19 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Slider, Label = "Field of view", Key = "fov", Min = 40, Max = 130, Step = 1,
                     Format = v => v.ToString("0", CultureInfo.InvariantCulture) + "°",
-                    Desc = "How wide the view is on foot. The game's is 70°."
+                    Desc = "Field of view on foot. The game's default is 70°."
                 },
                 new Row
                 {
                     Kind = RowKind.Slider, Label = "Aiming zoom", Key = "fov_aim", Min = 0, Max = 1, Step = 0.05,
                     Format = v => v.ToString("0.00", CultureInfo.InvariantCulture),
-                    Desc = "How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope."
+                    Desc = "How much aiming zooms in: 1 is the game's default, 0 is no zoom. Does not affect the sniper scope."
                 },
                 new Row
                 {
                     Kind = RowKind.Slider, Label = "Camera shake", Key = "camera_shake", Min = 0, Max = 1, Step = 0.05,
                     Format = v => v.ToString("0.00", CultureInfo.InvariantCulture),
-                    Desc = "How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did."
+                    Desc = "Camera shake strength: 1 is the game's default, 0 turns it off. Bullet spread is unchanged."
                 },
             };
 
@@ -1682,7 +1682,7 @@ namespace AO2Launcher
             var controls = new List<Row>
             {
                 Toggle("Mouse aiming", "mouse_aim",
-                    "The mouse turns the camera directly, like in PC shooters. When off, the mouse acts as the gamepad's right stick."),
+                    "The mouse turns the camera directly, as in PC shooters. When off, the mouse emulates the gamepad's right stick."),
                 new Row
                 {
                     Kind = RowKind.Slider, Label = "Mouse sensitivity", Key = "mouse_sens", Min = 0.25, Max = 8, Step = 0.25,
@@ -1693,9 +1693,9 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Slider, Label = "Sensitivity when aiming", Key = "mouse_zoom", Min = 0.25, Max = 2, Step = 0.05,
                     Format = times, Enabled = () => S.Bool("mouse_aim"),
-                    Desc = "Multiplier while aiming (right button, scopes). Turning already accounts for zoom; 1.0 feels the same as unaimed."
+                    Desc = "Sensitivity multiplier while aiming (right button, scopes). Zoom is already compensated, so 1.0 feels the same as hip fire."
                 },
-                Toggle("Invert Y axis", "invert_y", "Mouse up looks down (on top of the inversion setting in the game itself)."),
+                Toggle("Invert Y axis", "invert_y", "Moving the mouse up looks down (applied on top of the game's own invert option)."),
                 Toggle("Aim assist", "aim_assist",
                     "While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
                     "In co-op each player keeps their own setting."),
@@ -1723,7 +1723,7 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Text, Label = "Player name", Key = "gamertag", MaxLen = 15,
                     Placeholder = () => Shorten(Environment.MachineName, 15),
-                    Desc = "The name your partner sees (up to 15 characters). Empty: the computer's name."
+                    Desc = "The name your partner sees (up to 15 characters). Leave empty to use the computer's name."
                 },
                 new Row
                 {
@@ -1747,7 +1747,7 @@ namespace AO2Launcher
                            "Needs administrator rights: Windows will ask to confirm. Done once on both PCs."
                 },
                 Toggle("Co-op log", "coop_debug",
-                    "Writes coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance."),
+                    "Writes coop_debug.log to the game folder to help investigate desyncs. Costs a little performance."),
                 new Row
                 {
                     Kind = RowKind.Info,
@@ -1781,7 +1781,7 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Text, Label = "Extra arguments", Key = "extra_args", MaxLen = 1000,
                     Placeholder = () => "--flag=value ...",
-                    Desc = "Extra command line arguments for the game, appended at the end (for advanced users)."
+                    Desc = "Extra command-line arguments appended to the game's launch (for advanced users)."
                 },
                 new Row
                 {
@@ -1814,13 +1814,13 @@ namespace AO2Launcher
                             ShowToast(L.F("No saves yet: {0}", dir), true);
                         }
                     },
-                    Desc = "The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2)."
+                    Desc = "Opens the current profile's save folder (for the main profile: Documents\\armyoftworecomp_tu2)."
                 },
                 new Row
                 {
                     Kind = RowKind.Button, Label = "Game files and DLC", ButtonText = () => "INSTALL",
                     Click = () => SetScreen(UiScreen.Install),
-                    Desc = "Install the game from your own disc image, Title Update 2, or add downloadable content (DLC)."
+                    Desc = "Install the game from your own disc image and Title Update 2, or add downloadable content (DLC)."
                 },
                 new Row
                 {
@@ -1842,7 +1842,7 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Button, Label = "Game path", ButtonText = () => "CHANGE",
                     Click = () => BrowseGame(),
-                    Desc = "Point to armyoftworecomp.exe by hand if the launcher is not in the game folder."
+                    Desc = "Locate armyoftworecomp.exe manually if the launcher is not in the game folder."
                 },
                 new Row
                 {
@@ -1875,9 +1875,9 @@ namespace AO2Launcher
                             OfferAvx1();
                         }
                     },
-                    Desc = "The game built for processors without AVX2 (downloaded from the release, about 25 MB), a little slower. " +
-                           "Always on when the processor has no AVX2. Turn it on to play co-op with someone whose processor " +
-                           "has none: both players need the same version and the same build."
+                    Desc = "A build of the game for processors without AVX2 (about 25 MB to download), slightly slower. " +
+                           "Always on if your processor lacks AVX2. Turn it on to play co-op with someone whose processor lacks AVX2: " +
+                           "both players need the same version and the same build."
                 },
             };
 
@@ -2249,7 +2249,7 @@ namespace AO2Launcher
             }
             else
             {
-                ShowToast(L.T("Failed (the administrator prompt has to be confirmed)"), true);
+                ShowToast(L.T("Failed: the administrator prompt must be confirmed"), true);
             }
         }
 
@@ -3177,7 +3177,7 @@ namespace AO2Launcher
                 }
                 DrawText(g, status, fLabel, TextLight, line1, text);
                 Progress(g, new RectangleF(box.X + 40, box.Y + 104, box.Width - 80, 4), t);
-                DrawText(g, L.T(dl && !avx1Only ? "The launcher restarts by itself when the update is installed." : "Do not close the launcher."),
+                DrawText(g, L.T(dl && !avx1Only ? "The launcher restarts automatically once the update is installed." : "Do not close the launcher."),
                     fSmall, TextDim, new RectangleF(box.X + 30, box.Y + 118, box.Width - 60, 22), text);
                 if (dl)
                 {
@@ -3201,12 +3201,12 @@ namespace AO2Launcher
             else if (noAvx2)
             {
                 DrawText(g, L.F("Download the build with AVX1 support for {0}?", ver), fLabel, TextLight, line1, text);
-                DrawText(g, L.T("On such a processor the game runs only in its AVX1 build. About 25 MB."), fSmall, TextDim, line2, text);
+                DrawText(g, L.T("On this processor the game only runs in its AVX1 build. About 25 MB."), fSmall, TextDim, line2, text);
             }
             else if (avx1Only)
             {
                 DrawText(g, L.F("Download the build with AVX1 support for {0}?", ver), fLabel, TextLight, line1, text);
-                DrawText(g, L.T("For processors without AVX2 and co-op with such a player. About 25 MB."), fSmall, TextDim, line2, text);
+                DrawText(g, L.T("For processors without AVX2, and for co-op with a player whose processor lacks it. About 25 MB."), fSmall, TextDim, line2, text);
             }
             else
             {
@@ -3214,7 +3214,7 @@ namespace AO2Launcher
                     : L.F("Version {0} is out, you have {1}. Update now?", ver, "v" + Updates.Current), fLabel, TextLight, line1, text);
                 DrawText(g, older && Game.Avx1Mode(S)
                     ? L.F("{0} is the newest version with the AVX1 build.", ver)
-                    : L.T("The launcher downloads and installs it by itself. Your game files, settings and saves are kept."),
+                    : L.T("The launcher downloads and installs it automatically. Your game files, settings and saves are kept."),
                     fSmall, TextDim, line2, text);
             }
 

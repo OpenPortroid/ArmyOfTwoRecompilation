@@ -309,7 +309,7 @@ EnteringReadyRoom_Message="Entrando na tela da sala de espera..."
 ReadyRoom=Sala de Espera
 [Shell_Versus]
 CustomMatch="Criar Partida"
-QuickMatch="Partida Rápida"
+QuickMatch="Encontrar Partida"
 Leaderboards="Rankings"
 FriendsOnly="Só Amigos"
 GlobalRankings="Ranking Global"

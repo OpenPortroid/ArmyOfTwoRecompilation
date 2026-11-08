@@ -90,7 +90,8 @@ namespace ao2::ui
   void Check(ImDrawList *dl, ImVec2 center, float size, float thickness, ImU32 col);
   void Cross(ImDrawList *dl, ImVec2 center, float size, float thickness, ImU32 col);
   // A key cap ("F6") at `pos` (top left), `height` tall; returns its width.
-  float KeyCap(ImDrawList *dl, ImVec2 pos, float height, const char *key, float alpha);
+  float KeyCap(ImDrawList *dl, ImVec2 pos, float height, const char *key, float alpha,
+               FontKind kind = FontKind::kLabel);
 
   enum class ButtonStyle
   {

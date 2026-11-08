@@ -17,13 +17,43 @@
 // part alone, half a line under its top. It goes on the line between the parts, where
 // the meter does not cover it: the text's CurY, set by Draw, is moved up by the height
 // of the text just before it is drawn (sub_8270A9A8).
+//
+// The portraits (UAO2HudItem_MPHealth::Draw, sub_823A9C88): every AO2HUD's item draws
+// the player's and the partner's energy with Energy_CurrentMaterialInstance (+148) and
+// Energy_PartnerCurrentMaterialInstance (+152), the class defaults' material instances
+// (energy_Rios_Mat, energy_Salem_Mat) that script Initialize takes as they are: one
+// for every HUD. Draw sets their face and energy parameters, then puts the tile on the
+// Canvas, which is drawn after every HUD of the frame: in a split-screen each part of
+// the screen got the parameters of the HUD drawn last (the other team's player's
+// portrait for player 2). Each item gets instances of its own, made as script's
+// new(Outer) MaterialInstanceConstant would (StaticConstructObject, sub_82478F80), whose
+// parent is the shared one (UMaterialInstanceConstant::SetParent, sub_825D0A18): they
+// show what it shows until Draw sets their own parameters. The item holds them (an
+// object property, so they live as long as it does); one that is not the item's own
+// (its Outer) is replaced. The faces (texture parameter 'Character') are set once at
+// the match's start by AO2MPGame.InitializeCharacterPortraits, before the first Draw
+// and so on the shared instances (the last HUD's faces for every HUD): each item's own
+// get the faces of its player and partner (char +3184, as Draw takes it) as that
+// script does, MPFaceTextures[MPHealthPortraitIndex], whenever they change
+// (UMaterialInstanceConstant::SetTextureParameterValue, sub_825D05D8).
+// With two views Draw also takes one HUD (sub_823A9428 false) for the co-op partner's:
+// its player's energy goes on the partner's instance and that tile is drawn as the
+// player's own (in the campaign's split-screen player 2 is the partner). Players of
+// different teams are told there is one view, as for the aggro meter: each draws its
+// own portrait.
 #include "ue3_reflect.h"
 
 #include <bit>
 #include <cstdint>
 #include <cstring>
+#include <unordered_map>
 
+#include <rex/logging.h>
 #include <rex/ppc.h>
+
+extern "C" REX_FUNC(sub_82478F80); // StaticConstructObject
+extern "C" REX_FUNC(sub_825D0A18); // UMaterialInstanceConstant::SetParent
+extern "C" REX_FUNC(sub_825D05D8); // UMaterialInstanceConstant::SetTextureParameterValue
 
 namespace ao2::versus_guest
 {
@@ -38,6 +68,15 @@ namespace
   constexpr uint32_t kHudOwner = 76;      // AO2HudItem
   constexpr uint32_t kSafeZoneTop = 1792; // AO2HUD
   constexpr uint32_t kOrgY = 76, kCurY = 92; // Canvas
+  constexpr uint32_t kOuter = 40;            // UObject.Outer
+  constexpr uint32_t kPortraits[2] = {148, 152}; // AO2HudItem_MPHealth: the player's, the partner's
+  constexpr uint32_t kGError = 0x831B2084;   // GError (FOutputDevice *), StaticConstructObject's error device
+  constexpr uint32_t kPlayerOwner = 80;      // AO2HudItem.PlayerOwner
+  constexpr uint32_t kCharacter = 2024;      // AO2PlayerControllerNative.Character
+  constexpr uint32_t kPartner = 3184;        // the character's partner, as MPHealth's Draw reads it
+  constexpr uint32_t kFaceTextures = 156;    // AO2HudItem_MPHealth.MPFaceTextures[20]
+  constexpr uint32_t kFaceCount = 20;
+  constexpr uint32_t kPortraitIndex = 8160;  // AO2Character_Hero.MPHealthPortraitIndex
 
   thread_local bool t_one_view = false; // in the meter's Draw, for players of different teams
   thread_local uint32_t t_timer = 0;    // in the timer's Draw: the item
@@ -59,6 +98,70 @@ namespace
   {
     const uint32_t v = std::byteswap(std::bit_cast<uint32_t>(value));
     std::memcpy(base + addr, &v, 4);
+  }
+
+  void StoreU32(uint8_t *base, uint32_t addr, uint32_t value)
+  {
+    value = std::byteswap(value);
+    std::memcpy(base + addr, &value, 4);
+  }
+
+  // A MaterialInstanceConstant of `item`'s own under `parent` (0: none made).
+  uint32_t OwnInstance(PPCContext &ctx, uint8_t *base, uint32_t item, uint32_t parent)
+  {
+    static const uint32_t mic_class = ao2::ue3::FindClass(base, "MaterialInstanceConstant");
+    if (!mic_class)
+    {
+      return 0;
+    }
+    PPCContext saved = ctx;
+    ctx.r3.u64 = mic_class;
+    ctx.r4.u64 = item;
+    ctx.r5.u64 = 0; // NAME_None
+    ctx.r6.u64 = 0; // no flags
+    ctx.r7.u64 = 0; // the class default as the template
+    ctx.r8.u64 = LoadU32(base, kGError);
+    ctx.r9.u64 = 0;
+    ctx.r10.u64 = 0;
+    sub_82478F80(ctx, base);
+    const uint32_t mic = ctx.r3.u32;
+    if (mic)
+    {
+      ctx.r3.u64 = mic;
+      ctx.r4.u64 = parent;
+      sub_825D0A18(ctx, base);
+    }
+    ctx = saved;
+    return mic;
+  }
+
+  std::unordered_map<uint32_t, uint32_t> g_shown; // game thread: an item's own instance -> the face set on it
+
+  void Forget(uint32_t mic) { g_shown.erase(mic); }
+
+  // The face `mic` (an item's own instance) shows: MPFaceTextures[`character`'s portrait index].
+  void SetFace(PPCContext &ctx, uint8_t *base, uint32_t item, uint32_t mic, uint32_t character)
+  {
+    static const uint32_t hero = ao2::ue3::FindClass(base, "AO2Character_Hero");
+    static const uint32_t name = ao2::ue3::FindName(base, "Character");
+    if (!hero || !name || !character || !ao2::ue3::IsA(base, character, hero))
+    {
+      return;
+    }
+    const uint32_t index = LoadU32(base, character + kPortraitIndex);
+    const uint32_t face = index < kFaceCount ? LoadU32(base, item + kFaceTextures + index * 4) : 0;
+    auto it = g_shown.find(mic);
+    if (!face || (it != g_shown.end() && it->second == face))
+    {
+      return;
+    }
+    g_shown[mic] = face;
+    PPCContext saved = ctx;
+    ctx.r3.u64 = mic;
+    ctx.r4.u64 = uint64_t(name) << 32; // FName: index, number 0
+    ctx.r5.u64 = face;
+    sub_825D05D8(ctx, base);
+    ctx = saved;
   }
 
   bool OtherTeamOnScreen(const uint8_t *base, uint32_t item)
@@ -134,6 +237,44 @@ extern "C" REX_FUNC(sub_823AF0A8)
 {
   t_one_view = OtherTeamOnScreen(base, ctx.r3.u32);
   __imp__sub_823AF0A8(ctx, base);
+  t_one_view = false;
+}
+
+// UAO2HudItem_MPHealth::Draw (r3 = the item, r4 = the Canvas): the portraits'
+// material instances are the item's own.
+extern "C" REX_FUNC(__imp__sub_823A9C88);
+extern "C" REX_FUNC(sub_823A9C88)
+{
+  const uint32_t item = ctx.r3.u32;
+  for (uint32_t off : kPortraits)
+  {
+    const uint32_t shared = LoadU32(base, item + off);
+    if (!shared || LoadU32(base, shared + kOuter) == item)
+    {
+      continue;
+    }
+    if (const uint32_t own = OwnInstance(ctx, base, item, shared))
+    {
+      Forget(own); // an instance freed before may have had this address
+      StoreU32(base, item + off, own);
+      REXLOG_INFO("split_hud: MPHealth {:08X} +{}: own material instance {:08X} (parent {:08X})", item, off, own,
+                  shared);
+    }
+  }
+  const uint32_t controller = LoadU32(base, item + kPlayerOwner);
+  const uint32_t character = controller ? LoadU32(base, controller + kCharacter) : 0;
+  const uint32_t partner = character ? LoadU32(base, character + kPartner) : 0;
+  const uint32_t characters[2] = {character, partner};
+  for (int i = 0; i < 2; ++i)
+  {
+    const uint32_t mic = LoadU32(base, item + kPortraits[i]);
+    if (mic && LoadU32(base, mic + kOuter) == item)
+    {
+      SetFace(ctx, base, item, mic, characters[i]);
+    }
+  }
+  t_one_view = OtherTeamOnScreen(base, item);
+  __imp__sub_823A9C88(ctx, base);
   t_one_view = false;
 }
 

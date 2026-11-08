@@ -22,10 +22,10 @@ namespace AO2Launcher
             p("SSC Challenge", "SSC Challenge");
             p("Profile {0}: {1} of {2} unlocked, {3} of {4} G", "Perfil {0}: {1} de {2} desbloqueadas, {3} de {4} G");
             p("Unlock notices", "Avisos de conquistas");
-            p("Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently.",
+            p("Show an in-game notice with a sound when an achievement unlocks. When off, achievements still unlock, just silently.",
               "Mostrar no jogo um aviso com som quando uma conquista for desbloqueada. Desativado: as conquistas continuam sendo desbloqueadas, em silêncio.");
             p("Reset achievements", "Redefinir conquistas");
-            p("Lock every achievement of the current profile again. Saves and progress in the game are not changed.",
+            p("Re-lock every achievement of the current profile. Saves and game progress stay as they are.",
               "Bloquear de novo todas as conquistas do perfil atual. Os saves e o progresso no jogo não são alterados.");
             p("RESET ACHIEVEMENTS", "REDEFINIR CONQUISTAS");
             p("Every achievement of profile {0} will be locked again. This cannot be undone.",
@@ -33,7 +33,7 @@ namespace AO2Launcher
             p("Achievements reset", "Conquistas redefinidas");
             p("Could not reset the achievements", "Não foi possível redefinir as conquistas");
             p("Earned {0}", "Obtida em {0}");
-            p("The list of achievements comes from the game's files: start the game once to see it here.",
+            p("The achievement list is read from the game's files. Start the game once to see it here.",
               "A lista de conquistas vem dos arquivos do jogo: inicie o jogo uma vez para vê-la aqui.");
             p("Launcher", "Launcher");
             p("Installation", "Instalação");
@@ -56,7 +56,7 @@ namespace AO2Launcher
             p("UPDATE AVAILABLE", "ATUALIZAÇÃO DISPONÍVEL");
             p("Version {0} is out, you have {1}. Update now?",
               "A versão {0} já saiu, você tem a {1}. Atualizar agora?");
-            p("The launcher downloads and installs it by itself. Your game files, settings and saves are kept.",
+            p("The launcher downloads and installs it automatically. Your game files, settings and saves are kept.",
               "O launcher baixa e instala sozinho. Os arquivos do jogo, as configurações e os saves são mantidos.");
             p("UPDATE", "ATUALIZAR");
             p("WHAT'S NEW", "NOVIDADES");
@@ -68,7 +68,7 @@ namespace AO2Launcher
             p("Downloading: {0:0.0} of {1:0.0} MB", "Baixando: {0:0.0} de {1:0.0} MB");
             p("Downloading: {0:0.0} MB", "Baixando: {0:0.0} MB");
             p("Installing: {0:0}%", "Instalando: {0:0}%");
-            p("The launcher restarts by itself when the update is installed.",
+            p("The launcher restarts automatically once the update is installed.",
               "O launcher reinicia sozinho quando a atualização for instalada.");
             p("Do not close the launcher.", "Não feche o launcher.");
             p("UPDATE FAILED", "FALHA NA ATUALIZAÇÃO");
@@ -86,18 +86,14 @@ namespace AO2Launcher
             p("INSTALL AN OLDER VERSION", "INSTALAR UMA VERSÃO ANTERIOR");
             p("Go back to {0}? You have {1}.", "Voltar para a {0}? Você tem a {1}.");
             p("AVX1 version", "Versão AVX1");
-            p("The game built for processors without AVX2 (downloaded from the release, about 25 MB), a little slower. " +
-              "Always on when the processor has no AVX2. Turn it on to play co-op with someone whose processor " +
-              "has none: both players need the same version and the same build.",
-              "O jogo compilado para processadores sem AVX2 (baixado da versão, cerca de 25 MB), um pouco mais lento. " +
-              "Sempre ativado quando o processador não tem AVX2. Ative para jogar coop com alguém cujo processador " +
-              "não tem: os dois jogadores precisam da mesma versão e da mesma build.");
+            p("A build of the game for processors without AVX2 (about 25 MB to download), slightly slower. Always on if your processor lacks AVX2. Turn it on to play co-op with someone whose processor lacks AVX2: both players need the same version and the same build.",
+              "Uma build do jogo para processadores sem AVX2 (download de cerca de 25 MB), um pouco mais lenta. Sempre ativa se o seu processador não tem AVX2. Ative para jogar coop com alguém cujo processador não tem AVX2: os dois jogadores precisam da mesma versão e da mesma build.");
             p("AVX1 BUILD", "BUILD AVX1");
             p("Download the build with AVX1 support for {0}?", "Baixar a build com suporte a AVX1 da {0}?");
-            p("For processors without AVX2 and co-op with such a player. About 25 MB.",
+            p("For processors without AVX2, and for co-op with a player whose processor lacks it. About 25 MB.",
               "Para processadores sem AVX2 e para coop com um jogador assim. Cerca de 25 MB.");
             p("YOUR PROCESSOR DOES NOT SUPPORT AVX2 INSTRUCTIONS", "SEU PROCESSADOR NÃO SUPORTA AS INSTRUÇÕES AVX2");
-            p("On such a processor the game runs only in its AVX1 build. About 25 MB.",
+            p("On this processor the game only runs in its AVX1 build. About 25 MB.",
               "Em um processador assim o jogo roda apenas na build AVX1. Cerca de 25 MB.");
             p("{0} is the newest version with the AVX1 build.", "A {0} é a versão mais recente com build AVX1.");
             p("No version has the AVX1 build yet", "Nenhuma versão tem a build AVX1 ainda");
@@ -145,7 +141,7 @@ namespace AO2Launcher
             p("Monitor", "Monitor");
             p("PRIMARY", "PRINCIPAL");
             p(" (primary)", " (principal)");
-            p("Which monitor the game opens on.", "Em qual monitor o jogo abre.");
+            p("The monitor the game opens on.", "Em qual monitor o jogo abre.");
             p("Aspect ratio", "Proporção da tela");
             p("Shape of the picture. Auto follows the window (the monitor in fullscreen), " +
               "with no black bars. 16:9 is what the console had.",
@@ -186,18 +182,18 @@ namespace AO2Launcher
               "Sombras de contato suaves nos cantos e onde os objetos se encontram. O SSAO é o mais leve, o HBAO é mais definido, " +
               "o GTAO é o mais preciso e o mais pesado.");
             p("Motion blur", "Desfoque de movimento");
-            p("Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp.",
+            p("Blur from camera movement that looks the same at any frame rate. Your character, close to the camera, stays sharp.",
               "Desfoque pelo movimento da câmera, igual em qualquer taxa de quadros. Seu personagem perto da câmera continua nítido.");
             p("Depth of field", "Profundidade de campo");
-            p("What lies far behind the point you aim at goes out of focus; the focus follows the crosshair.",
+            p("Objects far behind the point you aim at go out of focus; the focus follows the crosshair.",
               "O que está muito atrás do ponto que você mira sai de foco; o foco acompanha a mira.");
             p("Field of view", "Campo de visão");
-            p("How wide the view is on foot. The game's is 70°.", "A largura da visão a pé. A do jogo é 70°.");
+            p("Field of view on foot. The game's default is 70°.", "A largura da visão a pé. A do jogo é 70°.");
             p("Aiming zoom", "Zoom ao mirar");
-            p("How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope.",
+            p("How much aiming zooms in: 1 is the game's default, 0 is no zoom. Does not affect the sniper scope.",
               "Quanto mirar estreita a visão: 1 como no jogo, 0 nada. Não a luneta.");
             p("Camera shake", "Tremor da câmera");
-            p("How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did.",
+            p("Camera shake strength: 1 is the game's default, 0 turns it off. Bullet spread is unchanged.",
               "Quanto a visão treme: 1 como no jogo, 0 nada. As balas vão para onde iam.");
             p("Shadow resolution", "Resolução das sombras");
             p("Sharpness of shadow edges. Auto follows the render resolution (the console had 768). " +
@@ -206,19 +202,19 @@ namespace AO2Launcher
               "4096 precisa de cerca de 150 MB a mais de memória de vídeo.");
             p("LOW", "BAIXO");
             p("HIGH", "ALTO");
-            p("Sharper textures at an angle (16×). Costs almost no performance.",
+            p("Sharper textures at oblique angles (16×). Almost no performance cost.",
               "Texturas mais nítidas em ângulo (16×). Quase não custa desempenho.");
             p("Mouse aiming", "Mira com o mouse");
-            p("The mouse turns the camera directly, like in PC shooters. When off, the mouse acts as the gamepad's right stick.",
+            p("The mouse turns the camera directly, as in PC shooters. When off, the mouse emulates the gamepad's right stick.",
               "O mouse gira a câmera diretamente, como nos shooters de PC. Desligado, o mouse funciona como o analógico direito do controle.");
             p("Mouse sensitivity", "Sensibilidade do mouse");
             p("How fast the mouse turns the camera. 1.0 is 0.022° per mouse count (as in Source/Quake); the default is 2.0.",
               "Quão rápido o mouse gira a câmera. 1.0 equivale a 0.022° por contagem do mouse (como em Source/Quake); o padrão é 2.0.");
             p("Sensitivity when aiming", "Sensibilidade ao mirar");
-            p("Multiplier while aiming (right button, scopes). Turning already accounts for zoom; 1.0 feels the same as unaimed.",
+            p("Sensitivity multiplier while aiming (right button, scopes). Zoom is already compensated, so 1.0 feels the same as hip fire.",
               "Multiplicador ao mirar (botão direito, lunetas). O giro já leva o zoom em conta; 1.0 dá a mesma sensação de quando não está mirando.");
             p("Invert Y axis", "Inverter eixo Y");
-            p("Mouse up looks down (on top of the inversion setting in the game itself).",
+            p("Moving the mouse up looks down (applied on top of the game's own invert option).",
               "Mouse para cima olha para baixo (somado à inversão configurada no próprio jogo).");
             p("Aim assist", "Assistência de mira");
             p("While aiming, the camera starts on the nearest target and shots are pulled onto targets near the crosshair. " +
@@ -304,20 +300,20 @@ namespace AO2Launcher
             p("RIGHT STICK", "ANALÓGICO DIREITO");
             p("Movement (left stick)", "Movimento (analógico esquerdo)");
             p("Camera (right stick)", "Câmera (analógico direito)");
-            p("Which stick of the gamepad moves the character. Swap both to play with the sticks swapped.",
+            p("The gamepad stick that moves the character. Change both to swap the sticks.",
               "Qual analógico do controle move o personagem. Troque os dois para jogar com os analógicos invertidos.");
-            p("Which stick of the gamepad turns the camera and aims.", "Qual analógico do controle gira a câmera e mira.");
+            p("The gamepad stick that turns the camera and aims.", "Qual analógico do controle gira a câmera e mira.");
             p("Invert movement stick Y", "Inverter Y do analógico de movimento");
             p("Invert camera stick Y", "Inverter Y do analógico da câmera");
-            p("Up on the movement stick walks backwards.", "Para cima no analógico de movimento anda para trás.");
-            p("Up on the camera stick looks down (on top of the Invert Y option in the game itself).",
+            p("Pushing the movement stick up walks backwards.", "Para cima no analógico de movimento anda para trás.");
+            p("Pushing the camera stick up looks down (applied on top of the game's own Invert Y option).",
               "Para cima no analógico da câmera olha para baixo (somado à opção Inverter Y do próprio jogo).");
             p("Gamepad layout", "Layout do controle");
             p("Return every gamepad button to the console layout.", "Voltar todos os botões do controle ao layout do console.");
             p("Default gamepad layout restored", "Layout padrão do controle restaurado");
             p("Player 1 name", "Nome do jogador 1");
             p("Player 2 name", "Nome do jogador 2");
-            p("Gamertag of player 1 (up to 15 characters), the same as Network → Player name. Empty: the computer's name.",
+            p("Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty to use the computer's name.",
               "Gamertag do jogador 1 (até 15 caracteres), a mesma de Rede → Nome do jogador. Vazio: o nome do computador.");
             p("Gamertag of player 2 (up to 15 characters); their own profile and settings. " +
               "Empty: player 1's name with (1) after it.",
@@ -328,7 +324,7 @@ namespace AO2Launcher
               "No jogo: Modo Campanha → Tela dividida. Uma janela se abre: cada jogador aperta um botão no seu " +
               "dispositivo, e ele passa a ser dele. Uma tecla ou o mouse dá o teclado e o mouse; um botão de controle, esse controle.");
             p("Player name", "Nome do jogador");
-            p("The name your partner sees (up to 15 characters). Empty: the computer's name.",
+            p("The name your partner sees (up to 15 characters). Leave empty to use the computer's name.",
               "O nome que seu parceiro vê (até 15 caracteres). Vazio: o nome do computador.");
             p("Host IP", "IP do anfitrião");
             p("Leave empty: the host is found automatically on the local network or Radmin VPN. " +
@@ -347,7 +343,7 @@ namespace AO2Launcher
               "Permitir conexões de entrada para o jogo em todos os tipos de rede (o Windows trata o Radmin como pública). " +
               "Exige direitos de administrador: o Windows vai pedir confirmação. Feito uma vez nos dois PCs.");
             p("Co-op log", "Registro do coop");
-            p("Writes coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance.",
+            p("Writes coop_debug.log to the game folder to help investigate desyncs. Costs a little performance.",
               "Grava o coop_debug.log na pasta do jogo, necessário para investigar dessincronizações. Custa um pouco de desempenho.");
             p("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
               "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
@@ -361,7 +357,7 @@ namespace AO2Launcher
             p("Close the launcher", "Fechar o launcher");
             p("Close this window once the game has started.", "Fechar esta janela depois que o jogo iniciar.");
             p("Extra arguments", "Argumentos extras");
-            p("Extra command line arguments for the game, appended at the end (for advanced users).",
+            p("Extra command-line arguments appended to the game's launch (for advanced users).",
               "Argumentos extras de linha de comando para o jogo, adicionados no final (para usuários avançados).");
             p("Game folder", "Pasta do jogo");
             p("OPEN", "ABRIR");
@@ -370,10 +366,10 @@ namespace AO2Launcher
               "Abrir a pasta do jogo no Explorador de Arquivos (logs, configurações, cache de shaders).");
             p("Saves", "Saves");
             p("No saves yet: {0}", "Ainda não há saves: {0}");
-            p("The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2).",
+            p("Opens the current profile's save folder (for the main profile: Documents\\armyoftworecomp_tu2).",
               "A pasta de saves do perfil atual (a do perfil principal: Documents\\armyoftworecomp_tu2).");
             p("Game files and DLC", "Arquivos do jogo e DLC");
-            p("Install the game from your own disc image, Title Update 2, or add downloadable content (DLC).",
+            p("Install the game from your own disc image and Title Update 2, or add downloadable content (DLC).",
               "Instale o jogo a partir da sua própria imagem de disco e do Title Update 2, ou adicione conteúdo para download (DLC).");
             p("Desktop shortcut", "Atalho na área de trabalho");
             p("CREATE", "CRIAR");
@@ -383,7 +379,7 @@ namespace AO2Launcher
               "Criar na área de trabalho um atalho \"Army of Two\" que abre este launcher.");
             p("Game path", "Caminho do jogo");
             p("CHANGE", "ALTERAR");
-            p("Point to armyoftworecomp.exe by hand if the launcher is not in the game folder.",
+            p("Locate armyoftworecomp.exe manually if the launcher is not in the game folder.",
               "Indique o armyoftworecomp.exe manualmente se o launcher não estiver na pasta do jogo.");
             p("Launcher settings", "Configurações do launcher");
             p("RESET", "REDEFINIR");
@@ -394,7 +390,7 @@ namespace AO2Launcher
             p("Programs", "Programas");
             p("Set the game path first", "Defina primeiro o caminho do jogo");
             p("Done: incoming connections to the game are allowed", "Pronto: as conexões de entrada para o jogo estão permitidas");
-            p("Failed (the administrator prompt has to be confirmed)", "Falhou (o pedido de administrador precisa ser confirmado)");
+            p("Failed: the administrator prompt must be confirmed", "Falhou (o pedido de administrador precisa ser confirmado)");
             p("The game is already running", "O jogo já está em execução");
             p("Could not start the game: {0}", "Não foi possível iniciar o jogo: {0}");
             p("Host found: {0} - joining", "Anfitrião encontrado: {0} - entrando");
@@ -442,26 +438,26 @@ namespace AO2Launcher
               "Content\\0000000000000000\\454107F8\\00000002). Can be added later. In co-op both players need the same content.",
               "Opcional: os pacotes Veteran Map Pack e SSC Challenge: Versus Mode Pack 1 (no console: " +
               "Content\\0000000000000000\\454107F8\\00000002). Podem ser adicionados depois. No coop os dois jogadores precisam do mesmo conteúdo.");
-            p("Copy the chosen files. After that the game runs without the image.",
+            p("Copy the selected files. After that, the game runs without the disc image.",
               "Copiar os arquivos escolhidos. Depois disso o jogo roda sem a imagem.");
             p("Checking the game version", "Verificando a versão do jogo");
             p("Copying the game files", "Copiando os arquivos do jogo");
             p("Extracting the game", "Extraindo o jogo");
             p("{0} is missing from the game folder", "{0} não está na pasta do jogo");
-            p("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)",
+            p("the processor is too old: SSE4.2 is required (1st-gen Intel Core i / AMD FX or newer)",
               "o processador é antigo demais: é necessário SSE4.2 (Intel Core i 1ª geração / AMD FX ou mais recente)");
             p("not an Xbox 360 disc image or a TU / DLC package", "não é uma imagem de disco do Xbox 360 nem um pacote de TU / DLC");
             p("the disc image is damaged", "a imagem de disco está danificada");
             p("the package is damaged", "o pacote está danificado");
             p("file not found", "arquivo não encontrado");
-            p("This folder has no extracted game (default.xex and AO2Game)",
+            p("This folder does not contain an extracted game (default.xex and AO2Game)",
               "Esta pasta não tem o jogo extraído (default.xex e AO2Game)");
             p("{0}: no game on this disc (default.xex)", "{0}: não há jogo neste disco (default.xex)");
             p("{0}: this package belongs to another game ({1})", "{0}: este pacote é de outro jogo ({1})");
             p("Not enough space on {0}: {1} needed, {2} free", "Espaço insuficiente em {0}: {1} necessários, {2} livres");
-            p("This version of the game is not supported: the European release of Army of Two for Xbox 360 is needed (4541084C)",
+            p("This version of the game is not supported: the European release of Army of Two for Xbox 360 is required (4541084C)",
               "Esta versão do jogo não é compatível: é necessária a versão europeia de Army of Two para Xbox 360 (4541084C)");
-            p("This is a different update: Title Update 2 of the European release is needed (TU_12K222C_…)",
+            p("This is the wrong update: Title Update 2 of the European release is required (TU_12K222C_…)",
               "Esta é outra atualização: é necessário o Title Update 2 da versão europeia (TU_12K222C_…)");
             p("The game files are not installed: choose a game image",
               "Os arquivos do jogo não estão instalados: escolha uma imagem do jogo");
@@ -512,12 +508,12 @@ namespace AO2Launcher
             p("none yet", "nenhum ainda");
             p("Last checkpoint: {0}", "Último checkpoint: {0}");
             p("Money: {0}", "Dinheiro: {0}");
-            p("The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; the downloadable content is shared.",
+            p("The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; downloadable content is shared.",
               "O perfil com que o jogo inicia. Cada perfil tem seus próprios saves, configurações do jogo, dinheiro e itens liberados; o conteúdo para download é compartilhado.");
             p("New profile name", "Nome do novo perfil");
-            p("The name of a new profile. Empty: the suggested one.", "O nome de um novo perfil. Vazio: o sugerido.");
+            p("Name for a new profile. Leave empty to use the suggested one.", "O nome de um novo perfil. Vazio: o sugerido.");
             p("Create profile", "Criar perfil");
-            p("Create an empty profile with the name above and switch to it. The game starts it from the beginning.",
+            p("Create a new profile with the name above and switch to it. The game starts it from scratch.",
               "Criar um perfil vazio com o nome acima e mudar para ele. O jogo começa nele do início.");
             p("Delete profile", "Excluir perfil");
             p("Delete the current profile with all its saves. The main profile cannot be deleted.",

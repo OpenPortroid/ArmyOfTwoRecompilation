@@ -64,6 +64,7 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <atomic>
 #include <bit>
 #include <cmath>
 #include <cstdio>
@@ -1538,9 +1539,40 @@ namespace
   }
 } // namespace
 
+namespace ao2::versus_lobby
+{
+  void SetupHint(); // versus_lobby.cpp
+}
+
 namespace ao2::menumouse
 {
   void Attach(rex::ui::Window *window) { g_window = window; }
+
+  std::atomic<int> g_versus_menu{0};
+  int VersusMenu() { return g_versus_menu.load(std::memory_order_relaxed); }
+
+  // The versus menu among the scenes; Game Setup shows its hint when it comes.
+  void NoteVersusMenu(const uint8_t *base, const std::vector<uint32_t> &scenes)
+  {
+    int menu = 0;
+    for (uint32_t scene : scenes)
+    {
+      std::string name = ao2::ue3::ObjectName(base, scene);
+      if (name.rfind("MPReadyRoomScene", 0) == 0)
+      {
+        menu = 2;
+        break;
+      }
+      if (name.rfind("MPLobbyHostScene", 0) == 0)
+      {
+        menu = 1;
+      }
+    }
+    if (g_versus_menu.exchange(menu, std::memory_order_relaxed) != menu && menu == 1)
+    {
+      ao2::versus_lobby::SetupHint();
+    }
+  }
 
   // UIScreenObject::SetFocus (sub_829A3DA8) not from here: the ready room
   // moves the focus to the host's slot when a character picked there comes
@@ -1609,6 +1641,7 @@ namespace ao2::menumouse
     {
       ao2::aspect::FitUiScene(base, s);
     }
+    NoteVersusMenu(base, scenes);
     if (keyboard)
     {
       PollUiDump(base, scenes);
@@ -1664,8 +1697,9 @@ namespace ao2::menumouse
       // they are bound to (Esc is Start, the pause menu). Decided when one
       // is pressed: the Esc that opened the pause menu stays Start until let go.
       bool front = GameInFront();
-      bool enter = front && (GetAsyncKeyState(VK_RETURN) & 0x8000);
-      bool esc = front && (GetAsyncKeyState(VK_ESCAPE) & 0x8000);
+      // Not one pressed in a window of ours (the Esc that closed it).
+      bool enter = front && (GetAsyncKeyState(VK_RETURN) & 0x8000) && !ao2::menu::HeldFromMenu(VK_RETURN);
+      bool esc = front && (GetAsyncKeyState(VK_ESCAPE) & 0x8000) && !ao2::menu::HeldFromMenu(VK_ESCAPE);
       if ((enter && !g_enter) || (esc && !g_esc))
       {
         bool menu = KeysMenu(base, scenes);

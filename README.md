@@ -103,7 +103,7 @@ and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind
   players found on the network (also the F1 menu's Invites tab); the partner accepts the invite with F6. It keeps
   checkpoints, so you can continue the game later.
 - Find a game: Campaign Mode → Search Co-op Game opens the list of public games (host, mission, difficulty,
-  players, ping): join one, Quick Join the one with the lowest ping, or create your own. Versus' Quick Match opens
+  players, ping): join one, Quick Join the one with the lowest ping, or create your own. Versus' Find Match (the disc's Quick Match) opens
   the same list of matches. Without Steam both run the game's own search.
 - Both players need the same version of the port (both on the AVX1 version if one of them has no AVX2), the same
   DLC and the same game language.

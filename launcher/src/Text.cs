@@ -97,14 +97,14 @@ namespace AO2Launcher
               "Profil {0} : {1} sur {2} débloqués, {3} sur {4} G", "Profil {0}: {1} von {2} freigeschaltet, {3} von {4} G",
               "Perfil {0}: {1} de {2} desbloqueados, {3} de {4} G", "Profilo {0}: {1} di {2} sbloccati, {3} di {4} G");
             a("Unlock notices", "Уведомления о достижениях", "Notifications de succès", "Erfolgsbenachrichtigungen", "Avisos de logros", "Notifiche degli obiettivi");
-            a("Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently.",
-              "Показывать в игре уведомление со звуком при получении достижения. Если выключено, достижения все равно открываются, но молча.",
+            a("Show an in-game notice with a sound when an achievement unlocks. When off, achievements still unlock, just silently.",
+              "Показывать в игре уведомление со звуком при получении достижения. Если выключено, достижения всё равно открываются, но без уведомления.",
               "Afficher une notification sonore dans le jeu quand un succès est débloqué. Désactivé : les succès se débloquent quand même, en silence.",
               "Im Spiel eine Meldung mit Ton zeigen, wenn ein Erfolg freigeschaltet wird. Aus: Erfolge werden trotzdem freigeschaltet, nur still.",
               "Mostrar un aviso con sonido en el juego al desbloquear un logro. Desactivado: los logros se desbloquean igual, en silencio.",
               "Mostra nel gioco una notifica con suono quando si sblocca un obiettivo. Disattivato: gli obiettivi si sbloccano comunque, in silenzio.");
             a("Reset achievements", "Сбросить достижения", "Réinitialiser les succès", "Erfolge zurücksetzen", "Restablecer logros", "Azzera obiettivi");
-            a("Lock every achievement of the current profile again. Saves and progress in the game are not changed.",
+            a("Re-lock every achievement of the current profile. Saves and game progress stay as they are.",
               "Снова закрыть все достижения текущего профиля. Сохранения и прогресс в игре не меняются.",
               "Verrouiller à nouveau tous les succès du profil actuel. Les sauvegardes et la progression ne changent pas.",
               "Alle Erfolge des aktuellen Profils wieder sperren. Spielstände und Fortschritt bleiben unverändert.",
@@ -121,7 +121,7 @@ namespace AO2Launcher
             a("Could not reset the achievements", "Не удалось сбросить достижения", "Impossible de réinitialiser les succès",
               "Erfolge konnten nicht zurückgesetzt werden", "No se pudieron restablecer los logros", "Impossibile azzerare gli obiettivi");
             a("Earned {0}", "Получено {0}", "Obtenu le {0}", "Erhalten am {0}", "Conseguido el {0}", "Ottenuto il {0}");
-            a("The list of achievements comes from the game's files: start the game once to see it here.",
+            a("The achievement list is read from the game's files. Start the game once to see it here.",
               "Список достижений берется из файлов игры: запустите игру один раз, чтобы он появился здесь.",
               "La liste des succès vient des fichiers du jeu : lancez le jeu une fois pour la voir ici.",
               "Die Liste der Erfolge stammt aus den Spieldateien: Starte das Spiel einmal, um sie hier zu sehen.",
@@ -162,7 +162,7 @@ namespace AO2Launcher
               "Version {0} ist erschienen, Sie haben {1}. Jetzt aktualisieren?",
               "Ya está disponible la versión {0}; tienes la {1}. ¿Actualizar ahora?",
               "È uscita la versione {0}, hai la {1}. Aggiornare ora?");
-            a("The launcher downloads and installs it by itself. Your game files, settings and saves are kept.",
+            a("The launcher downloads and installs it automatically. Your game files, settings and saves are kept.",
               "Лаунчер сам скачает и установит её. Файлы игры, настройки и сохранения останутся.",
               "Le lanceur la télécharge et l'installe lui-même. Fichiers du jeu, paramètres et sauvegardes sont conservés.",
               "Der Launcher lädt und installiert sie selbst. Spieldateien, Einstellungen und Spielstände bleiben erhalten.",
@@ -181,7 +181,7 @@ namespace AO2Launcher
               "Descargando: {0:0.0} MB", "Download: {0:0.0} MB");
             a("Installing: {0:0}%", "Установка: {0:0}%", "Installation : {0:0} %", "Installation: {0:0} %", "Instalando: {0:0} %",
               "Installazione: {0:0}%");
-            a("The launcher restarts by itself when the update is installed.",
+            a("The launcher restarts automatically once the update is installed.",
               "Когда обновление установится, лаунчер перезапустится сам.",
               "Le lanceur redémarre de lui-même une fois la mise à jour installée.",
               "Der Launcher startet nach der Installation von selbst neu.",
@@ -218,29 +218,17 @@ namespace AO2Launcher
 
             // --- The AVX1 build (the game for processors without AVX2) ---
             a("AVX1 version", "Версия AVX1", "Version AVX1", "AVX1-Version", "Versión AVX1", "Versione AVX1");
-            a("The game built for processors without AVX2 (downloaded from the release, about 25 MB), a little slower. " +
-              "Always on when the processor has no AVX2. Turn it on to play co-op with someone whose processor " +
-              "has none: both players need the same version and the same build.",
-              "Игра, собранная для процессоров без AVX2 (скачивается из релиза, около 25 МБ), немного медленнее. " +
-              "Всегда включена, если у процессора нет AVX2. Включите, чтобы играть в кооп с тем, у кого такой процессор: " +
-              "у обоих игроков должны быть одна версия и одна сборка.",
-              "Le jeu compilé pour les processeurs sans AVX2 (téléchargé depuis la version, environ 25 Mo), un peu plus lent. " +
-              "Toujours activé si le processeur n'a pas l'AVX2. Activez-le pour jouer en coop avec quelqu'un dont le processeur " +
-              "ne l'a pas : les deux joueurs doivent avoir la même version et la même compilation.",
-              "Das Spiel für Prozessoren ohne AVX2 (wird aus dem Release geladen, etwa 25 MB), etwas langsamer. " +
-              "Immer an, wenn der Prozessor kein AVX2 hat. Einschalten, um im Koop mit jemandem zu spielen, dessen Prozessor " +
-              "es nicht hat: beide Spieler brauchen dieselbe Version und denselben Build.",
-              "El juego compilado para procesadores sin AVX2 (se descarga de la versión, unos 25 MB), algo más lento. " +
-              "Siempre activado si el procesador no tiene AVX2. Actívalo para jugar en cooperativo con alguien cuyo procesador " +
-              "no lo tiene: ambos jugadores necesitan la misma versión y la misma compilación.",
-              "Il gioco compilato per processori senza AVX2 (scaricato dalla versione, circa 25 MB), un po' più lento. " +
-              "Sempre attivo se il processore non ha AVX2. Attivalo per giocare in cooperativa con chi ha un processore " +
-              "senza: entrambi i giocatori devono avere la stessa versione e la stessa build.");
+            a("A build of the game for processors without AVX2 (about 25 MB to download), slightly slower. Always on if your processor lacks AVX2. Turn it on to play co-op with someone whose processor lacks AVX2: both players need the same version and the same build.",
+              "Сборка игры для процессоров без AVX2 (загрузка около 25 МБ), работает чуть медленнее. Всегда включена, если у вашего процессора нет AVX2. Включите, чтобы играть в кооп с тем, у чьего процессора нет AVX2: у обоих игроков должны совпадать версия и сборка.",
+              "Une version du jeu pour les processeurs sans AVX2 (environ 25 Mo à télécharger), un peu plus lente. Toujours activée si votre processeur n'a pas l'AVX2. Activez-la pour jouer en coop avec quelqu'un dont le processeur n'a pas l'AVX2 : les deux joueurs doivent avoir la même version et la même compilation.",
+              "Ein Build des Spiels für Prozessoren ohne AVX2 (etwa 25 MB Download), etwas langsamer. Immer an, wenn dein Prozessor kein AVX2 hat. Schalte ihn ein, um Koop mit jemandem zu spielen, dessen Prozessor kein AVX2 hat: Beide Spieler brauchen dieselbe Version und denselben Build.",
+              "Una compilación del juego para procesadores sin AVX2 (unos 25 MB de descarga), algo más lenta. Siempre activada si tu procesador no tiene AVX2. Actívala para jugar en cooperativo con alguien cuyo procesador no tenga AVX2: ambos jugadores necesitan la misma versión y la misma compilación.",
+              "Una build del gioco per processori senza AVX2 (circa 25 MB da scaricare), un po' più lenta. Sempre attiva se il tuo processore non ha AVX2. Attivala per giocare in cooperativa con chi ha un processore senza AVX2: entrambi i giocatori devono avere la stessa versione e la stessa build.");
             a("AVX1 BUILD", "СБОРКА AVX1", "VERSION AVX1", "AVX1-BUILD", "VERSIÓN AVX1", "BUILD AVX1");
             a("Download the build with AVX1 support for {0}?", "Скачать сборку с поддержкой AVX1 для {0}?", "Télécharger la version compatible AVX1 de la {0} ?",
               "Den Build mit AVX1-Unterstützung für {0} herunterladen?", "¿Descargar la versión compatible con AVX1 de la {0}?", "Scaricare la build con supporto AVX1 della {0}?");
-            a("For processors without AVX2 and co-op with such a player. About 25 MB.",
-              "Для процессоров без AVX2 и для коопа с таким игроком. Около 25 МБ.",
+            a("For processors without AVX2, and for co-op with a player whose processor lacks it. About 25 MB.",
+              "Для процессоров без AVX2 и для коопа с игроком, у чьего процессора его нет. Около 25 МБ.",
               "Pour les processeurs sans AVX2 et la coop avec un tel joueur. Environ 25 Mo.",
               "Für Prozessoren ohne AVX2 und Koop mit so einem Spieler. Etwa 25 MB.",
               "Para procesadores sin AVX2 y el cooperativo con un jugador así. Unos 25 MB.",
@@ -248,8 +236,8 @@ namespace AO2Launcher
             a("YOUR PROCESSOR DOES NOT SUPPORT AVX2 INSTRUCTIONS", "ВАШ ПРОЦЕССОР НЕ ПОДДЕРЖИВАЕТ ИНСТРУКЦИИ AVX2",
               "VOTRE PROCESSEUR NE PREND PAS EN CHARGE L'AVX2", "IHR PROZESSOR UNTERSTÜTZT KEIN AVX2",
               "TU PROCESADOR NO ADMITE AVX2", "IL TUO PROCESSORE NON SUPPORTA AVX2");
-            a("On such a processor the game runs only in its AVX1 build. About 25 MB.",
-              "На таком процессоре игра работает только в сборке AVX1. Около 25 МБ.",
+            a("On this processor the game only runs in its AVX1 build. About 25 MB.",
+              "На этом процессоре игра работает только в сборке AVX1. Около 25 МБ.",
               "Sur ce processeur, le jeu ne fonctionne que dans sa version AVX1. Environ 25 Mo.",
               "Auf so einem Prozessor läuft das Spiel nur im AVX1-Build. Etwa 25 MB.",
               "En un procesador así el juego solo funciona con su versión AVX1. Unos 25 MB.",
@@ -344,7 +332,7 @@ namespace AO2Launcher
             a("Monitor", "Монитор", "Moniteur", "Monitor", "Monitor", "Monitor");
             a("PRIMARY", "ОСНОВНОЙ", "PRINCIPAL", "PRIMÄR", "PRINCIPAL", "PRINCIPALE");
             a(" (primary)", " (основной)", " (principal)", " (primär)", " (principal)", " (principale)");
-            a("Which monitor the game opens on.", "На каком мониторе открывается игра.", "Le moniteur sur lequel le jeu s'ouvre.",
+            a("The monitor the game opens on.", "На каком мониторе открывается игра.", "Le moniteur sur lequel le jeu s'ouvre.",
               "Auf welchem Monitor das Spiel startet.", "En qué monitor se abre el juego.", "Su quale monitor si apre il gioco.");
             a("Aspect ratio", "Соотношение сторон", "Format d'image", "Seitenverhältnis", "Relación de aspecto", "Proporzioni");
             a("Shape of the picture. Auto follows the window (the monitor in fullscreen), " +
@@ -450,7 +438,7 @@ namespace AO2Launcher
               "marcato, GTAO il più preciso e il più pesante.");
             a("Motion blur", "Размытие в движении", "Flou de mouvement", "Bewegungsunschärfe", "Desenfoque de movimiento",
               "Sfocatura di movimento");
-            a("Blur from camera movement, the same at any frame rate. Your character close to the camera stays sharp.",
+            a("Blur from camera movement that looks the same at any frame rate. Your character, close to the camera, stays sharp.",
               "Размытие от движения камеры, одинаковое при любой частоте кадров. Ваш персонаж рядом с камерой остаётся чётким.",
               "Flou dû au mouvement de la caméra, identique à toute fréquence d'images. Votre personnage près de la " +
               "caméra reste net.",
@@ -461,26 +449,26 @@ namespace AO2Launcher
               "telecamera resta nitido.");
             a("Depth of field", "Глубина резкости", "Profondeur de champ", "Tiefenschärfe", "Profundidad de campo",
               "Profondità di campo");
-            a("What lies far behind the point you aim at goes out of focus; the focus follows the crosshair.",
+            a("Objects far behind the point you aim at go out of focus; the focus follows the crosshair.",
               "То, что далеко позади точки прицеливания, уходит из фокуса; фокус следует за прицелом.",
               "Ce qui est loin derrière le point visé devient flou ; la mise au point suit le réticule.",
               "Was weit hinter dem Zielpunkt liegt, wird unscharf; der Fokus folgt dem Fadenkreuz.",
               "Lo que queda muy por detrás del punto al que apuntas se desenfoca; el enfoque sigue a la mira.",
               "Ciò che sta molto dietro il punto mirato va fuori fuoco; la messa a fuoco segue il mirino.");
             a("Field of view", "Поле зрения", "Champ de vision", "Sichtfeld", "Campo de visión", "Campo visivo");
-            a("How wide the view is on foot. The game's is 70°.", "Ширина обзора пешком. В игре 70°.",
+            a("Field of view on foot. The game's default is 70°.", "Поле зрения пешком. В оригинале 70°.",
               "La largeur de la vue à pied. Celle du jeu : 70°.", "Wie weit die Sicht zu Fuß ist. Im Spiel 70°.",
               "La amplitud de la vista a pie. La del juego es 70°.", "Ampiezza della visuale a piedi. Quella del gioco è 70°.");
             a("Aiming zoom", "Сужение при прицеливании", "Zoom en visant", "Zoom beim Zielen", "Zoom al apuntar", "Zoom mirando");
-            a("How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope.",
-              "Насколько прицеливание сужает обзор: 1 как в игре, 0 совсем нет. Снайперский прицел не меняется.",
+            a("How much aiming zooms in: 1 is the game's default, 0 is no zoom. Does not affect the sniper scope.",
+              "Насколько прицеливание приближает обзор: 1 как в игре, 0 без приближения. На снайперский прицел не влияет.",
               "À quel point viser rétrécit la vue : 1 comme le jeu, 0 pas du tout. Pas la lunette.",
               "Wie stark Zielen die Sicht verengt: 1 wie im Spiel, 0 gar nicht. Nicht das Zielfernrohr.",
               "Cuánto estrecha la vista apuntar: 1 como en el juego, 0 nada. No la mira telescópica.",
               "Quanto mirare restringe la visuale: 1 come nel gioco, 0 per niente. Non il mirino.");
             a("Camera shake", "Тряска камеры", "Tremblement de la caméra", "Kamerawackeln", "Temblor de cámara", "Tremolio della telecamera");
-            a("How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did.",
-              "Насколько трясётся вид: 1 как в игре, 0 совсем нет. Пули летят туда же, куда и раньше.",
+            a("Camera shake strength: 1 is the game's default, 0 turns it off. Bullet spread is unchanged.",
+              "Сила тряски камеры: 1 как в игре, 0 без тряски. Разброс пуль не меняется.",
               "À quel point la vue tremble : 1 comme le jeu, 0 pas du tout. Les balles vont au même endroit.",
               "Wie stark die Sicht wackelt: 1 wie im Spiel, 0 gar nicht. Die Kugeln fliegen wie zuvor.",
               "Cuánto tiembla la vista: 1 como en el juego, 0 nada. Las balas van al mismo sitio.",
@@ -501,7 +489,7 @@ namespace AO2Launcher
               "4096 richiede circa 150 MB di memoria video in più.");
             a("LOW", "НИЗКО", "FAIBLE", "NIEDRIG", "BAJO", "BASSO");
             a("HIGH", "ВЫСОКО", "ÉLEVÉ", "HOCH", "ALTO", "ALTO");
-            a("Sharper textures at an angle (16×). Costs almost no performance.",
+            a("Sharper textures at oblique angles (16×). Almost no performance cost.",
               "Чёткие текстуры под углом (16×). Почти не влияет на производительность.",
               "Textures plus nettes en biais (16×). Ne coûte presque rien en performances.",
               "Schärfere Texturen in Schräglage (16×). Kostet kaum Leistung.",
@@ -511,7 +499,7 @@ namespace AO2Launcher
             // --- Controls ---
             a("Mouse aiming", "Прицеливание мышью", "Visée à la souris", "Zielen mit der Maus", "Apuntar con el ratón",
               "Mira con il mouse");
-            a("The mouse turns the camera directly, like in PC shooters. When off, the mouse acts as the gamepad's right stick.",
+            a("The mouse turns the camera directly, as in PC shooters. When off, the mouse emulates the gamepad's right stick.",
               "Мышь поворачивает камеру напрямую, как в шутерах на ПК. Если выключено, мышь работает как правый стик геймпада.",
               "La souris tourne directement la caméra, comme dans les jeux de tir sur PC. Désactivé, la souris agit " +
               "comme le stick droit de la manette.",
@@ -534,7 +522,7 @@ namespace AO2Launcher
               "Source/Quake); il predefinito è 2.0.");
             a("Sensitivity when aiming", "Чувствительность при прицеливании", "Sensibilité en visée",
               "Empfindlichkeit beim Zielen", "Sensibilidad al apuntar", "Sensibilità in mira");
-            a("Multiplier while aiming (right button, scopes). Turning already accounts for zoom; 1.0 feels the same as unaimed.",
+            a("Sensitivity multiplier while aiming (right button, scopes). Zoom is already compensated, so 1.0 feels the same as hip fire.",
               "Множитель при прицеливании (правая кнопка, оптика). Поворот уже учитывает зум; 1.0 ощущается так же, " +
               "как без прицеливания.",
               "Multiplicateur en visée (bouton droit, lunettes). La rotation tient déjà compte du zoom ; 1.0 donne la " +
@@ -546,7 +534,7 @@ namespace AO2Launcher
               "Moltiplicatore durante la mira (tasto destro, mirini). La rotazione tiene già conto dello zoom; 1.0 si " +
               "sente come senza mirare.");
             a("Invert Y axis", "Инверсия оси Y", "Inverser l'axe Y", "Y-Achse umkehren", "Invertir eje Y", "Inverti asse Y");
-            a("Mouse up looks down (on top of the inversion setting in the game itself).",
+            a("Moving the mouse up looks down (applied on top of the game's own invert option).",
               "Мышь вверх — взгляд вниз (поверх настройки инверсии в самой игре).",
               "Souris vers le haut = regard vers le bas (en plus du réglage d'inversion du jeu).",
               "Maus nach oben blickt nach unten (zusätzlich zur Invertierung im Spiel selbst).",
@@ -717,23 +705,23 @@ namespace AO2Launcher
               "Movimiento (stick izquierdo)", "Movimento (levetta sinistra)");
             a("Camera (right stick)", "Камера (правый стик)", "Caméra (stick droit)", "Kamera (rechter Stick)",
               "Cámara (stick derecho)", "Telecamera (levetta destra)");
-            a("Which stick of the gamepad moves the character. Swap both to play with the sticks swapped.",
-              "Какой стик геймпада двигает персонажа. Поменяйте оба, чтобы играть с переставленными стиками.",
+            a("The gamepad stick that moves the character. Change both to swap the sticks.",
+              "Стик геймпада, которым двигается персонаж. Поменяйте оба, чтобы переставить стики местами.",
               "Quel stick de la manette déplace le personnage. Échangez les deux pour jouer avec les sticks inversés.",
               "Welcher Stick des Controllers die Figur bewegt. Beide tauschen, um mit vertauschten Sticks zu spielen.",
               "Qué stick del mando mueve al personaje. Cambia los dos para jugar con los sticks intercambiados.",
               "Quale levetta del controller muove il personaggio. Scambia entrambe per giocare con le levette invertite.");
-            a("Which stick of the gamepad turns the camera and aims.", "Какой стик геймпада поворачивает камеру и целится.",
+            a("The gamepad stick that turns the camera and aims.", "Стик геймпада, которым поворачивается камера и ведётся прицеливание.",
               "Quel stick de la manette tourne la caméra et vise.", "Welcher Stick des Controllers die Kamera dreht und zielt.",
               "Qué stick del mando gira la cámara y apunta.", "Quale levetta del controller gira la telecamera e mira.");
             a("Invert movement stick Y", "Инверсия Y стика движения", "Inverser l'axe Y du déplacement", "Bewegungsstick Y umkehren",
               "Invertir eje Y del movimiento", "Inverti asse Y del movimento");
             a("Invert camera stick Y", "Инверсия Y стика камеры", "Inverser l'axe Y de la caméra", "Kamerastick Y umkehren",
               "Invertir eje Y de la cámara", "Inverti asse Y della telecamera");
-            a("Up on the movement stick walks backwards.", "Стик движения вверх — идти назад.",
+            a("Pushing the movement stick up walks backwards.", "Стик движения вверх — идти назад.",
               "Pousser le stick de déplacement vers le haut fait reculer.", "Bewegungsstick nach oben geht rückwärts.",
               "Arriba en el stick de movimiento camina hacia atrás.", "Su sulla levetta di movimento cammina all'indietro.");
-            a("Up on the camera stick looks down (on top of the Invert Y option in the game itself).",
+            a("Pushing the camera stick up looks down (applied on top of the game's own Invert Y option).",
               "Стик камеры вверх — взгляд вниз (поверх настройки инверсии Y в самой игре).",
               "Pousser le stick de caméra vers le haut fait regarder en bas (en plus de l'option Inverser Y du jeu).",
               "Kamerastick nach oben sieht nach unten (zusätzlich zur Option Y umkehren im Spiel).",
@@ -750,8 +738,8 @@ namespace AO2Launcher
               "Disposizione del controller ripristinata");
             a("Player 1 name", "Имя игрока 1", "Nom du joueur 1", "Name von Spieler 1", "Nombre del jugador 1", "Nome giocatore 1");
             a("Player 2 name", "Имя игрока 2", "Nom du joueur 2", "Name von Spieler 2", "Nombre del jugador 2", "Nome giocatore 2");
-            a("Gamertag of player 1 (up to 15 characters), the same as Network → Player name. Empty: the computer's name.",
-              "Геймертег игрока 1 (до 15 символов), то же, что «Сеть → Имя игрока». Пусто — имя компьютера.",
+            a("Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty to use the computer's name.",
+              "Геймертег игрока 1 (до 15 символов), то же, что «Сеть → Имя игрока». Если пусто — имя компьютера.",
               "Gamertag du joueur 1 (15 caractères max.), le même que Réseau → Nom du joueur. Vide : le nom de l'ordinateur.",
               "Gamertag von Spieler 1 (bis 15 Zeichen), wie Netzwerk → Spielername. Leer: der Name des Computers.",
               "Gamertag del jugador 1 (hasta 15 caracteres), el mismo que Red → Nombre del jugador. Vacío: el nombre del PC.",
@@ -783,8 +771,8 @@ namespace AO2Launcher
 
             // --- Network ---
             a("Player name", "Имя игрока", "Nom du joueur", "Spielername", "Nombre del jugador", "Nome giocatore");
-            a("The name your partner sees (up to 15 characters). Empty: the computer's name.",
-              "Имя, которое видит напарник (до 15 символов). Пусто — имя компьютера.",
+            a("The name your partner sees (up to 15 characters). Leave empty to use the computer's name.",
+              "Имя, которое видит напарник (до 15 символов). Если пусто — имя компьютера.",
               "Le nom que voit votre partenaire (15 caractères max.). Vide : le nom de l'ordinateur.",
               "Der Name, den dein Partner sieht (bis zu 15 Zeichen). Leer: der Name des Computers.",
               "El nombre que ve tu compañero (hasta 15 caracteres). Vacío: el nombre del equipo.",
@@ -833,8 +821,8 @@ namespace AO2Launcher
               "Consenti le connessioni in entrata al gioco su ogni tipo di rete (Windows considera Radmin pubblica). " +
               "Servono i diritti di amministratore: Windows chiederà conferma. Va fatto una volta su entrambi i PC.");
             a("Co-op log", "Лог кооператива", "Journal coop", "Koop-Protokoll", "Registro cooperativo", "Registro cooperativa");
-            a("Writes coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance.",
-              "Пишет coop_debug.log в папку игры — нужен для разбора рассинхронов. Немного снижает производительность.",
+            a("Writes coop_debug.log to the game folder to help investigate desyncs. Costs a little performance.",
+              "Записывает coop_debug.log в папку игры для разбора рассинхронов. Немного снижает производительность.",
               "Écrit coop_debug.log dans le dossier du jeu, utile pour analyser les désynchronisations. Coûte un peu " +
               "de performances.",
               "Schreibt coop_debug.log in den Spielordner, nötig zur Untersuchung von Desyncs. Kostet etwas Leistung.",
@@ -879,7 +867,7 @@ namespace AO2Launcher
               "Cerrar esta ventana cuando el juego se haya iniciado.", "Chiudi questa finestra dopo l'avvio del gioco.");
             a("Extra arguments", "Доп. аргументы", "Arguments en plus", "Zusätzliche Argumente", "Argumentos extra",
               "Argomenti extra");
-            a("Extra command line arguments for the game, appended at the end (for advanced users).",
+            a("Extra command-line arguments appended to the game's launch (for advanced users).",
               "Дополнительные аргументы командной строки игры, добавляются в конец (для опытных).",
               "Arguments de ligne de commande supplémentaires pour le jeu, ajoutés à la fin (utilisateurs avancés).",
               "Zusätzliche Kommandozeilenargumente für das Spiel, am Ende angehängt (für Fortgeschrittene).",
@@ -898,15 +886,15 @@ namespace AO2Launcher
             a("Saves", "Сохранения", "Sauvegardes", "Spielstände", "Partidas guardadas", "Salvataggi");
             a("No saves yet: {0}", "Сохранений пока нет: {0}", "Pas encore de sauvegardes : {0}", "Noch keine Spielstände: {0}",
               "Aún no hay partidas guardadas: {0}", "Ancora nessun salvataggio: {0}");
-            a("The folder of the current profile's saves (the main profile's: Documents\\armyoftworecomp_tu2).",
-              "Папка сохранений текущего профиля (основного: Documents\\armyoftworecomp_tu2).",
+            a("Opens the current profile's save folder (for the main profile: Documents\\armyoftworecomp_tu2).",
+              "Открыть папку сохранений текущего профиля (у основного: Documents\\armyoftworecomp_tu2).",
               "Le dossier des sauvegardes du profil actuel (celui du profil principal : Documents\\armyoftworecomp_tu2).",
               "Der Ordner mit den Spielständen des aktuellen Profils (beim Hauptprofil: Documents\\armyoftworecomp_tu2).",
               "La carpeta de partidas del perfil actual (la del perfil principal: Documents\\armyoftworecomp_tu2).",
               "La cartella dei salvataggi del profilo attuale (quella del profilo principale: Documents\\armyoftworecomp_tu2).");
             a("Game files and DLC", "Файлы игры и DLC", "Fichiers du jeu et DLC", "Spieldateien und DLC",
               "Archivos del juego y DLC", "File del gioco e DLC");
-            a("Install the game from your own disc image, Title Update 2, or add downloadable content (DLC).",
+            a("Install the game from your own disc image and Title Update 2, or add downloadable content (DLC).",
               "Установить игру со своего образа диска и Title Update 2 или добавить загружаемый контент (DLC).",
               "Installer le jeu depuis votre propre image disque et le Title Update 2, ou ajouter du contenu " +
               "téléchargeable (DLC).",
@@ -928,7 +916,7 @@ namespace AO2Launcher
               "Crea sul desktop un collegamento «Army of Two» che avvia questo launcher.");
             a("Game path", "Путь к игре", "Chemin du jeu", "Spielpfad", "Ruta del juego", "Percorso del gioco");
             a("CHANGE", "ИЗМЕНИТЬ", "CHANGER", "ÄNDERN", "CAMBIAR", "CAMBIA");
-            a("Point to armyoftworecomp.exe by hand if the launcher is not in the game folder.",
+            a("Locate armyoftworecomp.exe manually if the launcher is not in the game folder.",
               "Указать armyoftworecomp.exe вручную, если лаунчер лежит не в папке игры.",
               "Indiquer armyoftworecomp.exe manuellement si le lanceur n'est pas dans le dossier du jeu.",
               "armyoftworecomp.exe von Hand wählen, wenn der Launcher nicht im Spielordner liegt.",
@@ -957,7 +945,7 @@ namespace AO2Launcher
               "Fertig: Eingehende Verbindungen zum Spiel sind zugelassen",
               "Hecho: se permiten las conexiones entrantes al juego",
               "Fatto: le connessioni in entrata al gioco sono consentite");
-            a("Failed (the administrator prompt has to be confirmed)", "Не вышло (нужно подтвердить запрос администратора)",
+            a("Failed: the administrator prompt must be confirmed", "Не удалось: нужно подтвердить запрос администратора",
               "Échec (la demande d'administrateur doit être confirmée)",
               "Fehlgeschlagen (die Administratorabfrage muss bestätigt werden)",
               "Error (hay que confirmar la solicitud de administrador)",
@@ -1072,7 +1060,7 @@ namespace AO2Launcher
               "Facoltativo: i pacchetti Veteran Map Pack e SSC Challenge: Versus Mode Pack 1 (sulla console: " +
               "Content\\0000000000000000\\454107F8\\00000002). Si possono aggiungere dopo. In cooperativa entrambi i " +
               "giocatori devono avere gli stessi contenuti.");
-            a("Copy the chosen files. After that the game runs without the image.",
+            a("Copy the selected files. After that, the game runs without the disc image.",
               "Скопировать выбранные файлы. После этого игра работает без образа.",
               "Copier les fichiers choisis. Ensuite, le jeu fonctionne sans l'image.",
               "Die gewählten Dateien kopieren. Danach läuft das Spiel ohne das Image.",
@@ -1088,7 +1076,7 @@ namespace AO2Launcher
             // --- Installation errors ---
             a("{0} is missing from the game folder", "{0} нет в папке игры", "{0} est absent du dossier du jeu",
               "{0} fehlt im Spielordner", "Falta {0} en la carpeta del juego", "{0} manca nella cartella del gioco");
-            a("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)",
+            a("the processor is too old: SSE4.2 is required (1st-gen Intel Core i / AMD FX or newer)",
               "процессор слишком старый: нужен SSE4.2 (Intel Core i первого поколения / AMD FX и новее)",
               "processeur trop ancien : SSE4.2 requis (Intel Core i 1re génération / AMD FX ou plus récent)",
               "Prozessor zu alt: SSE4.2 erforderlich (Intel Core i 1. Generation / AMD FX oder neuer)",
@@ -1104,7 +1092,7 @@ namespace AO2Launcher
               "el paquete está dañado", "il pacchetto è danneggiato");
             a("file not found", "файл не найден", "fichier introuvable", "Datei nicht gefunden", "archivo no encontrado",
               "file non trovato");
-            a("This folder has no extracted game (default.xex and AO2Game)",
+            a("This folder does not contain an extracted game (default.xex and AO2Game)",
               "В этой папке нет распакованной игры (default.xex и AO2Game)",
               "Ce dossier ne contient pas de jeu extrait (default.xex et AO2Game)",
               "Dieser Ordner enthält kein entpacktes Spiel (default.xex und AO2Game)",
@@ -1119,14 +1107,14 @@ namespace AO2Launcher
             a("Not enough space on {0}: {1} needed, {2} free", "Недостаточно места на {0}: нужно {1}, свободно {2}",
               "Espace insuffisant sur {0} : {1} nécessaires, {2} libres", "Nicht genug Platz auf {0}: {1} nötig, {2} frei",
               "No hay espacio suficiente en {0}: se necesitan {1}, libres {2}", "Spazio insufficiente su {0}: servono {1}, liberi {2}");
-            a("This version of the game is not supported: the European release of Army of Two for Xbox 360 is needed (4541084C)",
+            a("This version of the game is not supported: the European release of Army of Two for Xbox 360 is required (4541084C)",
               "Эта версия игры не поддерживается: нужно европейское издание Army of Two для Xbox 360 (4541084C)",
               "Cette version du jeu n'est pas prise en charge : il faut l'édition européenne d'Army of Two pour Xbox 360 (4541084C)",
               "Diese Spielversion wird nicht unterstützt: Benötigt wird die europäische Version von Army of Two für Xbox 360 (4541084C)",
               "Esta versión del juego no es compatible: se necesita la edición europea de Army of Two para Xbox 360 (4541084C)",
               "Questa versione del gioco non è supportata: serve l'edizione europea di Army of Two per Xbox 360 (4541084C)");
-            a("This is a different update: Title Update 2 of the European release is needed (TU_12K222C_…)",
-              "Это другое обновление: нужно Title Update 2 европейского издания (TU_12K222C_…)",
+            a("This is the wrong update: Title Update 2 of the European release is required (TU_12K222C_…)",
+              "Это не то обновление: нужно Title Update 2 европейского издания (TU_12K222C_…)",
               "C'est une autre mise à jour : il faut le Title Update 2 de l'édition européenne (TU_12K222C_…)",
               "Das ist ein anderes Update: Benötigt wird Title Update 2 der europäischen Version (TU_12K222C_…)",
               "Es otra actualización: se necesita el Title Update 2 de la edición europea (TU_12K222C_…)",
@@ -1232,19 +1220,19 @@ namespace AO2Launcher
             a("Last checkpoint: {0}", "Последний чекпоинт: {0}", "Dernier point de contrôle : {0}", "Letzter Checkpoint: {0}",
               "Último punto de control: {0}", "Ultimo checkpoint: {0}");
             a("Money: {0}", "Деньги: {0}", "Argent : {0}", "Geld: {0}", "Dinero: {0}", "Denaro: {0}");
-            a("The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; the downloadable content is shared.",
-              "Профиль, с которым запускается игра. У каждого профиля свои сохранения, настройки игры, деньги и открытое; дополнения (DLC) общие.",
+            a("The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; downloadable content is shared.",
+              "Профиль, с которым запускается игра. У каждого профиля свои сохранения, настройки игры, деньги и разблокированное; дополнения (DLC) общие.",
               "Le profil avec lequel le jeu démarre. Chaque profil a ses sauvegardes, ses réglages du jeu, son argent et ses déblocages ; les DLC sont communs.",
               "Das Profil, mit dem das Spiel startet. Jedes Profil hat eigene Spielstände, Spieleinstellungen, Geld und Freischaltungen; die DLC sind gemeinsam.",
               "El perfil con el que se inicia el juego. Cada perfil tiene sus partidas, ajustes del juego, dinero y desbloqueos; los DLC son compartidos.",
               "Il profilo con cui parte il gioco. Ogni profilo ha i suoi salvataggi, impostazioni di gioco, denaro e sblocchi; i DLC sono condivisi.");
             a("New profile name", "Имя нового профиля", "Nom du nouveau profil", "Name des neuen Profils", "Nombre del nuevo perfil", "Nome del nuovo profilo");
-            a("The name of a new profile. Empty: the suggested one.", "Имя нового профиля. Пусто — предложенное.",
+            a("Name for a new profile. Leave empty to use the suggested one.", "Имя нового профиля. Если пусто — предложенное.",
               "Le nom d'un nouveau profil. Vide : celui proposé.", "Der Name eines neuen Profils. Leer: der vorgeschlagene.",
               "El nombre de un nuevo perfil. Vacío: el propuesto.", "Il nome di un nuovo profilo. Vuoto: quello proposto.");
             a("Create profile", "Создать профиль", "Créer un profil", "Profil erstellen", "Crear perfil", "Crea profilo");
-            a("Create an empty profile with the name above and switch to it. The game starts it from the beginning.",
-              "Создать пустой профиль с этим именем и переключиться на него. Игра начнётся с начала.",
+            a("Create a new profile with the name above and switch to it. The game starts it from scratch.",
+              "Создать новый профиль с этим именем и переключиться на него. Игра начнётся с самого начала.",
               "Créer un profil vide avec le nom ci-dessus et passer dessus. Le jeu le commence depuis le début.",
               "Ein leeres Profil mit dem Namen oben erstellen und dorthin wechseln. Das Spiel beginnt es von vorn.",
               "Crear un perfil vacío con el nombre de arriba y cambiar a él. El juego lo empieza desde el principio.",

@@ -53,6 +53,9 @@ namespace ao2::ue3
 
   // The text of an FName (its GNames index), "" when unreadable.
   std::string Name(const uint8_t *base, uint32_t index);
+  // The GNames index of `name` (case-sensitive), 0 (None) if there is none. A scan of
+  // every name: look it up once.
+  uint32_t FindName(const uint8_t *base, const char *name);
 
   // "Name" or "Name_N" of an object.
   std::string ObjectName(const uint8_t *base, uint32_t object);

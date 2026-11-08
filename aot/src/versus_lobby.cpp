@@ -29,7 +29,11 @@
 // asks goes over at once to a free place of the other team
 // (ao2_versus_free_team_swap, below). versus_lobby.log dumps every player of
 // the slots (their first 96 bytes) whenever one changes, in the ready room.
+#include "debug_menu.h"
 #include "log_files.h"
+#include "menu_mouse.h"
+#include "ui_text.h"
+#include "ui_theme.h"
 #include "versus_bots.h"
 #include "versus_rules.h"
 
@@ -37,9 +41,13 @@
 #include <array>
 #include <bit>
 #include <utility>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <memory>
+
+#include <imgui.h>
 
 #include <rex/cvar.h>
 #include <rex/logging.h>
@@ -513,3 +521,78 @@ extern "C" REX_FUNC(sub_82A29A68)
   __imp__sub_82A29A68(ctx, base);
   FreeTeamSwap(ctx, base, lobby);
 }
+
+namespace ao2::versus_lobby
+{
+  // Game Setup (menu_mouse.cpp, as the scene comes): a note at the top that the
+  // match has more rules than the game's own, in the F1 menu's Versus tab. It
+  // fades out once Game Setup is gone.
+  void SetupHint()
+  {
+    struct Anim
+    {
+      double start = -1.0, gone = -1.0;
+    };
+    auto anim = std::make_shared<Anim>();
+    ao2::menu::SetHint([anim]() {
+      namespace ui = ao2::ui;
+      using ui::FontKind;
+      using ao2::text::Tr;
+      const double now = ImGui::GetTime();
+      if (anim->start < 0.0)
+      {
+        anim->start = now;
+      }
+      if (ao2::menumouse::VersusMenu() != 1)
+      {
+        if (anim->gone < 0.0)
+        {
+          anim->gone = now;
+        }
+      }
+      else
+      {
+        anim->gone = -1.0;
+      }
+      const float out = anim->gone < 0.0 ? 0.0f : ui::EaseOutCubic(float(now - anim->gone) / 0.25f);
+      if (out >= 1.0f)
+      {
+        return false;
+      }
+      const float since = float(now - anim->start);
+      const float a = ui::Clamp01((since - 0.4f) / 0.3f) * (1.0f - out); // after the scene's own fade-in
+      if (a <= 0.0f)
+      {
+        return true;
+      }
+      ImDrawList *dl = ImGui::GetForegroundDrawList();
+      const ImGuiViewport *vp = ImGui::GetMainViewport();
+      const float s = ui::Scale();
+      const char *title = Tr("MORE MATCH SETTINGS");
+      const char *text = Tr("Press F1 for the round length, cash goal, friendly fire, respawn price and bots.");
+      // A heading over a line of text, the F1 key cap as tall as both.
+      const float pad = 18.0f * s, gap = 14.0f * s;
+      const float title_h = ui::FontSize(FontKind::kHeading), text_h = ui::FontSize(FontKind::kSmall);
+      const float inner_h = title_h + 4.0f * s + text_h;
+      const float cap = inner_h;
+      const float key_w = std::max(cap, ui::CapsSize(FontKind::kHeading, "F1").x + cap * 0.8f);
+      const float text_w = std::max(ui::CapsSize(FontKind::kHeading, title).x, ui::TextSize(FontKind::kSmall, text).x);
+      const ImVec2 size(std::min(key_w + gap + text_w + pad * 2.0f, vp->Size.x - 32.0f * s), inner_h + pad * 2.0f);
+      const float drop = (1.0f - ui::EaseOutCubic((since - 0.4f) / 0.4f)) * 16.0f * s;
+      const ImVec2 mn(vp->Pos.x + (vp->Size.x - size.x) * 0.5f, vp->Pos.y + vp->Size.y * 0.035f - drop);
+      const ImVec2 mx(mn.x + size.x, mn.y + size.y);
+      const float pulse = 0.5f + 0.5f * std::sin(float(now) * 3.0f);
+      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.94f * a));
+      ui::Frame(dl, mn, mx, ui::Fade(ui::kAccent, (0.35f + 0.25f * pulse) * a), 1.5f * s);
+      ui::Bar(dl, mn, mx, ui::Fade(ui::kAccent, a));
+      const float x = mn.x + pad;
+      ui::KeyCap(dl, ImVec2(x, mn.y + pad), cap, "F1", a, FontKind::kHeading);
+      const float tx = x + key_w + gap;
+      float y = mn.y + pad;
+      ui::Caps(dl, FontKind::kHeading, ImVec2(tx, y), ui::Fade(ui::kAccentLight, a), title);
+      y += title_h + 4.0f * s;
+      ui::Text(dl, FontKind::kSmall, ImVec2(tx, y), ui::Fade(ui::kText, a), text);
+      return true;
+    });
+  }
+} // namespace ao2::versus_lobby

@@ -314,7 +314,7 @@ EnteringReadyRoom_Message="Переход в комнату ожидания..."
 ReadyRoom=Комната ожидания
 [Shell_Versus]
 CustomMatch="Создать матч"
-QuickMatch="Быстрый матч"
+QuickMatch="Найти матч"
 Leaderboards="Таблицы лидеров"
 ;OBSOLETE
 FriendsOnly="Только друзья"

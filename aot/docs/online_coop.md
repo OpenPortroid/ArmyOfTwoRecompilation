@@ -45,8 +45,8 @@ and D3DCompiler, settings, shader cache, game files, `Host co-op.bat` /
 **Private** - by invitation only, a friends-only Steam lobby; **Public** - also
 in everyone's server list (F1 → Online → Servers). The game hosts the same way
 either time; the pick stands in for its `B-U-Private` in the Steam lobby, the
-invites and the Players window, until Search Co-op Game or Quick Match is chosen.
-*Search Co-op Game* (the disc's Public Co-op Game) and Versus' *Quick Match*
+invites and the Players window, until Search Co-op Game or Find Match is chosen.
+*Search Co-op Game* (the disc's Public Co-op Game) and Versus' *Find Match* (the disc's Quick Match)
 open, while Steam runs, a list of the public Steam lobbies of their mode
 (`src/game_browser.cpp`: host, mission, difficulty or game type, players, ping;
 the lobby data's `difficulty` is the game's `B-U-Difficulty`) instead of the
@@ -190,7 +190,7 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   30 s when its game was never entered: it would keep a place of the host's
   lobby taken. Joining another lobby while hosting makes no new lobby for the
   hosted game until the join fails or that game ends.
-- **Search Co-op Game / Quick Match** (the game's quick match, `GLST` with
+- **Search Co-op Game / Find Match** (the game's quick match, `GLST` with
   `FILTER-NOT-PRIVATE=1` from the PC's own game) searches first
   (`ao2_public_game_search`, on by default; off: an empty list at once, so the
   game hosts a public game whose Steam lobby is in everyone's server list). A search that finds

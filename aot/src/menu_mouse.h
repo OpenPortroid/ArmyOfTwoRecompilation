@@ -19,4 +19,8 @@ namespace ao2::menumouse
   // returned the pad state at guest `state` (ctx.r3 = its result): the menus
   // take the mouse and Exit from there. Game thread.
   void OnPadPoll(PPCContext &ctx, uint8_t *base, uint32_t state, bool keyboard);
+
+  // Any thread: the versus menu on screen, from the scenes the last pad poll saw
+  // (0 none, 1 Game Setup: MPLobbyHostScene, 2 the ready room: MPReadyRoomScene).
+  int VersusMenu();
 } // namespace ao2::menumouse

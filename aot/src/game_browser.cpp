@@ -28,8 +28,11 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <imgui.h>
@@ -276,6 +279,140 @@ namespace
       return false;
     }
 
+    // "$500K", "$1.5M".
+    static std::string Money(int value)
+    {
+      char text[32];
+      if (value >= 1000000)
+      {
+        std::snprintf(text, sizeof(text), value % 1000000 ? "$%.1fM" : "$%.0fM", value / 1000000.0);
+      }
+      else
+      {
+        std::snprintf(text, sizeof(text), "$%dK", value / 1000);
+      }
+      return text;
+    }
+
+    // The match's details next to the mouse: the game's choices and the host's rules
+    // (steam_net.cpp "rules", coop_invite.cpp UpdateSteamHosting).
+    void Details(ImDrawList *dl, const Lobby &l, float a)
+    {
+      const float s = ui::Scale();
+      std::map<std::string, int> r;
+      for (size_t at = 0; at < l.rules.size();)
+      {
+        size_t end = l.rules.find(';', at);
+        if (end == std::string::npos)
+        {
+          end = l.rules.size();
+        }
+        std::string item = l.rules.substr(at, end - at);
+        size_t eq = item.find('=');
+        if (eq != std::string::npos)
+        {
+          r[item.substr(0, eq)] = std::atoi(item.c_str() + eq + 1);
+        }
+        at = end + 1;
+      }
+      auto get = [&](const char *key, int fallback) {
+        auto it = r.find(key);
+        return it == r.end() ? fallback : it->second;
+      };
+      std::vector<std::pair<std::string, std::string>> lines;
+      lines.emplace_back(Tr("Map"), ao2::steam::MissionName(l.map, true));
+      lines.emplace_back(Tr("Mode"), ao2::steam::ModeName(true, l.game_type));
+      lines.emplace_back(Tr("Players"), std::to_string(std::min(l.players, l.max)) + " / " + std::to_string(l.max));
+      lines.emplace_back(Tr("Host"), l.in_game           ? Tr("in a match")
+                                     : l.menu == "setup" ? Tr("in Game Setup")
+                                     : l.menu == "ready" ? Tr("in the ready room")
+                                                         : "\xE2\x80\x94");
+      if (!r.empty())
+      {
+        char text[64];
+        const int round = get("r", 0);
+        if (round > 0)
+        {
+          std::snprintf(text, sizeof(text), "%d %s", round, Tr("min"));
+        }
+        lines.emplace_back(Tr("Round length"), round > 0 ? text : Tr("Lobby's"));
+        const int cash = get("c", 0);
+        lines.emplace_back(Tr("Cash goal"), cash > 0 ? Money(cash) : Tr("Off"));
+        const int ff = get("f", 0);
+        lines.emplace_back(Tr("Friendly fire"), Tr(ff == 1 ? "Off" : ff == 2 ? "Full" : "Half"));
+        const int price = get("p", 0);
+        lines.emplace_back(Tr("Respawn price"), Money(price > 0 ? price : 10000));
+        const int step = get("s", 0);
+        lines.emplace_back(Tr("Each respawn dearer by"), step > 0 ? "+" + Money(step) : Tr("None"));
+        std::string bots = Tr("Off");
+        if (get("b", 0))
+        {
+          static const char *kDifficulty[] = {"Easy", "Normal", "Hard"};
+          const int d = get("d", -1);
+          bots = Tr(d >= 0 && d < 3 ? kDifficulty[d] : "Custom");
+          if (get("u", 0))
+          {
+            bots += std::string("  \xC2\xB7  ") + Tr("buy");
+          }
+          if (get("a", 0))
+          {
+            bots += std::string("  \xC2\xB7  ") + Tr("infinite ammo");
+          }
+        }
+        lines.emplace_back(Tr("Bots"), bots);
+      }
+
+      const float pad = 18.0f * s, lh = ui::FontSize(FontKind::kSmall) + 8.0f * s, col_gap = 24.0f * s;
+      const char *title = Tr("MATCH DETAILS");
+      float label_w = 0.0f, value_w = 0.0f;
+      for (const auto &[label, value] : lines)
+      {
+        label_w = std::max(label_w, ui::TextSize(FontKind::kSmall, label.c_str()).x);
+        value_w = std::max(value_w, ui::TextSize(FontKind::kSmall, value.c_str()).x);
+      }
+      const char *older = r.empty() ? Tr("The host's game is an older version: no match rules listed.") : nullptr;
+      float width = std::max(label_w + col_gap + value_w, ui::CapsSize(FontKind::kLabel, title).x);
+      if (older)
+      {
+        width = std::max(width, ui::TextSize(FontKind::kSmall, older).x);
+      }
+      const ImVec2 size(width + pad * 2.0f, pad * 2.0f + ui::FontSize(FontKind::kLabel) + 12.0f * s +
+                                                 lh * float(lines.size()) + (older ? lh + 6.0f * s : 0.0f));
+      // Beside the mouse, kept on the screen.
+      const ImGuiViewport *vp = ImGui::GetMainViewport();
+      const ImVec2 mouse = ImGui::GetIO().MousePos;
+      ImVec2 mn(mouse.x + 22.0f * s, mouse.y + 18.0f * s);
+      if (mn.x + size.x > vp->Pos.x + vp->Size.x - 8.0f * s)
+      {
+        mn.x = mouse.x - 16.0f * s - size.x;
+      }
+      if (mn.y + size.y > vp->Pos.y + vp->Size.y - 8.0f * s)
+      {
+        mn.y = vp->Pos.y + vp->Size.y - 8.0f * s - size.y;
+      }
+      mn.x = std::max(mn.x, vp->Pos.x + 8.0f * s);
+      mn.y = std::max(mn.y, vp->Pos.y + 8.0f * s);
+      const ImVec2 mx(mn.x + size.x, mn.y + size.y);
+      dl->AddRectFilled(ImVec2(mn.x + 4.0f * s, mn.y + 6.0f * s), ImVec2(mx.x + 4.0f * s, mx.y + 6.0f * s),
+                        ui::Fade(ui::kInk, 0.5f * a));
+      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.98f * a));
+      ui::Frame(dl, mn, mx, ui::Fade(ui::kAccent, 0.35f * a), 1.0f * s);
+      float y = mn.y + pad - 4.0f * s;
+      ui::Caps(dl, FontKind::kLabel, ImVec2(mn.x + pad, y), ui::Fade(ui::kAccentLight, a), title);
+      y += ui::FontSize(FontKind::kLabel) + 12.0f * s;
+      for (const auto &[label, value] : lines)
+      {
+        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad, y), ui::Fade(ui::kMuted, a), label.c_str());
+        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad + label_w + col_gap, y), ui::Fade(ui::kText, a),
+                 value.c_str());
+        y += lh;
+      }
+      if (older)
+      {
+        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad, y + 6.0f * s), ui::Fade(ui::kMuted, 0.8f * a), older);
+      }
+    }
+
     void Paint(double now, bool live)
     {
       const ImGuiViewport *vp = ImGui::GetMainViewport();
@@ -311,9 +448,9 @@ namespace
                Tr(versus_ ? "FIND A MATCH" : "FIND A CO-OP GAME"));
       y += ui::FontSize(FontKind::kTitle) + 6.0f * s;
       const bool failed = join_failed_;
-      const char *status = joining_ ? Tr("Joining. The host's game sends the invite, and this one goes there by itself.")
+      const char *status = joining_ ? Tr("Joining... The host's game sends an invite, and your game follows it automatically.")
                            : failed ? Tr("Couldn't join that game. It may have started or filled up; try another one.")
-                                    : Tr("Public games over Steam, the lowest ping first.");
+                                    : Tr("Public games over Steam, lowest ping first.");
       ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(failed ? ui::kRed : ui::kMuted, a), status);
       y += ui::FontSize(FontKind::kSmall) + 22.0f * s;
 
@@ -360,7 +497,7 @@ namespace
         ui::Frame(dl, emn, emx, ui::Fade(ui::kWhite, 0.08f * a), 1.0f * s);
         const char *line1 = refreshing ? Tr("Looking for games...")
                                        : Tr(versus_ ? "No public matches right now." : "No public co-op games right now.");
-        const char *line2 = Tr("Create one: it shows here for everyone.");
+        const char *line2 = Tr("Create one and it shows up here for everyone.");
         ImVec2 s1 = ui::TextSize(FontKind::kBody, line1), s2 = ui::TextSize(FontKind::kSmall, line2);
         const float cy = (emn.y + emx.y) * 0.5f;
         if (refreshing)
@@ -375,6 +512,7 @@ namespace
         }
       }
       const bool mouse_moved = std::abs(ImGui::GetIO().MouseDelta.x) + std::abs(ImGui::GetIO().MouseDelta.y) > 0.0f;
+      int details = -1; // the row the mouse is over: its match's details
       for (int i = top_; i < int(rows_.size()) && i < top_ + kVisibleRows; ++i)
       {
         const Lobby &l = rows_[i];
@@ -384,6 +522,10 @@ namespace
         if (hovered && mouse_moved)
         {
           sel_ = i;
+        }
+        if (hovered && versus_)
+        {
+          details = i;
         }
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
@@ -414,6 +556,14 @@ namespace
         if (l.in_game)
         {
           note(Tr("in game"));
+        }
+        else if (l.menu == "setup")
+        {
+          note(Tr("host in Game Setup"));
+        }
+        else if (l.menu == "ready")
+        {
+          note(Tr("host in the ready room"));
         }
         if (l.is_private)
         {
@@ -494,6 +644,10 @@ namespace
       hint({"R", "X"}, Tr("Refresh"));
       hint({"C", "Y"}, Tr("Create"));
       hint({"Esc", "B"}, Tr("Back"));
+      if (details >= 0)
+      {
+        Details(dl, rows_[details], a);
+      }
       ImGui::End();
       if (created)
       {

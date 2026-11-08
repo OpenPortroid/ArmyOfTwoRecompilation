@@ -110,7 +110,8 @@ extern "C" uint32_t rex_input_keyboard_user();
 
 /// A split-screen (the campaign's, a versus guest's): while `on`, the keyboard and mouse are
 /// keyboard_user's (kNoUser: nobody's) and player 1 and 2 have the gamepads of
-/// their masks (a bit per ordinal); other gamepads play nobody.
+/// their masks (a bit per ordinal); other gamepads play nobody. `on` 2 also keeps player 2
+/// connected (signed in) on the NOP stand-in, whatever their mask.
 extern "C" void rex_input_split_players(uint32_t on, uint32_t keyboard_user, uint32_t p1_pads,
                                         uint32_t p2_pads);
 

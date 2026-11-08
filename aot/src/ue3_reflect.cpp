@@ -254,6 +254,20 @@ namespace ao2::ue3
     return NameString(base, index);
   }
 
+  uint32_t FindName(const uint8_t *base, const char *name)
+  {
+    ScanCache cache;
+    const uint32_t count = LoadU32(base, kGNamesArray + 4);
+    for (uint32_t i = 0; i < count && i < 0x100000; ++i)
+    {
+      if (NameString(base, i) == name)
+      {
+        return i;
+      }
+    }
+    return 0;
+  }
+
   std::string ObjectName(const uint8_t *base, uint32_t object)
   {
     if (!Plausible(object) || !Readable(base, object, 56))

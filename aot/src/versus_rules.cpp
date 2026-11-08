@@ -5,7 +5,8 @@
 // They travel with the bot settings (versus_bots.cpp: the "vbots" lockstep
 // command, the host's count) and are applied here on every machine at the
 // same lockstep frame, from the simulation's state only:
-// - Round length (ao2_versus_round_minutes; 0: the lobby's 10 / 15 / 20):
+// - Round length (ao2_versus_round_minutes; 0: the lobby's 10 / 15 / 20;
+//   the F1 menu offers the lobby's or a number of minutes):
 //   GameInfo.TimeLimit, and the time left (UTGame.RemainingTime) moved by
 //   the difference; GameReplicationInfo's too. The HUD's timer reads
 //   RemainingTime every tick (AO2MPPlayerController.PlayerTick).
@@ -14,7 +15,8 @@
 //   reaches it ends the match: the time left becomes 1 s and the game ends
 //   it as at the time limit (AO2MPGame.CheckEndGame 'TimeLimit': the richer
 //   team wins).
-// - Friendly fire (ao2_versus_friendly_fire: 0 the game's, 1 off, 2 on):
+// - Friendly fire (ao2_versus_friendly_fire: 0 half, the game's own scale
+//   of 0.5; 1 off; 2 full):
 //   UTTeamGame.FriendlyFireScale, which AO2Character.GetDamageScaleForHacks
 //   multiplies a teammate's damage by.
 // - Respawn price (ao2_versus_respawn_cost; 0: the game's, 10000): the
@@ -52,7 +54,7 @@ REXCVAR_DEFINE_INT32(ao2_versus_round_minutes, 0, "Online",
 REXCVAR_DEFINE_INT32(ao2_versus_cash_goal, 0, "Online",
                      "Versus (host): a team with this much cash wins at once; 0 = no goal (the time limit only)");
 REXCVAR_DEFINE_INT32(ao2_versus_friendly_fire, 0, "Online",
-                     "Versus (host): friendly fire - 0 the game's, 1 off, 2 on (full damage)");
+                     "Versus (host): friendly fire - 0 half damage (the game's), 1 off, 2 full damage");
 REXCVAR_DEFINE_INT32(ao2_versus_respawn_cost, 0, "Online",
                      "Versus (host): what a respawn for money costs; 0 = the game's (10000)");
 REXCVAR_DEFINE_INT32(ao2_versus_respawn_step, 0, "Online",
@@ -354,7 +356,7 @@ namespace ao2::versus::rules
     {
       float scale = s.ff == 1 ? 0.0f : s.ff == 2 ? 1.0f : g_game_ff;
       StoreF32(base, game + p.ff, scale);
-      Logf("frame %u: friendly fire %s (scale %.2f)\n", frame, s.ff == 1 ? "off" : s.ff == 2 ? "on" : "the game's",
+      Logf("frame %u: friendly fire %s (scale %.2f)\n", frame, s.ff == 1 ? "off" : s.ff == 2 ? "full" : "half (the game's)",
            scale);
       g_last_ff = s.ff;
     }

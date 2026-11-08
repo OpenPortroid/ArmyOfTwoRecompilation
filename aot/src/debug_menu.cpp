@@ -49,6 +49,7 @@
 // ImGuiDrawer drawing into the overlay's lower layer. That drawer is no input
 // listener (it would capture the mouse on clicks): the overlay takes no input.
 #include "debug_menu.h"
+#include "menu_mouse.h"
 
 #include "achievements.h"
 #include "console_cmd.h"
@@ -328,7 +329,8 @@ namespace
   std::function<bool()> g_notice; // under g_notice_mutex
   std::function<bool()> g_toast;  // under g_notice_mutex (SetToast)
   std::function<bool()> g_banner; // under g_notice_mutex (SetBanner)
-  uint64_t g_notice_gen = 0, g_toast_gen = 0, g_banner_gen = 0; // under g_notice_mutex: each set
+  std::function<bool()> g_hint;   // under g_notice_mutex (SetHint)
+  uint64_t g_notice_gen = 0, g_toast_gen = 0, g_banner_gen = 0, g_hint_gen = 0; // under g_notice_mutex: each set
   std::atomic<bool> g_notice_on{false}; // any of them
   rex::ui::ImmediateDrawer *g_sdk_immediate = nullptr;
 
@@ -341,6 +343,8 @@ namespace
   std::atomic<bool> g_frames_wanted{false}, g_frame_queued{false};
   // Per player: the game's polls left to see the pad let go after the menu (OnPadPoll).
   std::atomic<int> g_pad_swallow[4];
+  // Keys pressed while the game got no input, until let go (InputBlocker).
+  std::atomic<bool> g_key_held[256];
   constexpr ImGuiKey kPadKeys[5] = {ImGuiKey_GamepadDpadUp, ImGuiKey_GamepadDpadDown, ImGuiKey_GamepadDpadLeft,
                                     ImGuiKey_GamepadDpadRight, ImGuiKey_GamepadFaceDown};
 
@@ -892,14 +896,14 @@ namespace
   const RuleRow kRuleRows[] = {
       {"Round length", "ao2_versus_round_minutes", [] { return REXCVAR_GET(ao2_versus_round_minutes); },
        [](int32_t v) { REXCVAR_SET(ao2_versus_round_minutes, v); },
-       {{0, "Lobby's"}, {10, "10 min"}, {15, "15 min"}, {20, "20 min"}, {30, "30 min"}, {45, "45 min"}, {60, "60 min"}},
+       {{0, "Lobby's"}},
        1, 1, 120, "min"},
       {"Cash goal", "ao2_versus_cash_goal", [] { return REXCVAR_GET(ao2_versus_cash_goal); },
        [](int32_t v) { REXCVAR_SET(ao2_versus_cash_goal, v); },
        {{0, "Off"}, {500000, "$500K"}, {1000000, "$1M"}, {2000000, "$2M"}, {5000000, "$5M"}},
        1000, 10, 100000, "$K"},
       {"Friendly fire", "ao2_versus_friendly_fire", [] { return REXCVAR_GET(ao2_versus_friendly_fire); },
-       [](int32_t v) { REXCVAR_SET(ao2_versus_friendly_fire, v); }, {{0, "Game's"}, {1, "Off"}, {2, "On"}}},
+       [](int32_t v) { REXCVAR_SET(ao2_versus_friendly_fire, v); }, {{1, "Off"}, {0, "Half"}, {2, "Full"}}},
       {"Respawn price", "ao2_versus_respawn_cost", [] { return REXCVAR_GET(ao2_versus_respawn_cost); },
        [](int32_t v) { REXCVAR_SET(ao2_versus_respawn_cost, v); },
        {{5000, "$5K"}, {0, "$10K"}, {20000, "$20K"}, {50000, "$50K"}},
@@ -934,33 +938,33 @@ namespace
   {
     static const std::map<std::string, const char *> kHelp = {
         {"Display mode", "Fullscreen or a window."},
-        {"Render resolution", "The game's 1280x720 picture drawn at this size. Switches at once."},
-        {"Aspect ratio", "The picture's shape. The game needs a restart for it."},
-        {"FPS limit", "The highest frame rate the game runs at."},
-        {"Vertical sync", "Frames wait for the monitor: no tearing, a little more input lag."},
-        {"FPS counter", "The frame rate in the corner; Detailed adds the GPU, CPU and memory."},
+        {"Render resolution", "Renders the game's 1280x720 picture at this resolution. Applies immediately."},
+        {"Aspect ratio", "The picture's aspect ratio. Requires a game restart."},
+        {"FPS limit", "The maximum frame rate."},
+        {"Vertical sync", "Syncs frames to the monitor: no tearing, slightly more input lag."},
+        {"FPS counter", "Shows the frame rate in the corner; Detailed adds GPU, CPU and memory stats."},
         {"Anisotropic filtering", "Sharper textures on surfaces seen at an angle."},
         {"Anti-aliasing", "Smooths jagged edges. SMAA is sharper, FXAA cheaper."},
         {"Ambient occlusion", "Soft shadows in corners and under objects. GTAO looks best, SSAO costs least."},
-        {"Motion blur", "Blur of the camera's own movement."},
-        {"Depth of field", "Blurs what is out of focus."},
-        {"Shadow resolution", "Sharper shadow edges for more GPU time. Auto is the game's own."},
-        {"Field of view", "How wide the view is on foot. The game's is 70\xC2\xB0."},
-        {"Aiming zoom", "How much aiming narrows the view: 1 as in the game, 0 not at all. Not the sniper scope."},
-        {"Camera shake", "How much the view shakes: 1 as in the game, 0 not at all. Bullets go where they did."},
+        {"Motion blur", "Blur from camera movement."},
+        {"Depth of field", "Blurs objects that are out of focus."},
+        {"Shadow resolution", "Sharper shadow edges at a GPU cost. Auto uses the game's default."},
+        {"Field of view", "Field of view on foot. The game's default is 70\xC2\xB0."},
+        {"Aiming zoom", "How much aiming zooms in: 1 is the game's default, 0 is no zoom. Does not affect the sniper scope."},
+        {"Camera shake", "Camera shake strength: 1 is the game's default, 0 turns it off. Bullet spread is unchanged."},
         {"Sensitivity", "How fast the mouse turns the camera."},
-        {"Zoomed sensitivity", "How fast the mouse turns while aiming, against the normal speed."},
-        {"Mouse in vehicles and turrets", "How fast the mouse turns where it acts as the right stick."},
+        {"Zoomed sensitivity", "Mouse speed while aiming, relative to the normal speed."},
+        {"Mouse in vehicles and turrets", "Mouse speed where it acts as the right stick."},
         {"Invert Y axis", "Moving the mouse up looks down."},
-        {"Aim assist", "While aiming, the camera starts on the nearest target and shots are pulled onto targets."},
-        {"Toggle aim", "One press of the aim button starts aiming, the next one stops it."},
+        {"Aim assist", "When you aim, the camera snaps to the nearest target and shots are pulled toward targets."},
+        {"Toggle aim", "Press the aim button once to start aiming and again to stop."},
         {"Vibration", "How strongly the gamepad vibrates. 0 turns it off."},
-        {"Menu scale", "The size of this menu. Applies when you let go of the slider."},
-        {"Master volume", "Everything the game plays, movies too."},
-        {"Music", "The music, also during missions."},
+        {"Menu scale", "Size of this menu. Applies when you release the slider."},
+        {"Master volume", "All game audio, including movies."},
+        {"Music", "Music, including during missions."},
         {"Sound effects", "Weapons, explosions, footsteps and the world around you."},
-        {"Voices", "Characters' lines, in the game and in its scenes."},
-        {"Achievement sound", "The sound of an achievement's notice."},
+        {"Voices", "Character dialogue, in gameplay and cutscenes."},
+        {"Achievement sound", "The sound of achievement notices."},
     };
     auto it = kHelp.find(label);
     return it != kHelp.end() ? Tr(it->second) : "";
@@ -994,7 +998,8 @@ namespace
       difficulty_ = std::clamp(REXCVAR_GET(ao2_start_difficulty), 0, 2);
       // An invite waiting for an answer (its notice says the menu key lists it).
       bool invite = ao2::invite::HasPendingInvite();
-      tab_ = invite ? kTabOnline : g_last_tab;
+      // Versus' Game Setup: its F1 hint (versus_lobby.cpp SetupHint) leads to the match rules.
+      tab_ = invite ? kTabOnline : ao2::menumouse::VersusMenu() == 1 ? int(kTabVersus) : g_last_tab;
       page_ = g_last_page;
       online_page_ = invite ? int(kOnlinePlayers) : g_last_online_page;
       g_pad_mode = g_open_by_pad;
@@ -2027,9 +2032,9 @@ namespace
            [](bool on) { REXCVAR_SET(ao2_god_mode, on); }, false},
           {"Infinite ammo", "The magazine and the reserve stay full.", [] { return REXCVAR_GET(ao2_infinite_ammo); },
            [](bool on) { REXCVAR_SET(ao2_infinite_ammo, on); }, true},
-          {"Unlock all", "The Professional difficulty and 9,999,999 money in the profile.",
+          {"Unlock all", "Unlocks Professional difficulty and gives the profile $9,999,999.",
            [] { return REXCVAR_GET(ao2_unlock_all); }, [](bool on) { REXCVAR_SET(ao2_unlock_all, on); }, true},
-          {"Bonus weapons", "The BST-V1 and SAL-86 in the store.",
+          {"Bonus weapons", "Adds the BST-V1 and SAL-86 to the store.",
            [] { return REXCVAR_GET(ao2_unlock_bonus_weapons); },
            [](bool on) { REXCVAR_SET(ao2_unlock_bonus_weapons, on); }, true},
       };
@@ -2055,7 +2060,7 @@ namespace
       if (network_)
       {
         ui::Text(dl, FontKind::kSmall, ImVec2(o.x, y + 4.0f * s), ui::Fade(ui::kMuted, a),
-                 Tr("Online co-op: god mode goes to both machines, for your character."));
+                 Tr("Online co-op: god mode applies on both PCs, to your character only."));
         y += ui::FontSize(FontKind::kSmall) + 12.0f * s;
       }
       return y;
@@ -2143,12 +2148,12 @@ namespace
       }
       else if (running)
       {
-        status = Tr("Waiting for the match's settings.");
+        status = Tr("Waiting for the match settings.");
         tone = kPending;
       }
       else
       {
-        status = Tr("In a match the host's settings go to every player; yours count when you host.");
+        status = Tr("In a match, the host's settings apply to every player; yours apply when you host.");
       }
       {
         float h = ui::FontSize(FontKind::kSmall) * (note.empty() ? 1.0f : 2.0f) + 22.0f * s +
@@ -2237,8 +2242,8 @@ namespace
           y += rule_h + 6.0f * s;
         }
         y = Wrapped(dl, FontKind::kSmall, ImVec2(x0, y + 4.0f * s), x1 - x0, ui::Fade(ui::kMuted, a),
-                    Tr("A team with the cash goal wins at once. The respawn price on screen is the first one; each "
-                       "later respawn of a player costs the step more.")) +
+                    Tr("The first team to reach the cash goal wins at once. The respawn price shown in game is for the "
+                       "first respawn; each later respawn of a player costs the step more.")) +
             24.0f * s;
       }
 
@@ -2250,11 +2255,11 @@ namespace
         void (*set)(bool);
       };
       static const BotSwitch kSwitches[] = {
-          {"Bots", "Bots play the empty places of a versus match.", "ao2_versus_bots",
+          {"Bots", "Bots fill the empty slots of a versus match.", "ao2_versus_bots",
            [] { return REXCVAR_GET(ao2_versus_bots); }, [](bool on) { REXCVAR_SET(ao2_versus_bots, on); }},
           {"Buying", "Bots buy weapon kits, armor and respawns with the team's cash.", "ao2_versus_bots_buy",
            [] { return REXCVAR_GET(ao2_versus_bots_buy); }, [](bool on) { REXCVAR_SET(ao2_versus_bots_buy, on); }},
-          {"Infinite ammo", "The bots' weapons never run out, as the AI partner's.", "ao2_versus_bots_infinite_ammo",
+          {"Infinite ammo", "The bots' weapons never run out, like the AI partner's.", "ao2_versus_bots_infinite_ammo",
            [] { return REXCVAR_GET(ao2_versus_bots_infinite_ammo); },
            [](bool on) { REXCVAR_SET(ao2_versus_bots_infinite_ammo, on); }},
       };
@@ -2353,7 +2358,7 @@ namespace
       }
       y += 6.0f * s;
       ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(ui::kMuted, a),
-               Tr("Settings are saved as they are changed."));
+               Tr("Settings are saved as you change them."));
       return y + ui::FontSize(FontKind::kSmall) + 8.0f * s;
     }
 
@@ -2470,7 +2475,7 @@ namespace
       ImU32 tone = ui::kMuted;
       if (code_bad_)
       {
-        std::snprintf(line, sizeof(line), "%s", Tr("That is not a code: 7 letters and digits, like ABC-DEFG."));
+        std::snprintf(line, sizeof(line), "%s", Tr("That's not a code: 7 letters and digits, like ABC-DEFG."));
         tone = ui::kRed;
       }
       else if (code_wait_ || state != ao2::steam::CodeJoin::kNone)
@@ -2482,7 +2487,7 @@ namespace
           tone = ui::kText;
           break;
         case ao2::steam::CodeJoin::kInvited:
-          std::snprintf(line, sizeof(line), Tr("%s's game invited you: on your way."), who);
+          std::snprintf(line, sizeof(line), Tr("%s's game invited you. Joining..."), who);
           tone = ui::kGreen;
           if (code_wait_)
           {
@@ -2492,7 +2497,7 @@ namespace
           break;
         case ao2::steam::CodeJoin::kNoGame:
           std::snprintf(line, sizeof(line),
-                        Tr("%s hosts no game now: they create one in the game (Online), then enter the code again."),
+                        Tr("%s isn't hosting a game right now. Ask them to create one (Online), then enter the code again."),
                         who);
           tone = ui::kRed;
           break;
@@ -2501,16 +2506,16 @@ namespace
           tone = ui::kRed;
           break;
         case ao2::steam::CodeJoin::kStarted:
-          std::snprintf(line, sizeof(line), Tr("%s's match has started: wait for it to end."), who);
+          std::snprintf(line, sizeof(line), Tr("%s's match has already started. Wait for it to end."), who);
           tone = ui::kRed;
           break;
         case ao2::steam::CodeJoin::kNoAnswer:
           std::snprintf(line, sizeof(line), "%s",
-                        Tr("No answer: check the code; the host's game must be running with Steam."));
+                        Tr("No answer. Check the code; the host's game must be running with Steam."));
           tone = ui::kRed;
           break;
         case ao2::steam::CodeJoin::kOwnCode:
-          std::snprintf(line, sizeof(line), "%s", Tr("That is your own code: enter the host's one."));
+          std::snprintf(line, sizeof(line), "%s", Tr("That's your own code. Enter the host's code."));
           tone = ui::kRed;
           break;
         default:
@@ -2524,8 +2529,8 @@ namespace
       if (!line[0])
       {
         std::snprintf(line, sizeof(line), "%s",
-                      Tr("Met someone on Discord? One creates a game in the game (Online) and sends their code; the "
-                         "other enters it here. No need to be Steam friends."));
+                      Tr("Met someone on Discord? One player creates a game (Online) and shares their code; the other "
+                         "enters it here. You don't need to be Steam friends."));
       }
       y = Wrapped(dl, FontKind::kSmall, ImVec2(x0, y), x1 - x0, ui::Fade(tone, a), line);
       return y + 18.0f * s;
@@ -2624,7 +2629,7 @@ namespace
       {
         ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(join_failed_ ? ui::kRed : ui::kText, a),
                  join_failed_ ? Tr("Couldn't join that game. It may have started or filled up; try another one.")
-                              : Tr("Joining. The host's game sends the invite, and this one goes there by itself."));
+                              : Tr("Joining... The host's game sends an invite, and your game follows it automatically."));
         y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
       }
       y += 8.0f * s;
@@ -2656,7 +2661,7 @@ namespace
         const char *line1 = refreshing        ? Tr("Looking for games...")
                             : servers_versus_ ? Tr("No public matches right now.")
                                               : Tr("No public co-op games right now.");
-        const char *line2 = Tr("Create a Public game in the game: it shows here for everyone.");
+        const char *line2 = Tr("Create a public game and it shows up here for everyone.");
         ImVec2 s1 = ui::TextSize(FontKind::kBody, line1), s2 = ui::TextSize(FontKind::kSmall, line2);
         ui::Text(dl, FontKind::kBody, ImVec2((x0 + x1 - s1.x) * 0.5f, y + eh * 0.5f - s1.y - 2.0f * s),
                  ui::Fade(ui::kText, a), line1);
@@ -2752,7 +2757,7 @@ namespace
       }
       y += 6.0f * s;
       ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(ui::kMuted, a),
-               Tr("Double click a game to join it. The list refreshes every 20 seconds."));
+               Tr("Double-click a game to join it. The list refreshes every 20 seconds."));
       return y + ui::FontSize(FontKind::kSmall) + 8.0f * s;
     }
 
@@ -3006,9 +3011,9 @@ namespace
       // The hint under them.
       float hy = mx.y - hint_h + 10.0f * s;
       const char *hint1 = network_ ? Tr("Loads for both. Your partner needs the same")
-                                   : Tr("Double-click loads too. Saving the game writes");
-      const char *hint2 = network_ ? Tr("files (a DLC checkpoint without the DLC breaks his game).")
-                                   : Tr("the loaded checkpoint to the profile as the current one.");
+                                   : Tr("Double-click also loads. Saving the game stores");
+      const char *hint2 = network_ ? Tr("files (a DLC checkpoint without that DLC breaks their game).")
+                                   : Tr("the loaded checkpoint in the profile as the current one.");
       ui::Text(dl, FontKind::kSmall, ImVec2(rx0, hy), ui::Fade(ui::kMuted, a), hint1);
       ui::Text(dl, FontKind::kSmall, ImVec2(rx0, hy + ui::FontSize(FontKind::kSmall) + 2.0f * s),
                ui::Fade(ui::kMuted, a), hint2);
@@ -3087,21 +3092,24 @@ namespace
   // toast (SetToast); clears each once it is over.
   void DrawNotice()
   {
-    std::function<bool()> notice, toast, banner;
-    uint64_t notice_gen, toast_gen, banner_gen;
+    std::function<bool()> notice, toast, banner, hint;
+    uint64_t notice_gen, toast_gen, banner_gen, hint_gen;
     {
       std::lock_guard lock(g_notice_mutex);
       notice = g_notice;
       toast = g_toast;
       banner = g_banner;
+      hint = g_hint;
       notice_gen = g_notice_gen;
       toast_gen = g_toast_gen;
       banner_gen = g_banner_gen;
+      hint_gen = g_hint_gen;
     }
+    bool hint_over = hint && !hint();
     bool banner_over = banner && !banner();
     bool notice_over = notice && !notice();
     bool toast_over = toast && !toast();
-    if (notice_over || toast_over || banner_over)
+    if (notice_over || toast_over || banner_over || hint_over)
     {
       std::lock_guard lock(g_notice_mutex);
       // Unless set again meanwhile.
@@ -3117,7 +3125,11 @@ namespace
       {
         g_banner = nullptr;
       }
-      g_notice_on = g_notice || g_toast || g_banner;
+      if (hint_over && g_hint_gen == hint_gen)
+      {
+        g_hint = nullptr;
+      }
+      g_notice_on = g_notice || g_toast || g_banner || g_hint;
     }
   }
 
@@ -3195,7 +3207,15 @@ namespace
         return;
       }
       forgotten_ = true;
-      --g_modal;
+      // What closed it (Esc, B) is still down: the pads give the game nothing until
+      // let go (the keys: InputBlocker).
+      if (--g_modal == 0 && !g_open.load())
+      {
+        for (auto &swallow : g_pad_swallow)
+        {
+          swallow = 2;
+        }
+      }
       auto it = g_windows.find(id_);
       if (it != g_windows.end() && it->second == this)
       {
@@ -3305,10 +3325,21 @@ namespace
 
   // Under ImGui (64), above the mouse aiming (32), cutscene skip (33) and
   // the input drivers (0): nothing but key releases gets past the open menu.
+  // A key pressed while blocked stays from the game until it is let go: the key
+  // repeat of the Esc that closed a window was a fresh Esc for the menu behind it.
   class InputBlocker final : public rex::ui::WindowInputListener
   {
   public:
-    void OnKeyDown(rex::ui::KeyEvent &e) override { e.set_handled(Blocking()); }
+    void OnKeyDown(rex::ui::KeyEvent &e) override
+    {
+      const uint32_t vk = uint32_t(e.virtual_key()) & 0xFF;
+      if (Blocking())
+      {
+        g_key_held[vk] = true;
+      }
+      e.set_handled(g_key_held[vk].load());
+    }
+    void OnKeyUp(rex::ui::KeyEvent &e) override { g_key_held[uint32_t(e.virtual_key()) & 0xFF] = false; }
     void OnKeyChar(rex::ui::KeyEvent &e) override { e.set_handled(Blocking()); }
     void OnMouseDown(rex::ui::MouseEvent &e) override { e.set_handled(Blocking()); }
     void OnMouseMove(rex::ui::MouseEvent &e) override { e.set_handled(Blocking()); }
@@ -3321,6 +3352,8 @@ namespace
 
 namespace ao2::menu
 {
+  bool HeldFromMenu(uint32_t vk) { return g_key_held[vk & 0xFF].load(std::memory_order_relaxed); }
+
   void Attach(rex::ui::Window *window, rex::ui::ImGuiDrawer *sdk_drawer, rex::ui::ImmediateDrawer *sdk_immediate,
               rex::input::InputSystem *input, const std::filesystem::path &game_data_root)
   {
@@ -3564,7 +3597,7 @@ namespace ao2::menu
       std::lock_guard lock(g_notice_mutex);
       g_notice = std::move(draw);
       ++g_notice_gen;
-      g_notice_on = g_notice || g_toast || g_banner;
+      g_notice_on = g_notice || g_toast || g_banner || g_hint;
     }
     ShowNoticeDialog();
   }
@@ -3575,7 +3608,7 @@ namespace ao2::menu
       std::lock_guard lock(g_notice_mutex);
       g_toast = std::move(draw);
       ++g_toast_gen;
-      g_notice_on = g_notice || g_toast || g_banner;
+      g_notice_on = g_notice || g_toast || g_banner || g_hint;
     }
     ShowNoticeDialog();
   }
@@ -3586,9 +3619,26 @@ namespace ao2::menu
       std::lock_guard lock(g_notice_mutex);
       g_banner = std::move(draw);
       ++g_banner_gen;
-      g_notice_on = g_notice || g_toast || g_banner;
+      g_notice_on = g_notice || g_toast || g_banner || g_hint;
     }
     ShowNoticeDialog();
+  }
+
+  void SetHint(std::function<bool()> draw)
+  {
+    {
+      std::lock_guard lock(g_notice_mutex);
+      g_hint = std::move(draw);
+      ++g_hint_gen;
+      g_notice_on = g_notice || g_toast || g_banner || g_hint;
+    }
+    ShowNoticeDialog();
+  }
+
+  int BotPreset()
+  {
+    return BotPresetOf(REXCVAR_GET(ao2_versus_bots_miss), REXCVAR_GET(ao2_versus_bots_reaction),
+                       REXCVAR_GET(ao2_versus_bots_turn), REXCVAR_GET(ao2_versus_bots_range));
   }
 
   rex::ui::ImmediateDrawer *NoticeImmediateDrawer()

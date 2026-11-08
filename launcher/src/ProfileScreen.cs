@@ -125,13 +125,13 @@ namespace AO2Launcher
                     ShowToast(L.F("Profile {0}: {1}", ProfileName(S["profile"]), SummaryLine(S["profile"])), false);
                 },
                 Desc = "The profile the game starts with. Each profile has its own saves, game settings, money and unlocks; " +
-                       "the downloadable content is shared."
+                       "downloadable content is shared."
             };
             newProfileRow = new Row
             {
                 Kind = RowKind.Text, Label = "New profile name", Key = "new_profile", MaxLen = 32,
                 Placeholder = Profiles.SuggestName,
-                Desc = "The name of a new profile. Empty: the suggested one."
+                Desc = "Name for a new profile. Leave empty to use the suggested one."
             };
             return new List<Row>
             {
@@ -152,7 +152,7 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Button, Label = "Create profile", ButtonText = () => "CREATE",
                     Click = CreateProfile,
-                    Desc = "Create an empty profile with the name above and switch to it. The game starts it from the beginning."
+                    Desc = "Create a new profile with the name above and switch to it. The game starts it from scratch."
                 },
                 new Row
                 {

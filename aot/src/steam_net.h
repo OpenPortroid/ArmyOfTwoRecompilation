@@ -37,6 +37,11 @@ namespace ao2::steam
   // This PC's own virtual address (0 without Steam).
   uint32_t SelfAddress();
 
+  // The SteamID of the Steam player at virtual address `ip` (0: none known).
+  uint64_t SteamIdOf(uint32_t ip);
+  // Shows that player's Steam profile in the Steam overlay; false without Steam.
+  bool OpenProfile(uint64_t steam_id);
+
   // From the presence service (every announcement): the lobby game this
   // machine hosts, or none. A hosted game gets a Steam lobby (the server
   // list, friends' "Join game"); a player entering it is invited
@@ -56,6 +61,8 @@ namespace ao2::steam
     int game_type = -1;
     int difficulty = -1; // co-op: 0 Recruit, 1 Contractor, 2 Professional
     std::string mode;
+    std::string menu;  // versus: "setup" (Game Setup), "ready" (the ready room), "" (neither)
+    std::string rules; // versus: the host's match rules and bots, "key=value;..." (coop_invite.cpp)
   };
   void SetHosting(const Hosting &hosting);
 
@@ -83,6 +90,8 @@ namespace ao2::steam
     int players = 0;
     int max = 0;
     int ping = -1; // ms, estimated from the host's ping location (-1: unknown)
+    std::string menu;  // Hosting::menu
+    std::string rules; // Hosting::rules
   };
   void RefreshLobbies();
   bool Refreshing();

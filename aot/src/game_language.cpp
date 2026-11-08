@@ -407,8 +407,9 @@ namespace ao2::lang
     }
 
     // ---------------------------------------------------------------------
-    // Create / Search in place of the disc's Private / Public Co-op Game and
-    // Custom Match (lobby_visibility.cpp asks private or public on Create).
+    // Create / Search in place of the disc's Private / Public Co-op Game,
+    // Create Match for Custom Match (lobby_visibility.cpp asks private or
+    // public on Create) and Find Match for versus' Quick Match.
     // Our languages have them in localization\<dir>\AO2Game.int; the disc's
     // get them here, in Coalesced.<lang> and (English) in the downloadable
     // content's DLC<n>__AO2Game.int, which the game reads over Coalesced.
@@ -426,6 +427,8 @@ namespace ao2::lang
          "Buscar partida coop", "Cerca partita co-op"},
         {"[Shell_Versus]", "CustomMatch", "Create Match", "Spiel erstellen", "Créer une partie", "Crear partida",
          "Crea partita"},
+        {"[Shell_Versus]", "QuickMatch", "Find Match", "Spiel suchen", "Trouver une partie", "Buscar partida",
+         "Trova partita"},
     };
 
     const char *MenuNameIn(const MenuName &name, std::string_view code)
@@ -662,7 +665,7 @@ namespace ao2::lang
         data = OwnCoalesced(data, *own, own_dir);
       if (prompts && lower.starts_with("coalesced."))
         data = ao2::prompts::RewriteLocalization(data, english && !own, rewritten);
-      // The disc's languages: Create / Search Co-op Game, Create Match (ours have them).
+      // The disc's languages: Create / Search Co-op Game, Create / Find Match (ours have them).
       static const std::pair<const char *, const char *> kMenuLanguages[] = {
           {"coalesced.int", "en"}, {"coalesced.deu", "de"}, {"coalesced.fra", "fr"},
           {"coalesced.esn", "es"}, {"coalesced.ita", "it"}};

@@ -315,6 +315,8 @@ namespace
   {
     std::mutex mutex;
     std::vector<uint32_t> peer_ips;
+    std::map<uint32_t, uint64_t> peer_ids; // virtual address -> SteamID
+    uint64_t profile = 0;                  // a Steam profile to show in the overlay (OpenProfile)
     uint32_t self_ip = 0;
     ao2::steam::Hosting hosting;
     std::map<uint32_t, Clock::time_point> auto_accept; // host address -> until
@@ -392,6 +394,7 @@ namespace
       {
         std::lock_guard lock(shared().mutex);
         shared().self_ip = self_ip_;
+        shared().peer_ids[self_ip_] = self_;
       }
       SteamNetworkingUtils()->InitRelayNetworkAccess();
       for (uint16_t port : kTcpPorts)
@@ -444,6 +447,7 @@ namespace
       Log("peer %s (%llu) at %s", p.name.c_str(), (unsigned long long)id, IpString(p.ip).c_str());
       std::lock_guard lock(shared().mutex);
       shared().peer_ips.push_back(p.ip);
+      shared().peer_ids[p.ip] = id;
       return &p;
     }
 
@@ -955,7 +959,7 @@ namespace
     void Requests()
     {
       bool refresh, invite_dialog, quick = false;
-      uint64_t join;
+      uint64_t join, profile;
       uint32_t code;
       {
         auto &sh = shared();
@@ -970,6 +974,7 @@ namespace
         join = std::exchange(sh.join, 0);
         code = std::exchange(sh.code_join, 0);
         invite_dialog = std::exchange(sh.invite_dialog, false);
+        profile = std::exchange(sh.profile, 0);
         if (refresh)
         {
           sh.refreshing = true;
@@ -1011,6 +1016,11 @@ namespace
       if (invite_dialog && lobby_)
       {
         SteamFriends()->ActivateGameOverlayInviteDialog(CSteamID(lobby_));
+      }
+      if (profile)
+      {
+        Log("profile of %llu in the overlay", (unsigned long long)profile);
+        SteamFriends()->ActivateGameOverlayToUser("steamid", CSteamID(profile));
       }
     }
 
@@ -1076,6 +1086,8 @@ namespace
       l.in_game = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "state"), "game") == 0;
       l.players = std::atoi(SteamMatchmaking()->GetLobbyData(id, "players"));
       l.max = SteamMatchmaking()->GetLobbyMemberLimit(id);
+      l.menu = SteamMatchmaking()->GetLobbyData(id, "menu");
+      l.rules = SteamMatchmaking()->GetLobbyData(id, "rules");
       SteamNetworkPingLocation_t loc;
       const char *where = SteamMatchmaking()->GetLobbyData(id, "loc");
       if (*where && SteamNetworkingUtils()->ParsePingLocationString(where, loc))
@@ -1271,6 +1283,8 @@ namespace
         set("difficulty", h.difficulty >= 0 ? std::to_string(h.difficulty) : "");
         set("umode", h.mode);
         set("state", h.in_game ? "game" : "lobby");
+        set("menu", h.menu);
+        set("rules", h.rules);
         // Where this PC is, for the others' ping (ready once the relays answered).
         SteamNetworkPingLocation_t loc;
         if (SteamNetworkingUtils()->GetLocalPingLocation(loc) >= 0.0f)
@@ -1542,6 +1556,24 @@ namespace ao2::steam
     return shared().self_ip;
   }
 
+  uint64_t SteamIdOf(uint32_t ip)
+  {
+    std::lock_guard lock(shared().mutex);
+    auto it = shared().peer_ids.find(ip);
+    return it != shared().peer_ids.end() ? it->second : 0;
+  }
+
+  bool OpenProfile(uint64_t steam_id)
+  {
+    std::lock_guard lock(shared().mutex);
+    if (!g_running || !steam_id)
+    {
+      return false;
+    }
+    shared().profile = steam_id;
+    return true;
+  }
+
   void SetHosting(const Hosting &hosting)
   {
     std::lock_guard lock(shared().mutex);
@@ -1686,6 +1718,8 @@ namespace ao2::steam
   std::string PersonaName() { return {}; }
   std::vector<uint32_t> PeerAddresses() { return {}; }
   uint32_t SelfAddress() { return 0; }
+  uint64_t SteamIdOf(uint32_t) { return 0; }
+  bool OpenProfile(uint64_t) { return false; }
   void SetHosting(const Hosting &) {}
   bool TakeAutoAccept(uint32_t) { return false; }
   uint32_t AutoAccepted() { return 0; }

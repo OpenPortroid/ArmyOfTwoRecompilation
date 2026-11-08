@@ -14,7 +14,14 @@
 // each pressed is theirs: a key or a mouse button gives the keyboard and the
 // mouse, a gamepad button that gamepad (rexruntime's rex_input_split_players).
 // A device nobody pressed plays nobody. Esc or B undoes the last player, and with
-// nobody in closes the window: the menu stays where it was.
+// nobody in closes the window. Right after the held event the button's sequence
+// closes Campaign Mode's scene (MissionSetupScene): with nothing on the scene stack
+// taking input the menu was dead, and opening Campaign Mode again played its
+// animation (and once crashed the render thread on a primitive of the closed scene).
+// So that close is skipped while the window is open, and on cancel the menu is still
+// there (UGameUISceneClient::CloseScene, sub_82975D68, scene client vtable +264, as
+// UISceneClient.CloseScene and UIAction_CloseScene call it). With both in the scene
+// is closed right after the window's own event has gone through.
 //
 // With both in, the command runs again and goes through once player 2 is signed
 // in (the runtime looks at the devices every 250 ms; the event may ask for player 2
@@ -53,6 +60,12 @@
 #include <rex/ppc.h>
 
 extern "C" REX_FUNC(sub_82B06D90); // XamUserGetSigninState (versus_guest.cpp)
+extern "C" REX_FUNC(__imp__sub_82975D68); // UGameUISceneClient::CloseScene
+
+namespace ao2::lobby_visibility
+{
+  void BackToMenu(bool versus); // lobby_visibility.cpp
+}
 
 namespace ao2::split_join
 {
@@ -77,7 +90,13 @@ namespace
   std::atomic<bool> g_left_shell{false}; // a level was entered since
   std::atomic<bool> g_guest_devices{false}; // a versus guest's window gave them
   std::atomic<bool> g_guest_close{false};   // the lobby went while its window was open
+  std::atomic<bool> g_held{false};          // the Splitscreen button's event was held back for the window
+  std::atomic<bool> g_drop_next{false};     // cancelled before it came: held back when it comes, menu again
   std::chrono::steady_clock::time_point g_pass_until; // game thread: Splitscreen events go through until then
+  std::chrono::steady_clock::time_point g_drop_until; // game thread: ... are dropped until then (a cancel)
+  std::atomic<int64_t> g_keep_until{0};    // Campaign Mode's close is skipped until then (steady clock ns; a cancel)
+  uint32_t g_kept_scene = 0, g_kept_client = 0; // game thread: the close that was skipped
+  std::atomic<bool> g_close_kept{false};   // the window's own event went through: close it after it
 
   void Log(const char *what)
   {
@@ -256,7 +275,27 @@ namespace
       }
       else
       {
-        DevicesBack("cancelled: devices back");
+        // Player 2 stays signed in, on the runtime's NOP stand-in (nothing to press),
+        // player 1 has the keyboard and every pad: signed out right after the sign-in,
+        // the game freed their profile while its read was still to come, which then
+        // wrote into memory taken by other things since (crashes on the rendering and
+        // game threads). They are signed out with the devices back (Back, another
+        // Campaign Mode button, the main menu after a level).
+        SplitPlayers(2, 0, 0xFFFFFFFFu, 0);
+        g_left_shell = false;
+        g_active = true;
+        Log("cancelled: player 2 stays signed in with no device");
+        if (g_held.exchange(false))
+        {
+          Log("cancelled: Campaign Mode stays");
+        }
+        else
+        {
+          // The event and the close right after it are still on their way (a
+          // later close is the player's own: Back).
+          g_keep_until = (std::chrono::steady_clock::now() + std::chrono::seconds(2)).time_since_epoch().count();
+          g_drop_next = true;
+        }
       }
     }
 
@@ -286,6 +325,7 @@ namespace
       }
       g_left_shell = false;
       g_active = true;
+      g_held = false;
       g_resume = true;
       g_window_open = false;
       ao2::console::Queue("exec causeevent MissionSetup_Splitscreen");
@@ -322,7 +362,7 @@ namespace
       ui::Caps(dl, FontKind::kTitle, ImVec2(mn.x + pad, y), ui::Fade(ui::kAccentLight, a), Tr("SPLIT-SCREEN"));
       y += ui::FontSize(FontKind::kTitle) + 6.0f * s;
       ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad, y), ui::Fade(ui::kMuted, a),
-               Tr("Each player presses a button on their device: the keyboard or a gamepad."));
+               Tr("Each player presses any button on their own device: the keyboard or a gamepad."));
       y += ui::FontSize(FontKind::kSmall) + 18.0f * s;
 
       const float card_w = (width - pad * 2.0f - gap) * 0.5f;
@@ -625,13 +665,64 @@ namespace ao2::split_join
     {
       return false;
     }
+    if (g_drop_next.exchange(false))
+    {
+      Log("cancelled before the event: held back, Campaign Mode stays");
+      g_drop_until = now + std::chrono::milliseconds(500); // the other PlayerControllers' copies of it
+      g_keep_until = (now + std::chrono::milliseconds(500)).time_since_epoch().count(); // its close
+      return true;
+    }
+    if (now < g_drop_until)
+    {
+      return true;
+    }
     if (g_resume.exchange(false))
     {
       WaitForPlayer2(ctx, base);
       g_pass_until = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+      g_close_kept = true;
       return false;
     }
     // The window opened at the count; the sequence stops here until it is done.
-    return g_window_open.load(std::memory_order_relaxed);
+    if (!g_window_open.load(std::memory_order_relaxed))
+    {
+      return false;
+    }
+    g_held = true;
+    return true;
+  }
+
+  // Game thread, after PlayerController.CauseEvent has run (script_trace.cpp).
+  void AfterCauseEvent(PPCContext &ctx, uint8_t *base)
+  {
+    if (!g_close_kept.exchange(false) || !g_kept_scene)
+    {
+      return;
+    }
+    Log("Campaign Mode closes (players in)");
+    PPCContext saved = ctx;
+    ctx.r3.u64 = g_kept_client;
+    ctx.r4.u64 = g_kept_scene;
+    g_kept_scene = g_kept_client = 0;
+    __imp__sub_82975D68(ctx, base);
+    ctx = saved;
   }
 } // namespace ao2::split_join
+
+// UGameUISceneClient::CloseScene (r3 = scene client, r4 = scene): Campaign Mode stays
+// open behind the window.
+extern "C" REX_FUNC(sub_82975D68)
+{
+  const uint32_t scene = ctx.r4.u32;
+  const int64_t now = std::chrono::steady_clock::now().time_since_epoch().count();
+  if (scene && (g_window_open.load() || now < g_keep_until.load()) &&
+      ao2::ue3::ObjectName(base, scene).rfind("MissionSetupScene", 0) == 0)
+  {
+    g_kept_scene = scene;
+    g_kept_client = ctx.r3.u32;
+    Log("Campaign Mode stays open behind the window");
+    ctx.r3.u64 = 1;
+    return;
+  }
+  __imp__sub_82975D68(ctx, base);
+}
