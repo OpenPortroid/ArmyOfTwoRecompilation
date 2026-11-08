@@ -84,3 +84,32 @@ namespace ao2::recomp
 #define REX_STORE_U16(x, y) (*(volatile u16 *)(base + (u32)(x) + AO2_HOST_OFFSET(x, #x)) = __builtin_bswap16(y))
 #define REX_STORE_U32(x, y) (*(volatile u32 *)(base + (u32)(x) + AO2_HOST_OFFSET(x, #x)) = __builtin_bswap32(y))
 #define REX_STORE_U64(x, y) (*(volatile u64 *)(base + (u32)(x) + AO2_HOST_OFFSET(x, #x)) = __builtin_bswap64(y))
+
+// Vector dot products (vmsum3fp128 / vmsum4fp128: simde_mm_dp_ps with 0xEF / 0xFF) on the CPU's DPPS: the order DPPS adds
+// the four products in is not the same on every CPU (vendors differ), so the poses of skeletons (matrix and vector
+// math) came out a few ulps apart on two PCs of a lockstep game, a bullet that grazed a character hit on one and missed
+// on the other and the game went out of sync (versus traces 2026-11-07: the first difference was a hit). The same
+// products added in a fixed order, (p0 + p1) + (p2 + p3), on every machine.
+#include <simde/x86/sse4.1.h>
+
+namespace ao2::recomp
+{
+  template <int Imm>
+  inline simde__m128 DotProduct(simde__m128 a, simde__m128 b)
+  {
+    static_assert(Imm == 0xEF || Imm == 0xFF, "only the dot products the code generator emits");
+    simde__m128 p = simde_mm_mul_ps(a, b);
+    if constexpr (Imm == 0xEF)
+    {
+      // Elements 1..3 only; the result goes to all four.
+      p = simde_mm_and_ps(p, simde_mm_castsi128_ps(simde_mm_set_epi32(-1, -1, -1, 0)));
+    }
+    // (p0 + p1, p1 + p0, p2 + p3, p3 + p2), then (p0 + p1) + (p2 + p3) in every element (the adds are commutative).
+    simde__m128 t = simde_mm_add_ps(p, simde_mm_shuffle_ps(p, p, SIMDE_MM_SHUFFLE(2, 3, 0, 1)));
+    return simde_mm_add_ps(t, simde_mm_shuffle_ps(t, t, SIMDE_MM_SHUFFLE(1, 0, 3, 2)));
+  }
+} // namespace ao2::recomp
+
+#undef simde_mm_dp_ps
+#undef _mm_dp_ps
+#define simde_mm_dp_ps(a, b, imm8) ::ao2::recomp::DotProduct<(imm8)>((a), (b))

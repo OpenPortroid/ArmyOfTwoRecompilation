@@ -191,7 +191,7 @@ namespace
       o.world_info = ao2::ue3::PropertyOffset(base, "Actor", "WorldInfo");
       o.pawn_list = ao2::ue3::PropertyOffset(base, "WorldInfo", "PawnList");
       o.next_pawn = ao2::ue3::PropertyOffset(base, "Pawn", "NextPawn");
-      o.found = o.location >= 0 && o.health >= 0 && o.pawn >= 0 && o.world_info >= 0 && o.pawn_list >= 0 &&
+      o.found = o.location >= 0 && o.health >= 0 && o.pawn >= 0 && o.pawn_list >= 0 &&
                 o.next_pawn >= 0;
       if (FILE *f = Log())
       {
@@ -227,6 +227,68 @@ namespace
     }
   }
 
+  // What moves a player's pawn: " ph <Actor.Physics> base <Actor.Base name> act <current action class> +72 <word>"
+  // (the character's current action: [pawn+1736], its current one through vtable +264, as mouse_aim.cpp).
+  void AppendMotion(PPCContext &ctx, uint8_t *base, uint32_t pawn, std::string &out)
+  {
+    static int32_t physics = -2, actor_base = -2;
+    if (physics == -2)
+    {
+      physics = ao2::ue3::PropertyOffset(base, "Actor", "Physics");
+      actor_base = ao2::ue3::PropertyOffset(base, "Actor", "Base");
+    }
+    char buf[160];
+    if (physics >= 0)
+    {
+      std::snprintf(buf, sizeof(buf), " ph %u", uint32_t(base[pawn + physics]));
+      out += buf;
+    }
+    if (actor_base >= 0)
+    {
+      uint32_t attached = LoadU32(base, pawn + actor_base);
+      out += " base " + (Plausible(attached) && Readable(base, attached, 64) ? ao2::ue3::ObjectName(base, attached)
+                                                                              : std::string("-"));
+    }
+    // The skeleton's own clocks and root motion (the first difference of every versus desync so far came as a downed
+    // character's animation moved it): AnimTickTime, AnimSampleTime, LastAnimMovingTimeStamp, LastBoundUpdateTime, and
+    // RootMotionDelta / RootMotionVelocity (SkeletalMeshComponent +1232, +1236, +1024, +1212, +1032, +1064).
+    {
+      uint32_t mesh = LoadU32(base, pawn + 868);
+      if (Plausible(mesh) && Readable(base, mesh, 1280))
+      {
+        std::snprintf(buf, sizeof(buf), " mesh %08X %08X %08X %08X rmd %08X %08X %08X rmv %08X %08X %08X",
+                      LoadU32(base, mesh + 1232), LoadU32(base, mesh + 1236), LoadU32(base, mesh + 1024),
+                      LoadU32(base, mesh + 1212), LoadU32(base, mesh + 1032), LoadU32(base, mesh + 1036),
+                      LoadU32(base, mesh + 1040), LoadU32(base, mesh + 1064), LoadU32(base, mesh + 1068),
+                      LoadU32(base, mesh + 1072));
+        out += buf;
+        // The ragdoll: PhysicsWeight (+704), the component's flag word (+920: bSyncActorLocationToRootRigidBody,
+        // bHasPhysicsAssetInstance, bHasHadPhysicsBlendedIn, bUpdateKinematicBonesFromAnimation...), whether it has a
+        // PhysicsAssetInstance (+700).
+        std::snprintf(buf, sizeof(buf), " pw %08X fl %08X pai %d", LoadU32(base, mesh + 704), LoadU32(base, mesh + 920),
+                      LoadU32(base, mesh + 700) ? 1 : 0);
+        out += buf;
+      }
+    }
+    // AO2CharacterNative.CachedHeadBoneOffsetFromLocation (the versus bots aimed with it once).
+    std::snprintf(buf, sizeof(buf), " head %08X %08X %08X", LoadU32(base, pawn + 2780), LoadU32(base, pawn + 2784),
+                  LoadU32(base, pawn + 2788));
+    out += buf;
+    uint32_t actions = LoadU32(base, pawn + 1736);
+    uint32_t vtable = Plausible(actions) && Readable(base, actions, 4) ? LoadU32(base, actions) : 0;
+    uint32_t current = Plausible(vtable) && Readable(base, vtable + 264, 4) ? LoadU32(base, vtable + 264) : 0;
+    if (current)
+    {
+      uint32_t action = CallGuest(ctx, base, current, actions, 0);
+      if (Plausible(action) && Readable(base, action, 80))
+      {
+        std::snprintf(buf, sizeof(buf), " act %s +72 %08X", ao2::ue3::ObjectName(base, action).c_str(),
+                      LoadU32(base, action + 72));
+        out += buf;
+      }
+    }
+  }
+
   uint32_t g_any_pawn = 0; // a player's pawn of the last frame (AppendPawns)
 
   void AppendPlayers(PPCContext &ctx, uint8_t *base, std::string &out)
@@ -256,6 +318,7 @@ namespace
         out += " pawn " + ao2::ue3::ObjectName(base, pawn);
         g_any_pawn = pawn;
         AppendActor(base, pawn, out);
+        AppendMotion(ctx, base, pawn, out);
       }
       // The player's camera actor (controller +832, AAO2CameraActor; +460 =
       // FOV): what the AI may read of the player's view.
@@ -298,7 +361,7 @@ namespace
     {
       return;
     }
-    uint32_t world_info = LoadU32(base, any_pawn + o.world_info);
+    uint32_t world_info = ao2::coop::LevelWorldInfo(base, any_pawn);
     uint32_t pawn = Plausible(world_info) ? LoadU32(base, world_info + o.pawn_list) : 0;
     auto put = [&](uint8_t kind, const std::string &name, uint32_t addr, uint32_t size) {
       if (!Plausible(addr) || !Readable(base, addr, size))
@@ -373,7 +436,7 @@ namespace
     {
       kactor_class = ao2::ue3::FindClass(base, "AO2KActor");
     }
-    if (!kactor_class || last_render < 0 || physics < 0 || world_info < 0 || time_seconds < 0 ||
+    if (!kactor_class || last_render < 0 || physics < 0 || time_seconds < 0 ||
         !Plausible(any_pawn))
     {
       return;
@@ -390,7 +453,7 @@ namespace
         }
       }
     }
-    uint32_t info = LoadU32(base, any_pawn + world_info);
+    uint32_t info = ao2::coop::LevelWorldInfo(base, any_pawn);
     if (!Plausible(info) || !Readable(base, info + time_seconds, 4))
     {
       return;
@@ -513,7 +576,7 @@ namespace
     {
       return;
     }
-    uint32_t world_info = LoadU32(base, any_pawn + o.world_info);
+    uint32_t world_info = ao2::coop::LevelWorldInfo(base, any_pawn);
     if (!Plausible(world_info) || !Readable(base, world_info + o.pawn_list, 4))
     {
       return;
@@ -550,7 +613,7 @@ namespace
     {
       return;
     }
-    uint32_t world_info = LoadU32(base, any_pawn + o.world_info);
+    uint32_t world_info = ao2::coop::LevelWorldInfo(base, any_pawn);
     if (!Plausible(world_info) || !Readable(base, world_info + o.pawn_list, 4))
     {
       return;
@@ -643,6 +706,32 @@ extern "C" REX_FUNC(sub_8240DAD8)
   t_script_frame = outer;
 }
 
+namespace
+{
+  std::string g_inputs; // " <controller id>:<key>=<value>,... " of the records replayed since the last F line
+}
+
+namespace ao2::coop
+{
+  void TraceRecord(const uint8_t *base, uint32_t record, uint32_t controller_id)
+  {
+    if (!On() || !Plausible(record) || !Readable(base, record, 320))
+    {
+      return;
+    }
+    uint32_t count = std::min<uint32_t>(LoadU32(base, record + 312), 16);
+    char buf[48];
+    std::snprintf(buf, sizeof(buf), " %u:", controller_id);
+    g_inputs += buf;
+    for (uint32_t i = 0; i < count; ++i)
+    {
+      std::snprintf(buf, sizeof(buf), "%u=%d,", LoadU32(base, record + 248 + i * 8),
+                    int32_t(LoadU32(base, record + 252 + i * 8)));
+      g_inputs += buf;
+    }
+  }
+} // namespace ao2::coop
+
 // The frame sync builds this machine's record of a frame (r3 = sync, r4 =
 // frame) with the checksum at +44 / +46; again while waiting (same frame).
 extern "C" REX_FUNC(__imp__sub_82A2D708);
@@ -673,6 +762,8 @@ extern "C" REX_FUNC(sub_82A2D708)
         sites += " " + site + "=" + std::to_string(count);
       }
       std::fprintf(f, "R %u%s\n", frame, sites.c_str());
+      std::fprintf(f, "I %u%s\n", frame, g_inputs.c_str());
+      g_inputs.clear();
       // The second generator (appSRand, seed at kSRandSeed): not part of the
       // checksum. "S <frame> seed <state> caller=count ..." (game thread).
       std::string srand_sites;

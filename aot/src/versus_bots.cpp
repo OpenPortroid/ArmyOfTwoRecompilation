@@ -142,6 +142,7 @@
 // play by the host's (the lowest id that says it hosts, else the lowest id
 // that sent), and by the defaults until any came: the same everywhere.
 #include "versus_bots.h"
+#include "det_math.h"
 
 #include "coop.h"
 #include "coop_cmd.h"
@@ -388,7 +389,7 @@ namespace
   }
   float Dist2D(const Vec &a, const Vec &b)
   {
-    return std::hypot(a.x - b.x, a.y - b.y);
+    return ao2::det::Hypot(a.x - b.x, a.y - b.y);
   }
 
   // A number from the frame and the bot (the same on every machine), -1..1.
@@ -635,13 +636,12 @@ namespace
 
   Vec Head(const uint8_t *base, uint32_t pawn)
   {
+    // Not the character's CachedHeadBoneOffsetFromLocation (kHeadOffset): it comes from the skeleton, which the
+    // game updates as its machine draws, so the two PCs of a game read different last bits of it (versus traces
+    // 2026-11-07: the bots' look rotations differed by ulps long before the game went out of sync). Bots aim at a
+    // fixed height above the character's place, the same everywhere.
     Vec v = LoadVec(base, pawn + kActorLocation);
-    Vec h = LoadVec(base, pawn + kHeadOffset);
-    if (std::fabs(h.x) + std::fabs(h.y) + std::fabs(h.z) < 1.0f || std::fabs(h.z) > 200.0f)
-    {
-      h = {0, 0, 60};
-    }
-    return {v.x + h.x, v.y + h.y, v.z + h.z};
+    return {v.x, v.y, v.z + 60.0f};
   }
 
   // How a character lies: 0 standing, 1 wounded (crawls; its partner can
@@ -952,7 +952,7 @@ namespace
       return false;
     }
     Vec d{to.x - from.x, to.y - from.y, to.z - from.z};
-    float len = std::hypot(std::hypot(d.x, d.y), d.z);
+    float len = ao2::det::Hypot(ao2::det::Hypot(d.x, d.y), d.z);
     if (len <= 2.0f * kWalkTrim + 10.0f)
     {
       return true;
@@ -979,7 +979,7 @@ namespace
 
   float Dist3D(const Vec &a, const Vec &b)
   {
-    return std::hypot(std::hypot(a.x - b.x, a.y - b.y), a.z - b.z);
+    return ao2::det::Hypot(ao2::det::Hypot(a.x - b.x, a.y - b.y), a.z - b.z);
   }
 
   void StartNavigation(const uint8_t *base, uint32_t first)
@@ -1164,7 +1164,7 @@ namespace
         for (int dy = -r; dy <= r; ++dy)
         {
           float x = (float(cx + dx) + 0.5f) * kGridStep, y = (float(cy + dy) + 0.5f) * kGridStep;
-          if (std::hypot(x - n.at.x, y - n.at.y) <= kGridNear)
+          if (ao2::det::Hypot(x - n.at.x, y - n.at.y) <= kGridNear)
           {
             g_grid.columns.push_back({cx + dx, cy + dy});
           }
@@ -1300,11 +1300,11 @@ namespace
         {
           float a = float(side) * 1.5707963f;
           Vec wall;
-          if (TraceHit(ctx, base, source, mid, {x + std::cos(a) * kFloorClear, y + std::sin(a) * kFloorClear, mid.z},
+          if (TraceHit(ctx, base, source, mid, {x + ao2::det::Cos(a) * kFloorClear, y + ao2::det::Sin(a) * kFloorClear, mid.z},
                        0.0f, kTraceFlagBlocking, &wall))
           {
-            float d = std::hypot(wall.x - x, wall.y - y);
-            push_x -= std::cos(a) * (kFloorClear - d), push_y -= std::sin(a) * (kFloorClear - d);
+            float d = ao2::det::Hypot(wall.x - x, wall.y - y);
+            push_x -= ao2::det::Cos(a) * (kFloorClear - d), push_y -= ao2::det::Sin(a) * (kFloorClear - d);
           }
         }
         if (room && (push_x != 0 || push_y != 0))
@@ -1443,7 +1443,7 @@ namespace
         // from one to the next past the wall's end grazes the end. Walked by
         // a point beside the line's middle (g_via) when both halves are clear.
         Vec d{pb.x - pa.x, pb.y - pa.y, 0.0f};
-        float len = std::max(1.0f, std::hypot(d.x, d.y));
+        float len = std::max(1.0f, ao2::det::Hypot(d.x, d.y));
         Vec side{-d.y / len, d.x / len, 0.0f};
         Vec mid{(pa.x + pb.x) * 0.5f, (pa.y + pb.y) * 0.5f, (pa.z + pb.z) * 0.5f};
         for (float off : {kViaNear, -kViaNear, kViaFar, -kViaFar})
@@ -1736,7 +1736,7 @@ namespace
     std::priority_queue<Item, std::vector<Item>, std::greater<Item>> open;
     auto h = [&](int i) {
       const Vec &a = g_nodes[i].at, &b = g_nodes[goal].at;
-      return std::hypot(std::hypot(a.x - b.x, a.y - b.y), a.z - b.z);
+      return ao2::det::Hypot(ao2::det::Hypot(a.x - b.x, a.y - b.y), a.z - b.z);
     };
     cost[start] = 0;
     open.push({h(start), start});
@@ -2051,7 +2051,7 @@ namespace
     float dpitch = std::remainder(std::clamp(want_pitch, -kMaxPitch, kMaxPitch) - std::remainder(pitch, 65536.0f),
                                   65536.0f);
     float step = float(g_settings.turn) * kUnitsPerDegree;
-    float len = std::hypot(dyaw, dpitch);
+    float len = ao2::det::Hypot(dyaw, dpitch);
     float k = len > step ? step / len : 1.0f;
     StoreF32(base, rotation + 4, yaw + dyaw * k);
     StoreF32(base, rotation, pitch + dpitch * k);
@@ -2061,10 +2061,10 @@ namespace
   // The left stick towards a point, relative to the view's yaw.
   void Steer(const Vec &from, const Vec &to, float view_yaw, float speed, Input &in)
   {
-    float want = std::atan2(to.y - from.y, to.x - from.x);
+    float want = ao2::det::Atan2(to.y - from.y, to.x - from.x);
     float rel = want - view_yaw / kUnitsPerRadian; // + = to the right (yaw grows towards +Y)
-    in.ly = std::cos(rel) * speed;
-    in.lx = std::sin(rel) * speed;
+    in.ly = ao2::det::Cos(rel) * speed;
+    in.lx = ao2::det::Sin(rel) * speed;
   }
 
   // A short walk from where the bot stands is clear: a line, and a box
@@ -2088,7 +2088,7 @@ namespace
   Vec ProbeEnd(const Vec &at, const Vec &to, float a, float dist)
   {
     float climb = (to.z - at.z) * std::min(1.0f, dist / std::max(1.0f, Dist2D(at, to)));
-    return {at.x + std::cos(a) * dist, at.y + std::sin(a) * dist, at.z + climb};
+    return {at.x + ao2::det::Cos(a) * dist, at.y + ao2::det::Sin(a) * dist, at.z + climb};
   }
 
   // The way towards `to`: straight on when a probe kWallProbe ahead is
@@ -2100,7 +2100,7 @@ namespace
     if (frame >= bot.next_probe)
     {
       bot.next_probe = frame + kProbeFrames;
-      float want = std::atan2(to.y - at.y, to.x - at.x);
+      float want = ao2::det::Atan2(to.y - at.y, to.x - at.x);
       float probe = std::clamp(Dist2D(at, to) - 60.0f, 60.0f, kWallProbe);
       bot.walk_dir = want;
       bool found = false;
@@ -2122,7 +2122,7 @@ namespace
         }
       }
     }
-    return {at.x + std::cos(bot.walk_dir) * 500.0f, at.y + std::sin(bot.walk_dir) * 500.0f, to.z};
+    return {at.x + ao2::det::Cos(bot.walk_dir) * 500.0f, at.y + ao2::det::Sin(bot.walk_dir) * 500.0f, to.z};
   }
 
   // Away from what holds the bot: of the ways back from `want` (radians),
@@ -2134,7 +2134,7 @@ namespace
       for (int s : {side, -side})
       {
         float a = want + float(s) * turn / 57.29578f;
-        if (ProbeClear(ctx, base, pawn, at, {at.x + std::cos(a) * 200.0f, at.y + std::sin(a) * 200.0f, at.z}))
+        if (ProbeClear(ctx, base, pawn, at, {at.x + ao2::det::Cos(a) * 200.0f, at.y + ao2::det::Sin(a) * 200.0f, at.z}))
         {
           return a;
         }
@@ -2730,7 +2730,7 @@ namespace
     {
       return false;
     }
-    float theta = std::atan((v2 - std::sqrt(disc)) / (g * r));
+    float theta = ao2::det::Atan((v2 - std::sqrt(disc)) / (g * r));
     pitch = (theta * 57.29578f - offset) * kUnitsPerDegree;
     return true;
   }
@@ -2790,8 +2790,8 @@ namespace
         ++why.seen;
         continue; // seen crouching
       }
-      float a = std::atan2(eye.y - c.y, eye.x - c.x);
-      float sx = -std::sin(a) * 70.0f, sy = std::cos(a) * 70.0f;
+      float a = ao2::det::Atan2(eye.y - c.y, eye.x - c.x);
+      float sx = -ao2::det::Sin(a) * 70.0f, sy = ao2::det::Cos(a) * 70.0f;
       Vec up{c.x, c.y, c.z + 55.0f}, mid{c.x, c.y, c.z + 35.0f};
       bool fires = !Blocked(ctx, base, pawn, up, body, threat);
       for (float s : {1.0f, -1.0f})
@@ -2914,7 +2914,7 @@ namespace
         continue; // gone off (its memory another object's now)
       }
       Vec p = LoadVec(base, o + kActorLocation);
-      float speed = std::hypot(LoadF32(base, o + kActorVelocity), LoadF32(base, o + kActorVelocity + 4),
+      float speed = ao2::det::Hypot(LoadF32(base, o + kActorVelocity), LoadF32(base, o + kActorVelocity + 4),
                                LoadF32(base, o + kActorVelocity + 8));
       bool landed = (g.bounces >= 0 && cls == g.proj_class && int32_t(LoadU32(base, o + g.bounces)) > 0) ||
                     speed < kGrenadeLanded;
@@ -3634,7 +3634,7 @@ namespace
       }
       else
       {
-        TurnTowards(base, holder, std::atan2(partner->at.y - me.at.y, partner->at.x - me.at.x) * kUnitsPerRadian,
+        TurnTowards(base, holder, ao2::det::Atan2(partner->at.y - me.at.y, partner->at.x - me.at.x) * kUnitsPerRadian,
                     -30.0f * kUnitsPerDegree, 0.0f);
         uint32_t since = frame - bot.offer_since;
         in.buttons |= since >= 10 && since % 60 < 3 ? kA : 0;
@@ -3659,7 +3659,7 @@ namespace
     if (player_partner && !have_goal && !carrying && props.step_volume >= 0 && !partner->down)
     {
       uint32_t volume = LoadU32(base, partner->pawn + props.step_volume);
-      float speed = std::hypot(LoadF32(base, partner->pawn + kActorVelocity),
+      float speed = ao2::det::Hypot(LoadF32(base, partner->pawn + kActorVelocity),
                                LoadF32(base, partner->pawn + kActorVelocity + 4));
       bool lifter = volume && volume == bot.lift_volume && frame - bot.lift_seen < kLiftMemory;
       // Waited by it kLiftPatience and it does not lift again (or the bot
@@ -3768,7 +3768,7 @@ namespace
       goal_at = partner->at, have_goal = true, goal_actor = partner->pawn;
       arrive = kFollowReach;
       float vx = LoadF32(base, partner->pawn + kActorVelocity), vy = LoadF32(base, partner->pawn + kActorVelocity + 4);
-      float speed = std::hypot(vx, vy);
+      float speed = ao2::det::Hypot(vx, vy);
       if (speed > kFollowMoving)
       {
         for (float lead : {kFollowLead, kFollowLead * 0.5f})
@@ -3973,8 +3973,8 @@ namespace
               bot.extract_leave_at = frame;
               bot.extract_out_since = 0;
               // Out just past its edge the way the bot is from its middle.
-              float a = std::atan2(me.at.y - mid.y, me.at.x - mid.x);
-              float cx = std::cos(a), cy = std::sin(a);
+              float a = ao2::det::Atan2(me.at.y - mid.y, me.at.x - mid.x);
+              float cx = ao2::det::Cos(a), cy = ao2::det::Sin(a);
               float edge = cylinder ? radius : 100.0f;
               if (v)
               {
@@ -4418,7 +4418,7 @@ namespace
     if (use)
     {
       Vec a = goal_actor ? LoadVec(base, goal_actor + kActorLocation) : goal_at;
-      TurnTowards(base, holder, std::atan2(a.y - me.at.y, a.x - me.at.x) * kUnitsPerRadian,
+      TurnTowards(base, holder, ao2::det::Atan2(a.y - me.at.y, a.x - me.at.x) * kUnitsPerRadian,
                   task == Task::kHeal ? -20.0f * kUnitsPerDegree : 0.0f, 0.0f);
       if (task == Task::kJoin)
       {
@@ -4567,9 +4567,9 @@ namespace
         return Noise(step, seed) * (1.0f - k) + Noise(step + 1, seed) * k;
       };
       float dx = at.x - eye.x, dy = at.y - eye.y, dz = at.z - eye.z;
-      float want_yaw = std::atan2(dy, dx) * kUnitsPerRadian + miss * wander(id * 2);
-      float want_pitch = std::atan2(dz, std::hypot(dx, dy)) * kUnitsPerRadian + miss * wander(id * 2 + 1);
-      float tolerance = std::max(3.0f * kUnitsPerDegree, std::atan2(30.0f, std::hypot(dx, dy)) * kUnitsPerRadian);
+      float want_yaw = ao2::det::Atan2(dy, dx) * kUnitsPerRadian + miss * wander(id * 2);
+      float want_pitch = ao2::det::Atan2(dz, ao2::det::Hypot(dx, dy)) * kUnitsPerRadian + miss * wander(id * 2 + 1);
+      float tolerance = std::max(3.0f * kUnitsPerDegree, ao2::det::Atan2(30.0f, ao2::det::Hypot(dx, dy)) * kUnitsPerRadian);
       bool on = TurnTowards(base, holder, want_yaw, want_pitch, tolerance);
       bool moving_on = have_goal && !there && task != Task::kHunt;
       // Aiming slows the walk: not while catching up with its partner.
@@ -4593,8 +4593,8 @@ namespace
       // The enemy out of sight: aimed where it was last seen, up or down.
       Vec at{bot.threat_at.x, bot.threat_at.y, bot.threat_at.z + 40.0f};
       float dx = at.x - eye.x, dy = at.y - eye.y;
-      TurnTowards(base, holder, std::atan2(dy, dx) * kUnitsPerRadian,
-                  std::atan2(at.z - eye.z, std::hypot(dx, dy)) * kUnitsPerRadian, 0.0f);
+      TurnTowards(base, holder, ao2::det::Atan2(dy, dx) * kUnitsPerRadian,
+                  ao2::det::Atan2(at.z - eye.z, ao2::det::Hypot(dx, dy)) * kUnitsPerRadian, 0.0f);
       in.buttons |= kLT;
     }
     if (hiding)
@@ -4629,7 +4629,7 @@ namespace
         for (int s : {side, -side})
         {
           float a = yaw + float(s) * 1.5707964f;
-          if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * 150.0f, me.at.y + std::sin(a) * 150.0f, me.at.z}))
+          if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + ao2::det::Cos(a) * 150.0f, me.at.y + ao2::det::Sin(a) * 150.0f, me.at.z}))
           {
             bot.strafe_side = s;
             break;
@@ -4721,7 +4721,7 @@ namespace
       Vec way = vault_link || ladder_link ? to : WalkTarget(ctx, base, pawn, me.at, to, bot, frame);
       if (frame < bot.escape_until)
       {
-        way = {me.at.x + std::cos(bot.escape_dir) * 500.0f, me.at.y + std::sin(bot.escape_dir) * 500.0f, me.at.z};
+        way = {me.at.x + ao2::det::Cos(bot.escape_dir) * 500.0f, me.at.y + ao2::det::Sin(bot.escape_dir) * 500.0f, me.at.z};
         speed = 1.0f;
       }
       Steer(me.at, way, view_yaw, speed, in);
@@ -4741,7 +4741,7 @@ namespace
       if (!bot.target && !bot.nade_step)
       {
         // Look where it goes.
-        float want_yaw = std::atan2(way.y - me.at.y, way.x - me.at.x) * kUnitsPerRadian;
+        float want_yaw = ao2::det::Atan2(way.y - me.at.y, way.x - me.at.x) * kUnitsPerRadian;
         TurnTowards(base, holder, want_yaw, 0.0f, 0.0f);
       }
       // Not moving: Y and B by turns. Y is the context button (vault, also
@@ -4815,7 +4815,7 @@ namespace
       }
       if ((frame >= bot.progress_until || walled) && frame >= bot.escape_until)
       {
-        float want = std::atan2(to.y - me.at.y, to.x - me.at.x);
+        float want = ao2::det::Atan2(to.y - me.at.y, to.x - me.at.x);
         if (node >= 0)
         {
           bot.barred.push_back({from_node, node, frame + kBarFrames});
@@ -4845,7 +4845,7 @@ namespace
 
     // Held still with the stick pushed: counted (a wall), and what holds it logged.
     {
-      bool pushed = std::hypot(in.lx, in.ly) > 0.5f;
+      bool pushed = ao2::det::Hypot(in.lx, in.ly) > 0.5f;
       bool moved = Dist2D(me.at, bot.last_at) > kStillMove;
       bot.last_at = me.at;
       bot.still = pushed && !moved ? bot.still + 1 : 0;
@@ -4864,8 +4864,8 @@ namespace
           cover_ratio = ao2::ue3::PropertyOffset(base, "AO2CharacterNative", "CoverRatio");
         }
         float yaw = view_yaw / kUnitsPerRadian;
-        float dir = std::atan2(in.lx, in.ly) + yaw; // where the stick pushes, in the world
-        Vec ahead{me.at.x + std::cos(dir) * 150.0f, me.at.y + std::sin(dir) * 150.0f, me.at.z};
+        float dir = ao2::det::Atan2(in.lx, in.ly) + yaw; // where the stick pushes, in the world
+        Vec ahead{me.at.x + ao2::det::Cos(dir) * 150.0f, me.at.y + ao2::det::Sin(dir) * 150.0f, me.at.z};
         uint32_t hit = TraceHit(ctx, base, pawn, me.at, ahead);
         uint32_t node = cover_node >= 0 ? LoadU32(base, controller + cover_node) : 0;
         Logf("frame %u: bot %u still %u frames at %.0f %.0f %.0f: stick %.2f %.2f, buttons %X, physics %u, cover "
@@ -4890,7 +4890,7 @@ namespace
       for (int s : {first, -first})
       {
         float a = yaw + float(s) * 1.5707964f;
-        if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * 250.0f, me.at.y + std::sin(a) * 250.0f, me.at.z}))
+        if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + ao2::det::Cos(a) * 250.0f, me.at.y + ao2::det::Sin(a) * 250.0f, me.at.z}))
         {
           bot.dodge_at = frame + 1;
           bot.dodge_side = s;
@@ -4914,14 +4914,14 @@ namespace
     if (player_partner && !in_cover && !partner->down)
     {
       uint32_t look = LoadU32(base, partner->controller + kLookHolder);
-      float speed = std::hypot(LoadF32(base, partner->pawn + kActorVelocity),
+      float speed = ao2::det::Hypot(LoadF32(base, partner->pawn + kActorVelocity),
                                LoadF32(base, partner->pawn + kActorVelocity + 4));
       if (look == partner->pawn && speed < kClearSlow && frame >= bot.clear_until + 15)
       {
         float pitch = LoadF32(base, look + kLookRotation) / kUnitsPerRadian;
         float yaw = LoadF32(base, look + kLookRotation + 4) / kUnitsPerRadian;
         Vec from = Head(base, partner->pawn);
-        Vec dir{std::cos(pitch) * std::cos(yaw), std::cos(pitch) * std::sin(yaw), std::sin(pitch)};
+        Vec dir{ao2::det::Cos(pitch) * ao2::det::Cos(yaw), ao2::det::Cos(pitch) * ao2::det::Sin(yaw), ao2::det::Sin(pitch)};
         Vec mid = Body(base, pawn);
         float along = (mid.x - from.x) * dir.x + (mid.y - from.y) * dir.y + (mid.z - from.z) * dir.z;
         Vec far{from.x + dir.x * kClearRange, from.y + dir.y * kClearRange, from.z + dir.z * kClearRange};
@@ -4931,7 +4931,7 @@ namespace
           for (float s : {side, -side})
           {
             float a = yaw + s * 1.5707964f;
-            if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * 200.0f, me.at.y + std::sin(a) * 200.0f, me.at.z}))
+            if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + ao2::det::Cos(a) * 200.0f, me.at.y + ao2::det::Sin(a) * 200.0f, me.at.z}))
             {
               bot.clear_until = frame + 30;
               bot.clear_dir = a;
@@ -4945,7 +4945,7 @@ namespace
     }
     if (frame < bot.clear_until)
     {
-      Steer(me.at, {me.at.x + std::cos(bot.clear_dir) * 300.0f, me.at.y + std::sin(bot.clear_dir) * 300.0f, me.at.z},
+      Steer(me.at, {me.at.x + ao2::det::Cos(bot.clear_dir) * 300.0f, me.at.y + ao2::det::Sin(bot.clear_dir) * 300.0f, me.at.z},
             view_yaw, 1.0f, in);
     }
 
@@ -4958,14 +4958,14 @@ namespace
     if (danger && frame >= bot.flee_until)
     {
       float d = Dist2D(me.at, nade_at);
-      float away = d > 10.0f ? std::atan2(me.at.y - nade_at.y, me.at.x - nade_at.x)
+      float away = d > 10.0f ? ao2::det::Atan2(me.at.y - nade_at.y, me.at.x - nade_at.x)
                              : view_yaw / kUnitsPerRadian + 3.1415927f;
       float run = std::max(250.0f, nade_reach - d + 100.0f);
       bot.flee_dir = away;
       for (float turn : {0.0f, 0.6f, -0.6f, 1.2f, -1.2f, 1.9f, -1.9f})
       {
         float a = away + turn;
-        if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + std::cos(a) * run, me.at.y + std::sin(a) * run, me.at.z}))
+        if (ProbeClear(ctx, base, pawn, me.at, {me.at.x + ao2::det::Cos(a) * run, me.at.y + ao2::det::Sin(a) * run, me.at.z}))
         {
           bot.flee_dir = a;
           break;
@@ -4988,7 +4988,7 @@ namespace
     }
     if (frame < bot.flee_until)
     {
-      Steer(me.at, {me.at.x + std::cos(bot.flee_dir) * 500.0f, me.at.y + std::sin(bot.flee_dir) * 500.0f, me.at.z},
+      Steer(me.at, {me.at.x + ao2::det::Cos(bot.flee_dir) * 500.0f, me.at.y + ao2::det::Sin(bot.flee_dir) * 500.0f, me.at.z},
             view_yaw, 1.0f, in);
       in.buttons &= ~(kLT | kL3);
       bot.stuck_check = 0;
@@ -5028,8 +5028,8 @@ namespace
         // The curve's top half way: clear from the hand to it and from it down.
         float theta = (pitch / kUnitsPerDegree + nade_offset) / 57.29578f;
         float x = Dist2D(eye, aim_to) * 0.5f;
-        float c = std::cos(theta);
-        float y = x * std::tan(theta) - g * x * x / (2.0f * nade_speed * nade_speed * c * c);
+        float c = ao2::det::Cos(theta);
+        float y = x * ao2::det::Tan(theta) - g * x * x / (2.0f * nade_speed * nade_speed * c * c);
         Vec top{(eye.x + aim_to.x) * 0.5f, (eye.y + aim_to.y) * 0.5f, eye.z + y};
         if ((!g_last_nade || frame - g_last_nade >= kNadeApart) && !Blocked(ctx, base, pawn, eye, top) &&
             !Blocked(ctx, base, pawn, top, {to.x, to.y, to.z + 80.0f}))
@@ -5072,11 +5072,11 @@ namespace
       if (bot.nade_step >= 2)
       {
         TurnTowards(base, holder,
-                    std::atan2(bot.nade_to.y - eye.y, bot.nade_to.x - eye.x) * kUnitsPerRadian, bot.nade_pitch,
+                    ao2::det::Atan2(bot.nade_to.y - eye.y, bot.nade_to.x - eye.x) * kUnitsPerRadian, bot.nade_pitch,
                     0.0f);
       }
       float yaw = LoadF32(base, holder + kLookRotation + 4), pitch = LoadF32(base, holder + kLookRotation);
-      float want = std::atan2(bot.nade_to.y - eye.y, bot.nade_to.x - eye.x) * kUnitsPerRadian;
+      float want = ao2::det::Atan2(bot.nade_to.y - eye.y, bot.nade_to.x - eye.x) * kUnitsPerRadian;
       bool on = std::fabs(std::remainder(want - yaw, 65536.0f)) < kUnitsPerDegree &&
                 std::fabs(std::remainder(bot.nade_pitch - pitch, 65536.0f)) < kUnitsPerDegree;
       switch (bot.nade_step)

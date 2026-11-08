@@ -80,6 +80,8 @@ set(ARMYOFTWORECOMP_SOURCES
     src/aim_assist.cpp
     src/audio_settings.cpp
     src/versus_bots.cpp
+    src/det_log2.cpp
+    src/coop_task_pool.cpp
     src/versus_guest.cpp
     src/split_join.cpp
     src/lobby_visibility.cpp

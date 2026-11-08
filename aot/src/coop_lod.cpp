@@ -73,12 +73,17 @@
 #include <rex/ppc.h>
 
 #include "coop.h"
+#include "decouple.h"
 #include "ue3_reflect.h"
 #include "log_files.h"
 
 REXCVAR_DEFINE_BOOL(ao2_coop_force_lod, true, "Online",
                     "Online co-op: the same skeletal LOD for every pawn on both machines - the view-dependent "
                     "LOD changed the simulation (desync)");
+REXCVAR_DEFINE_BOOL(ao2_coop_no_player_ragdoll, false, "Debug",
+                    "Online lockstep test: a player's mesh takes no physics (PhysicsWeight 0, the actor not synced to the root "
+                    "body): a knocked-down player stays where the animation leaves it. Tells whether the PhysX ragdoll is what "
+                    "splits the game (every versus desync began a few frames after a player went down). Same on both PCs");
 REXCVAR_DEFINE_DOUBLE(ao2_coop_lod_scale, 2.0, "Online",
                       "Online co-op: screen scale of the shared pawn LOD (higher = full detail farther away; "
                       "0 = every pawn at full detail). Must be the same on both PCs");
@@ -215,6 +220,57 @@ namespace
     return Valid(base, object, g_pawn_class);
   }
 
+  // The level's WorldInfo when Actor.WorldInfo is not a property of this build (TU2): the WorldInfo object whose
+  // PawnList holds `pawn`. Kept while it does; looked up again (a scan of every object) at most once per second.
+  uint32_t WorldInfoByPawn(const uint8_t *base, uint32_t pawn, uint32_t info_class, uint32_t pawn_list,
+                           uint32_t next_pawn)
+  {
+    static uint32_t cached = 0;
+    static uint32_t skip = 0;
+    auto holds = [&](uint32_t info) {
+      if (!Valid(base, info, info_class))
+      {
+        return false;
+      }
+      uint32_t p = LoadU32(base, info + pawn_list);
+      for (int i = 0; i < 512 && Plausible(p); ++i)
+      {
+        if (p == pawn)
+        {
+          return true;
+        }
+        p = LoadU32(base, p + next_pawn);
+      }
+      return false;
+    };
+    if (cached && holds(cached))
+    {
+      return cached;
+    }
+    cached = 0;
+    if (skip > 0)
+    {
+      --skip;
+      return 0;
+    }
+    skip = 60;
+    for (uint32_t i = 0, n = ao2::ue3::ObjectCount(base); i < n; ++i)
+    {
+      uint32_t o = ao2::ue3::ObjectAt(base, i);
+      if (o && holds(o))
+      {
+        cached = o;
+        if (FILE *f = ao2::OpenLogFile("coop_lod.log", "a"))
+        {
+          std::fprintf(f, "WorldInfo found by its pawn list: %08X (Actor.WorldInfo is no property here)\n", o);
+          std::fclose(f);
+        }
+        break;
+      }
+    }
+    return cached;
+  }
+
   void WriteLod(uint8_t *base, uint32_t component, const Lod &lod)
   {
     StoreU32(base, component + kMinDesiredLod, lod.render);
@@ -225,6 +281,29 @@ namespace
 
 namespace ao2::coop
 {
+  // The level's WorldInfo of a player's pawn (the trace's P / V lines): Actor.WorldInfo when this build has it.
+  uint32_t LevelWorldInfo(const uint8_t *base, uint32_t pawn)
+  {
+    static int32_t world_info = -2, pawn_list = -1, next_pawn = -1;
+    static uint32_t info_class = 0;
+    if (world_info == -2 || !info_class)
+    {
+      info_class = ao2::ue3::FindClass(base, "WorldInfo");
+      world_info = ao2::ue3::PropertyOffset(base, "Actor", "WorldInfo");
+      pawn_list = ao2::ue3::PropertyOffset(base, "WorldInfo", "PawnList");
+      next_pawn = ao2::ue3::PropertyOffset(base, "Pawn", "NextPawn");
+    }
+    if (!Plausible(pawn) || !info_class || pawn_list < 0 || next_pawn < 0)
+    {
+      return 0;
+    }
+    if (world_info >= 0)
+    {
+      return LoadU32(base, pawn + world_info);
+    }
+    return WorldInfoByPawn(base, pawn, info_class, uint32_t(pawn_list), uint32_t(next_pawn));
+  }
+
   // Once per simulation step on the game thread (engine pad poll).
   void ForceLod(PPCContext &ctx, uint8_t *base)
   {
@@ -253,7 +332,7 @@ namespace ao2::coop
       actor_render = ao2::ue3::PropertyOffset(base, "Actor", "LastRenderTime");
       component_render = ao2::ue3::PropertyOffset(base, "PrimitiveComponent", "LastRenderTime");
     }
-    if (pawn_off < 0 || world_info < 0 || pawn_list < 0 || next_pawn < 0 || mesh < 0 || forced < 0 ||
+    if (pawn_off < 0 || pawn_list < 0 || next_pawn < 0 || mesh < 0 || forced < 0 ||
         !g_pawn_class || !g_skel_class || !g_info_class)
     {
       return;
@@ -269,7 +348,12 @@ namespace ao2::coop
     static Flag flags[] = {{"bUpdateSkelWhenNotRendered", true},
                            {"bTickAnimNodesWhenNotRendered", true},
                            {"bIgnoreControllersWhenNotRendered", false},
-                           {"bForceRefpose", false}};
+                           {"bForceRefpose", false},
+                           // UE3's animation update-rate optimization skips skeleton updates by how big the mesh is
+                           // in this machine's views (the time of the skipped steps is added later): the pose of a
+                           // pawn then depends on the view. Not in every build: the list of what the component has
+                           // goes to skel_props.log.
+                           {"bEnableUpdateRateOptimizations", false}};
     static bool flags_found = false;
     if (!flags_found)
     {
@@ -292,16 +376,83 @@ namespace ao2::coop
         std::fclose(f);
       }
       flags[3].offset = -1; // bForceRefpose: only logged
+      // What decides a character's ragdoll (every property of the classes, for the versus knock-down desync).
+      if (FILE *pf = ao2::OpenLogFile("pawn_props.log"))
+      {
+        for (const char *name : {"Pawn", "AO2Pawn", "AO2Character", "AO2CharacterNative", "UTPawn", "AO2MPPlayerChar"})
+        {
+          if (uint32_t cls = ao2::ue3::FindClass(base, name))
+          {
+            for (const auto &prop : ao2::ue3::Properties(base, cls))
+            {
+              if (prop.owner == name)
+              {
+                std::fprintf(pf, "%s %s %s +%d\n", prop.owner.c_str(), prop.type.c_str(), prop.name.c_str(), prop.offset);
+              }
+            }
+          }
+        }
+        std::fclose(pf);
+      }
+      if (FILE *pf = ao2::OpenLogFile("skel_props.log"))
+      {
+        for (const auto &prop : ao2::ue3::Properties(base, g_skel_class))
+        {
+          std::fprintf(pf, "%s %s %s +%d\n", prop.owner.c_str(), prop.type.c_str(), prop.name.c_str(), prop.offset);
+        }
+        std::fclose(pf);
+      }
     }
     uint32_t controller = FirstController(ctx, base);
     uint32_t any = Plausible(controller) ? LoadU32(base, controller + pawn_off) : 0;
-    uint32_t info = IsPawn(base, any) ? LoadU32(base, any + world_info) : 0;
+    uint32_t info = 0;
+    if (IsPawn(base, any))
+    {
+      info = world_info >= 0 ? LoadU32(base, any + world_info)
+                             : WorldInfoByPawn(base, any, g_info_class, uint32_t(pawn_list), uint32_t(next_pawn));
+    }
     if (!Valid(base, info, g_info_class))
     {
       return;
     }
     uint32_t pawn = LoadU32(base, info + pawn_list);
-    uint32_t now = time_seconds >= 0 ? LoadU32(base, info + time_seconds) : 0;
+    uint32_t now = time_seconds > 0 ? LoadU32(base, info + time_seconds) : 0;
+    {
+      // A time that is no time (a wrong offset reads a pointer or zero) is never written into the pawns.
+      float seconds = std::bit_cast<float>(now);
+      if (!(seconds > 0.001f && seconds < 1.0e7f))
+      {
+        now = 0;
+      }
+    }
+    if (!now)
+    {
+      // This build has no WorldInfo.TimeSeconds property (TU2). The world's time is the sum of the steps' float
+      // DeltaSeconds from the level's start: 1 / sim_hz each, S steps done when step S begins (2026-11-07 traces: the
+      // renderer's LastRenderTime of a drawn pawn was exactly that sum, 12.0499878 = 0x4140CCC0 after 723 steps,
+      // while frame / 60 is 0x4140CCCD). The rendering thread writes LastRenderTime too, with this very sum for
+      // the state after the step that ended: both writers must write the same bits, or what the animation reads
+      // (the time since the pawn was drawn) depends on which of them got there last - machine and timing.
+      static uint32_t summed_steps = 0;
+      static float summed = 0.0f, step_seconds = 0.0f;
+      double period_ms = ao2::decouple::SimPeriodMs();
+      float dt = period_ms > 0.0 ? float(period_ms / 1000.0) : 0.0f;
+      uint32_t steps = SyncFrame(base);
+      if (dt > 0.0f)
+      {
+        if (dt != step_seconds || steps < summed_steps)
+        {
+          step_seconds = dt;
+          summed = 0.0f;
+          summed_steps = 0;
+        }
+        for (; summed_steps < steps && summed_steps < 4000000; ++summed_steps)
+        {
+          summed += step_seconds; // one float add per step, as the engine's
+        }
+        now = steps ? std::bit_cast<uint32_t>(summed) : 0;
+      }
+    }
     // The players' pawns: the shared view's places.
     static std::vector<Vec> players;
     players.clear();
@@ -352,6 +503,32 @@ namespace ao2::coop
           if (w != want)
           {
             StoreU32(base, m + fl.offset, want);
+          }
+        }
+        if (REXCVAR_GET(ao2_coop_no_player_ragdoll) && pawn_controller >= 0 && player_class)
+        {
+          uint32_t controller = LoadU32(base, pawn + pawn_controller);
+          if (Plausible(controller) && ao2::ue3::IsA(base, controller, player_class))
+          {
+            static int32_t sync_offset = -2;
+            static uint32_t sync_mask = 0;
+            if (sync_offset == -2 && !ao2::ue3::BoolProperty(base, "SkeletalMeshComponent",
+                                                              "bSyncActorLocationToRootRigidBody", sync_offset, sync_mask))
+            {
+              sync_offset = -1;
+            }
+            if (LoadU32(base, m + 704) != 0)
+            {
+              StoreU32(base, m + 704, 0); // SkeletalMeshComponent.PhysicsWeight
+            }
+            if (sync_offset >= 0 && sync_mask)
+            {
+              uint32_t w = LoadU32(base, m + sync_offset);
+              if (w & sync_mask)
+              {
+                StoreU32(base, m + sync_offset, w & ~sync_mask);
+              }
+            }
           }
         }
       }

@@ -67,6 +67,9 @@ REXCVAR_DEFINE_BOOL(ao2_decouple, false, "Gameplay",
 REXCVAR_DEFINE_INT32(ao2_sim_hz, 60, "Gameplay", "Simulation steps per second with ao2_decouple")
     .range(20, 240);
 REXCVAR_DEFINE_BOOL(ao2_decouple_debug, false, "Debug", "Log ao2_decouple frame statistics to decouple.log");
+REXCVAR_DEFINE_BOOL(ao2_coop_no_extra_draws, false, "Debug",
+                    "Online lockstep test: no render-only draws between the steps and none while waiting for the partner "
+                    "(the picture is drawn once per step): tells whether the game's draw changes the simulation");
 REXCVAR_DEFINE_BOOL(ao2_coop_step_slip, true, "Online",
                     "Online co-op: a simulation step that waited for the partner moves the next steps by that "
                     "wait, so the two machines settle in step instead of one waiting every step");
@@ -268,6 +271,10 @@ namespace
   // kept.
   void DrawOnly(PPCContext &ctx, uint8_t *base)
   {
+    if (REXCVAR_GET(ao2_coop_no_extra_draws) && ao2::coop::OnlineLockstep(base))
+    {
+      return;
+    }
     double start = NowMs();
     uint32_t rand_state = LoadU32(base, kRandState);
     uint32_t tls = ctx.r13.u32 ? LoadU32(base, ctx.r13.u32) : 0;

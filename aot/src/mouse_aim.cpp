@@ -1565,13 +1565,21 @@ extern "C" REX_FUNC(sub_82A0EEC8)
     ctx = saved;
     controller_id = LoadU32(base, record + (network ? 592 : 588));
   }
+  if (record && online)
+  {
+    ao2::coop::TraceRecord(base, record, controller_id);
+  }
   if (mouse)
   {
     // The replay hands that id to the gameplay InputAxis as a pad, which in
     // a Plasma world maps it to the player (PlayerIdOfPad): with a guest the
     // record's id can be another local player's controller id, and the turn
     // went to the guest.
-    uint32_t player_id = PlayerIdOfPad(ctx, base, controller_id);
+    // Online the record's id is already the player's network id: the pad
+    // map holds only this machine's local players, so mapping the partner's
+    // id through it (pad 0 -> this machine's player) sent the partner's
+    // mouse turn to this machine's own camera and desynced the game.
+    uint32_t player_id = online ? controller_id : PlayerIdOfPad(ctx, base, controller_id);
     uint32_t count = std::min<uint32_t>(LoadU32(base, record + 312), 8);
     for (uint32_t i = 0; i < count; ++i)
     {

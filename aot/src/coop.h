@@ -72,6 +72,12 @@ namespace ao2::coop
   // Every pawn's skeletal mesh at LOD 0 while the lockstep runs (coop_lod.cpp);
   // once per simulation step on the game thread.
   void ForceLod(PPCContext &ctx, uint8_t *base);
+  // The level's WorldInfo of a pawn (0 when not found): Actor.WorldInfo, or a scan for the one whose PawnList
+  // holds the pawn (coop_lod.cpp).
+  uint32_t LevelWorldInfo(const uint8_t *base, uint32_t pawn);
+  // A player's replayed input record of a lockstep frame (the key / value pairs at +248, count +312) for the sync trace's
+  // I lines: what each machine replays for each player must be the same (coop_sync_trace.cpp).
+  void TraceRecord(const uint8_t *base, uint32_t record, uint32_t controller_id);
   // ao2_coop_state_hash: every reflected property of the level's objects to
   // state_hash.log (coop_state_hash.cpp); at each lockstep frame's record
   // build on the game thread.
