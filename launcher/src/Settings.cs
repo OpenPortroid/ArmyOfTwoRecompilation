@@ -17,6 +17,7 @@ namespace AO2Launcher
             { "fullscreen", "1" },
             { "window_size", "1920x1080" },
             { "monitor", "0" },
+            { "gpu", "auto" },
             { "aspect_ratio", "auto" },
             { "render_scale", "2" },
             { "fps", "240" },

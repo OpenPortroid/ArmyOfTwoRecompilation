@@ -39,6 +39,9 @@
 REXCVAR_DEFINE_STRING(ao2_native_gpu, "on", "GPU",
                       "Renderer: on (native D3D12), off (ReXGlue Xenos emulation plugin)")
     .allowed({"on", "off"});
+REXCVAR_DEFINE_STRING(ao2_native_gpu_adapter, "", "GPU",
+                      "Native renderer: the video device to render on, by the name DXGI gives it (the launcher's "
+                      "Video device list); empty or not found: the high performance one");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_dump_shaders, false, "GPU",
                     "Native renderer: dump microcode of every shader to shader_dump/");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_async_pipelines, true, "GPU",

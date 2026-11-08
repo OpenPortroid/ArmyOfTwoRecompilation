@@ -70,6 +70,7 @@ using rex::graphics::FormatInfo;
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_capture_frame);
 REXCVAR_DECLARE(int32_t, ao2_native_gpu_writeback_texels);
 REXCVAR_DECLARE(bool, ao2_native_gpu_debug_layer);
+REXCVAR_DECLARE(std::string, ao2_native_gpu_adapter);
 REXCVAR_DECLARE(bool, ao2_native_gpu_async_pipelines);
 REXCVAR_DEFINE_BOOL(ao2_prompts_debug, false, "Debug",
                     "Log where split-screen button pictures are drawn (native_gpu.log)");
@@ -2024,7 +2025,38 @@ float4 ps(VO i) : SV_Target { return i.c * t.Sample(smp, i.uv); }
         }
       }
       ComPtr<IDXGIAdapter1> adapter;
-      g.factory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
+      {
+        // The device the launcher's Video device list picked (by its DXGI name).
+        const std::string want = REXCVAR_GET(ao2_native_gpu_adapter);
+        if (!want.empty())
+        {
+          for (UINT i = 0;; ++i)
+          {
+            ComPtr<IDXGIAdapter1> candidate;
+            if (FAILED(g.factory->EnumAdapters1(i, &candidate)))
+            {
+              break;
+            }
+            DXGI_ADAPTER_DESC1 cd = {};
+            candidate->GetDesc1(&cd);
+            char cname[128] = {};
+            WideCharToMultiByte(CP_UTF8, 0, cd.Description, -1, cname, sizeof(cname) - 1, nullptr, nullptr);
+            if ((cd.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0 && want == cname)
+            {
+              adapter = candidate;
+              break;
+            }
+          }
+          if (!adapter)
+          {
+            NativeLog("video device '%s' not found: the high performance one\n", want.c_str());
+          }
+        }
+      }
+      if (!adapter)
+      {
+        g.factory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
+      }
       BOOL tearing = FALSE;
       g.tearing = SUCCEEDED(g.factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &tearing,
                                                            sizeof(tearing))) &&

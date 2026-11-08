@@ -229,6 +229,11 @@ namespace AO2Launcher
                 }
             }
             a.Add("--ao2_aspect_ratio=" + s["aspect_ratio"]);
+            string gpu = s["gpu"];
+            if (!string.IsNullOrEmpty(gpu) && gpu != "auto")
+            {
+                a.Add("--ao2_native_gpu_adapter=" + gpu);
+            }
             a.Add("--ao2_native_gpu_resolution_scale=" + Num(Math.Max(1.0, Math.Min(4.0, s.Double("render_scale")))));
             a.Add("--ao2_fps_unlock");
             a.Add("--ao2_fps_target=" + s.Int("fps"));

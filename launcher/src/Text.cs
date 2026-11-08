@@ -1212,6 +1212,28 @@ namespace AO2Launcher
             a("Profile {0}", "Профиль {0}", "Profil {0}", "Profil {0}", "Perfil {0}", "Profilo {0}");
             a("Profile {0}: {1}", "Профиль {0}: {1}", "Profil {0} : {1}", "Profil {0}: {1}", "Perfil {0}: {1}", "Profilo {0}: {1}");
             a("no saves yet", "сохранений пока нет", "pas encore de sauvegarde", "noch keine Spielstände", "aún no hay partidas", "nessun salvataggio");
+            a("Video device", "Видеоустройство", "Périphérique vidéo", "Grafikgerät", "Dispositivo de vídeo", "Dispositivo video");
+            a("AUTO (FASTEST)", "АВТО (САМОЕ БЫСТРОЕ)", "AUTO (LE PLUS RAPIDE)", "AUTO (SCHNELLSTES)", "AUTO (EL MÁS RÁPIDO)", "AUTO (IL PIÙ VELOCE)");
+            a("{0} GB", "{0} ГБ", "{0} Go", "{0} GB", "{0} GB", "{0} GB");
+            a("{0} MB", "{0} МБ", "{0} Mo", "{0} MB", "{0} MB", "{0} MB");
+            a("The video device the game renders on. Auto takes the fastest one: the graphics card, not the one " +
+              "built into the processor. Pick the built-in one to save power on a laptop, or a card by hand when " +
+              "the game picks the wrong one. Applies from the next start of the game.",
+              "Видеоустройство, на котором рисует игра. Авто берёт самое быстрое: видеокарту, а не встроенную в процессор. " +
+              "Встроенную можно выбрать, чтобы экономить заряд ноутбука, а карту вручную, если игра выбрала не ту. " +
+              "Действует со следующего запуска игры.",
+              "Le périphérique vidéo sur lequel le jeu s'affiche. Auto prend le plus rapide : la carte graphique, pas celle " +
+              "intégrée au processeur. Choisissez l'intégrée pour économiser la batterie d'un portable, ou une carte à la main " +
+              "si le jeu choisit la mauvaise. Pris en compte au prochain lancement du jeu.",
+              "Das Grafikgerät, auf dem das Spiel rendert. Auto nimmt das schnellste: die Grafikkarte, nicht die im Prozessor " +
+              "eingebaute. Die eingebaute spart Akku beim Laptop; eine Karte von Hand wählen, wenn das Spiel die falsche nimmt. " +
+              "Gilt ab dem nächsten Spielstart.",
+              "El dispositivo de vídeo en el que se dibuja el juego. Auto elige el más rápido: la tarjeta gráfica, no la " +
+              "integrada en el procesador. Elige la integrada para ahorrar batería en un portátil, o una tarjeta a mano si el " +
+              "juego elige la equivocada. Se aplica desde el próximo inicio del juego.",
+              "Il dispositivo video su cui gira il gioco. Auto sceglie il più veloce: la scheda video, non quella integrata " +
+              "nel processore. Scegli quella integrata per risparmiare batteria su un portatile, o una scheda a mano se il " +
+              "gioco sceglie quella sbagliata. Vale dal prossimo avvio del gioco.");
             a("Time played", "Время в игре", "Temps de jeu", "Spielzeit", "Tiempo de juego", "Tempo di gioco");
             a("Time played: {0}", "Время в игре: {0}", "Temps de jeu : {0}", "Spielzeit: {0}", "Tiempo de juego: {0}", "Tempo di gioco: {0}");
             a("{0} h", "{0} ч", "{0} h", "{0} Std.", "{0} h", "{0} h");

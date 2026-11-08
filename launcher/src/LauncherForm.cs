@@ -1557,6 +1557,22 @@ namespace AO2Launcher
                 S["monitor"] = "0";
             }
 
+            // The video devices: automatic (the game's pick, the fastest) or one of DXGI's list.
+            List<VideoAdapters.Info> gpus = VideoAdapters.List();
+            var gpuValues = new List<string> { "auto" };
+            gpuValues.AddRange(gpus.Select(x => x.Name));
+            if (!gpuValues.Contains(S["gpu"]))
+            {
+                S["gpu"] = "auto";
+            }
+            // On the button the name is shortened to fit ("GeForce RTX 4060"); the open list has the whole name.
+            Func<int, string> gpuName = i => i == 0 ? L.T("AUTO (FASTEST)")
+                : System.Text.RegularExpressions.Regex.Replace(gpus[i - 1].Name, @"\(TM\)|\(R\)|^NVIDIA\s+|\s+(Laptop GPU|Graphics)$", "").Trim();
+            Func<int, string> gpuDropName = i => i == 0 ? L.T("AUTO (FASTEST)")
+                : gpus[i - 1].Name + "   —   " + (gpus[i - 1].Vram >= 1073741824L
+                    ? L.F("{0} GB", (gpus[i - 1].Vram / 1073741824.0).ToString("0.#", CultureInfo.InvariantCulture))
+                    : L.F("{0} MB", (gpus[i - 1].Vram / 1048576).ToString(CultureInfo.InvariantCulture)));
+
             var graphics = new List<Row>
             {
                 new Row
@@ -1589,6 +1605,15 @@ namespace AO2Launcher
                     Values = monValues.ToArray(), Name = monName,
                     Enabled = () => monValues.Count > 1,
                     Desc = "The monitor the game opens on."
+                },
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Video device", Key = "gpu", Drop = true,
+                    Values = gpuValues.ToArray(), Name = gpuName, DropName = gpuDropName,
+                    Enabled = () => gpuValues.Count > 2,
+                    Desc = "The video device the game renders on. Auto takes the fastest one: the graphics card, not the one " +
+                           "built into the processor. Pick the built-in one to save power on a laptop, or a card by hand when " +
+                           "the game picks the wrong one. Applies from the next start of the game."
                 },
                 new Row
                 {

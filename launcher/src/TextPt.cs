@@ -501,6 +501,16 @@ namespace AO2Launcher
             p("Profile {0}", "Perfil {0}");
             p("Profile {0}: {1}", "Perfil {0}: {1}");
             p("no saves yet", "ainda sem saves");
+            p("Video device", "Dispositivo de vídeo");
+            p("AUTO (FASTEST)", "AUTO (O MAIS RÁPIDO)");
+            p("{0} GB", "{0} GB");
+            p("{0} MB", "{0} MB");
+            p("The video device the game renders on. Auto takes the fastest one: the graphics card, not the one " +
+              "built into the processor. Pick the built-in one to save power on a laptop, or a card by hand when " +
+              "the game picks the wrong one. Applies from the next start of the game.",
+              "O dispositivo de vídeo em que o jogo renderiza. Auto usa o mais rápido: a placa de vídeo, não a integrada " +
+              "ao processador. Escolha a integrada para economizar bateria no notebook, ou uma placa à mão se o jogo " +
+              "escolher a errada. Vale a partir da próxima abertura do jogo.");
             p("Time played", "Tempo de jogo");
             p("Time played: {0}", "Tempo de jogo: {0}");
             p("{0} h", "{0} h");
