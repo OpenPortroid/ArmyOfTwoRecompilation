@@ -27,6 +27,7 @@
 // devices go back when versus_guest.cpp says so (CloseGuest: out of every lobby
 // and match), not in the main menu, where the lobby also is.
 #include "console_cmd.h"
+#include "coop.h"
 #include "debug_menu.h"
 #include "log_files.h"
 #include "ue3_reflect.h"
@@ -593,6 +594,15 @@ namespace ao2::split_join
     char what[128];
     std::snprintf(what, sizeof(what), "CauseEvent %s", event.c_str());
     Log(what);
+    // Back to the main menu from Multiplayer or Campaign Mode: no network
+    // session is left. EA's game manager starts listening as soon as the
+    // Multiplayer menu connects (coop.h network_session) and, with no game
+    // made, nothing ended it: cheats and checkpoints stayed "network only".
+    if ((event == "Multiplayer_BackSelected" || event == "MissionSetup_BackSelected") &&
+        ao2::coop::network_session.exchange(false))
+    {
+      Log("network session over (back to the main menu)");
+    }
     constexpr char kPrefix[] = "MissionSetup_";
     if (event.rfind(kPrefix, 0) != 0)
     {
