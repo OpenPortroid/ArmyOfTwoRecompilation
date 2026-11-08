@@ -296,7 +296,9 @@ namespace
 
     // The match's details next to the mouse: the game's choices and the host's rules
     // (steam_net.cpp "rules", coop_invite.cpp UpdateSteamHosting).
-    void Details(ImDrawList *dl, const Lobby &l, float a)
+    // The selected row's match (a mouse over a row selects it too, so the keyboard and a pad get it as well):
+    // beside the list (panel_mn / panel_mx), level with the row (row_y).
+    void Details(ImDrawList *dl, const Lobby &l, float a, ImVec2 panel_mn, ImVec2 panel_mx, float row_y)
     {
       const float s = ui::Scale();
       std::map<std::string, int> r;
@@ -343,7 +345,7 @@ namespace
         const int price = get("p", 0);
         lines.emplace_back(Tr("Respawn price"), Money(price > 0 ? price : 10000));
         const int step = get("s", 0);
-        lines.emplace_back(Tr("Each respawn dearer by"), step > 0 ? "+" + Money(step) : Tr("None"));
+        lines.emplace_back(Tr("Respawn price increase"), step > 0 ? "+" + Money(step) : Tr("None"));
         std::string bots = Tr("Off");
         if (get("b", 0))
         {
@@ -378,13 +380,17 @@ namespace
       }
       const ImVec2 size(width + pad * 2.0f, pad * 2.0f + ui::FontSize(FontKind::kLabel) + 12.0f * s +
                                                  lh * float(lines.size()) + (older ? lh + 6.0f * s : 0.0f));
-      // Beside the mouse, kept on the screen.
+      // Right of the list, else left of it, else over the list's right edge; kept on the screen.
       const ImGuiViewport *vp = ImGui::GetMainViewport();
-      const ImVec2 mouse = ImGui::GetIO().MousePos;
-      ImVec2 mn(mouse.x + 22.0f * s, mouse.y + 18.0f * s);
+      const float gap = 16.0f * s;
+      ImVec2 mn(panel_mx.x + gap, row_y);
       if (mn.x + size.x > vp->Pos.x + vp->Size.x - 8.0f * s)
       {
-        mn.x = mouse.x - 16.0f * s - size.x;
+        mn.x = panel_mn.x - gap - size.x;
+        if (mn.x < vp->Pos.x + 8.0f * s)
+        {
+          mn.x = panel_mx.x - 24.0f * s - size.x;
+        }
       }
       if (mn.y + size.y > vp->Pos.y + vp->Size.y - 8.0f * s)
       {
@@ -512,7 +518,8 @@ namespace
         }
       }
       const bool mouse_moved = std::abs(ImGui::GetIO().MouseDelta.x) + std::abs(ImGui::GetIO().MouseDelta.y) > 0.0f;
-      int details = -1; // the row the mouse is over: its match's details
+      int details = -1; // the selected row: its match's details
+      float details_y = 0.0f;
       for (int i = top_; i < int(rows_.size()) && i < top_ + kVisibleRows; ++i)
       {
         const Lobby &l = rows_[i];
@@ -523,9 +530,10 @@ namespace
         {
           sel_ = i;
         }
-        if (hovered && versus_)
+        if (versus_ && live && i == sel_)
         {
           details = i;
+          details_y = ry;
         }
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
@@ -646,7 +654,7 @@ namespace
       hint({"Esc", "B"}, Tr("Back"));
       if (details >= 0)
       {
-        Details(dl, rows_[details], a);
+        Details(dl, rows_[details], a, mn, mx, details_y);
       }
       ImGui::End();
       if (created)

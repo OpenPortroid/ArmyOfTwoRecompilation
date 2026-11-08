@@ -908,7 +908,7 @@ namespace
        [](int32_t v) { REXCVAR_SET(ao2_versus_respawn_cost, v); },
        {{5000, "$5K"}, {0, "$10K"}, {20000, "$20K"}, {50000, "$50K"}},
        1000, 1, 10000, "$K"},
-      {"Each respawn dearer by", "ao2_versus_respawn_step", [] { return REXCVAR_GET(ao2_versus_respawn_step); },
+      {"Respawn price increase", "ao2_versus_respawn_step", [] { return REXCVAR_GET(ao2_versus_respawn_step); },
        [](int32_t v) { REXCVAR_SET(ao2_versus_respawn_step, v); },
        {{0, "None"}, {5000, "+$5K"}, {10000, "+$10K"}, {25000, "+$25K"}},
        1000, 0, 10000, "$K"},
@@ -2283,7 +2283,7 @@ namespace
       y += float((n + columns - 1) / columns) * (card_h + gap) + 10.0f * s;
 
       // The difficulty.
-      y = Section(dl, x0, x1, y, Tr("Difficulty"), a);
+      y = Section(dl, x0, x1, y, Tr("Bot difficulty"), a);
       int preset = BotPresetOf(REXCVAR_GET(ao2_versus_bots_miss), REXCVAR_GET(ao2_versus_bots_reaction),
                                REXCVAR_GET(ao2_versus_bots_turn), REXCVAR_GET(ao2_versus_bots_range));
       // Custom opens the values one by one, and is what values of no preset are.

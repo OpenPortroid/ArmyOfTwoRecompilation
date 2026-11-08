@@ -235,21 +235,21 @@ namespace AO2Launcher
             });
         }
 
-        // Bottom left, mirroring the Discord / GitHub chips, in two rows: the time played (a click opens the
-        // Profiles tab) above, level with Settings / Exit the achievements of the profile the game starts with
+        // Bottom left, mirroring the Discord / GitHub chips, in two rows: the profile the game starts with (a
+        // click opens the Profiles tab) above, level with Settings / Exit the achievements of the profile the game starts with
         // (the Achievements tab): the icons of the latest unlocked and the progress.
         void DrawStatsChips(Graphics g, float cy)
         {
             const float x = 24;
-            TimeChip(g, x, cy - 40);
+            ProfileChip(g, x, cy - 40);
             AchievementChip(g, x, cy);
         }
 
-        void TimeChip(Graphics g, float left, float cy)
+        void ProfileChip(Graphics g, float left, float cy)
         {
             const float icon = 16, h = 32, padX = 12, gap = 8;
-            const string id = "stats_time";
-            string text = Playtime.Format(playSeconds);
+            const string id = "stats_profile";
+            string text = ProfileName(S["profile"]);
             float tw = g.MeasureString(text, fSmall).Width;
             var r = new RectangleF(left, cy - h / 2, padX + icon + gap + tw + padX, h);
             FillRound(g, IsHover(id) ? Color.FromArgb(230, InkRaise) : Color.FromArgb(178, InkDeep), r, h / 2);
@@ -308,6 +308,7 @@ namespace AO2Launcher
         }
 
         // The chips' icons, drawn as lines around a centre (18 units across): a clock, or a cup.
+        // A cup (achievements) or a person (the profile).
         static void StatIcon(Graphics g, float cx, float cy, bool cup, float k)
         {
             GraphicsState st = g.Save();
@@ -329,9 +330,9 @@ namespace AO2Launcher
                 }
                 else
                 {
-                    g.DrawEllipse(pen, -9, -9, 18, 18);
-                    g.DrawLine(pen, 0, 0, 0, -5.5f);
-                    g.DrawLine(pen, 0, 0, 4.5f, 2.5f);
+                    // A person: the head over the shoulders.
+                    g.DrawEllipse(pen, -4, -9, 8, 8);
+                    g.DrawBezier(pen, -8, 9, -8, 1, 8, 1, 8, 9);
                 }
             }
             g.Restore(st);
