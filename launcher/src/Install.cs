@@ -271,7 +271,7 @@ namespace AO2Launcher
                     if (p.ExitCode == unchecked((int)0xC000001D) && error == null)
                     {
                         // STATUS_ILLEGAL_INSTRUCTION: the tool and the game need SSE4.2 (x86-64-v2).
-                        error = L.T("the processor is too old: SSE4.2 is required (Intel Core i 1st gen / AMD FX or newer)");
+                        error = L.T("the processor is too old: SSE4.2 is required (1st-gen Intel Core i / AMD FX or newer)");
                     }
                     else if (p.ExitCode != 0 && error == null)
                     {
@@ -312,7 +312,7 @@ namespace AO2Launcher
                 string dir = Directory.Exists(path) ? path : Path.GetDirectoryName(path);
                 if (!File.Exists(Path.Combine(dir, "default.xex")) || !Directory.Exists(Path.Combine(dir, "AO2Game")))
                 {
-                    throw new InstallException(L.T("This folder has no extracted game (default.xex and AO2Game)"));
+                    throw new InstallException(L.T("This folder does not contain an extracted game (default.xex and AO2Game)"));
                 }
                 long bytes = 0;
                 foreach (string f in GameFiles(dir))
@@ -535,7 +535,7 @@ namespace AO2Launcher
                     if (!HashIs(xex, XexSha1))
                     {
                         LogHashMismatch(xex, XexSha1);
-                        throw new InstallException(L.T("This version of the game is not supported: the European release of Army of Two for Xbox 360 is needed (4541084C)"));
+                        throw new InstallException(L.T("This version of the game is not supported: the European release of Army of Two for Xbox 360 is required (4541084C)"));
                     }
                     if (game.Folder)
                     {
@@ -560,7 +560,7 @@ namespace AO2Launcher
                     if (!HashIs(Path.Combine(temp, "default.xexp"), XexpSha1))
                     {
                         LogHashMismatch(Path.Combine(temp, "default.xexp"), XexpSha1);
-                        throw new InstallException(L.T("This is a different update: Title Update 2 of the European release is needed (TU_12K222C_…)"));
+                        throw new InstallException(L.T("This is the wrong update: Title Update 2 of the European release is required (TU_12K222C_…)"));
                     }
                     Directory.CreateDirectory(assets);
                     MoveInto(temp, assets);

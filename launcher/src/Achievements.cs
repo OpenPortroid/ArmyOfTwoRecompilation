@@ -246,14 +246,14 @@ namespace AO2Launcher
             achGot = achTotal = 0;
             achRecent = new List<Bitmap>();
             achievementRows.Add(Toggle("Unlock notices", "ach_notices",
-                "Show a notice with a sound in the game when an achievement unlocks. Off: achievements still unlock, silently."));
+                "Show an in-game notice with a sound when an achievement unlocks. When off, achievements still unlock, just silently."));
             List<Achievements.Entry> all = Achievements.Load(S["profile"]);
             if (all.Count == 0)
             {
                 achievementRows.Add(new Row
                 {
                     Kind = RowKind.Info,
-                    Text = () => L.T("The list of achievements comes from the game's files: start the game once to see it here.")
+                    Text = () => L.T("The achievement list is read from the game's files. Start the game once to see it here.")
                 });
                 return;
             }
@@ -276,7 +276,7 @@ namespace AO2Launcher
             {
                 Kind = RowKind.Button, Label = "Reset achievements", ButtonText = () => "RESET",
                 Click = ResetAchievements, Enabled = () => got > 0,
-                Desc = "Lock every achievement of the current profile again. Saves and progress in the game are not changed."
+                Desc = "Re-lock every achievement of the current profile. Saves and game progress stay as they are."
             });
             foreach (var section in all.GroupBy(e => e.Section))
             {

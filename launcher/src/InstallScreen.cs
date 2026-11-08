@@ -362,7 +362,7 @@ namespace AO2Launcher
             "Optional: the Veteran Map Pack and SSC Challenge: Versus Mode Pack 1 packages (on the console: Content\\0000000000000000\\" +
             "454107F8\\00000002). Can be added later. In co-op both players need the same content.",
             "Create an \"Army of Two\" shortcut on the desktop that starts this launcher.",
-            "Copy the chosen files. After that the game runs without the image.",
+            "Copy the selected files. After that, the game runs without the disc image.",
         };
 
         void DrawInstall(Graphics g)

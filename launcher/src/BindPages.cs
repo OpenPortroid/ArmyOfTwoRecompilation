@@ -57,16 +57,16 @@ namespace AO2Launcher
             rows.Add(new Row
             {
                 Kind = RowKind.Choice, Label = "Movement (left stick)", Key = "pad_left_stick", Values = sticks, Names = stickNames,
-                Desc = "Which stick of the gamepad moves the character. Swap both to play with the sticks swapped."
+                Desc = "The gamepad stick that moves the character. Change both to swap the sticks."
             });
             rows.Add(new Row
             {
                 Kind = RowKind.Choice, Label = "Camera (right stick)", Key = "pad_right_stick", Values = sticks, Names = stickNames,
-                Desc = "Which stick of the gamepad turns the camera and aims."
+                Desc = "The gamepad stick that turns the camera and aims."
             });
-            rows.Add(Toggle("Invert movement stick Y", "pad_invert_left_y", "Up on the movement stick walks backwards."));
+            rows.Add(Toggle("Invert movement stick Y", "pad_invert_left_y", "Pushing the movement stick up walks backwards."));
             rows.Add(Toggle("Invert camera stick Y", "pad_invert_right_y",
-                "Up on the camera stick looks down (on top of the Invert Y option in the game itself)."));
+                "Pushing the camera stick up looks down (applied on top of the game's own Invert Y option)."));
             rows.Add(new Row
             {
                 Kind = RowKind.Button, Label = "Gamepad layout", ButtonText = () => "RESET",
@@ -96,7 +96,7 @@ namespace AO2Launcher
                 {
                     Kind = RowKind.Text, Label = "Player 1 name", Key = "gamertag", MaxLen = 15,
                     Placeholder = () => Shorten(Environment.MachineName, 15),
-                    Desc = "Gamertag of player 1 (up to 15 characters), the same as Network → Player name. Empty: the computer's name."
+                    Desc = "Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty to use the computer's name."
                 },
                 new Row
                 {
