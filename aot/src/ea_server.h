@@ -14,9 +14,41 @@ namespace ao2::ea
 
   // The server alone (also used by the standalone ao2_lobby_server.exe):
   // listens on TCP 18480, 18485 and 13505 on all interfaces. False when a
-  // port is taken (another server running).
-  bool StartServer(bool log_to_console);
+  // port is taken (another server running). Without `listen` no ports of its
+  // own: the OpenPortroid server, whose players all come through the tunnel
+  // (and where the 40th Day's server has 18485 / 13505).
+  bool StartServer(bool log_to_console, bool listen = true);
   void LogMessage(const std::string &text);
+
+  // The server's address on the internet ("1.2.3.4" or a host name), for a
+  // server behind NAT: players outside the LAN are sent it instead of the
+  // address their connection arrived at. False when it does not resolve.
+  bool SetPublicAddress(const std::string &address);
+
+  // An IPv4 address, or a host name looked up; 0 when it does not resolve.
+  uint32_t ResolveIp(const std::string &address);
+
+  // The OpenPortroid server's end of the lobby tunnel (ea_server.cpp,
+  // "Tunnel"): nginx passes /aot1/ here, on 127.0.0.1:port. False when it is
+  // taken.
+  bool StartTunnelBridge(uint16_t port);
+
+  // The standalone server on a LAN: answers the games' GAMEQ on the presence
+  // port (UDP 18491; the OpenPortroid server answers it over the tunnel).
+  void StartInviteQueries();
+
+  // ao2_net_mode: "steam" (LAN / VPN, and Steam when it runs), "lan" (no
+  // Steam) or "openportroid".
+  std::string NetMode();
+
+  // The game's end (ao2_net_mode = openportroid): whether the lobby goes
+  // through the tunnel, and the server's GAME answer (coop_invite.cpp's
+  // presence packet) for the game the player `name` hosts there.
+  bool TunnelActive();
+  bool TunnelGameQuery(const std::string &name, std::string *packet);
+  // Finds a player by the name claimed on the server: "online" (its virtual
+  // address in *vip), "offline", "unknown" (no such name) or "error".
+  std::string TunnelFindPlayer(const std::string &name, uint32_t *vip);
 
   // IPv4 addresses of this computer's active adapters (to tell the partner).
   struct LocalAddress

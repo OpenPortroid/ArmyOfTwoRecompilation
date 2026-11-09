@@ -131,6 +131,7 @@ set(ARMYOFTWORECOMP_SOURCES
     src/physx_worker.cpp
     src/coop_ragdoll_pool.cpp
     src/ea_server.cpp
+    src/openportroid_net.cpp
     src/coop_invite.cpp
     src/ui_text.cpp
     src/ui_theme.cpp

@@ -24,7 +24,11 @@ Put it next to `armyoftworecomp.exe` (or set the game path in the launcher itsel
 - Game files are not changed: settings go to the game as command line flags, which take precedence over
   `settings\*.toml`. The launcher keeps its own settings in `ArmyOfTwoLauncher.ini` next to itself
   (in `%APPDATA%\ArmyOfTwoLauncher` when that folder is read-only).
-- **Co-op: the role is chosen automatically.** On Play the launcher looks for a host on the local network for
+- **Network** (`net_mode`): LAN + Steam (default), OpenPortroid or LAN. On the OpenPortroid server
+  (`src\Nicks.cs`) there are no roles: the launcher keeps the player's key (`op_key`, copy / paste on the page),
+  shows whether the name is free, yours or taken, claims it on Play and starts the game with
+  `--ao2_net_mode=openportroid --ao2_openportroid_key=<key>`.
+- **Co-op (LAN + Steam, LAN): the role is chosen automatically.** On Play the launcher looks for a host on the local network for
   about a second (UDP broadcast, port 18490; works over Radmin VPN too). If one answers the game starts as the
   partner (`--ao2_coop_host=<ip>`), otherwise as the host (`--ao2_coop_server`). The second player presses Play a
   few seconds after the first player's game has started, then both go to Campaign Mode → Search Co-op Game.

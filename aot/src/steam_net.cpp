@@ -1492,6 +1492,13 @@ namespace ao2::steam
     {
       return;
     }
+    // Online play over the OpenPortroid server or the LAN only: no Steam
+    // lobbies, invites or relays next to it.
+    if (std::string mode = ao2::ea::NetMode(); mode != "steam")
+    {
+      Log("Steam not started: ao2_net_mode = %s", mode.c_str());
+      return;
+    }
     // Linked to load late (CMakeLists.txt): a copy without it plays offline.
     if (!LoadLibraryA("steam_api64.dll"))
     {

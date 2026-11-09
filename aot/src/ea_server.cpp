@@ -28,19 +28,54 @@
 // address of its own adapter. The server replaces it with the address it
 // actually sees that player at (and the host's with the address the partner
 // reached the server at), so LAN and VPN setups work without configuration.
+//
+// The same file is the OpenPortroid server's lobby (aot.bhop.pw/aot1/: the
+// ArmyOfTwoOpenPortroid repository builds a copy of it on Linux with
+// AO2_STANDALONE_SERVER and AO2_OPENPORTROID_SERVER, next to its relay and
+// player names). Its players reach it through the HTTP tunnel ("Tunnel"
+// below); with ao2_net_mode = openportroid this game's end of that tunnel is
+// here too. Keep it building without the SDK and on POSIX sockets.
 #include "ea_server.h"
 #include "log_files.h"
+#include "openportroid.h"
 #include "steam_net.h"
+#ifdef AO2_OPENPORTROID_SERVER
+#include "nick_registry.h"
+#include "relay_server.h"
+#endif
+#ifndef AO2_STANDALONE_SERVER
+#include "openportroid_net.h"
+#endif
 
 // clang-format off
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#else
+// The OpenPortroid server builds this on Linux.
+#include <arpa/inet.h>
+#include <cerrno>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
+using SOCKET = int;
+constexpr SOCKET INVALID_SOCKET = -1;
+inline int closesocket(SOCKET s) { return close(s); }
+inline int WSAGetLastError() { return errno; }
+#endif
 // clang-format on
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
+#include <cstdlib>
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
@@ -57,11 +92,24 @@
 #ifndef AO2_STANDALONE_SERVER
 #include <rex/cvar.h>
 
+REXCVAR_DEFINE_STRING(ao2_net_mode, "steam", "Online",
+                      "Online play: steam (LAN / VPN with ao2_coop_server / ao2_coop_host, and Steam when it "
+                      "runs, ao2_steam), lan (the same without Steam) or openportroid (the OpenPortroid server, "
+                      "ao2_openportroid_server: anyone on the internet, no VPN or open ports; no Steam).");
+REXCVAR_DEFINE_STRING(ao2_openportroid_server, "aot.bhop.pw", "Online",
+                      "The OpenPortroid server (ao2_net_mode = openportroid): the lobby over HTTP (port 80, or "
+                      "host:port), the game traffic over UDP ao2_openportroid_port.");
+REXCVAR_DEFINE_UINT32(ao2_openportroid_port, 18501, "Online",
+                      "The OpenPortroid server's UDP port: NAT punching between the players and the relay.");
+REXCVAR_DEFINE_STRING(ao2_openportroid_key, "", "Online",
+                      "This player's key on the OpenPortroid server (32 hex digits, kept by the launcher): the "
+                      "player name claimed with it is this player's. Empty: a new key each run, no own name.");
 REXCVAR_DEFINE_BOOL(ao2_coop_server, false, "Online",
-                    "Online co-op host: run the EA lobby server (TCP 18480, 18485, 13505) in this game. "
-                    "The partner connects with ao2_coop_host = this computer's IP (VPN/LAN/public).");
+                    "LAN co-op host (ao2_net_mode steam / lan): run the EA lobby server (TCP 18480, 18485, 13505) "
+                    "in this game. The partner connects with ao2_coop_host = this computer's IP (VPN/LAN/public).");
 REXCVAR_DEFINE_STRING(ao2_coop_host, "", "Online",
-                      "Online co-op partner: IP address of the player who runs ao2_coop_server.");
+                      "LAN co-op partner (ao2_net_mode steam / lan): IP address of the player who runs "
+                      "ao2_coop_server.");
 REXCVAR_DEFINE_BOOL(ao2_public_game_search, true, "Online",
                     "Search Co-op Game / Quick Match look for an open game first (on this PC's server, then "
                     "over Steam) and host only when there is none. Off: they host at once, a public game "
@@ -92,6 +140,16 @@ namespace ao2::ea
 
     using Fields = std::vector<std::pair<std::string, std::string>>;
 
+#ifdef _WIN32
+    constexpr int kSendFlags = 0;
+    void LocalTime(const std::time_t *t, std::tm *out) { localtime_s(out, t); }
+    void UtcTime(const std::time_t *t, std::tm *out) { gmtime_s(out, t); }
+#else
+    constexpr int kSendFlags = MSG_NOSIGNAL; // a closed peer must not kill the server
+    void LocalTime(const std::time_t *t, std::tm *out) { localtime_r(t, out); }
+    void UtcTime(const std::time_t *t, std::tm *out) { gmtime_r(t, out); }
+#endif
+
     // ---------------------------------------------------------------------
     // Log (ea_server.log in the working directory)
     // ---------------------------------------------------------------------
@@ -105,7 +163,7 @@ namespace ao2::ea
       static FILE *f = ao2::OpenLogFile("ea_server.log");
       std::time_t now = std::time(nullptr);
       std::tm local = {};
-      localtime_s(&local, &now);
+      LocalTime(&now, &local);
       char line[2048];
       int n = std::snprintf(line, sizeof(line), "[%02d:%02d:%02d] ", local.tm_hour, local.tm_min, local.tm_sec);
       va_list args;
@@ -303,11 +361,22 @@ namespace ao2::ea
       return buf;
     }
 
-    // This PC (a Steam player's virtual address, steam_net.h, is another PC).
+    // This PC (a Steam or OpenPortroid player's virtual address, steam_net.h /
+    // openportroid.h, is another PC).
     bool IsLoopback(uint32_t ip)
     {
-      return (ntohl(ip) >> 24) == 127 && !ao2::steam::IsVirtual(ip);
+      return (ntohl(ip) >> 24) == 127 && !ao2::steam::IsVirtual(ip) && !ao2::opnet::IsVirtual(ip);
     }
+
+    // Loopback, LAN and carrier-grade NAT / Tailscale addresses.
+    bool IsPrivate(uint32_t ip)
+    {
+      uint32_t h = ntohl(ip);
+      return IsLoopback(ip) || h >> 24 == 10 || h >> 20 == 0xAC1 || h >> 16 == 0xC0A8 || h >> 22 == (100 << 2 | 1);
+    }
+
+    // The server's address on the internet (SetPublicAddress), 0 when not set.
+    std::atomic<uint32_t> g_public_ip{0};
 
     // XNADDR: ina, inaOnline, wPortOnline, abEnet[6], abOnline[20] (the
     // SDK puts the IP into abOnline[0..3] too).
@@ -337,7 +406,7 @@ namespace ao2::ea
       Conn(SOCKET s, const char *kind) : socket_(s), kind_(kind)
       {
         sockaddr_in a = {};
-        int len = sizeof(a);
+        socklen_t len = sizeof(a);
         if (getpeername(s, reinterpret_cast<sockaddr *>(&a), &len) == 0)
         {
           peer_ip_ = a.sin_addr.s_addr;
@@ -363,7 +432,7 @@ namespace ao2::ea
           FD_ZERO(&fds);
           FD_SET(socket_, &fds);
           timeval tv = {1, 0};
-          int ready = select(0, &fds, nullptr, nullptr, &tv);
+          int ready = select(int(socket_) + 1, &fds, nullptr, nullptr, &tv);
           if (ready < 0)
           {
             break;
@@ -431,7 +500,7 @@ namespace ao2::ea
         size_t sent = 0;
         while (sent < data.size())
         {
-          int n = send(socket_, data.data() + sent, int(data.size() - sent), 0);
+          int n = send(socket_, data.data() + sent, int(data.size() - sent), kSendFlags);
           if (n <= 0)
           {
             return false;
@@ -443,6 +512,24 @@ namespace ao2::ea
 
       uint32_t peer_ip() const { return peer_ip_; }
       uint32_t local_ip() const { return local_ip_; }
+      // The server's address this player reaches it at: the public one for a
+      // player on the internet when the server is behind NAT (it only sees
+      // its LAN address), else the one the connection arrived at.
+      uint32_t server_ip() const
+      {
+        uint32_t pub = g_public_ip;
+        return pub && !tunneled_ && !IsPrivate(peer_ip_) ? pub : local_ip_;
+      }
+      // A player through the tunnel (StartTunnelBridge): the connection comes
+      // from nginx; the player is at `ip`, and its game reaches the server at
+      // its own tunnel, `local` (127.0.0.1, or its net_bind_ip).
+      void SetTunnel(uint32_t ip, uint32_t local, const std::string &key)
+      {
+        peer_ip_ = ip;
+        local_ip_ = local;
+        tunneled_ = true;
+        key_ = key;
+      }
       bool closed() const { return closed_; }
       const std::string &name() const { return name_; }
 
@@ -456,6 +543,8 @@ namespace ao2::ea
       uint32_t peer_ip_ = 0;
       uint32_t local_ip_ = 0;
       uint16_t peer_port_ = 0;
+      bool tunneled_ = false;
+      std::string key_; // the player's key (X-AO2-Key), through the tunnel
       std::string name_ = "?";
       std::atomic<bool> closed_{false};
       std::mutex send_mutex_;
@@ -517,11 +606,11 @@ namespace ao2::ea
         std::string txn = Get(p.fields, "TXN");
         if (p.type == "fsys" && txn == "Hello")
         {
-          std::string ip = IpString(local_ip());
+          std::string ip = IpString(server_ip());
           char now[64];
           std::time_t t = std::time(nullptr);
           std::tm utc = {};
-          gmtime_s(&utc, &t);
+          UtcTime(&t, &utc);
           std::strftime(now, sizeof(now), "\"%b-%d-%Y %H:%M:%S UTC\"", &utc);
           Send("fsys", reply,
                {{"TXN", "Hello"},
@@ -552,13 +641,25 @@ namespace ao2::ea
                {{"TXN", "GetPingSites"},
                 {"minPingSitesToPing", "0"},
                 {"pingSites.[]", "1"},
-                {"pingSites.0.addr", IpString(local_ip())},
+                {"pingSites.0.addr", IpString(server_ip())},
                 {"pingSites.0.name", "local"},
                 {"pingSites.0.type", "0"}});
         }
         else if (p.type == "acct" && txn == "XBL360Login")
         {
           name_ = Get(p.fields, "gamertag", "Player");
+#ifdef AO2_OPENPORTROID_SERVER
+          if (tunneled_)
+          {
+            // A name another player owns is shown as a guest's.
+            std::string shown = nicks::LobbyName(name_, key_);
+            if (shown != name_)
+            {
+              Log("FESL: %s is another player's name, shown as %s", name_.c_str(), shown.c_str());
+              name_ = shown;
+            }
+          }
+#endif
           std::string xuid = Get(p.fields, "xuid", "1");
           uint64_t uid = ToU64(xuid, 1) & 0x7FFFFFFF;
           {
@@ -629,14 +730,25 @@ namespace ao2::ea
       }
 
       // The address `viewer` can reach `player` at: the address the server
-      // sees the player at, or - for a player on the server's own machine
-      // (loopback) - wherever the viewer found the server.
+      // sees the player at; for a player on the server's own machine
+      // (loopback), wherever the viewer found the server; for two players
+      // behind one NAT (the server sees both at the same address), the
+      // player's own address from its XNADDR, since a router seldom forwards
+      // its public address back inside.
       static uint32_t PlayerIpFor(const TheaterConn &player, const TheaterConn &viewer)
       {
         // A loopback address is only useless to a viewer on another machine: a second
         // instance on this PC (127.0.0.2) must be reached there, not at the server's.
         uint32_t ip = player.peer_ip();
-        return IsLoopback(ip) && !IsLoopback(viewer.peer_ip()) ? viewer.local_ip() : ip;
+        if (IsLoopback(ip))
+        {
+          return IsLoopback(viewer.peer_ip()) ? ip : viewer.server_ip();
+        }
+        if (ip == viewer.peer_ip() && player.own_ip_ && &player != &viewer && !IsLoopback(player.own_ip_))
+        {
+          return player.own_ip_;
+        }
+        return ip;
       }
 
       Fields Summary(const Game &game, const std::string &tid)
@@ -949,6 +1061,11 @@ namespace ao2::ea
             {
               it->second.xnaddr = Get(f, "R-XNADDR");
             }
+            std::vector<uint8_t> own = Base64Decode(Get(f, "R-XNADDR"));
+            if (own.size() == 36)
+            {
+              std::memcpy(&own_ip_, own.data(), 4);
+            }
             pid = it->second.next_pid++;
             st.pending[{gid, pid}] = {self(), {}, std::chrono::steady_clock::now()};
           }
@@ -997,6 +1114,14 @@ namespace ao2::ea
             p->second.request = req;
           }
         }
+#ifdef AO2_OPENPORTROID_SERVER
+        // Two OpenPortroid players: they punch through to each other now,
+        // before the host's game answers and the game traffic starts.
+        if (host.get() != this && ao2::opnet::IsVirtual(peer_ip()) && ao2::opnet::IsVirtual(host->peer_ip()))
+        {
+          relay::Introduce(peer_ip(), host->peer_ip());
+        }
+#endif
         host->Send("EGRQ", 0, req);
       }
 
@@ -1124,6 +1249,7 @@ namespace ao2::ea
     private:
       uint64_t uid_ = 0;
       uint32_t gid_ = 0;
+      uint32_t own_ip_ = 0; // the address in the player's own XNADDR (EGAM)
     };
 
     // ---------------------------------------------------------------------
@@ -1161,6 +1287,13 @@ namespace ao2::ea
       addr.sin_family = AF_INET;
       addr.sin_port = htons(port);
       addr.sin_addr.s_addr = INADDR_ANY;
+#ifndef _WIN32
+      int reuse = 1; // restart while old connections are in TIME_WAIT
+      if (s != INVALID_SOCKET)
+      {
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse));
+      }
+#endif
       if (s == INVALID_SOCKET || bind(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0 ||
           listen(s, 16) != 0)
       {
@@ -1181,7 +1314,7 @@ namespace ao2::ea
             Log("accept failed (error %d)", WSAGetLastError());
             break;
           }
-          BOOL nodelay = TRUE;
+          int nodelay = 1;
           setsockopt(c, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(nodelay));
           auto conn = std::make_shared<T>(c);
           std::thread([conn]() { conn->Run(); }).detach();
@@ -1199,7 +1332,7 @@ namespace ao2::ea
       addr.sin_family = AF_INET;
       addr.sin_addr.s_addr = htonl(INADDR_ANY);
       addr.sin_port = htons(kDiscoveryPort);
-      BOOL reuse = TRUE;
+      int reuse = 1;
       if (s != INVALID_SOCKET)
       {
         setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse));
@@ -1220,13 +1353,17 @@ namespace ao2::ea
         {
           uint32_t packet[4] = {};
           sockaddr_in from = {};
-          int from_len = sizeof(from);
+          socklen_t from_len = sizeof(from);
           int n = recvfrom(s, reinterpret_cast<char *>(packet), sizeof(packet), 0, reinterpret_cast<sockaddr *>(&from),
                            &from_len);
           if (n < 0)
           {
             int err = WSAGetLastError();
+#ifdef _WIN32
             if (err == WSAECONNRESET || err == WSAEMSGSIZE)
+#else
+            if (err == ECONNREFUSED || err == EINTR)
+#endif
             {
               continue; // ICMP port unreachable from an earlier reply / oversized datagram
             }
@@ -1244,11 +1381,519 @@ namespace ao2::ea
         }
       }).detach();
     }
+
+    // The presence service's GAME packet (coop_invite.cpp) for the game the
+    // player `name` hosts here; empty when it hosts none.
+    std::string GameReply(const std::string &name)
+    {
+      HostedGame game;
+      if (name.empty() || !FindHostedGame(name, &game))
+      {
+        return "";
+      }
+      char session[32], xuid[32];
+      std::snprintf(session, sizeof(session), "%016llx", (unsigned long long)game.session_id);
+      std::snprintf(xuid, sizeof(xuid), "%016llx", (unsigned long long)game.host_xuid);
+      std::string hex;
+      for (uint8_t b : game.xnaddr)
+      {
+        char h[3];
+        std::snprintf(h, sizeof(h), "%02x", b);
+        hex += h;
+      }
+      return "AO2I1 GAME\ngid=" + std::to_string(game.gid) + "\nsession=" + session + "\nxnaddr=" + hex +
+             "\nxuid=" + xuid + "\nprivate=" + (game.is_private ? "1" : "0") +
+             "\nplaygroup=" + (game.playgroup ? "1" : "0") + "\nplayers=" + std::to_string(game.players) + "\n";
+    }
+
+#ifdef AO2_STANDALONE_SERVER
+    // The games' presence service (coop_invite.cpp, UDP 18491, "AO2I1 <TYPE>"
+    // then "key=value" lines). A game whose server runs in another process
+    // asks it for the game it hosts (GAMEQ name) to put it into its invites;
+    // in a game with ao2_coop_server its own presence answers, here this does.
+    void StartPresenceResponder()
+    {
+      constexpr uint16_t kPresencePort = 18491;
+      SOCKET s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+      sockaddr_in addr = {};
+      addr.sin_family = AF_INET;
+      addr.sin_addr.s_addr = htonl(INADDR_ANY);
+      addr.sin_port = htons(kPresencePort);
+      if (s == INVALID_SOCKET || bind(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0)
+      {
+        Log("ERROR: cannot bind UDP %u for invites (error %d)", kPresencePort, WSAGetLastError());
+        if (s != INVALID_SOCKET)
+        {
+          closesocket(s);
+        }
+        return;
+      }
+      Log("invite queries on UDP %u", kPresencePort);
+      std::thread([s]() {
+        char packet[2048];
+        while (true)
+        {
+          sockaddr_in from = {};
+          socklen_t from_len = sizeof(from);
+          int n = recvfrom(s, packet, sizeof(packet), 0, reinterpret_cast<sockaddr *>(&from), &from_len);
+          if (n < 0)
+          {
+            continue; // ICMP port unreachable from an earlier reply
+          }
+          std::string text(packet, size_t(n));
+          if (text.rfind("AO2I1 GAMEQ\n", 0) != 0)
+          {
+            continue; // HELLO / HERE: the games' own presence, nothing for the server
+          }
+          std::string name;
+          size_t at = text.find("\nname=");
+          if (at != std::string::npos)
+          {
+            at += 6;
+            name = text.substr(at, text.find('\n', at) - at);
+          }
+          std::string reply = GameReply(name);
+          if (!reply.empty())
+          {
+            sendto(s, reply.data(), int(reply.size()), 0, reinterpret_cast<sockaddr *>(&from), from_len);
+          }
+        }
+      }).detach();
+    }
+#endif
+
+    // ---------------------------------------------------------------------
+    // Tunnel: players on the internet reach the public server through nginx
+    // (its router only forwards HTTP). The game listens on 127.0.0.1 at the
+    // three ports (StartOpenPortroid) and opens, for each connection, an HTTP
+    // request to /aot1/<fesl|theater|messenger> with "Upgrade: aot1-tunnel"
+    // (openportroid.h);
+    // nginx passes it with the player's address (X-Real-IP) to the server's
+    // bridge (StartTunnelBridge), which answers 101 and from then on both
+    // sides carry the plain FESL / Theater / Messenger bytes. GAMEQ (the game
+    // a player hosts, for invites) is a plain GET /aot1/gameq?name=<name>.
+    // ---------------------------------------------------------------------
+
+    using ao2::opnet::kTunnelUpgrade;
+
+    // A path under the tunnel's ("/aot1/" + what).
+    std::string TunnelPath(const std::string &what)
+    {
+      return std::string(ao2::opnet::kTunnelPath) + what;
+    }
+
+    bool StartsWith(const std::string &text, const std::string &head)
+    {
+      return text.rfind(head, 0) == 0;
+    }
+
+    std::string UrlEncode(const std::string &text)
+    {
+      std::string out;
+      for (unsigned char c : text)
+      {
+        if (std::isalnum(c) || c == '-' || c == '_' || c == '.')
+        {
+          out += char(c);
+        }
+        else
+        {
+          char b[4];
+          std::snprintf(b, sizeof(b), "%%%02X", c);
+          out += b;
+        }
+      }
+      return out;
+    }
+
+    std::string UrlDecode(const std::string &text)
+    {
+      std::string out;
+      for (size_t i = 0; i < text.size(); i++)
+      {
+        if (text[i] == '%' && i + 2 < text.size())
+        {
+          out += char(std::strtoul(text.substr(i + 1, 2).c_str(), nullptr, 16));
+          i += 2;
+        }
+        else
+        {
+          out += text[i] == '+' ? ' ' : text[i];
+        }
+      }
+      return out;
+    }
+
+    void SetTimeout(SOCKET s, int seconds)
+    {
+#ifdef _WIN32
+      DWORD ms = DWORD(seconds) * 1000;
+      setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char *>(&ms), sizeof(ms));
+#else
+      timeval tv = {seconds, 0};
+      setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char *>(&tv), sizeof(tv));
+#endif
+    }
+
+    bool SendAll(SOCKET s, const std::string &data)
+    {
+      size_t sent = 0;
+      while (sent < data.size())
+      {
+        int n = send(s, data.data() + sent, int(data.size() - sent), kSendFlags);
+        if (n <= 0)
+        {
+          return false;
+        }
+        sent += size_t(n);
+      }
+      return true;
+    }
+
+    // Reads an HTTP head (up to the blank line); `rest` gets what came after it.
+    bool ReadHead(SOCKET s, std::string *head, std::string *rest)
+    {
+      std::string buffer;
+      char chunk[2048];
+      while (buffer.size() < 16384)
+      {
+        size_t end = buffer.find("\r\n\r\n");
+        if (end != std::string::npos)
+        {
+          *head = buffer.substr(0, end + 2);
+          *rest = buffer.substr(end + 4);
+          return true;
+        }
+        int n = recv(s, chunk, sizeof(chunk), 0);
+        if (n <= 0)
+        {
+          return false;
+        }
+        buffer.append(chunk, size_t(n));
+      }
+      return false;
+    }
+
+    // A header's value from an HTTP head ("Name: value"), case-insensitive name.
+    std::string Header(const std::string &head, const std::string &name)
+    {
+      size_t at = 0;
+      while ((at = head.find("\r\n", at)) != std::string::npos)
+      {
+        at += 2;
+        if (head.size() - at > name.size() && head[at + name.size()] == ':' &&
+            std::equal(name.begin(), name.end(), head.begin() + at,
+                       [](char a, char b) { return std::tolower(uint8_t(a)) == std::tolower(uint8_t(b)); }))
+        {
+          size_t v = head.find_first_not_of(' ', at + name.size() + 1);
+          return v == std::string::npos ? "" : head.substr(v, head.find("\r\n", v) - v);
+        }
+      }
+      return "";
+    }
+
+    template <typename T>
+    void RunTunneled(SOCKET c, uint32_t ip, uint32_t local, const std::string &key)
+    {
+      auto conn = std::make_shared<T>(c);
+      conn->SetTunnel(ip, local, key);
+      conn->Run();
+    }
+
+    void SendText(SOCKET c, const std::string &body)
+    {
+      SendAll(c, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(body.size()) +
+                     "\r\nConnection: close\r\n\r\n" + body);
+    }
+
+    // "name=<value>" from a path's query, decoded.
+    std::string QueryName(const std::string &path)
+    {
+      size_t q = path.find("name=");
+      return q == std::string::npos ? "" : UrlDecode(path.substr(q + 5, path.find('&', q) - q - 5));
+    }
+
+    void ServeTunnel(SOCKET c)
+    {
+      SetTimeout(c, 10);
+      std::string head, rest;
+      if (!ReadHead(c, &head, &rest))
+      {
+        closesocket(c);
+        return;
+      }
+      // "GET /aot1/theater HTTP/1.1"
+      size_t sp = head.find(' ');
+      std::string path = sp == std::string::npos ? "" : head.substr(sp + 1, head.find(' ', sp + 1) - sp - 1);
+      // nginx sets X-Real-IP; without it (a test without nginx) the player
+      // is where the connection comes from.
+      uint32_t ip = ParseIp(Header(head, "X-Real-IP"));
+      if (!ip)
+      {
+        sockaddr_in a = {};
+        socklen_t len = sizeof(a);
+        if (getpeername(c, reinterpret_cast<sockaddr *>(&a), &len) == 0)
+        {
+          ip = a.sin_addr.s_addr;
+        }
+      }
+      // Where that game's own tunnel listens (its net_bind_ip; 127.0.0.1).
+      uint32_t local = ParseIp(Header(head, "X-AO2-Local"));
+      if (!IsLoopback(local))
+      {
+        local = htonl(INADDR_LOOPBACK);
+      }
+      std::string key = Header(head, "X-AO2-Key");
+#ifdef AO2_OPENPORTROID_SERVER
+      // A player signed in to the relay is seen (and shown to the others) at
+      // its virtual address: its game traffic goes through the relay.
+      if (uint32_t vip = relay::VirtualIpForKey(key); vip && ip)
+      {
+        ip = vip;
+      }
+      // Player names (nick_registry.h): the launcher checks and claims a name
+      // with its key; a game finds a friend's virtual address by name.
+      //   /aot1/nick?name=N  (X-AO2-Key) -> free | yours | taken | invalid
+      //   /aot1/claim?name=N (X-AO2-Key) -> yours | taken | invalid
+      //   /aot1/find?name=N              -> online <virtual ip> | offline | unknown
+      if (StartsWith(path, TunnelPath("nick?")) || StartsWith(path, TunnelPath("claim?")))
+      {
+        std::string name = QueryName(path);
+        bool claim = StartsWith(path, TunnelPath("claim?"));
+        nicks::Status s = claim ? nicks::Claim(name, key) : nicks::Check(name, key);
+        if (claim)
+        {
+          Log("name %s claimed: %s", name.c_str(), nicks::StatusName(s));
+        }
+        SendText(c, nicks::StatusName(s));
+        closesocket(c);
+        return;
+      }
+      // The statistics page's numbers now (the server repository's stats.py).
+      if (path == TunnelPath("stats"))
+      {
+        int games = 0, in_games = 0;
+        {
+          auto &st = state();
+          std::lock_guard lock(st.mutex);
+          for (const auto &[gid, g] : st.games)
+          {
+            if (g.host && !g.host->closed())
+            {
+              games++;
+              in_games += g.joined;
+            }
+          }
+        }
+        char json[160];
+        std::snprintf(json, sizeof(json), "{\"online\":%d,\"games\":%d,\"in_games\":%d,\"accounts\":%d}",
+                      relay::OnlineCount(), games, in_games, nicks::Count());
+        SendText(c, json);
+        closesocket(c);
+        return;
+      }
+      if (StartsWith(path, TunnelPath("find?")))
+      {
+        std::string owner = nicks::KeyFor(QueryName(path));
+        uint32_t vip = owner.empty() ? 0 : relay::VirtualIpForKey(owner);
+        SendText(c, owner.empty() ? "unknown" : vip ? "online " + IpString(vip) : "offline");
+        closesocket(c);
+        return;
+      }
+#endif
+      if (StartsWith(path, TunnelPath("gameq?")))
+      {
+        SendText(c, GameReply(QueryName(path)));
+        closesocket(c);
+        return;
+      }
+      std::string kind = StartsWith(path, TunnelPath("")) ? path.substr(TunnelPath("").size()) : "";
+      bool upgrade = Header(head, "Upgrade") == kTunnelUpgrade;
+      if (!ip || !upgrade || !rest.empty() || (kind != "fesl" && kind != "theater" && kind != "messenger"))
+      {
+        Log("tunnel: bad request %s from %s", path.c_str(), Header(head, "X-Real-IP").c_str());
+        SendAll(c, "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        closesocket(c);
+        return;
+      }
+      SetTimeout(c, 0);
+      if (!SendAll(c, std::string("HTTP/1.1 101 Switching Protocols\r\nUpgrade: ") + kTunnelUpgrade +
+                          "\r\nConnection: Upgrade\r\n\r\n"))
+      {
+        closesocket(c);
+        return;
+      }
+      int nodelay = 1;
+      setsockopt(c, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(nodelay));
+      if (kind == "fesl")
+      {
+        RunTunneled<FeslConn>(c, ip, local, key);
+      }
+      else if (kind == "theater")
+      {
+        RunTunneled<TheaterConn>(c, ip, local, key);
+      }
+      else
+      {
+        RunTunneled<MessengerConn>(c, ip, local, key);
+      }
+    }
+
+#ifndef AO2_STANDALONE_SERVER
+    std::atomic<bool> g_tunnel{false};
+    std::string g_tunnel_host;     // the server's name (the Host header)
+    std::atomic<uint32_t> g_tunnel_ip{0};
+    uint16_t g_tunnel_port = 80;   // the server's HTTP port (nginx)
+    uint32_t g_tunnel_local = 0;   // where this game's tunnel listens
+
+    // An HTTP connection to the public server: the request sent, the answer's
+    // head read. INVALID_SOCKET when it cannot be reached.
+    SOCKET TunnelOpen(const std::string &request, std::string *head, std::string *rest)
+    {
+      SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+      if (s == INVALID_SOCKET)
+      {
+        return s;
+      }
+      sockaddr_in addr = {};
+      addr.sin_family = AF_INET;
+      addr.sin_port = htons(g_tunnel_port);
+      addr.sin_addr.s_addr = g_tunnel_ip;
+      SetTimeout(s, 10);
+      if (connect(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0 || !SendAll(s, request) ||
+          !ReadHead(s, head, rest))
+      {
+        closesocket(s);
+        return INVALID_SOCKET;
+      }
+      return s;
+    }
+
+    // Copies one direction until it closes, then ends both.
+    void Pump(SOCKET from, SOCKET to)
+    {
+      char chunk[16384];
+      while (true)
+      {
+        int n = recv(from, chunk, sizeof(chunk), 0);
+        if (n <= 0 || !SendAll(to, std::string(chunk, size_t(n))))
+        {
+          break;
+        }
+      }
+#ifdef _WIN32
+      shutdown(from, SD_BOTH);
+      shutdown(to, SD_BOTH);
+#else
+      shutdown(from, SHUT_RDWR);
+      shutdown(to, SHUT_RDWR);
+#endif
+    }
+
+    void ForwardToTunnel(SOCKET local, const std::string &kind)
+    {
+      std::string head, rest;
+      std::string key = opnet::KeyHex();
+      SOCKET remote = TunnelOpen("GET " + TunnelPath(kind) + " HTTP/1.1\r\nHost: " + g_tunnel_host + "\r\nUpgrade: " +
+                                     kTunnelUpgrade + "\r\nConnection: Upgrade\r\nX-AO2-Local: " +
+                                     IpString(g_tunnel_local) + "\r\n" +
+                                     (key.empty() ? "" : "X-AO2-Key: " + key + "\r\n") + "\r\n",
+                                 &head, &rest);
+      if (remote == INVALID_SOCKET || head.find(" 101 ") == std::string::npos)
+      {
+        Log("tunnel %s: %s answered %s", kind.c_str(), g_tunnel_host.c_str(),
+            remote == INVALID_SOCKET ? "nothing" : head.substr(0, head.find("\r\n")).c_str());
+        if (remote != INVALID_SOCKET)
+        {
+          closesocket(remote);
+        }
+        closesocket(local);
+        return;
+      }
+      SetTimeout(remote, 0);
+      int nodelay = 1;
+      setsockopt(remote, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(nodelay));
+      Log("tunnel %s open", kind.c_str());
+      if (!rest.empty())
+      {
+        SendAll(local, rest);
+      }
+      std::thread up([local, remote]() { Pump(local, remote); });
+      Pump(remote, local);
+      up.join();
+      closesocket(remote);
+      closesocket(local);
+      Log("tunnel %s closed", kind.c_str());
+    }
+
+    // 127.0.0.1:port -> the tunnel. False when the port is taken (another
+    // game on this PC already forwards it, or runs a server).
+    bool ListenTunnel(uint16_t port, const std::string &kind)
+    {
+      SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+      sockaddr_in addr = {};
+      addr.sin_family = AF_INET;
+      addr.sin_port = htons(port);
+      addr.sin_addr.s_addr = g_tunnel_local;
+      if (s == INVALID_SOCKET || bind(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0 ||
+          listen(s, 16) != 0)
+      {
+        if (s != INVALID_SOCKET)
+        {
+          closesocket(s);
+        }
+        return false;
+      }
+      std::thread([s, kind]() {
+        while (true)
+        {
+          SOCKET c = accept(s, nullptr, nullptr);
+          if (c == INVALID_SOCKET)
+          {
+            break;
+          }
+          int nodelay = 1;
+          setsockopt(c, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(nodelay));
+          std::thread([c, kind]() { ForwardToTunnel(c, kind); }).detach();
+        }
+      }).detach();
+      return true;
+    }
+#endif
   } // namespace
+
+  uint32_t ResolveIp(const std::string &address)
+  {
+    if (uint32_t ip = ParseIp(address))
+    {
+      return ip;
+    }
+    addrinfo hints = {}, *res = nullptr;
+    hints.ai_family = AF_INET;
+    if (address.empty() || getaddrinfo(address.c_str(), nullptr, &hints, &res) != 0 || !res)
+    {
+      return 0;
+    }
+    uint32_t ip = reinterpret_cast<sockaddr_in *>(res->ai_addr)->sin_addr.s_addr;
+    freeaddrinfo(res);
+    return ip;
+  }
+
+  bool SetPublicAddress(const std::string &address)
+  {
+    uint32_t ip = ResolveIp(address);
+    g_public_ip = ip;
+    if (ip)
+    {
+      Log("public address: %s (%s), given to players outside the LAN", IpString(ip).c_str(), address.c_str());
+    }
+    return ip != 0;
+  }
 
   std::vector<LocalAddress> LocalAddresses()
   {
     std::vector<LocalAddress> out;
+#ifdef _WIN32
     ULONG size = 32 * 1024;
     std::vector<uint8_t> buffer(size);
     auto *list = reinterpret_cast<IP_ADAPTER_ADDRESSES *>(buffer.data());
@@ -1278,17 +1923,41 @@ namespace ao2::ea
         out.push_back({IpString(ip), name, radmin});
       }
     }
+#else
+    ifaddrs *list = nullptr;
+    if (getifaddrs(&list) != 0)
+    {
+      return out;
+    }
+    for (auto *a = list; a; a = a->ifa_next)
+    {
+      if (!a->ifa_addr || a->ifa_addr->sa_family != AF_INET || !(a->ifa_flags & IFF_UP) || a->ifa_flags & IFF_LOOPBACK)
+      {
+        continue;
+      }
+      uint32_t ip = reinterpret_cast<sockaddr_in *>(a->ifa_addr)->sin_addr.s_addr;
+      out.push_back({IpString(ip), a->ifa_name, (ntohl(ip) >> 24) == 26});
+    }
+    freeifaddrs(list);
+#endif
     return out;
   }
 
-  bool StartServer(bool log_to_console)
+  bool StartServer(bool log_to_console, bool listen)
   {
     g_log_console = log_to_console;
+#ifdef _WIN32
     WSADATA wsa = {};
     WSAStartup(MAKEWORD(2, 2), &wsa);
+#endif
     for (const auto &a : LocalAddresses())
     {
       Log("this computer: %s (%s)%s", a.ip.c_str(), a.adapter.c_str(), a.radmin ? "  <- Radmin VPN" : "");
+    }
+    if (!listen)
+    {
+      Log("no TCP ports of its own: players come through the tunnel only");
+      return true;
     }
     bool ok = Listen<FeslConn>(kFeslPort);
     ok = Listen<TheaterConn>(kTheaterPort) && ok;
@@ -1338,9 +2007,175 @@ namespace ao2::ea
     g_quick_match = hook;
   }
 
+#ifdef AO2_STANDALONE_SERVER
+  void StartInviteQueries()
+  {
+    StartPresenceResponder();
+  }
+#endif
+
+  bool StartTunnelBridge(uint16_t port)
+  {
+    SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sockaddr_in addr = {};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // nginx only
+#ifndef _WIN32
+    int reuse = 1;
+    if (s != INVALID_SOCKET)
+    {
+      setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse));
+    }
+#endif
+    if (s == INVALID_SOCKET || bind(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0 ||
+        listen(s, 64) != 0)
+    {
+      Log("ERROR: cannot listen on 127.0.0.1:%u for the tunnel (error %d)", port, WSAGetLastError());
+      if (s != INVALID_SOCKET)
+      {
+        closesocket(s);
+      }
+      return false;
+    }
+    Log("tunnel bridge on 127.0.0.1:%u (nginx: %s)", port, ao2::opnet::kTunnelPath);
+    std::thread([s]() {
+      while (true)
+      {
+        SOCKET c = accept(s, nullptr, nullptr);
+        if (c == INVALID_SOCKET)
+        {
+          break;
+        }
+        std::thread([c]() { ServeTunnel(c); }).detach();
+      }
+    }).detach();
+    return true;
+  }
+
 #ifndef AO2_STANDALONE_SERVER
+  bool TunnelActive()
+  {
+    return g_tunnel;
+  }
+
+  bool TunnelGameQuery(const std::string &name, std::string *packet)
+  {
+    if (!g_tunnel)
+    {
+      return false;
+    }
+    std::string head, rest;
+    SOCKET s = TunnelOpen("GET " + TunnelPath("gameq?name=") + UrlEncode(name) + " HTTP/1.1\r\nHost: " +
+                              g_tunnel_host + "\r\nConnection: close\r\n\r\n",
+                          &head, &rest);
+    if (s == INVALID_SOCKET)
+    {
+      return false;
+    }
+    char chunk[2048];
+    int n;
+    while ((n = recv(s, chunk, sizeof(chunk), 0)) > 0)
+    {
+      rest.append(chunk, size_t(n));
+    }
+    closesocket(s);
+    *packet = rest;
+    return head.find(" 200 ") != std::string::npos && !rest.empty();
+  }
+
+  std::string TunnelFindPlayer(const std::string &name, uint32_t *vip)
+  {
+    *vip = 0;
+    if (!g_tunnel)
+    {
+      return "error";
+    }
+    std::string head, rest;
+    SOCKET s = TunnelOpen("GET " + TunnelPath("find?name=") + UrlEncode(name) + " HTTP/1.1\r\nHost: " +
+                              g_tunnel_host + "\r\nConnection: close\r\n\r\n",
+                          &head, &rest);
+    if (s == INVALID_SOCKET)
+    {
+      return "error";
+    }
+    char chunk[512];
+    int n;
+    while ((n = recv(s, chunk, sizeof(chunk), 0)) > 0)
+    {
+      rest.append(chunk, size_t(n));
+    }
+    closesocket(s);
+    if (head.find(" 200 ") == std::string::npos)
+    {
+      return "error";
+    }
+    if (rest.rfind("online ", 0) == 0)
+    {
+      *vip = ParseIp(rest.substr(7));
+      return *vip ? "online" : "error";
+    }
+    return rest == "offline" || rest == "unknown" ? rest : "error";
+  }
+
+  std::string NetMode()
+  {
+    std::string mode = REXCVAR_GET(ao2_net_mode);
+    return mode == "openportroid" || mode == "lan" ? mode : "steam";
+  }
+
+  namespace
+  {
+    // The OpenPortroid server: the lobby through the tunnel (127.0.0.1 here),
+    // the game traffic over its UDP port (openportroid_net.cpp).
+    void StartOpenPortroid()
+    {
+      // "host" or "host:port" (the HTTP port, 80 by default; a test
+      // without nginx gives the server's --tunnel-port).
+      std::string server = REXCVAR_GET(ao2_openportroid_server);
+      if (size_t colon = server.find(':'); colon != std::string::npos)
+      {
+        g_tunnel_port = uint16_t(std::atoi(server.c_str() + colon + 1));
+        server.resize(colon);
+      }
+      uint32_t ip = ResolveIp(server);
+      if (!ip)
+      {
+        Log("OpenPortroid server %s does not resolve: no online play", server.c_str());
+        return;
+      }
+      opnet::Start(server, uint16_t(REXCVAR_GET(ao2_openportroid_port)), REXCVAR_GET(ao2_openportroid_key));
+      // The tunnel tells the server this game's key: wait a moment for the
+      // sign-in, so the lobby shows this player at its virtual address.
+      uint32_t vip = opnet::SelfIp(1500);
+      g_tunnel_host = server;
+      g_tunnel_ip = ip;
+      // Two games on one PC (tests) each have a loopback address of their own.
+      uint32_t bind_ip = ParseIp(rex::cvar::GetFlagByName("net_bind_ip"));
+      g_tunnel_local = IsLoopback(bind_ip) ? bind_ip : htonl(INADDR_LOOPBACK);
+      int bound = 0;
+      bound += ListenTunnel(kFeslPort, "fesl");
+      bound += ListenTunnel(kTheaterPort, "theater");
+      bound += ListenTunnel(kMessengerPort, "messenger");
+      g_tunnel = true;
+      rex::cvar::SetFlagByName("net_title_server_ip", IpString(g_tunnel_local));
+      Log("OpenPortroid server %s (%s): lobby through the tunnel (%d of 3 ports here%s), this player %s", server.c_str(),
+          IpString(ip).c_str(), bound, bound < 3 ? ", the rest another game's on this PC" : "",
+          vip ? IpString(vip).c_str() : "not signed in yet (game traffic straight, no NAT punching)");
+    }
+  } // namespace
+
   void Start()
   {
+#ifdef _WIN32
+    WSADATA wsa = {};
+    WSAStartup(MAKEWORD(2, 2), &wsa); // host names are looked up before the server starts
+#endif
+    if (NetMode() == "openportroid")
+    {
+      StartOpenPortroid();
+      return;
+    }
     std::string host = REXCVAR_GET(ao2_coop_host);
     bool server = REXCVAR_GET(ao2_coop_server);
     if (!host.empty())

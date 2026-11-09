@@ -54,6 +54,8 @@
 #include "ea_server.h"
 #include "invite_checks.h"
 #include "log_files.h"
+#include "openportroid.h"
+#include "openportroid_net.h"
 #include "steam_net.h"
 #include "ui_text.h"
 #include "ui_theme.h"
@@ -191,16 +193,30 @@ namespace
     return buf;
   }
 
+  // A Steam or OpenPortroid player's address on this PC's virtual LAN
+  // (steam_net.h, openportroid.h): another PC, whose address means nothing to
+  // the player.
+  bool IsVirtual(uint32_t ip)
+  {
+    return ao2::steam::IsVirtual(ip) || ao2::opnet::IsVirtual(ip);
+  }
+
   bool IsVirtualText(const std::string &ip)
   {
     in_addr a = {};
-    return inet_pton(AF_INET, ip.c_str(), &a) == 1 && ao2::steam::IsVirtual(a.s_addr);
+    return inet_pton(AF_INET, ip.c_str(), &a) == 1 && IsVirtual(a.s_addr);
   }
 
-  // This PC (a Steam player's virtual address is another PC).
+  // How a virtual address is shown ("Steam", "OpenPortroid").
+  const char *VirtualName(uint32_t ip)
+  {
+    return ao2::opnet::IsVirtual(ip) ? "OpenPortroid" : "Steam";
+  }
+
+  // This PC (a Steam or OpenPortroid player's virtual address is another PC).
   bool IsLoopback(uint32_t ip)
   {
-    return (ntohl(ip) >> 24) == 127 && !ao2::steam::IsVirtual(ip);
+    return (ntohl(ip) >> 24) == 127 && !IsVirtual(ip);
   }
 
   uint16_t Port()
@@ -790,6 +806,8 @@ namespace
     Log("EA server: %s -> %s (%s hosts no game now)", current.c_str(), server.c_str(), name.c_str());
   }
 
+  void TakeRemoteGame(const Fields &f, bool from_server);
+
   void Beacon()
   {
     auto &st = state();
@@ -808,6 +826,10 @@ namespace
       targets.push_back(a);
     }
     for (uint32_t ip : ao2::steam::PeerAddresses())
+    {
+      targets.push_back({ip, Port()});
+    }
+    for (uint32_t ip : ao2::opnet::PeerAddresses())
     {
       targets.push_back({ip, Port()});
     }
@@ -831,7 +853,28 @@ namespace
     // Our game on a lobby server in another process (its presence answers).
     ao2::ea::HostedGame local;
     Address server;
-    if (!ao2::ea::FindHostedGame(LocalName(), &local) && ServerAddress(&server))
+    if (ao2::ea::FindHostedGame(LocalName(), &local))
+    {
+    }
+    else if (ao2::ea::TunnelActive())
+    {
+      // The OpenPortroid server: over HTTP, off this thread.
+      static std::atomic<bool> asking{false};
+      if (!asking.exchange(true))
+      {
+        std::thread([]() {
+          std::string packet, type;
+          Fields f;
+          if (ao2::ea::TunnelGameQuery(LocalName(), &packet) && Parse(packet.data(), packet.size(), &type, &f) &&
+              type == "GAME")
+          {
+            TakeRemoteGame(f, true);
+          }
+          asking = false;
+        }).detach();
+      }
+    }
+    else if (ServerAddress(&server))
     {
       {
         std::lock_guard lock(st.mutex);
@@ -915,24 +958,13 @@ namespace
     }
     else if (type == "GAME")
     {
-      ao2::ea::HostedGame game;
-      game.gid = uint32_t(std::strtoul(Get(f, "gid").c_str(), nullptr, 10));
-      game.session_id = std::strtoull(Get(f, "session").c_str(), nullptr, 16);
-      game.xnaddr = Unhex(Get(f, "xnaddr"));
-      game.host_xuid = std::strtoull(Get(f, "xuid").c_str(), nullptr, 16);
-      game.is_private = Get(f, "private") == "1";
-      game.playgroup = Get(f, "playgroup") == "1";
-      game.players = std::atoi(Get(f, "players", "1").c_str());
-      if (game.session_id && game.xnaddr.size() == 36)
+      // What this player's own invites will carry: only from the server it asked.
+      bool asked;
       {
-        // What this player's own invites will carry: only from the server it asked.
         std::lock_guard lock(st.mutex);
-        if (from.ip == st.game_query_ip)
-        {
-          st.remote_game = game;
-          st.remote_game_seen = now;
-        }
+        asked = from.ip == st.game_query_ip;
       }
+      TakeRemoteGame(f, asked);
     }
     else if (type == "INVITE")
     {
@@ -953,9 +985,16 @@ namespace
       inv.playgroup = Get(f, "playgroup") == "1";
       inv.build = ao2::invite_checks::CleanText(Get(f, "build"), ao2::invite_checks::kMaxFieldBytes);
       // The inviter's lobby server (invite_checks.h says which it may be).
-      uint32_t server_ip = ao2::invite_checks::ChooseInviteServer(Get(f, "server"), from.ip, ao2::steam::IsVirtual);
+      uint32_t server_ip = ao2::invite_checks::ChooseInviteServer(Get(f, "server"), from.ip, IsVirtual);
       inv.server_ip = IpString(server_ip);
       inv.server_here = server_ip == ao2::steam::SelfAddress() && server_ip != 0;
+      // An OpenPortroid player plays on the same server as this game: the
+      // lobby stays where it is (its "server" is its own tunnel, 127.0.0.1).
+      if (ao2::opnet::IsVirtual(from.ip) && ao2::ea::TunnelActive())
+      {
+        inv.server_ip = rex::cvar::GetFlagByName("net_title_server_ip");
+        inv.server_here = true;
+      }
       inv.received = now;
       if (inv.xnaddr.size() != 36 || !inv.session_id)
       {
@@ -1311,6 +1350,27 @@ namespace
     }
   }
 
+  // A GAME answer (the game this player hosts on a lobby server in another
+  // process, or on the OpenPortroid server through the tunnel).
+  void TakeRemoteGame(const Fields &f, bool from_server)
+  {
+    ao2::ea::HostedGame game;
+    game.gid = uint32_t(std::strtoul(Get(f, "gid").c_str(), nullptr, 10));
+    game.session_id = std::strtoull(Get(f, "session").c_str(), nullptr, 16);
+    game.xnaddr = Unhex(Get(f, "xnaddr"));
+    game.host_xuid = std::strtoull(Get(f, "xuid").c_str(), nullptr, 16);
+    game.is_private = Get(f, "private") == "1";
+    game.playgroup = Get(f, "playgroup") == "1";
+    game.players = std::atoi(Get(f, "players", "1").c_str());
+    if (from_server && game.session_id && game.xnaddr.size() == 36)
+    {
+      auto &st = state();
+      std::lock_guard lock(st.mutex);
+      st.remote_game = game;
+      st.remote_game_seen = Clock::now();
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------
@@ -1324,6 +1384,7 @@ namespace
       *error = Tr("Create a game first: Campaign Mode - Private (or Public) Co-op Game.");
       return false;
     }
+    ao2::opnet::Connect(to.ip); // an OpenPortroid player: the way to it
     static std::mt19937 rng{std::random_device{}()};
     auto &st = state();
     SentInvite s;
@@ -1429,7 +1490,7 @@ namespace
   std::string InviteOrigin(const ReceivedInvite &inv)
   {
     std::string out;
-    if (!ao2::steam::IsVirtual(inv.from.ip))
+    if (!IsVirtual(inv.from.ip))
     {
       out = IpString(inv.from.ip);
     }
@@ -1758,6 +1819,17 @@ namespace
 
     char address[64] = {};
     std::string error;
+    std::string note; // a good result (a player found by name)
+    // A player looked up by name on the OpenPortroid server (off the UI thread).
+    struct NameSearch
+    {
+      std::mutex mutex;
+      bool busy = false;
+      bool done = false;
+      std::string name, result;
+      uint32_t vip = 0;
+    };
+    std::shared_ptr<NameSearch> search = std::make_shared<NameSearch>();
     double opened = -1.0;
     double closing = -1.0;
     float panel_h = 0.0f;
@@ -2225,7 +2297,10 @@ namespace
         }
         ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 42.0f * s, mn.y + 8.0f * s), ui::Fade(ui::kText, ra),
                  p.name.c_str());
-        std::string sub = (ao2::steam::IsVirtual(p.address.ip) ? std::string("Steam") : IpString(p.address.ip)) +
+        std::string way = ao2::opnet::PathTo(p.address.ip);
+        std::string sub = (IsVirtual(p.address.ip) ? std::string(VirtualName(p.address.ip)) +
+                                                         (way.empty() ? "" : std::string(", ") + Tr(way.c_str()))
+                                                   : IpString(p.address.ip)) +
                           "  ·  " + StateText(p.state) + (p.hosting ? Tr("  ·  hosting a game") : "");
         ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 42.0f * s, mn.y + 32.0f * s), ui::Fade(ui::kMuted, ra),
                  sub.c_str());
@@ -2305,9 +2380,42 @@ namespace
         y += hosting ? 34.0f * s + 10.0f * s : 0.0f;
       }
 
-      // --- By address ----------------------------------------------------
+      // --- By name or address ---------------------------------------------
+      bool by_name = ao2::ea::TunnelActive();
+      {
+        // A name search that finished: the player is added like an address.
+        std::lock_guard lock(search->mutex);
+        if (search->done)
+        {
+          search->done = false;
+          char line[160];
+          if (search->result == "online")
+          {
+            ao2::opnet::Connect(search->vip);
+            Address addr{search->vip, Port()};
+            std::lock_guard slock(st.mutex);
+            if (std::find(st.manual.begin(), st.manual.end(), addr) == st.manual.end())
+            {
+              st.manual.push_back(addr);
+            }
+            st.next_beacon = Clock::now();
+            error.clear();
+            std::snprintf(line, sizeof(line), Tr("%s found: they will show up in the list."), search->name.c_str());
+            note = line;
+          }
+          else
+          {
+            note.clear();
+            const char *why = search->result == "offline"   ? Tr("%s is not online now.")
+                              : search->result == "unknown" ? Tr("No player is named %s.")
+                                                            : Tr("The server did not answer, try again.");
+            std::snprintf(line, sizeof(line), why, search->name.c_str());
+            error = line;
+          }
+        }
+      }
       y += 14.0f * s;
-      section(Tr("BY ADDRESS"), -1);
+      section(by_name ? Tr("BY NAME OR ADDRESS") : Tr("BY ADDRESS"), -1);
       ImGui::PushFont(ui::Font(FontKind::kBody), ui::FontSize(FontKind::kBody));
       ImGui::PushStyleVar(ImGuiStyleVar_Alpha, a);
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f * s, 8.0f * s));
@@ -2323,8 +2431,8 @@ namespace
       ImGui::SetCursorScreenPos(ImVec2(cx0, y));
       float field_w = 320.0f * s;
       ImGui::SetNextItemWidth(field_w);
-      bool enter = ImGui::InputTextWithHint("##address", Tr("IP or IP:port"), address, sizeof(address),
-                                            ImGuiInputTextFlags_EnterReturnsTrue);
+      bool enter = ImGui::InputTextWithHint("##address", by_name ? Tr("Friend's name or IP") : Tr("IP or IP:port"),
+                                            address, sizeof(address), ImGuiInputTextFlags_EnterReturnsTrue);
       float field_h = ImGui::GetItemRectSize().y;
       ImGui::PopStyleColor(7);
       ImGui::PopStyleVar(4);
@@ -2335,7 +2443,20 @@ namespace
           live)
       {
         Address addr;
-        if (ParseAddress(address, &addr))
+        std::string text = address;
+        while (!text.empty() && text.back() == ' ')
+        {
+          text.pop_back();
+        }
+        while (!text.empty() && text.front() == ' ')
+        {
+          text.erase(text.begin());
+        }
+        note.clear();
+        // On the OpenPortroid server a word without a dot is a name (not a
+        // host name to look up).
+        bool name_like = by_name && text.find('.') == std::string::npos && text.find(':') == std::string::npos;
+        if (!name_like && ParseAddress(text, &addr))
         {
           std::lock_guard lock(st.mutex);
           if (std::find(st.manual.begin(), st.manual.end(), addr) == st.manual.end())
@@ -2345,15 +2466,59 @@ namespace
           st.next_beacon = Clock::now();
           error.clear();
         }
+        else if (name_like && !text.empty() && text.size() <= 15 &&
+                 std::all_of(text.begin(), text.end(), [](char c) {
+                   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' ||
+                          c == '-';
+                 }))
+        {
+          std::shared_ptr<NameSearch> ns = search;
+          std::lock_guard lock(ns->mutex);
+          if (!ns->busy)
+          {
+            ns->busy = true;
+            ns->name = text;
+            error.clear();
+            std::thread([ns, text]() {
+              uint32_t vip = 0;
+              std::string result = ao2::ea::TunnelFindPlayer(text, &vip);
+              std::lock_guard lock(ns->mutex);
+              ns->busy = false;
+              ns->done = true;
+              ns->result = result;
+              ns->vip = vip;
+            }).detach();
+          }
+        }
         else
         {
-          error = Tr("Couldn't read the address.");
+          error = by_name ? Tr("Name: Latin letters, digits, _ and -, up to 15; or an IP.")
+                          : Tr("Couldn't read the address.");
         }
       }
       y += field_h + 10.0f * s;
-      if (!error.empty())
+      bool searching_name = false;
+      std::string searching_for;
+      {
+        std::lock_guard lock(search->mutex);
+        searching_name = search->busy;
+        searching_for = search->name;
+      }
+      if (searching_name)
+      {
+        char line[96];
+        std::snprintf(line, sizeof(line), Tr("Looking for %s..."), searching_for.c_str());
+        ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), line);
+        y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
+      }
+      else if (!error.empty())
       {
         ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kRed, a), error.c_str());
+        y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
+      }
+      else if (!note.empty())
+      {
+        ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kAccentLight, a), note.c_str());
         y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
       }
 

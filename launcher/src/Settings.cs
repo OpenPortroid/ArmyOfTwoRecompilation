@@ -46,6 +46,8 @@ namespace AO2Launcher
             { "unlock_all", "0" },
             { "profile", "" },
             { "new_profile", "" },
+            { "net_mode", "steam" },
+            { "op_key", "" },
             { "host_ip", "" },
             { "gamertag", "" },
             { "gamertag2", "" },
@@ -288,7 +290,8 @@ namespace AO2Launcher
         // Everything but the game's path and the chosen profile.
         public void Reset()
         {
-            string game = this["game_path"], profile = this["profile"], seen = this["seen_version"];
+            // The OpenPortroid key stays too: it owns the player's name on the server.
+            string game = this["game_path"], profile = this["profile"], seen = this["seen_version"], key = this["op_key"];
             values.Clear();
             foreach (var kv in Defaults)
             {
@@ -297,6 +300,7 @@ namespace AO2Launcher
             values["game_path"] = game;
             values["profile"] = profile;
             values["seen_version"] = seen;
+            values["op_key"] = key;
         }
     }
 }

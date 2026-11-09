@@ -5,6 +5,18 @@ a LAN or a virtual network (Radmin VPN, ZeroTier, Tailscale...).
 
 ## Playing
 
+Online play goes one of three ways (`ao2_net_mode`, the launcher's *Network*):
+
+- **steam** (default): LAN or a virtual network (Radmin VPN, ZeroTier,
+  Tailscale...) with the roles below, and Steam friends and lobbies while
+  Steam runs (*Over Steam*).
+- **lan**: the same without Steam.
+- **openportroid**: the OpenPortroid server, **aot.bhop.pw/aot1/**
+  (repository ArmyOfTwoOpenPortroid). Anyone on the internet, no VPN, Steam
+  or ports to open, no roles: the host is whoever creates a game in the menu,
+  and *Search Co-op Game* / *Quick Match* find the public games of everyone on
+  the server. See *Over the OpenPortroid server* below.
+
 Both players need the **same build** (`armyoftworecomp.exe` + `rexruntime.dll`)
 and their own game files in `assets/`. Settings live in
 [`settings/online.toml`](../settings/online.toml) (or the same names as
@@ -215,6 +227,56 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   P2P connection on the same virtual port, and on the far side passes it on
   from the sender's address to the PC's own virtual address. The lobby
   server and the invites treat these addresses as other PCs, not loopback.
+
+### Over the OpenPortroid server (`src/openportroid_net.cpp`, the tunnel in `src/ea_server.cpp`)
+
+The 40th Day's OpenPortroid server built for this game; the server is its own
+repository, ArmyOfTwoOpenPortroid (`aot1_server` on cube next to The 40th
+Day's, `http://aot.bhop.pw/aot1/`, UDP 18501). Its lobby is this repository's
+`ea_server.cpp` (copied there by its `tools/sync_aot1.sh`; built with
+`AO2_OPENPORTROID_SERVER`, which adds the relay and the player names), so a
+change to the lobby is made here and synced. What the game and the server
+share is in `src/openportroid.h`.
+
+- **Lobby through HTTP.** With `ao2_net_mode = openportroid` the game runs no
+  server and Steam stays off. It listens on its own loopback address
+  (127.0.0.1, or `net_bind_ip`) at TCP 18480 / 18485 / 13505 and sets
+  `net_title_server_ip` to it; each connection becomes a request to
+  `http://<ao2_openportroid_server>/aot1/<fesl | theater | messenger>` with
+  `Upgrade: aot1-tunnel`, the player's key (`X-AO2-Key`) and that loopback
+  address (`X-AO2-Local`); nginx passes it on with `X-Real-IP`, the server
+  answers 101 and both sides then carry the lobby's own bytes. Every player
+  is on one server, so a public game is found by the game's own search (a
+  player through the tunnel is not this PC's own, so no Steam quick match).
+- **Game traffic on a virtual LAN.** Every game signs in to the server's UDP
+  port (`ao2_openportroid_port`, 18501) with its key and gets an address in
+  127.128.0.0/10 (Steam's are 127.64.0.0/10); the lobby shows the player at
+  it. For every player it knows the bridge binds that address on UDP 1000
+  (the game), 1002 (the link) and 18491 (presence), the Steam bridge's way,
+  and sends what the game sends there to that player: straight once NAT
+  punching worked (the server introduces both players when the lobby pairs
+  them: EGRQ), else through the server. `ao2_openportroid_direct = false`
+  sends everything through the server. `openportroid.log` shows each peer's
+  way.
+- **Invites and the players window.** The players this game knows get the
+  presence announcements; the game a player hosts comes from the server
+  (`GET /aot1/gameq?name=`); an invite from an OpenPortroid player keeps this
+  game on the same server. The window's address field takes a player's name
+  too (`/aot1/find?name=`: online at its virtual address, offline, unknown).
+- **Player names.** The launcher makes a key once (`op_key`, copy / paste on
+  the Network page), passes it as `ao2_openportroid_key` and claims the name
+  on Play (`/aot1/claim?name=`): a name (1-15 of `A-Z a-z 0-9 _ -`) belongs
+  to the first key that claims it, free again after 180 days unused. A player
+  who signs in with another key's name is shown as `Guest-xxxx`.
+
+Tested 2026-11-08 on one PC, the server on Windows (`aot1_server
+--tunnel-port 18101 --udp-port 18501`), both games with
+`ao2_openportroid_server = 127.0.0.1:18101` and their own `net_bind_ip`
+(127.0.0.1 / 127.0.0.2; without it the first game's 0.0.0.0:1000 loses its
+traffic to the second game's bridge on the same PC): both signed in, the
+second found the first's public game (Search Co-op Game), straight at once,
+the lockstep ran into the level. Not tested: two PCs, real NAT, the relay
+path, invites, the server on cube behind nginx.
 
 `steam_api64.dll` is linked to load late: without it (or without Steam) the
 game plays as before. Built only when `steamworks/sdk` holds the Steamworks

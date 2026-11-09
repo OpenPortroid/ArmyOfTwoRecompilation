@@ -140,6 +140,7 @@ namespace AO2Launcher
         int tab;
         int sel;
         bool searching;
+        string searchLabel = "LOOKING FOR A HOST…"; // the Play button while searching
         bool snapshotting;
 
         readonly List<Hot> hots = new List<Hot>();
@@ -1721,13 +1722,84 @@ namespace AO2Launcher
             {
                 new Row
                 {
+                    Kind = RowKind.Choice, Label = "Network", Key = "net_mode",
+                    Values = new[] { "steam", "openportroid", "lan" }, Names = new[] { "LAN + STEAM", "OPENPORTROID", "LAN" },
+                    Desc = "LAN + Steam: the local network or a VPN (Radmin VPN, ZeroTier...), and Steam friends and lobbies " +
+                           "while Steam runs. OpenPortroid: play with anyone on the internet through the OpenPortroid server " +
+                           "(aot.bhop.pw), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
+                           "Both players need the same choice."
+                },
+                new Row
+                {
                     Kind = RowKind.Text, Label = "Player name", Key = "gamertag", MaxLen = 15,
-                    Placeholder = () => Shorten(Environment.MachineName, 15),
-                    Desc = "The name your partner sees (up to 15 characters). Empty: the computer's name."
+                    Placeholder = () => S["net_mode"] == "openportroid" ? Nicks.Sanitize(Environment.MachineName)
+                                                                         : Shorten(Environment.MachineName, 15),
+                    Desc = "The name your partner sees (up to 15 characters). Empty: the computer's name. On the OpenPortroid " +
+                           "server only Latin letters, digits, _ and -, and it is yours alone: the first to take it keeps it " +
+                           "(it is freed after 180 days unused), and friends find you by it."
+                },
+                new Row
+                {
+                    Kind = RowKind.Info,
+                    Visible = () => S["net_mode"] == "openportroid",
+                    Text = NickStateText
+                },
+                new Row
+                {
+                    Kind = RowKind.Button, Label = "Player key", ButtonText = () => "COPY",
+                    Visible = () => S["net_mode"] == "openportroid",
+                    Click = () =>
+                    {
+                        try
+                        {
+                            Clipboard.SetText(Nicks.Key(S));
+                            ShowToast(L.T("Key copied. Keep it secret: it owns your name"), false);
+                        }
+                        catch
+                        {
+                            ShowToast(L.T("Could not copy the key"), true);
+                        }
+                    },
+                    Desc = "The key is your account on the OpenPortroid server, without a password: whoever has it owns your name. " +
+                           "Copy it to move your name to another PC or to keep it safe. Do not give it to anyone."
+                },
+                new Row
+                {
+                    Kind = RowKind.Button, Label = "Load a key", ButtonText = () => "PASTE",
+                    Visible = () => S["net_mode"] == "openportroid",
+                    Click = () =>
+                    {
+                        string k = "";
+                        try
+                        {
+                            k = (Clipboard.GetText() ?? "").Trim().ToLowerInvariant();
+                        }
+                        catch
+                        {
+                        }
+                        if (!Nicks.ValidKey(k))
+                        {
+                            ShowToast(L.T("The clipboard has no key (32 characters 0-9, a-f)"), true);
+                            return;
+                        }
+                        if (k == Nicks.Key(S))
+                        {
+                            ShowToast(L.T("This key is already in use"), false);
+                            return;
+                        }
+                        S["op_key"] = k;
+                        S.Save();
+                        Nicks.Recheck();
+                        Invalidate();
+                        ShowToast(L.T("Key loaded: your name is now the one claimed with it"), false);
+                    },
+                    Desc = "Takes a key copied on another PC from the clipboard: your name comes with it. " +
+                           "The current key is replaced - copy it first if its name matters."
                 },
                 new Row
                 {
                     Kind = RowKind.Text, Label = "Host IP", Key = "host_ip", MaxLen = 64,
+                    Visible = () => S["net_mode"] != "openportroid",
                     Placeholder = () => L.T("auto"),
                     Desc = "Leave empty: the host is found automatically on the local network or Radmin VPN. " +
                            "Enter an address only if the host is not found, for example over the internet."
@@ -1751,6 +1823,7 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Info,
+                    Visible = () => S["net_mode"] != "openportroid",
                     Text = () => L.T("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
                                      "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
                                      "the first player's game has started. Then both, in the game: Campaign Mode → Search Co-op Game.")
@@ -2253,8 +2326,40 @@ namespace AO2Launcher
             }
         }
 
+        // The player name's state on the OpenPortroid server, under the name on the Network page.
+        string NickStateText()
+        {
+            string name = Nicks.Name(S);
+            string st = Nicks.State(name, Nicks.Key(S), () =>
+            {
+                try
+                {
+                    BeginInvoke((Action)Invalidate);
+                }
+                catch (InvalidOperationException)
+                {
+                }
+            });
+            switch (st)
+            {
+                case "yours":
+                    return L.F("The name {0} is yours.", name);
+                case "free":
+                    return L.F("The name {0} is free: it becomes yours when you press Play.", name);
+                case "taken":
+                    return L.F("The name {0} is taken by another player: choose another.", name);
+                case "invalid":
+                    return L.T("Only Latin letters, digits, _ and - (up to 15).");
+                case "checking":
+                    return L.F("Checking the name {0}…", name);
+                default:
+                    return L.T("The OpenPortroid server does not answer: the name could not be checked.");
+            }
+        }
+
         // Play: look for a host on the network (off the UI thread), then start
-        // the game as a partner if one answered, otherwise as the host.
+        // the game as a partner if one answered, otherwise as the host. On the
+        // OpenPortroid server: claim the player's name, then start.
         void Play()
         {
             if (searching)
@@ -2285,7 +2390,45 @@ namespace AO2Launcher
                 OfferAvx1();
                 return;
             }
+            if (S["net_mode"] == "openportroid")
+            {
+                // Both games are the server's clients, nobody to look for. The name is claimed first (a name
+                // another player owns would show as a guest's in the lobby).
+                string name = Nicks.Name(S), key = Nicks.Key(S);
+                searching = true;
+                searchLabel = "CHECKING THE NAME…";
+                Invalidate();
+                var ct = new System.Threading.Thread(() =>
+                {
+                    string r = Nicks.Ask("claim", name, key);
+                    try
+                    {
+                        BeginInvoke(new Action(() =>
+                        {
+                            Nicks.Recheck();
+                            if (r == "taken" || r == "invalid")
+                            {
+                                searching = false;
+                                ShowToast(r == "taken" ? L.F("The name {0} is taken: choose another in Settings → Network", name)
+                                                       : L.T("Only Latin letters, digits, _ and - (up to 15)."), true);
+                                Invalidate();
+                                return;
+                            }
+                            // Claimed, or the server is not answering (the game tries it anyway).
+                            StartGame(null);
+                        }));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // The form was closed meanwhile.
+                    }
+                });
+                ct.IsBackground = true;
+                ct.Start();
+                return;
+            }
             searching = true;
+            searchLabel = "LOOKING FOR A HOST…";
             Invalidate();
             string manual = S["host_ip"].Trim();
             var th = new System.Threading.Thread(() =>
@@ -3114,7 +3257,7 @@ namespace AO2Launcher
             var exit = new RectangleF(btnX + 126, colY + 72, 118, 40);
             FlatButton(g, set, L.T("SETTINGS"), fBtn, false, Lit(mainSel, 1) || IsHover("settings"), false);
             FlatButton(g, exit, L.T("EXIT"), fBtn, false, Lit(mainSel, 2) || IsHover("exit"), false);
-            FlatButton(g, play, L.T(searching ? "LOOKING FOR A HOST…" : install ? "INSTALL" : "PLAY"), searching || install ? fInstall : fPlay, true,
+            FlatButton(g, play, L.T(searching ? searchLabel : install ? "INSTALL" : "PLAY"), searching || install ? fInstall : fPlay, true,
                 !searching && (Lit(mainSel, 0) || IsHover("play")), searching);
             AddHot(set, "settings", () => SetScreen(UiScreen.Settings), 1);
             AddHot(exit, "exit", Close, 2);
