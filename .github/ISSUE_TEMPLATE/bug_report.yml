@@ -10,7 +10,7 @@ body:
     attributes:
       label: Port version
       description: Shown under the Play button in the launcher. Please update to the latest version first.
-      placeholder: v1.4.3
+      placeholder: v1.5.0
     validations:
       required: true
   - type: dropdown
