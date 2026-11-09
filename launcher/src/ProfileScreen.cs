@@ -235,8 +235,8 @@ namespace AO2Launcher
             });
         }
 
-        // Bottom left, mirroring the Discord / GitHub chips, in two rows: the profile the game starts with (a
-        // click opens the Profiles tab) above, level with Settings / Exit the achievements of the profile the game starts with
+        // Bottom left, mirroring the Discord / GitHub chips, in two rows: the profile the game starts with and its
+        // time played (a click opens the Profiles tab) above, level with Settings / Exit the achievements of the profile the game starts with
         // (the Achievements tab): the icons of the latest unlocked and the progress.
         void DrawStatsChips(Graphics g, float cy)
         {
@@ -249,7 +249,7 @@ namespace AO2Launcher
         {
             const float icon = 16, h = 32, padX = 12, gap = 8;
             const string id = "stats_profile";
-            string text = ProfileName(S["profile"]);
+            string text = ProfileName(S["profile"]) + "  ·  " + Playtime.Format(playSeconds);
             float tw = g.MeasureString(text, fSmall).Width;
             var r = new RectangleF(left, cy - h / 2, padX + icon + gap + tw + padX, h);
             FillRound(g, IsHover(id) ? Color.FromArgb(230, InkRaise) : Color.FromArgb(178, InkDeep), r, h / 2);

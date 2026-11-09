@@ -174,6 +174,7 @@ namespace ao2::prompts
       std::string text;
       int arrow = 0, mouse = 0;
       int u = 0, v = 0, w = 0; // page texels (height 26)
+      bool placed = false;     // given room on the page
       bool operator<(const Cap &o) const
       {
         return std::tie(kind, text, arrow, mouse) < std::tie(o.kind, o.text, o.arrow, o.mouse);
@@ -212,7 +213,7 @@ namespace ao2::prompts
         {"_y", "keybind_left_shoulder", "LB"},
         {"`z", "keybind_right_shoulder", "RB"},
         {":<", "keybind_back", "Back"},
-        {";>", "keybind_start", "Start"},
+        {";>", "keybind_start", "Start"},  // ">" becomes Enter where there is room (kTitleStart)
         {"j", "keybind_lstick_press", "L3"},
         {"h", "keybind_rstick_press", "R3"},
         {"m", "keybind_dpad_up", "D-Up"},
@@ -223,6 +224,10 @@ namespace ao2::prompts
     constexpr const char *kLeftStick = "kLMNOPQRST";
     constexpr const char *kRightStick = "iCDEFGHIJK";
     constexpr const char *kDpad = "l";
+    // The title screen's "Press START" (RewriteIni) shows the Start character ">" (";" elsewhere), drawn as
+    // Enter: Enter presses Start there (input_script.cpp: A does, Enter is A's), and Esc - Start's key - reads
+    // like leaving rather than starting.
+    constexpr char kTitleStart = '>';
 
     std::optional<Cap> CapForToken(const std::string &token)
     {
@@ -389,6 +394,10 @@ namespace ao2::prompts
       static Layout layout;
       static std::once_flag once;
       std::call_once(once, [] {
+       // With the title's Enter first; without it (">" as Start's other character again) when it does not fit.
+       for (bool title_enter : {true, false})
+       {
+        layout = Layout{};
         layout.cap_of_char.fill(-1);
         std::map<Cap, int> index;
         // Every character of the free room gets a picture: its old one is gone.
@@ -424,6 +433,11 @@ namespace ao2::prompts
         assign(kDpad, CapForDirections("keybind_dpad_up", "keybind_dpad_left", "keybind_dpad_down",
                                        "keybind_dpad_right"),
                "D-pad");
+        if (title_enter)
+        {
+          const char chars[2] = {kTitleStart, 0};
+          assign(chars, CapForToken("Return"), "Enter");
+        }
 
         // First fit, widest first, into the free room.
         TextRenderer text;
@@ -441,15 +455,20 @@ namespace ao2::prompts
           auto span = std::find_if(free.begin(), free.end(), [&](const FreeSpan &f) { return f.w >= cap.w; });
           if (span == free.end())
           {
-            REXLOG_WARN("keyboard_prompts: no room on the button page for a {}-texel key", cap.w);
-            return;
+            REXLOG_WARN("keyboard_prompts: no room on the button page for a {}-texel key{}", cap.w,
+                        title_enter ? " (again without the title's Enter)" : "");
+            break;
           }
           cap.u = span->u;
           cap.v = span->v;
           span->u += cap.w;
           span->w -= cap.w;
+          cap.placed = true;
         }
-        layout.valid = true;
+        layout.valid = std::all_of(layout.caps.begin(), layout.caps.end(), [](const Cap &c) { return c.placed; });
+        if (layout.valid)
+          return;
+       }
       });
       return layout;
     }
@@ -1239,6 +1258,27 @@ namespace ao2::prompts
 
       for (Line &line : lines)
       {
+        // The title screen's "Press START" names the button in words in every language but the Russian
+        // translation, which shows its picture (Start's character ";"). Here it is Start's other character
+        // (kTitleStart), drawn as Enter on the keyboard and as Start on a gamepad. Only the word START or
+        // the picture changes, the rest of the line stays.
+        if (line.key == "PressStart" || line.key == "PressStart_Xbox360")
+        {
+          const std::string title = std::string(kOpen) + kTitleStart + std::string(kClose);
+          const std::string start = std::string(kOpen) + ";" + std::string(kClose);
+          size_t at;
+          if (line.value.find(kOpen) == std::string::npos && (at = line.value.find("START")) != std::string::npos)
+          {
+            line.value.replace(at, 5, title);
+            ++rewritten;
+          }
+          else if ((at = line.value.find(start)) != std::string::npos)
+          {
+            line.value.replace(at, start.size(), title);
+            ++rewritten;
+          }
+          continue;
+        }
         if (line.value.find(kOpen) == std::string::npos || line.key.ends_with("_PS3"))
           continue;
         std::string before = line.value;
@@ -1342,6 +1382,11 @@ namespace ao2::prompts
   std::string RewriteLocalization(const std::string &data, bool english, int &rewritten)
   {
     return RewriteCoalesced(data, english, rewritten);
+  }
+
+  std::string RewriteIniText(const std::string &text, bool english, int &rewritten)
+  {
+    return RewriteIni(text, english, rewritten);
   }
 
   void Tick(uint8_t *base)

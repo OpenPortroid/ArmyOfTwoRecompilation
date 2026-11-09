@@ -225,16 +225,18 @@ namespace
       ao2::steam::JoinLobby(l.id);
     }
 
+    // Quick join: the fullest open game with a good ping (steam::QuickScore).
     const Lobby *Best() const
     {
+      const Lobby *best = nullptr;
       for (const Lobby &l : rows_)
       {
-        if (Open(l))
+        if (Open(l) && (!best || ao2::steam::QuickScore(l) < ao2::steam::QuickScore(*best)))
         {
-          return &l; // the open ones come first, by ping
+          best = &l;
         }
       }
-      return nullptr;
+      return best;
     }
 
     void Create()

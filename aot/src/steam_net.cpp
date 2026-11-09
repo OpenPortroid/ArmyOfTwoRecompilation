@@ -69,6 +69,9 @@ REXCVAR_DEFINE_BOOL(ao2_steam, true, "Online",
                     "Online play over Steam (needs the Steam client running): Steam friends in the game are found "
                     "and invited as on a LAN, the players window lists the games hosted over Steam, and all "
                     "traffic goes through Steam's relays (no VPN, no forwarded ports).");
+REXCVAR_DEFINE_BOOL(ao2_steam_name, false, "Online",
+                    "The player's name online is their Steam name (net_gamertag is replaced once Steam has started). "
+                    "Without Steam, or off: net_gamertag (the launcher's Player name).");
 REXCVAR_DECLARE(uint32_t, ao2_invite_port);
 
 namespace ao2::steam
@@ -327,6 +330,10 @@ namespace
     uint64_t join = 0;
     uint64_t lobby = 0; // the lobby this game is in
     bool own_lobby = false; // ... it hosts
+    // A joined lobby whose game this one is going to or is in. False once that game is left: the lobby is kept a
+    // little longer (a versus party between its screens), but the lists show it as joinable again.
+    bool joined_active = false;
+    Clock::time_point viewed; // a list was on the screen (Lobbies): its rows' data is asked for again
     bool invite_dialog = false;
     // A quick match (QuickMatch): asked -> lobby list -> joining -> the
     // invite accepted, or failed.
@@ -825,6 +832,34 @@ namespace
       }
       UpdateHosting();
       PumpKnocks();
+      PollListed(now);
+    }
+
+    // While a list is on the screen, its lobbies' data every 2 s (OnLobbyData): the host's menu, the players,
+    // the match rules and a lobby gone were only seen at the next refresh (15-20 s). Friends-only lobbies are
+    // not in RequestLobbyList at all, so their data was as old as the last RequestLobbyData.
+    void PollListed(Clock::time_point now)
+    {
+      std::vector<uint64_t> ids;
+      {
+        std::lock_guard lock(shared().mutex);
+        if (now - shared().viewed > std::chrono::seconds(1) || now < next_poll_)
+        {
+          return;
+        }
+        for (const ao2::steam::Lobby &l : shared().lobbies)
+        {
+          ids.push_back(l.id);
+        }
+      }
+      next_poll_ = now + std::chrono::seconds(2);
+      for (uint64_t id : ids)
+      {
+        if (id != lobby_) // this game's own lobby updates by itself
+        {
+          SteamMatchmaking()->RequestLobbyData(CSteamID(id));
+        }
+      }
     }
 
   private:
@@ -1113,8 +1148,7 @@ namespace
         {
           continue;
         }
-        int ping = l.ping < 0 ? 999 : l.ping;
-        if (!best.id || ping < (best.ping < 0 ? 999 : best.ping))
+        if (!best.id || ao2::steam::QuickScore(l) < ao2::steam::QuickScore(best))
         {
           best = l;
         }
@@ -1139,7 +1173,16 @@ namespace
     {
       if (id == lobby_)
       {
-        return;
+        bool active;
+        {
+          std::lock_guard lock(shared().mutex);
+          active = shared().joined_active;
+        }
+        if (own_lobby_ || active)
+        {
+          return;
+        }
+        // Its game was left, the lobby only kept a moment: entered again (the host invites again).
       }
       {
         // A game hosted now goes on until the invite takes this player away:
@@ -1176,6 +1219,13 @@ namespace
       std::lock_guard lock(shared().mutex);
       shared().lobby = id;
       shared().own_lobby = own;
+      shared().joined_active = id && !own;
+    }
+
+    void SetJoinedActive(bool active)
+    {
+      std::lock_guard lock(shared().mutex);
+      shared().joined_active = active;
     }
 
     // A lobby joined holds a place of the host's lobby: left once this
@@ -1205,12 +1255,14 @@ namespace
       else if (h.session)
       {
         joined_session_ended_ = {};
+        SetJoinedActive(true);
       }
       else
       {
         if (joined_session_ended_ == Clock::time_point{})
         {
           joined_session_ended_ = now;
+          SetJoinedActive(false); // the lists offer it again at once (the lobby is still kept a moment)
         }
         if (now - joined_session_ended_ > std::chrono::seconds(10))
         {
@@ -1402,6 +1454,12 @@ namespace
     STEAM_CALLBACK(Session, OnSessionRequest, SteamNetworkingMessagesSessionRequest_t);
     // Messages to a player that could not get through (its UDP, knocks).
     STEAM_CALLBACK(Session, OnSessionFailed, SteamNetworkingMessagesSessionFailed_t);
+    // The Steam overlay opened or closed (OverlayBlocksInput).
+    STEAM_CALLBACK(Session, OnOverlay, GameOverlayActivated_t);
+    // A lobby's data came (PollListed, RequestLobbyData; this game's own lobby by itself): its row anew.
+    STEAM_CALLBACK(Session, OnLobbyData, LobbyDataUpdate_t);
+
+    Clock::time_point next_poll_;
 
     uint64_t lobby_ = 0;
     bool own_lobby_ = false;
@@ -1451,6 +1509,63 @@ namespace
       Log("%s entered the lobby: invited", p->name.c_str());
       ao2::invite::InviteAddress(p->ip, p->name);
     }
+  }
+
+  // The overlay takes the keyboard while open, but the window keeps the focus: the Esc that closes it (and its
+  // key repeats) reached the game as well, which opened the pause menu. The game gets no input while it is open
+  // and a moment after (keys held then stay from the game until let go, debug_menu.cpp InputBlocker).
+  std::atomic<bool> g_overlay_open{false};
+  std::atomic<int64_t> g_overlay_closed_ms{0};
+
+  int64_t NowMs()
+  {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count();
+  }
+
+  void Session::OnLobbyData(LobbyDataUpdate_t *e)
+  {
+    if (e->m_ulSteamIDLobby != e->m_ulSteamIDMember)
+    {
+      return; // a member's data
+    }
+    CSteamID id(e->m_ulSteamIDLobby);
+    bool gone = !e->m_bSuccess || std::strcmp(SteamMatchmaking()->GetLobbyData(id, "ao2"), "1") != 0;
+    ao2::steam::Lobby fresh;
+    if (!gone)
+    {
+      fresh = Describe(id);
+    }
+    std::lock_guard lock(shared().mutex);
+    auto &list = shared().lobbies;
+    auto it = std::find_if(list.begin(), list.end(), [&](const ao2::steam::Lobby &l) { return l.id == fresh.id || l.id == id.ConvertToUint64(); });
+    if (it == list.end())
+    {
+      return; // not listed: the next refresh decides
+    }
+    if (gone)
+    {
+      if (it->id != shared().lobby)
+      {
+        list.erase(it);
+      }
+      return;
+    }
+    if (fresh.ping < 0)
+    {
+      fresh.ping = it->ping;
+    }
+    *it = std::move(fresh);
+  }
+
+  void Session::OnOverlay(GameOverlayActivated_t *e)
+  {
+    bool open = e->m_bActive != 0;
+    if (!open)
+    {
+      g_overlay_closed_ms = NowMs();
+    }
+    g_overlay_open = open;
+    Log("Steam overlay %s", open ? "open" : "closed");
   }
 
   void Session::OnJoinRequested(GameLobbyJoinRequested_t *e)
@@ -1526,6 +1641,26 @@ namespace ao2::steam
       shared().persona = SteamFriends()->GetPersonaName();
       shared().account = SteamUser()->GetSteamID().GetAccountID();
     }
+    if (REXCVAR_GET(ao2_steam_name))
+    {
+      // One name everywhere (invites, lobbies, the game's own gamertag): the runtime reads net_gamertag when
+      // the game first goes online, later than this. 15 bytes as the runtime cuts it, on a whole UTF-8 letter.
+      std::string name = PersonaName();
+      if (name.size() > 15)
+      {
+        size_t cut = 15;
+        while (cut > 0 && (static_cast<unsigned char>(name[cut]) & 0xC0) == 0x80)
+        {
+          --cut;
+        }
+        name.resize(cut);
+      }
+      if (!name.empty())
+      {
+        rex::cvar::SetFlagByName("net_gamertag", name);
+        Log("the player's name is the Steam name: %s", name.c_str());
+      }
+    }
     WSADATA wsa = {};
     WSAStartup(MAKEWORD(2, 2), &wsa);
     g_running = true;
@@ -1536,6 +1671,12 @@ namespace ao2::steam
   bool Running()
   {
     return g_running;
+  }
+
+  bool OverlayBlocksInput()
+  {
+    return g_overlay_open.load(std::memory_order_relaxed) ||
+           NowMs() - g_overlay_closed_ms.load(std::memory_order_relaxed) < 400;
   }
 
   std::string PersonaName()
@@ -1619,11 +1760,12 @@ namespace ao2::steam
   std::vector<Lobby> Lobbies()
   {
     std::lock_guard lock(shared().mutex);
+    shared().viewed = Clock::now();
     std::vector<Lobby> list = shared().lobbies;
     for (Lobby &l : list)
     {
-      l.joined = l.id == shared().lobby;
-      l.own = l.joined && shared().own_lobby;
+      l.own = l.id == shared().lobby && shared().own_lobby;
+      l.joined = l.own || (l.id == shared().lobby && shared().joined_active);
     }
     return list;
   }
@@ -1715,6 +1857,7 @@ namespace ao2::steam
 {
   void Start() {}
   bool Running() { return false; }
+  bool OverlayBlocksInput() { return false; }
   std::string PersonaName() { return {}; }
   std::vector<uint32_t> PeerAddresses() { return {}; }
   uint32_t SelfAddress() { return 0; }

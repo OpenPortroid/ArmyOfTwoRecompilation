@@ -578,6 +578,7 @@ namespace
     std::string build;           // the inviter's BuildHash
     bool is_private = false;
     bool playgroup = false;      // a versus party: joined with the playgroup manager
+    bool versus = false;         // a versus game (party or match), not co-op
     Clock::time_point received;
   };
 
@@ -591,6 +592,9 @@ namespace
     std::vector<ReceivedInvite> received; // newest last
     bool have_accepted = false;
     ReceivedInvite accepted; // what XInviteGetAcceptedInfo answers
+    // Invites already answered (sender, id -> when): the sender resends until its ACK arrives, and a resend
+    // after the answer is no new invite (it showed the notice again after a join through a Steam lobby).
+    std::map<std::pair<Address, uint32_t>, std::pair<Clock::time_point, bool>> answered;
     Clock::time_point next_beacon;
     bool window_open = false;
     // The game this player hosts on a lobby server in another process
@@ -1019,6 +1023,8 @@ namespace
       inv.xnaddr = Unhex(Get(f, "xnaddr"));
       inv.is_private = Get(f, "private") == "1";
       inv.playgroup = Get(f, "playgroup") == "1";
+      // Older builds send no "versus": their versus invites are the parties.
+      inv.versus = Get(f, "versus") == "1" || inv.playgroup;
       inv.build = ao2::invite_checks::CleanText(Get(f, "build"), ao2::invite_checks::kMaxFieldBytes);
       // The inviter's lobby server (invite_checks.h says which it may be).
       uint32_t server_ip = ao2::invite_checks::ChooseInviteServer(Get(f, "server"), from.ip, ao2::steam::IsVirtual);
@@ -1060,6 +1066,21 @@ namespace
         if (dup != st.received.end())
         {
           return; // a resend
+        }
+        std::erase_if(st.answered, [&](const auto &a) { return now - a.second.first > kInviteLifetime; });
+        if (auto done = st.answered.find({from, id}); done != st.answered.end())
+        {
+          // Answered already: the answer again (it may have been lost), no notice.
+          SendTo(from, Build("ANSWER", {{"id", std::to_string(id)}, {"accepted", done->second.second ? "1" : "0"}}));
+          return;
+        }
+        // The game this player is in already (gone there another way, or by another invite of it): no
+        // notice either.
+        if (st.have_accepted && st.accepted.session_id == inv.session_id && st.accepted.from.ip == from.ip &&
+            ao2::coop::network_session.load(std::memory_order_relaxed))
+        {
+          SendTo(from, Build("ANSWER", {{"id", std::to_string(id)}, {"accepted", "1"}}));
+          return;
         }
         if (!st.invite_rate.Allow(now))
         {
@@ -1127,7 +1148,12 @@ namespace
           }
           else
           {
-            s.state = Get(f, "accepted") == "1" ? SentState::kAccepted : SentState::kDeclined;
+            SentState answer = Get(f, "accepted") == "1" ? SentState::kAccepted : SentState::kDeclined;
+            if (s.state == answer)
+            {
+              continue; // the same answer again (a resend was answered): no second notice
+            }
+            s.state = answer;
             s.since = now;
             result = s.state;
             who = s.name;
@@ -1429,6 +1455,7 @@ namespace
                                 {"xnaddr", Hex(game.xnaddr)},
                                 {"private", game.is_private ? "1" : "0"},
                                 {"playgroup", game.playgroup ? "1" : "0"},
+                                {"versus", game.playgroup || game.max_players > 2 ? "1" : "0"},
                                 {"server", server_text},
                                 {"build", BuildHash()}});
     s.next_send = Clock::now();
@@ -1447,6 +1474,7 @@ namespace
     {
       std::lock_guard lock(st.mutex);
       std::erase_if(st.received, [&](const ReceivedInvite &r) { return r.from == inv.from && r.id == inv.id; });
+      st.answered[{inv.from, inv.id}] = {Clock::now(), accept};
       if (accept)
       {
         // The same game's invite over another way (LAN and Steam) goes too.
@@ -1527,6 +1555,16 @@ namespace
     return out;
   }
 
+  // What an invite is to: "invites you to a (private) co-op game / versus match".
+  std::string InviteLine(bool versus, bool is_private)
+  {
+    if (versus)
+    {
+      return is_private ? Tr("invites you to a private versus match") : Tr("invites you to a versus match");
+    }
+    return is_private ? Tr("invites you to a private co-op game") : Tr("invites you to a co-op game");
+  }
+
   // A notice's animation clock: ImGui time of its first frame. Shared, as
   // the notice's std::function is copied for each frame.
   struct NoticeClock
@@ -1555,6 +1593,7 @@ namespace
       auto &st = state();
       std::string name;
       bool is_private = false;
+      bool versus = false;
       bool other_build = false;
       std::string origin;
       bool other_server = false;
@@ -1570,6 +1609,7 @@ namespace
         other_server = !newest.server_here && newest.server_ip != IpString(newest.from.ip);
         name = st.received.back().name;
         is_private = st.received.back().is_private;
+        versus = st.received.back().versus;
         other_build = OtherBuild(st.received.back().build);
         received = st.received.back().received;
       }
@@ -1633,7 +1673,7 @@ namespace
       }
       else
       {
-        std::string line = is_private ? Tr("invites you to a private co-op game") : Tr("invites you to a co-op game");
+        std::string line = InviteLine(versus, is_private);
         if (!origin.empty())
         {
           line += "  ·  " + origin;
@@ -2181,8 +2221,7 @@ namespace
           ui::Bar(dl, mn, mx, ui::Fade(ui::kAccent, a));
           ui::Text(dl, FontKind::kHeading, ImVec2(mn.x + 20.0f * s, mn.y + 14.0f * s), ui::Fade(ui::kText, a),
                    inv.name.c_str());
-          std::string sub = std::string(inv.is_private ? Tr("invites you to a private co-op game")
-                                                       : Tr("invites you to a co-op game"));
+          std::string sub = InviteLine(inv.versus, inv.is_private);
           std::string origin = InviteOrigin(inv);
           if (!origin.empty())
           {
@@ -2338,6 +2377,18 @@ namespace
         float ex = bp.x - 10.0f * s; // the extra buttons' left edge so far
         const float sbw = 110.0f * s;
         const int lobby_index = hosting ? LobbyIndexOf(p.xuid) : -1;
+        if (hosting && lobby_index <= 0 && p.state != "menu")
+        {
+          // Why there is no KICK for a player in a lobby or game (once per player and index).
+          static std::map<std::string, int> told;
+          int &last = told.try_emplace(key, -2).first->second;
+          if (last != lobby_index)
+          {
+            last = lobby_index;
+            Log("no kick for %s: xuid %016llx, lobby index %d", p.name.c_str(), (unsigned long long)p.xuid,
+                lobby_index);
+          }
+        }
         if (lobby_index > 0)
         {
           ex -= sbw;
@@ -2681,8 +2732,21 @@ namespace ao2::invite
     ShowRejoinNotice(name, host, desync);
   }
 
-  void InviteAddress(uint32_t ip, const std::string &name)
+  void InviteAddress(uint32_t ip, const std::string &steam_name)
   {
+    // The name that player's game goes by (its HELLO), not the Steam one: the same as in its lobby and invites.
+    std::string name = steam_name;
+    {
+      std::lock_guard lock(state().mutex);
+      for (const auto &[address, peer] : state().peers)
+      {
+        if (address.ip == ip && !peer.name.empty())
+        {
+          name = peer.name;
+          break;
+        }
+      }
+    }
     std::string error;
     if (g_started && !Invite({ip, Port()}, name, &error))
     {
@@ -2873,4 +2937,46 @@ extern "C" REX_FUNC(sub_82A27E18)
   ctx.r5.u64 = params;
   ctx.r6.u64 = 0;
   sub_8227C638(ctx, base);
+}
+
+// EA's Plasma result handler (the lobby controller's vfunc 144: r4 the result, 0 = success). On success it asks
+// the online root (0x8321D0D4) for an object (root->vfunc 64, then its vfunc 64) and calls into it without a
+// check. A game that joined a Steam lobby from Find Game / Find Match (game_browser.cpp) got there before that
+// object existed, and the game thread read a NULL vtable (crash_*.txt: sub_82A31C08 from 8221A084). Without it
+// the result is dropped (logged): no crash, the join goes on through the invite.
+extern "C" REX_FUNC(__imp__sub_82A31C08);
+extern "C" REX_FUNC(sub_82A31C08)
+{
+  if (ctx.r4.s32 == 0)
+  {
+    auto u32 = [&](uint32_t addr) {
+      uint32_t v;
+      std::memcpy(&v, base + addr, 4);
+      return std::byteswap(v);
+    };
+    auto call = [&](uint32_t object, uint32_t slot) -> uint32_t {
+      if (!object || !u32(object))
+      {
+        return 0;
+      }
+      PPCContext saved = ctx;
+      ctx.r1.u64 = (ctx.r1.u32 - 2048) & ~15u;
+      ctx.r3.u64 = object;
+      rex::runtime::ResolveIndirectFunction(u32(u32(object) + slot))(ctx, base);
+      uint32_t result = ctx.r3.u32;
+      ctx = saved;
+      return result;
+    };
+    const uint32_t root = u32(0x8321D0D4);
+    if (!call(call(root, 64), 64))
+    {
+      static std::atomic<int> logged{0};
+      if (logged.fetch_add(1) < 20)
+      {
+        Log("online result 0 with no game object (sub_82A31C08): skipped, not crashed");
+      }
+      return;
+    }
+  }
+  __imp__sub_82A31C08(ctx, base);
 }

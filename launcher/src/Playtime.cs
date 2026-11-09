@@ -19,6 +19,8 @@ namespace AO2Launcher
         const string MutexName = "Local\\AO2LauncherPlaytime";
         static string storePath;
 
+        // Next to the launcher's ini. The tracker runs from %TEMP%, where Settings would look next to the copy:
+        // it gets the launcher's path as --track-store.
         static string StorePath
         {
             get
@@ -26,19 +28,47 @@ namespace AO2Launcher
                 if (storePath == null)
                 {
                     storePath = Path.ChangeExtension(new Settings().FilePath, ".playtime");
+                    MigrateStray();
                 }
                 return storePath;
             }
         }
 
+        // Trackers of 1.4.x wrote the time next to their copy in %TEMP%: it goes over to the real store once.
+        static void MigrateStray()
+        {
+            try
+            {
+                string stray = Path.Combine(TrackerDir, "ArmyOfTwoLauncher.playtime");
+                if (!File.Exists(stray) || string.Equals(Path.GetFullPath(stray), Path.GetFullPath(storePath), StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+                foreach (KeyValuePair<string, long> kv in ReadFile(stray))
+                {
+                    Add(kv.Key, kv.Value);
+                }
+                File.Delete(stray);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("moving the time played from the tracker's folder", ex);
+            }
+        }
+
         static Dictionary<string, long> Read()
+        {
+            return ReadFile(StorePath);
+        }
+
+        static Dictionary<string, long> ReadFile(string path)
         {
             var map = new Dictionary<string, long>();
             try
             {
-                if (File.Exists(StorePath))
+                if (File.Exists(path))
                 {
-                    foreach (string line in File.ReadAllLines(StorePath, Encoding.UTF8))
+                    foreach (string line in File.ReadAllLines(path, Encoding.UTF8))
                     {
                         int tab = line.LastIndexOf('\t');
                         long secs;
@@ -147,7 +177,8 @@ namespace AO2Launcher
                 string copy = Path.Combine(dir, "tracker_" + pid.ToString(CultureInfo.InvariantCulture) + ".exe");
                 File.Copy(Application.ExecutablePath, copy, true);
                 Process.Start(new ProcessStartInfo(copy,
-                    "--track=" + pid.ToString(CultureInfo.InvariantCulture) + " \"--track-profile=" + profile + "\"")
+                    "--track=" + pid.ToString(CultureInfo.InvariantCulture) + " \"--track-profile=" + profile + "\"" +
+                    " \"--track-store=" + StorePath + "\"")
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
@@ -160,8 +191,12 @@ namespace AO2Launcher
         }
 
         // --track=<pid> --track-profile=<name>: no window; waits for the game and adds its time.
-        public static void RunTracker(int pid, string profile)
+        public static void RunTracker(int pid, string profile, string store)
         {
+            if (!string.IsNullOrEmpty(store))
+            {
+                storePath = store;
+            }
             Process p;
             try
             {

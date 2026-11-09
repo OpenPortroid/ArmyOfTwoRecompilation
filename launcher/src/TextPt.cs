@@ -13,13 +13,9 @@ namespace AO2Launcher
             Action<string, string> p = (en, pt) => t[en] = pt;
 
             p("ACHIEVEMENTS", "CONQUISTAS");
-            p("Story", "História");
-            p("Campaign", "Campanha");
-            p("Gear and co-op", "Equipamento e coop");
-            p("Weapons", "Armas");
-            p("Combat", "Combate");
-            p("Versus", "Versus");
-            p("SSC Challenge", "SSC Challenge");
+            p("Main game", "Jogo principal");
+            p("SSC Challenge Pack", "SSC Challenge Pack");
+            p("Veteran Map Pack", "Veteran Map Pack");
             p("Profile {0}: {1} of {2} unlocked, {3} of {4} G", "Perfil {0}: {1} de {2} desbloqueadas, {3} de {4} G");
             p("Unlock notices", "Avisos de conquistas");
             p("Show an in-game notice with a sound when an achievement unlocks. When off, achievements still unlock, just silently.",
@@ -323,6 +319,12 @@ namespace AO2Launcher
               "device, and it is theirs. A key or the mouse gives the keyboard and mouse, a gamepad button that gamepad.",
               "No jogo: Modo Campanha → Tela dividida. Uma janela se abre: cada jogador aperta um botão no seu " +
               "dispositivo, e ele passa a ser dele. Uma tecla ou o mouse dá o teclado e o mouse; um botão de controle, esse controle.");
+            p("Name online", "Nome online");
+            p("OWN", "PRÓPRIO");
+            p("STEAM: in the game and online you go by your Steam name. OWN: by the Player name below. " +
+              "Without Steam running the Player name is used either way.",
+              "STEAM: no jogo e online você usa seu nome da Steam. PRÓPRIO: o nome do jogador abaixo. " +
+              "Sem a Steam aberta, vale sempre o nome do jogador.");
             p("Player name", "Nome do jogador");
             p("The name your partner sees (up to 15 characters). Leave empty to use the computer's name.",
               "O nome que seu parceiro vê (até 15 caracteres). Vazio: o nome do computador.");

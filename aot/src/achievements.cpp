@@ -8,12 +8,25 @@
 // game's language: the disc has English, German, French, Spanish and Italian;
 // Russian and Brazilian Portuguese are the tables below. Unlocks are kept by id, untouched.
 //
+// The downloadable content brings achievements of its own: on the console a
+// content package's SPA (spa.bin, an XDBF like the title's) takes over from the
+// title's, so the "AO2 Veteran Map Pack" adds 71-76 (Mission 7 and 8 Complete,
+// the two for Dalton, the destructibles in missions 7 and 8, "pack 8" in
+// versus). The title's XDBF does not have them, and the runtime drops the
+// unlock of an achievement it does not know, so Setup adds the achievements of
+// each installed package (dlc\<package>\spa.bin) that the title lacks. The
+// packages' SPAs are in English only (the other disc languages fall back to
+// it; Russian and Portuguese are in the tables), and their icons are the PNGs
+// Export writes to the cache (the runtime's icon cache looks in the title's
+// XDBF only).
+//
 // The launcher shows them too, but the text and the icons are the game's, not
 // the port's: Setup writes them, every language, to <cache_root>\achievements
 // (catalog.tsv, icons\<image id>.png), which every launcher profile shares.
 // The unlocks are each profile's own.
 //
-// The sections group the 41 achievements for the launcher's tab.
+// The sections group the 41 achievements (47 with the Veteran Map Pack) for
+// the launcher's tab.
 //
 // The unlock notice is the port's own (the SDK's toast is off: with the
 // native renderer nothing draws it): a toast in the notices' overlay layer
@@ -50,6 +63,7 @@
 #include <rex/system/xcontent.h>
 
 #include "debug_menu.h"
+#include "dlc_folder.h"
 #include "game_language.h"
 #include "ui_text.h"
 #include "ui_theme.h"
@@ -97,6 +111,7 @@ namespace
       {"Combat", {37, 38, 39, 60, 61}},
       {"Versus", {48, 49, 50, 51, 55}},
       {"SSC Challenge", {67, 68, 69, 70}},
+      {"Veteran Map Pack", {72, 73, 75, 76, 74, 71}},
   };
 
   int SectionOf(uint32_t id)
@@ -168,6 +183,13 @@ namespace
       {68, "Бочки SSC", "Уничтожьте 500 бочек в рейтинговых матчах SSC Challenge.", nullptr},
       {69, "Победа в SSC Challenge", "Выиграйте рейтинговый матч SSC Challenge.", nullptr},
       {70, "Снайпер SSC", "Завершите рейтинговый матч SSC Challenge из трех раундов с точностью 75%.", nullptr},
+      // The Veteran Map Pack.
+      {71, "Ну и кто теперь смеется?", "Купите набор оружия «pack 8» в рейтинговом матче.", nullptr},
+      {72, "Миссия 7 пройдена", "Пройдите миссию 7 на уровне «Профессионал».", nullptr},
+      {73, "Миссия 8 пройдена", "Пройдите миссию 8 на уровне «Профессионал».", nullptr},
+      {74, "Arnold Braunschweiger", "Уничтожьте 300 разрушаемых объектов в миссиях 7 и 8.", nullptr},
+      {75, "Обещаю убить тебя последним", "Убейте Далтона меньше чем за 40 секунд.", nullptr},
+      {76, "Хочу быть чистильщиком", "Добейте Далтона выстрелом в голову из прокачанного .44 MODEL 29.", nullptr},
   };
 
   // Brazilian Portuguese (the disc has none either), in the words of
@@ -217,6 +239,13 @@ namespace
       {68, "Desafiante dos Barris SSC", "Destrua 500 barris em partidas ranqueadas do SSC Challenge.", nullptr},
       {69, "Vitória no SSC Challenge", "Vença uma partida ranqueada do SSC Challenge.", nullptr},
       {70, "Atirador do SSC Challenge", "Alcance 75% de precisão ao final de uma partida ranqueada de três rodadas do SSC Challenge.", nullptr},
+      // The Veteran Map Pack.
+      {71, "Isso Mesmo. Quem Está Rindo Agora?", "Compre o pacote de armas 'pack 8' em uma partida multijogador ranqueada.", nullptr},
+      {72, "Missão 7 Completa", "Completou a Missão 7 como Profissional.", nullptr},
+      {73, "Missão 8 Completa", "Completou a Missão 8 como Profissional.", nullptr},
+      {74, "Arnold Braunschweiger", "Destrua 300 objetos destrutíveis nas Missões 7 e 8.", nullptr},
+      {75, "Prometo Matar Você por Último", "Mate Dalton em menos de 40 segundos.", nullptr},
+      {76, "Quero Ser um Faxineiro", "Dê o golpe final em Dalton com um tiro na cabeça usando a .44 MODEL 29 Turbinada.", nullptr},
   };
 
   const Russian *TranslationOf(const Russian *table, size_t count, uint32_t id)
@@ -269,6 +298,93 @@ namespace
             db.GetStringTableEntry(lang, uint16_t(e.unachieved_id))};
   }
 
+  // An achievement and the XDBF its text and icon come from (the title's or a
+  // content package's SPA).
+  struct Entry
+  {
+    const rex::system::util::XdbfGameData *db;
+    rex::system::util::XdbfAchievementTableEntry e;
+  };
+
+  // The installed packages' SPAs (dlc\<package>\spa.bin), kept for the
+  // process: the XDBF readers point into the bytes.
+  std::vector<std::vector<uint8_t>> g_spa_bytes;
+  std::vector<std::unique_ptr<rex::system::util::XdbfGameData>> g_spas;
+
+  void LoadPackageSpas()
+  {
+    namespace fs = std::filesystem;
+    if (!g_spas.empty())
+    {
+      return;
+    }
+    fs::path dir = ao2::dlc::Dir();
+    std::error_code ec;
+    if (dir.empty() || !fs::is_directory(dir, ec))
+    {
+      return;
+    }
+    std::vector<fs::path> files;
+    for (const auto &pkg : fs::directory_iterator(dir, ec))
+    {
+      std::error_code ec2;
+      fs::path spa = pkg.path() / "spa.bin";
+      if (pkg.is_directory(ec2) && pkg.path().extension() != ".tmp" && fs::is_regular_file(spa, ec2))
+      {
+        files.push_back(spa);
+      }
+    }
+    std::sort(files.begin(), files.end());
+    g_spa_bytes.reserve(files.size()); // no reallocation: the readers keep pointers
+    for (const fs::path &spa : files)
+    {
+      std::ifstream in(spa, std::ios::binary);
+      std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+      if (bytes.size() < sizeof(rex::system::util::XbdfHeader))
+      {
+        continue;
+      }
+      g_spa_bytes.push_back(std::move(bytes));
+      auto db = std::make_unique<rex::system::util::XdbfGameData>(g_spa_bytes.back().data(), g_spa_bytes.back().size());
+      if (!db->is_valid())
+      {
+        REXLOG_WARN("achievements: {} is no XDBF", rex::path_to_utf8(spa));
+        continue;
+      }
+      g_spas.push_back(std::move(db));
+    }
+  }
+
+  // The title's achievements, then those of the installed packages that the
+  // title does not have.
+  std::vector<Entry> AllAchievements(const rex::system::util::XdbfGameData &title, size_t &from_packages)
+  {
+    std::vector<Entry> all;
+    for (const auto &e : title.GetAchievements())
+    {
+      all.push_back({&title, e});
+    }
+    from_packages = 0;
+    for (const auto &db : g_spas)
+    {
+      for (const auto &e : db->GetAchievements())
+      {
+        if (std::none_of(all.begin(), all.end(), [&](const Entry &x) { return x.e.id == e.id; }))
+        {
+          all.push_back({db.get(), e});
+          ++from_packages;
+        }
+      }
+    }
+    return all;
+  }
+
+  // Where Export puts an achievement's icon for the launcher.
+  std::filesystem::path IconFile(const std::filesystem::path &cache_root, uint32_t image_id)
+  {
+    return cache_root / "achievements" / "icons" / (std::to_string(image_id) + ".png");
+  }
+
   // Tabs and line breaks out: catalog.tsv is a line per text.
   std::string Field(std::string s)
   {
@@ -307,7 +423,7 @@ namespace
   }
 
   // catalog.tsv and the icons for the launcher.
-  void Export(const std::filesystem::path &cache_root, const rex::system::util::XdbfGameData &db)
+  void Export(const std::filesystem::path &cache_root, const std::vector<Entry> &all)
   {
     namespace fs = std::filesystem;
     fs::path dir = cache_root / "achievements";
@@ -322,19 +438,19 @@ namespace
     //   A  id  section  gamerscore  image id  secret
     //   T  id  language  label  description  description while locked
     std::string tsv = "# Army of Two achievements, written by the game for the launcher\n";
-    for (const auto &e : db.GetAchievements())
+    for (const auto &[db, e] : all)
     {
       bool secret = !(e.flags & 0x8); // XDBF: shown before it is unlocked
       tsv += "A\t" + std::to_string(e.id) + "\t" + std::to_string(SectionOf(e.id)) + "\t" +
              std::to_string(e.gamerscore) + "\t" + std::to_string(e.image_id) + "\t" + (secret ? "1" : "0") + "\n";
       for (const char *code : {"en", "ru", "pt", "de", "fr", "es", "it"})
       {
-        Text t = TextIn(db, e, code);
+        Text t = TextIn(*db, e, code);
         tsv += "T\t" + std::to_string(e.id) + "\t" + code + "\t" + Field(t.label) + "\t" + Field(t.description) +
                "\t" + Field(t.locked) + "\n";
       }
-      auto icon = db.GetEntry(rex::system::util::XdbfSection::kImage, e.image_id);
-      fs::path png = dir / "icons" / (std::to_string(e.image_id) + ".png");
+      auto icon = db->GetEntry(rex::system::util::XdbfSection::kImage, e.image_id);
+      fs::path png = IconFile(cache_root, e.image_id);
       if (icon && !fs::exists(png, ec))
       {
         WriteIfChanged(png, std::string(reinterpret_cast<const char *>(icon.buffer), icon.size));
@@ -722,7 +838,7 @@ namespace
   const char *SectionTitle(int section)
   {
     static const char *const kNames[] = {"STORY", "CAMPAIGN", "GEAR AND CO-OP", "WEAPONS",
-                                         "COMBAT", "VERSUS", "SSC CHALLENGE"};
+                                         "COMBAT", "VERSUS", "SSC CHALLENGE", "VETERAN MAP PACK"};
     static_assert(std::size(kNames) == std::size(kSections));
     return ao2::text::Tr(kNames[section]);
   }
@@ -1030,10 +1146,13 @@ namespace ao2::ach
       return;
     }
     const char *code = ao2::lang::Code();
+    LoadPackageSpas();
+    size_t from_packages = 0;
+    const std::vector<Entry> all = AllAchievements(db, from_packages);
     std::vector<rex::system::AchievementInfo> list;
-    for (const auto &e : db.GetAchievements())
+    for (const auto &[src, e] : all)
     {
-      Text t = TextIn(db, e, code);
+      Text t = TextIn(*src, e, code);
       rex::system::AchievementInfo info;
       info.id = uint32_t(e.id);
       info.label = t.label;
@@ -1042,6 +1161,11 @@ namespace ao2::ach
       info.image_id = uint32_t(e.image_id);
       info.gamerscore = uint32_t(e.gamerscore);
       info.flags = uint32_t(e.flags);
+      if (src != &db && !cache_root.empty())
+      {
+        // Not in the title's XDBF, where the icon cache looks: the PNG Export writes.
+        info.icon_path = rex::path_to_utf8(IconFile(cache_root, info.image_id));
+      }
       list.push_back(std::move(info));
     }
     size_t count = list.size();
@@ -1053,10 +1177,11 @@ namespace ao2::ach
       ks->achievements().RegisterNotificationCallback(
           [](const rex::system::AchievementEvent &e) { PushToast(e.achievement); });
     }
-    REXLOG_INFO("achievements: {} in '{}'", count, code);
+    REXLOG_INFO("achievements: {} in '{}' ({} from {} downloadable content package(s))", count, code,
+                from_packages, g_spas.size());
     if (!cache_root.empty())
     {
-      Export(cache_root, db);
+      Export(cache_root, all);
     }
   }
 

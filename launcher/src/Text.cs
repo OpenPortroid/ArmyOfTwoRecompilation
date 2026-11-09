@@ -86,13 +86,9 @@ namespace AO2Launcher
 
             // --- Achievements tab ---
             a("ACHIEVEMENTS", "ДОСТИЖЕНИЯ", "SUCCÈS", "ERFOLGE", "LOGROS", "OBIETTIVI");
-            a("Story", "Сюжет", "Histoire", "Story", "Historia", "Storia");
-            a("Campaign", "Кампания", "Campagne", "Kampagne", "Campaña", "Campagna");
-            a("Gear and co-op", "Снаряжение и кооп", "Équipement et coop", "Ausrüstung und Koop", "Equipo y coop", "Equipaggiamento e coop");
-            a("Weapons", "Оружие", "Armes", "Waffen", "Armas", "Armi");
-            a("Combat", "Бой", "Combat", "Kampf", "Combate", "Combattimento");
-            a("Versus", "Противостояние", "Versus", "Versus", "Versus", "Versus");
-            a("SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge", "SSC Challenge");
+            a("Main game", "Основная игра", "Jeu principal", "Hauptspiel", "Juego principal", "Gioco principale");
+            a("SSC Challenge Pack", "SSC Challenge Pack", "SSC Challenge Pack", "SSC Challenge Pack", "SSC Challenge Pack", "SSC Challenge Pack");
+            a("Veteran Map Pack", "Veteran Map Pack", "Veteran Map Pack", "Veteran Map Pack", "Veteran Map Pack", "Veteran Map Pack");
             a("Profile {0}: {1} of {2} unlocked, {3} of {4} G", "Профиль {0}: получено {1} из {2}, {3} из {4} G",
               "Profil {0} : {1} sur {2} débloqués, {3} sur {4} G", "Profil {0}: {1} von {2} freigeschaltet, {3} von {4} G",
               "Perfil {0}: {1} de {2} desbloqueados, {3} de {4} G", "Profilo {0}: {1} di {2} sbloccati, {3} di {4} G");
@@ -770,6 +766,20 @@ namespace AO2Launcher
               "dispositivo, che diventa suo. Un tasto o il mouse danno tastiera e mouse, un tasto del controller quel controller.");
 
             // --- Network ---
+            a("Name online", "Имя в сети", "Nom en ligne", "Online-Name", "Nombre en línea", "Nome online");
+            a("OWN", "СВОЁ", "PERSO", "EIGENER", "PROPIO", "PROPRIO");
+            a("STEAM: in the game and online you go by your Steam name. OWN: by the Player name below. " +
+              "Without Steam running the Player name is used either way.",
+              "STEAM: в игре и по сети у вас имя из Steam. СВОЁ: имя игрока ниже. Если Steam не запущен, " +
+              "в любом случае используется имя игрока.",
+              "STEAM : en jeu et en ligne, vous portez votre nom Steam. PERSO : le nom du joueur ci-dessous. " +
+              "Sans Steam lancé, c'est toujours le nom du joueur.",
+              "STEAM: Im Spiel und online heißt du wie bei Steam. EIGENER: der Spielername unten. " +
+              "Läuft Steam nicht, gilt immer der Spielername.",
+              "STEAM: en el juego y en línea usas tu nombre de Steam. PROPIO: el nombre del jugador de abajo. " +
+              "Sin Steam en marcha se usa siempre el nombre del jugador.",
+              "STEAM: nel gioco e online usi il tuo nome Steam. PROPRIO: il nome giocatore qui sotto. " +
+              "Senza Steam avviato si usa sempre il nome giocatore.");
             a("Player name", "Имя игрока", "Nom du joueur", "Spielername", "Nombre del jugador", "Nome giocatore");
             a("The name your partner sees (up to 15 characters). Leave empty to use the computer's name.",
               "Имя, которое видит напарник (до 15 символов). Если пусто — имя компьютера.",

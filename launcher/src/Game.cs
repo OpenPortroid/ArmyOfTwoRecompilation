@@ -303,6 +303,8 @@ namespace AO2Launcher
             {
                 a.Add("--net_gamertag=" + tag);
             }
+            // The Steam name replaces it in the game once Steam has started (no Steam: this one).
+            a.Add("--ao2_steam_name=" + (s["name_source"] == "own" ? "false" : "true"));
             a.Add("--ao2_coop_input_margin_ms=" + s.Int("input_margin"));
 
             // Split-screen: every device is player 1's and nobody else is signed in until the game's own

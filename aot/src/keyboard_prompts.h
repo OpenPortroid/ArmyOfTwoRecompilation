@@ -16,6 +16,9 @@ namespace ao2::prompts
   // `english`: also the rules for English strings without a PS3 twin. Data
   // that does not parse comes back as it is.
   std::string RewriteLocalization(const std::string &data, bool english, int &rewritten);
+  // The same for one .int file's text (a downloadable content's DLC<n>__AO2Game.int, which has its own
+  // [Shell_MainMenu] PressStart and replaces Coalesced's); no size kept.
+  std::string RewriteIniText(const std::string &text, bool english, int &rewritten);
 
   // Game thread, once per frame: keys or the controller's buttons, by what
   // player 1 used last; moves the button characters of the font

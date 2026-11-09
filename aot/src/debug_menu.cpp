@@ -140,6 +140,8 @@ REXCVAR_DECLARE(int32_t, ao2_versus_friendly_fire);
 REXCVAR_DECLARE(int32_t, ao2_versus_respawn_cost);
 REXCVAR_DECLARE(int32_t, ao2_versus_respawn_step);
 
+REXCVAR_DEFINE_BOOL(ao2_servers_versus, false, "Online",
+                    "The F1 menu's Servers list shows versus matches (else co-op games); kept as last picked there");
 REXCVAR_DEFINE_BOOL(ao2_debug_menu_pad, true, "Debug",
                     "Select + Start on a gamepad opens and closes the menu of the menu key. Off: Start and Select "
                     "alone are not held back ~0.1 s to see whether the other follows");
@@ -337,7 +339,8 @@ namespace
   // The game gets no input: the menu or a port window is open.
   bool Blocking()
   {
-    return g_open.load(std::memory_order_relaxed) || g_modal.load(std::memory_order_relaxed) > 0;
+    return g_open.load(std::memory_order_relaxed) || g_modal.load(std::memory_order_relaxed) > 0 ||
+           ao2::steam::OverlayBlocksInput();
   }
   // Native renderer: UI frames are wanted / one is queued to the UI thread.
   std::atomic<bool> g_frames_wanted{false}, g_frame_queued{false};
@@ -965,6 +968,16 @@ namespace
         {"Sound effects", "Weapons, explosions, footsteps and the world around you."},
         {"Voices", "Character dialogue, in gameplay and cutscenes."},
         {"Achievement sound", "The sound of achievement notices."},
+        // Versus
+        {"Round length", "How long a round lasts. Lobby's: the length picked in the game's own lobby."},
+        {"Cash goal", "The first team to have this much cash wins the match at once. Off: only the rounds count."},
+        {"Friendly fire", "Damage to your own team: Off, Half (the game's default) or Full."},
+        {"Respawn price", "What a player's first respawn costs the team."},
+        {"Respawn price increase", "How much dearer each later respawn of the same player gets."},
+        {"Aim error", "How far the bots' shots stray from the target. More is easier."},
+        {"Reaction time", "How long a bot takes to react to an enemy it sees. More is easier."},
+        {"Turn speed", "How fast the bots turn to aim. More is harder."},
+        {"Firing range", "How far away the bots start to shoot."},
     };
     auto it = kHelp.find(label);
     return it != kHelp.end() ? Tr(it->second) : "";
@@ -1350,6 +1363,7 @@ namespace
         DrawOnline(cmn, cmx, ca, live);
         break;
       case kTabVersus:
+        tip_ = nullptr;
         Scrolling("versus", cmn, cmx, false, [&](ImVec2 o, float w) { return DrawVersus(o, w, ca, live); });
         break;
       case kTabDebug:
@@ -1364,7 +1378,7 @@ namespace
 
       // Over the content, the tip over both.
       DrawPadFocus(ImVec2(content_x - 4.0f * s, y - 4.0f * s), ImVec2(x1 - 1.0f, content_y1 + 4.0f * s), ca, live);
-      if (tab_ == kTabGraphics || tab_ == kTabControls || tab_ == kTabSound)
+      if (tab_ == kTabGraphics || tab_ == kTabControls || tab_ == kTabSound || tab_ == kTabVersus)
       {
         DrawTip(ca);
       }
@@ -2184,7 +2198,12 @@ namespace
           bool listed = std::any_of(r.choices.begin(), r.choices.end(), [&](const RuleChoice &c) { return c.value == now; });
           bool custom = r.unit > 0 && (rule_custom_[ri] || !listed);
           ImVec2 mn(x0, y), mx(x1, y + rule_h);
-          RowBack(dl, mn, mx, Eased(r.cvar, Hovering(mn, mx, live)), a);
+          bool rule_hovered = Hovering(mn, mx, live);
+          if (rule_hovered)
+          {
+            tip_ = r.label;
+          }
+          RowBack(dl, mn, mx, Eased(r.cvar, rule_hovered), a);
           ui::Text(dl, FontKind::kBody,
                    ImVec2(mn.x + 20.0f * s, mn.y + (rule_h - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s),
                    ui::Fade(ui::kText, a), Tr(r.label));
@@ -2330,7 +2349,12 @@ namespace
       {
         const SliderRow &sr = kBotSliders[k];
         ImVec2 mn(x0, y), mx(x1, y + row_h);
-        RowBack(dl, mn, mx, Eased(sr.label, Hovering(mn, mx, live)), a);
+        bool slider_hovered = Hovering(mn, mx, live);
+        if (slider_hovered)
+        {
+          tip_ = sr.label;
+        }
+        RowBack(dl, mn, mx, Eased(sr.label, slider_hovered), a);
         ui::Text(dl, FontKind::kBody, ImVec2(mn.x + 20.0f * s, mn.y + (row_h - ui::FontSize(FontKind::kBody)) * 0.5f -
                                                                    1.0f * s),
                  ui::Fade(ui::kText, a), Tr(sr.label));
@@ -2365,7 +2389,7 @@ namespace
     // --- Servers: the games hosted over Steam (steam_net.h). The filters,
     // a table sorted by a click on its header (the lowest ping first), JOIN
     // or a double click on a row; QUICK JOIN the open game of this version
-    // with the lowest ping. Joined, the host's game invites this one (and it
+    // that QuickScore picks (the fullest with a good ping). Joined, the host's game invites this one (and it
     // accepts by itself): the menu closes for the game to go there.
     // Playing with someone met elsewhere (Discord): this player's code to
     // give, and a field for the host's (ao2::steam::JoinByCode).
@@ -2588,10 +2612,9 @@ namespace
       const ao2::steam::Lobby *best = nullptr;
       for (const ao2::steam::Lobby &l : all)
       {
-        auto ping = [](const ao2::steam::Lobby &x) { return x.ping < 0 ? 999 : x.ping; };
-        if (open(l) && (!best || ping(l) < ping(*best)))
+        if (open(l) && (!best || ao2::steam::QuickScore(l) < ao2::steam::QuickScore(*best)))
         {
-          best = &l;
+          best = &l; // the fullest open game with a good ping (QuickScore)
         }
       }
       float bx = x0;
@@ -2617,9 +2640,13 @@ namespace
         {
           char id[16];
           std::snprintf(id, sizeof(id), "srvmode%d", i);
-          if (Chip(id, ImVec2(cx, y), ImVec2(cw[i], bh), labels[i], servers_versus_ == (i == 1), live, a))
+          if (Chip(id, ImVec2(cx, y), ImVec2(cw[i], bh), labels[i], servers_versus_ == (i == 1), live, a) &&
+              servers_versus_ != (i == 1))
           {
+            // Kept for the next time the menu opens (it is made anew each time) and the next start.
             servers_versus_ = i == 1;
+            REXCVAR_SET(ao2_servers_versus, servers_versus_);
+            ao2::gfxmenu::SaveValue("ao2_servers_versus", servers_versus_ ? "true" : "false", "online.toml", nullptr);
           }
           cx += cw[i] + 8.0f * s;
         }
@@ -3045,7 +3072,7 @@ namespace
     float mark_w_ = -1.0f, mark_width_target_ = 0.0f; // ... and its width
     // Online: the games list's refresh, the join under way.
     double servers_refreshed_ = -100.0;
-    bool servers_versus_ = false;   // the games list shows versus matches (else co-op games)
+    bool servers_versus_ = REXCVAR_GET(ao2_servers_versus); // the games list shows versus matches (else co-op games)
     char code_text_[24] = {};       // the host's code (Join with code)
     bool code_bad_ = false;         // ... was not a code
     bool code_wait_ = false;        // ... asked for here: closed once invited

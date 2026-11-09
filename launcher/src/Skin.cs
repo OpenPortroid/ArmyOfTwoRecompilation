@@ -429,7 +429,7 @@ namespace AO2Launcher
             "3.838 14.246 13.838 12.912C13.838 11.579 14.793 10.493 15.995 10.493C17.206 10.493 18.171 11.589 18.152 12.912" +
             "C18.152 14.246 17.206 15.331 15.995 15.331Z";
 
-        const string DiscordInvite = "https://discord.gg/BPeTWvqde";
+        const string DiscordInvite = "https://discord.gg/jp9QhKPz3Z";
 
         static readonly Dictionary<string, GraphicsPath> marks = new Dictionary<string, GraphicsPath>();
 

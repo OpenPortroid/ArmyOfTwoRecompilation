@@ -795,11 +795,16 @@ namespace ao2::ea
           // next to its game (TYPE=G, ready room); a quick match must find the game.
           std::string type = Get(f, "TYPE");
           std::vector<Fields> found;
+          bool hosts_party = false; // this player leads a versus party (its own TYPE=P game here)
           {
             std::lock_guard lock(st.mutex);
             for (const auto &[gid, g] : st.games)
             {
               uint64_t max = ToU64(Get(g.fields, "MAX-PLAYERS", "2"), 2);
+              if (g.host.get() == this && !g.host->closed() && Get(g.fields, "TYPE", "G") == "P")
+              {
+                hosts_party = true;
+              }
               if (g.host.get() == this || g.host->closed() || uint64_t(g.joined) >= max ||
                   (not_private && Get(g.fields, "B-U-Private") == "1") ||
                   (!type.empty() && Get(g.fields, "TYPE", "G") != type))
@@ -815,7 +820,13 @@ namespace ao2::ea
           // unanswered). Without it no search at all: the list comes back
           // empty and the game hosts a public game (a Steam lobby everyone
           // sees in the server list).
-          bool own_quick = not_private && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G";
+          // A party's leader looks for a match game the same way when the party starts (then creates one): that
+          // is no quick match, the party must not be taken to somebody else's lobby.
+          bool own_quick = not_private && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G" && !hosts_party;
+          if (hosts_party && not_private && IsLoopback(peer_ip()))
+          {
+            Log("game list of a party's leader: this server only");
+          }
           if (own_quick && !PublicGameSearch())
           {
             Log("public game: hosting (no search)");

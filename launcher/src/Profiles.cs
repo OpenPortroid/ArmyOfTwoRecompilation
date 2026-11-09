@@ -166,6 +166,99 @@ namespace AO2Launcher
             }
         }
 
+        // Earlier game versions took the --user_data_root and --cache_root they were given (UTF-8) in the
+        // ANSI code page, so with a non-ASCII path (Документы, "Профиль 2") a profile other than the main one
+        // kept its saves, game profile and achievements in a misspelt twin of its folder
+        // (Р”РѕРєСѓРјРµРЅС‚С‹\...), and the shared cache (the achievement list) went to one too. What is there
+        // moves back where the launcher and the game now read it: a file the right folder already has stays
+        // the newer of the two. The empty twin folders are removed. Not while the game runs.
+        public static void RecoverMisspelt()
+        {
+            var roots = All().Skip(1).Select(Root).ToList();
+            roots.Add(Path.Combine(MainRoot, "cache"));
+            foreach (string right in roots)
+            {
+                string wrong;
+                try
+                {
+                    wrong = Encoding.Default.GetString(Encoding.UTF8.GetBytes(right));
+                }
+                catch
+                {
+                    continue;
+                }
+                if (string.Equals(wrong, right, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                try
+                {
+                    if (!Directory.Exists(wrong))
+                    {
+                        continue;
+                    }
+                    int n = MergeInto(wrong, right);
+                    Log.Write("moved " + n + " file(s) from the misspelt " + wrong + " to " + right);
+                    for (string dir = wrong; dir != null && !IsAncestorOrSelf(dir, right); dir = Path.GetDirectoryName(dir))
+                    {
+                        if (!Directory.Exists(dir) || Directory.EnumerateFileSystemEntries(dir).Any())
+                        {
+                            break;
+                        }
+                        Directory.Delete(dir, false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("moving " + wrong + " to " + right, ex);
+                }
+            }
+        }
+
+        static bool IsAncestorOrSelf(string dir, string path)
+        {
+            string d = dir.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return (path.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar)
+                .StartsWith(d, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Moves from's files into to (a folder to lacks moves whole); returns how many files moved.
+        static int MergeInto(string from, string to)
+        {
+            if (!Directory.Exists(to))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(to));
+                int all = Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories).Count();
+                Directory.Move(from, to);
+                return all;
+            }
+            int n = 0;
+            foreach (string file in Directory.GetFiles(from))
+            {
+                string target = Path.Combine(to, Path.GetFileName(file));
+                if (File.Exists(target))
+                {
+                    if (File.GetLastWriteTimeUtc(file) <= File.GetLastWriteTimeUtc(target))
+                    {
+                        File.Delete(file);
+                        continue;
+                    }
+                    File.Delete(target);
+                }
+                File.Move(file, target);
+                n++;
+            }
+            foreach (string dir in Directory.GetDirectories(from))
+            {
+                n += MergeInto(dir, Path.Combine(to, Path.GetFileName(dir)));
+            }
+            if (Directory.Exists(from) && !Directory.EnumerateFileSystemEntries(from).Any())
+            {
+                Directory.Delete(from, false);
+            }
+            return n;
+        }
+
         // Deletes a profile's folder with its saves. A junction in it (an earlier version's DLC link) is
         // removed, not what it points to.
         public static void Delete(string name)

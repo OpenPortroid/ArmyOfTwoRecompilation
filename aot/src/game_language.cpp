@@ -389,6 +389,11 @@ namespace ao2::lang
         if (values.empty() || !ReadFile(it->path(), english))
           continue;
         std::string merged = Merge(english, values, translated);
+        if (ao2::prompts::Enabled())
+        {
+          int prompts = 0; // PressStart and the tutorials' buttons, as in Coalesced (keyboard_prompts.cpp)
+          merged = ao2::prompts::RewriteIniText(merged, false, prompts);
+        }
         fs::path out_dir = overlay_root / it->path().parent_path().filename();
         fs::create_directories(out_dir, ec);
         fs::path out = out_dir / name;
@@ -550,6 +555,10 @@ namespace ao2::lang
         if (!ReadFile(it->path(), text))
           continue;
         text = RenameMenus(text, "en", renamed);
+        // Its own [Shell_MainMenu] PressStart ("Press START") replaces Coalesced's: the title screen showed
+        // no key with the DLC installed (the Russian overlay is translated, its line has the button).
+        if (ao2::prompts::Enabled())
+          text = ao2::prompts::RewriteIniText(text, true, renamed);
         if (!renamed)
           continue;
         fs::path out_dir = overlay_root / it->path().parent_path().filename();

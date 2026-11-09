@@ -191,6 +191,11 @@ namespace AO2Launcher
             // The launcher always opens on the main screen; without the game files its button reads
             // INSTALL and leads to the installation.
             InitInstall();
+            // Saves and achievements that earlier game versions put in a misspelt folder (Profiles.cs).
+            if (!Game.IsRunning())
+            {
+                Profiles.RecoverMisspelt();
+            }
             RefreshProfiles();
             // Back from the game: its saves may have changed, and its Graphics and Controls pages may
             // have changed settings in our file.
@@ -1744,6 +1749,13 @@ namespace AO2Launcher
             // Network
             var online = new List<Row>
             {
+                new Row
+                {
+                    Kind = RowKind.Choice, Label = "Name online", Key = "name_source",
+                    Values = new[] { "steam", "own" }, Names = new[] { "STEAM", "OWN" },
+                    Desc = "STEAM: in the game and online you go by your Steam name. OWN: by the Player name below. " +
+                           "Without Steam running the Player name is used either way."
+                },
                 new Row
                 {
                     Kind = RowKind.Text, Label = "Player name", Key = "gamertag", MaxLen = 15,
@@ -3595,7 +3607,7 @@ namespace AO2Launcher
         static void Main()
         {
             // The play time tracker (Playtime.Track): no window, nothing else.
-            string trackPid = null, trackProfile = "";
+            string trackPid = null, trackProfile = "", trackStore = null;
             foreach (string a in Environment.GetCommandLineArgs())
             {
                 if (a.StartsWith("--track="))
@@ -3606,11 +3618,15 @@ namespace AO2Launcher
                 {
                     trackProfile = a.Substring(16);
                 }
+                else if (a.StartsWith("--track-store="))
+                {
+                    trackStore = a.Substring(14);
+                }
             }
             int pid;
             if (trackPid != null && int.TryParse(trackPid, out pid))
             {
-                Playtime.RunTracker(pid, trackProfile);
+                Playtime.RunTracker(pid, trackProfile, trackStore);
                 return;
             }
             try

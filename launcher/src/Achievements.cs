@@ -24,9 +24,23 @@ namespace AO2Launcher
             public Bitmap Icon;
         }
 
-        // The sections, as the game's Achievements page has them.
-        public static readonly string[] Sections =
-            { "Story", "Campaign", "Gear and co-op", "Weapons", "Combat", "Versus", "SSC Challenge" };
+        // The tab's groups: the main game's achievements, then each downloadable content pack's.
+        public static readonly string[] Packs = { "Main game", "SSC Challenge Pack", "Veteran Map Pack" };
+
+        // The group of an achievement, by id (the catalog's section column, the game's finer grouping, only
+        // orders the achievements within it): 67-70 SSC Challenge: Versus Mode Pack 1, 71-76 AO2 Veteran Map Pack.
+        public static int PackOf(int id)
+        {
+            if (id >= 67 && id <= 70)
+            {
+                return 1;
+            }
+            if (id >= 71 && id <= 76)
+            {
+                return 2;
+            }
+            return 0;
+        }
 
         static string Dir
         {
@@ -201,9 +215,10 @@ namespace AO2Launcher
                 }
                 e.Icon = IconOf(e.Image);
             }
-            // Section by section, in the game's order within each.
+            // Pack by pack; within one, section by section in the game's order.
             return list.Select((e, i) => new { e, i })
-                .OrderBy(x => x.e.Section < 0 ? int.MaxValue : x.e.Section).ThenBy(x => x.i)
+                .OrderBy(x => PackOf(x.e.Id))
+                .ThenBy(x => x.e.Section < 0 ? int.MaxValue : x.e.Section).ThenBy(x => x.i)
                 .Select(x => x.e).ToList();
         }
 
@@ -226,7 +241,7 @@ namespace AO2Launcher
         }
     }
 
-    // The Achievements tab: the current profile's achievements by section.
+    // The Achievements tab: the current profile's achievements, the main game's and each pack's.
     sealed partial class LauncherForm
     {
         readonly List<Row> achievementRows = new List<Row>();
@@ -278,10 +293,9 @@ namespace AO2Launcher
                 Click = ResetAchievements, Enabled = () => got > 0,
                 Desc = "Re-lock every achievement of the current profile. Saves and game progress stay as they are."
             });
-            foreach (var section in all.GroupBy(e => e.Section))
+            foreach (var section in all.GroupBy(e => Achievements.PackOf(e.Id)))
             {
-                int s = section.Key;
-                string name = s >= 0 && s < Achievements.Sections.Length ? L.T(Achievements.Sections[s]) : "";
+                string name = L.T(Achievements.Packs[section.Key]);
                 int sGot = section.Count(e => e.Unlocked != null);
                 int sCount = section.Count();
                 achievementRows.Add(new Row

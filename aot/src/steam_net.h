@@ -24,6 +24,9 @@ namespace ao2::steam
   bool Running();
   std::string PersonaName();
 
+  // The Steam overlay is open, or closed a moment ago: the game gets no input (its Esc closed the overlay).
+  bool OverlayBlocksInput();
+
   // For the server list (translated): a lobby's mission and mode.
   std::string MissionName(const std::string &map, bool versus);
   const char *ModeName(bool versus, int game_type);
@@ -93,6 +96,13 @@ namespace ao2::steam
     std::string menu;  // Hosting::menu
     std::string rules; // Hosting::rules
   };
+  // Quick join's choice among the open lobbies (lower is better): the ping, less 60 ms for each player there
+  // already, so a fuller game wins over an emptier one unless its ping is clearly worse (an unknown ping counts
+  // as 300 ms). A game that waits for one more player starts sooner, and its players are not split up.
+  inline int QuickScore(const Lobby &l)
+  {
+    return (l.ping < 0 ? 300 : l.ping) - 60 * (l.players > 0 ? l.players : 0);
+  }
   void RefreshLobbies();
   bool Refreshing();
   std::vector<Lobby> Lobbies();
@@ -124,7 +134,7 @@ namespace ao2::steam
 
   // The game's public quick match found nothing on this PC's server
   // (ea::SetQuickMatchHook): the open Steam lobby of the same mode and build
-  // with the lowest ping is joined; true once its invite was accepted, false
+  // that QuickScore picks (fullest, good ping) is joined; true once its invite was accepted, false
   // (at once, or after ~15 s) when there is none or it did not work out.
   bool QuickMatch(const std::string &mode);
 } // namespace ao2::steam

@@ -49,6 +49,7 @@ namespace AO2Launcher
             { "new_profile", "" },
             { "host_ip", "" },
             { "gamertag", "" },
+            { "name_source", "steam" },
             { "gamertag2", "" },
             { "pad_left_stick", "LS" },
             { "pad_right_stick", "RS" },

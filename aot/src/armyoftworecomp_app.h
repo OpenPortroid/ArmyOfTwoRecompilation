@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include <rex/cvar.h>
+#include <rex/filesystem.h>
 #include <rex/input/input_system.h>
 #include <rex/logging.h>
 #include <rex/memory/utils.h>
@@ -175,6 +176,24 @@ public:
     {
       paths.game_data_root = utils::RepoRoot() / "assets";
     }
+
+    // The path flags are UTF-8 (the launcher passes --user_data_root and
+    // --cache_root for a profile other than the main one), but the SDK made
+    // them paths in the ANSI code page: "Документы" became "Р”РѕРєСѓРјРµРЅС‚С‹",
+    // a folder of its own the launcher never reads. Taken again as UTF-8.
+    // (The launcher moves what went to such folders back where it belongs.)
+    auto utf8 = [](const std::string &flag, std::filesystem::path &path)
+    {
+      if (!flag.empty())
+      {
+        path = rex::to_path(flag);
+      }
+    };
+    utf8(REXCVAR_GET(game_data_root), paths.game_data_root);
+    utf8(REXCVAR_GET(user_data_root), paths.user_data_root);
+    utf8(REXCVAR_GET(update_data_root), paths.update_data_root);
+    utf8(REXCVAR_GET(cache_root), paths.cache_root);
+    utf8(REXCVAR_GET(metadata_root), paths.metadata_root);
 
     // TU2 keeps its own saves and profile next to the disc version's
     // (Documents\armyoftworecomp); the downloadable content is in the game's
