@@ -20,30 +20,11 @@ Windows x64 executable; graphics go through the port's own Direct3D 12 renderer 
 The campaign can be played solo, in split-screen and in **online co-op**, and **versus** works online against other
 players and bots, all without EA servers (over LAN, a virtual network or Steam).
 
-The whole game is finishable in solo or co-op without crashes. Tested on NVIDIA GeForce RTX 2060 and RTX 4060.
-
 **This repository and its releases contain no game files. You need your own copy of the game.**
 
 [**Download the latest release**](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/releases/latest) ·
 [Discord](https://discord.gg/jp9QhKPz3Z) ·
 [Report a bug or suggest something](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues)
-
-## Table of Contents
-
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Features](#features)
-- [Controls](#controls)
-- [Co-op](#co-op)
-- [Versus](#versus)
-- [Split-screen](#split-screen)
-- [Settings](#settings)
-- [Known issues](#known-issues)
-- [FAQ](#faq)
-- [Building](#building)
-- [Special Thanks](#special-thanks)
-- [Legal](#legal)
-
 ## Requirements
 
 - Windows 10/11 x64 only, a GPU with Direct3D 12
@@ -76,19 +57,17 @@ what it says it is, and a package with game files in it is not ours.
 
 #### Native Direct3D 12 renderer
 Not GPU emulation: the Xbox 360's draws are translated to D3D12 by the port's own renderer, tuned for high frame
-rates (about 180-190 FPS at 1440p in combat on a Ryzen 7 7840H with an RTX 4060 laptop). Shaders and pipelines the game uses are precompiled during the
+rates. Shaders and pipelines the game uses are precompiled during the
 loading screens from a manifest shipped with the release (it holds hashes, not game code), so the first runs stutter
-much less. The launcher's Video device setting picks the GPU (Auto, the fastest, or one by name).
+much less. 
 
 #### Graphics settings in the game
 Options → Graphics or F1: render resolution above the console's 720p, anti-aliasing, ambient occlusion, shadow
 resolution, anisotropic filtering, FPS cap and more. Widescreen and ultrawide aspect ratios, and field of view
-sliders for walking and for aiming.
+sliders.
 
 #### Online co-op and versus without EA servers
-Public and Private games, a server list with ping, invites, Steam lobbies and Join with code, versus bots that fill
-empty slots. Both run in deterministic lockstep with an adaptive input delay and an overlay that shows the link's
-quality. See [Co-op](#co-op) and [Versus](#versus).
+Public and Private games, a server list with ping, invites, Steam lobbies and Join with code, versus bots that fill empty slots. Both run in deterministic lockstep with an adaptive input delay and an overlay that shows the connection quality. See [Co-op](#co-op) and [Versus](#versus).
 
 #### Split-screen on one PC
 Each player's keyboard, mouse or gamepad is chosen in a window in the game or in the launcher, also for a versus guest.
@@ -101,13 +80,8 @@ the game and in the launcher, field of view and mouse settings, vibration and vo
 Installs the game from your files, finds the co-op host on the network and picks the role, has all settings,
 split-screen devices, the achievements and the time played per profile, and updates itself (updates are verified
 and can be rolled back).
-
-#### Achievements
-All achievements with the Xbox 360's on-screen notice, including those of the Veteran Map Pack.
-
 #### Languages
-English, plus Russian and Brazilian Portuguese texts (Settings → `ao2_game_language`, `auto` follows Windows).
-The voices stay English.
+English, Spanish, French, German, Italian, Russian, Portuguese (Brazilian)
 
 #### Quality of life
 Skippable pre-rendered cutscenes (Enter, Space or Start), frame rate overlay (F2), the debug menu (F1) with
@@ -144,7 +118,7 @@ and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind
 
 ## Co-op
 
-- Works over LAN, a virtual network (Radmin VPN, ZeroTier, Tailscale) or **Steam**: with the Steam client running
+- Works over LAN, a virtual network (Radmin VPN or ZeroTier) or **Steam**: with the Steam client running
   the game needs no VPN or forwarded ports. Steam friends running the port show up in the Players window and can be
   invited; others join a public game from the server list or by **Join with code** (F1 → Online), a 7-letter code
   of the host's Steam account.
@@ -201,58 +175,6 @@ File|Contents
 `mapping.toml`|Key and gamepad bindings, mouse sensitivity and inversion, split-screen players and devices
 `online.toml`|Co-op and versus settings, versus bots (`ao2_versus_bots*`), gamertag
 
-## Known issues
-
-- The first runs stutter while shaders compile (a manifest precompiles most of them during loading).
-- Co-op and versus need both PCs on the same version, DLC and language; a different CPU vendor is fine, the
-  lockstep math is made identical.
-- Linux and Steam Deck are not supported officially ([FAQ](#faq)).
-- Only the European release with Title Update 2 is supported.
-
-## FAQ
-
-**Where do I get the game? The launcher asks for an ISO I don't have.**
-The port contains no game files and this project cannot provide them. You need your own copy of the European Xbox 360
-release and Title Update 2: [how to copy them from your console](aot/docs/dumping.md).
-
-**I started `armyoftworecomp.exe` and got an error about `game_data_root`.**
-Start `ArmyOfTwoLauncher.exe` instead. It opens the install screen if the game is not installed yet.
-
-**Does the US version work?**
-No, and it is not planned: the launcher only accepts the European disc (title `4541084C`) with its Title Update 2.
-
-**Does it run on Linux or Steam Deck?**
-Not officially ([#44](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/44)). Proton is untested so far;
-[this page](aot/docs/proton.md) says how to try it and what to report.
-
-**My antivirus says the launcher is a virus.**
-That is a false positive ([#14](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/14)): the launcher is
-unsigned, downloads and unpacks its own updates and reads the keyboard and gamepad, which is what such programs look
-for. The source is in this repository, so you can read it and build it yourself. Download only from the Releases page.
-Releases after 1.4.3 list the SHA-256 of their files in `SHA256SUMS.txt`.
-
-**The frame rate is low.**
-In Options → Graphics, lower the render resolution and turn off ambient occlusion and anti-aliasing first. The first
-runs also stutter while shaders compile.
-
-**The game crashes when it starts.**
-Update to the latest version, and check that Windows has a working default playback device: a game that cannot open an
-audio device has crashed before. If it still crashes, please report it with the logs (below).
-
-**Co-op shows that the versions differ, or the game goes out of sync.**
-Both players need the same version of the port (both on the AVX1 version if one has no AVX2), the same DLC, the same
-game language and, in versus, the same bot settings.
-
-**Will The 40th Day and The Devil's Cartel be ported?**
-The 40th Day is in development and comes out once its campaign can be finished in online co-op; The Devil's Cartel
-follows. There are no dates.
-
-**How do I report a bug?**
-[Open an issue](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues/new/choose). Logs help the most: in the
-launcher, Settings → Advanced, enter `--log_to_files=true` in Extra arguments and run the game until the problem happens.
-Then attach the newest `logs\armyoftworecomp_NNN.log` and `logs\launcher.log` from the game folder (Advanced can open
-that folder), and any `crash_*.txt` next to the game. Please never attach game files.
-
 ## Building
 
 Needed: Visual Studio 2022 Build Tools, LLVM/Clang, CMake, Ninja, Git, and the game files with `default.xexp` from
@@ -295,12 +217,7 @@ Renderer notes: [aot/docs/native_renderer.md](aot/docs/native_renderer.md).
 ## Special Thanks
 
 - [Nikolay Gorb](https://github.com/nikolaygorb)
-- [rexglue](https://github.com/rexglue/rexglue-sdk), the recompilation SDK this port is built on
-- [XenonRecomp](https://github.com/hedge-dev/XenonRecomp) and [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp),
-  [N64: Recompiled](https://github.com/N64Recomp/N64Recomp) and [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp):
-  the recompilation projects that paved the way
-- Everyone who tested online play and reported bugs, on Discord and in the issues
-
+- [rexglue](https://github.com/rexglue/rexglue-sdk)
 ## Legal
 
 A fan project, not affiliated with Electronic Arts. Army of Two and related names are trademarks of their owners.
