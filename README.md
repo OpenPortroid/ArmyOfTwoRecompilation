@@ -1,24 +1,48 @@
 <p align="center">
   <img src="./aot/docs/logo.png" alt="Army of Two Recompilation">
   <br>
+  <a href="https://github.com/OpenPortroid/ArmyOfTwoRecompilation/releases/latest"><img src="https://img.shields.io/github/v/release/OpenPortroid/ArmyOfTwoRecompilation?label=release" alt="Latest release"></a>
+  <a href="https://github.com/OpenPortroid/ArmyOfTwoRecompilation/releases"><img src="https://img.shields.io/github/downloads/OpenPortroid/ArmyOfTwoRecompilation/total" alt="Downloads"></a>
+  <a href="https://discord.gg/jp9QhKPz3Z"><img src="https://img.shields.io/badge/discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <br>
   <img src="https://img.shields.io/badge/platform-Windows%20x64-0078D6?logo=windows&logoColor=white" alt="Windows x64">
   <img src="https://img.shields.io/badge/renderer-Direct3D%2012-76B900" alt="Direct3D 12">
-  <img src="https://img.shields.io/badge/co--op-online-1E5BB8" alt="Online co-op">
+  <img src="https://img.shields.io/badge/co--op%20%26%20versus-online-1E5BB8" alt="Online co-op and versus">
 </p>
 
 # Army of Two Recompilation
 
-Unofficial PC port of the Xbox 360 version of Army of Two (2008). The campaign can be played in online co-op and
-versus online against other players and bots, all without EA servers.
-Graphics go through the port's own Direct3D 12 renderer, not GPU emulation.
-The game's PowerPC code is statically recompiled
-to C++ with the ReXGlue SDK and built as a Windows x64 executable.
+Unofficial PC port of the Xbox 360 version of Army of Two (2008), made by static recompilation. The game's PowerPC
+code is translated to C++ with the [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk) and built as a native
+Windows x64 executable; graphics go through the port's own Direct3D 12 renderer instead of GPU emulation.
+
+The campaign can be played solo, in split-screen and in **online co-op**, and **versus** works online against other
+players and bots, all without EA servers (over LAN, a virtual network or Steam).
 
 The whole game is finishable in solo or co-op without crashes. Tested on NVIDIA GeForce RTX 2060 and RTX 4060.
 
-The repository contains no game files. You need your own copy of the game.
+**This repository and its releases contain no game files. You need your own copy of the game.**
 
-Found a bug or have a suggestion? Please open an [issue](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues).
+[**Download the latest release**](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/releases/latest) ·
+[Discord](https://discord.gg/jp9QhKPz3Z) ·
+[Report a bug or suggest something](https://github.com/OpenPortroid/ArmyOfTwoRecompilation/issues)
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Features](#features)
+- [Controls](#controls)
+- [Co-op](#co-op)
+- [Versus](#versus)
+- [Split-screen](#split-screen)
+- [Settings](#settings)
+- [Known issues](#known-issues)
+- [FAQ](#faq)
+- [Building](#building)
+- [Special Thanks](#special-thanks)
+- [Legal](#legal)
 
 ## Requirements
 
@@ -48,21 +72,46 @@ Builds of this port are published only on the [Releases](https://github.com/Open
 page of this repository. Be careful with copies from anywhere else: a program you run from another site may not be
 what it says it is, and a package with game files in it is not ours.
 
-## What the port adds
+## Features
 
-- Online co-op without EA servers, Public and Private Co-op
-- Online versus without EA servers, with private matches and invites; bots fill the empty slots
-- Split-screen on one PC with each player's devices chosen in the launcher
-- Graphics settings inside the game (Options → Graphics or F1): render resolution above the console's 720p,
-  anti-aliasing, ambient occlusion, shadow resolution, anisotropic filtering, FPS cap and more
-- Field of view sliders for walking and for aiming
-- Widescreen and ultrawide aspect ratios
-- Achievements with on-screen notices
-- Keyboard and mouse support, including keyboard key glyphs in on-screen button prompts
-- Key and gamepad rebinding inside the game (Options → Graphics → Controls) and in the launcher
-- Skippable pre-rendered cutscenes using the Enter or Space key, or Start on a gamepad
-- Frame rate overlay on F2 (off, simple, detailed)
-- The debug menu (F1): graphics, field of view and mouse settings, achievements, invites, cheats.
+#### Native Direct3D 12 renderer
+Not GPU emulation: the Xbox 360's draws are translated to D3D12 by the port's own renderer, tuned for high frame
+rates (about 180-190 FPS at 1440p in combat on a Ryzen 7 7840H with an RTX 4060 laptop). Shaders and pipelines the game uses are precompiled during the
+loading screens from a manifest shipped with the release (it holds hashes, not game code), so the first runs stutter
+much less. The launcher's Video device setting picks the GPU (Auto, the fastest, or one by name).
+
+#### Graphics settings in the game
+Options → Graphics or F1: render resolution above the console's 720p, anti-aliasing, ambient occlusion, shadow
+resolution, anisotropic filtering, FPS cap and more. Widescreen and ultrawide aspect ratios, and field of view
+sliders for walking and for aiming.
+
+#### Online co-op and versus without EA servers
+Public and Private games, a server list with ping, invites, Steam lobbies and Join with code, versus bots that fill
+empty slots. Both run in deterministic lockstep with an adaptive input delay and an overlay that shows the link's
+quality. See [Co-op](#co-op) and [Versus](#versus).
+
+#### Split-screen on one PC
+Each player's keyboard, mouse or gamepad is chosen in a window in the game or in the launcher, also for a versus guest.
+
+#### Keyboard, mouse and gamepad
+Keyboard and mouse support with key glyphs in the on-screen button prompts, rebinding of keys and gamepad buttons in
+the game and in the launcher, field of view and mouse settings, vibration and volume sliders in the F1 menu.
+
+#### Launcher
+Installs the game from your files, finds the co-op host on the network and picks the role, has all settings,
+split-screen devices, the achievements and the time played per profile, and updates itself (updates are verified
+and can be rolled back).
+
+#### Achievements
+All achievements with the Xbox 360's on-screen notice, including those of the Veteran Map Pack.
+
+#### Languages
+English, plus Russian and Brazilian Portuguese texts (Settings → `ao2_game_language`, `auto` follows Windows).
+The voices stay English.
+
+#### Quality of life
+Skippable pre-rendered cutscenes (Enter, Space or Start), frame rate overlay (F2), the debug menu (F1) with
+graphics, controls, sound, achievements, invites and cheats, and checkpoints that work in co-op.
 
 ## Controls
 
@@ -95,7 +144,10 @@ and mouse buttons 4–5 work), or `settings\mapping.toml` (`keybind_*`, `padbind
 
 ## Co-op
 
-- Works over LAN or a virtual network (Radmin VPN, ZeroTier, Tailscale).
+- Works over LAN, a virtual network (Radmin VPN, ZeroTier, Tailscale) or **Steam**: with the Steam client running
+  the game needs no VPN or forwarded ports. Steam friends running the port show up in the Players window and can be
+  invited; others join a public game from the server list or by **Join with code** (F1 → Online), a 7-letter code
+  of the host's Steam account.
 - Both players start the game from the launcher. The launcher looks for a host on the local network and picks the
   role. Over the internet, enter the host's IP in the launcher's Settings → Network.
 - Create a game: Campaign Mode → Create Co-op Game, then pick Private (invites only) or Public (also in the server
@@ -148,6 +200,14 @@ File|Contents
 `hardware.toml`|Window, fullscreen, render scale (`ao2_native_gpu_resolution_scale`), FPS cap (`ao2_fps_target`), aspect ratio (`ao2_aspect_ratio`), graphics effects, field of view (`ao2_fov`, `ao2_fov_aim`), language (`ao2_game_language`)
 `mapping.toml`|Key and gamepad bindings, mouse sensitivity and inversion, split-screen players and devices
 `online.toml`|Co-op and versus settings, versus bots (`ao2_versus_bots*`), gamertag
+
+## Known issues
+
+- The first runs stutter while shaders compile (a manifest precompiles most of them during loading).
+- Co-op and versus need both PCs on the same version, DLC and language; a different CPU vendor is fine, the
+  lockstep math is made identical.
+- Linux and Steam Deck are not supported officially ([FAQ](#faq)).
+- Only the European release with Title Update 2 is supported.
 
 ## FAQ
 
@@ -235,7 +295,11 @@ Renderer notes: [aot/docs/native_renderer.md](aot/docs/native_renderer.md).
 ## Special Thanks
 
 - [Nikolay Gorb](https://github.com/nikolaygorb)
-- [rexglue](https://github.com/rexglue/rexglue-sdk)
+- [rexglue](https://github.com/rexglue/rexglue-sdk), the recompilation SDK this port is built on
+- [XenonRecomp](https://github.com/hedge-dev/XenonRecomp) and [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp),
+  [N64: Recompiled](https://github.com/N64Recomp/N64Recomp) and [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp):
+  the recompilation projects that paved the way
+- Everyone who tested online play and reported bugs, on Discord and in the issues
 
 ## Legal
 
