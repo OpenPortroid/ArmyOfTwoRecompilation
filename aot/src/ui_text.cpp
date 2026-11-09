@@ -69,6 +69,8 @@ namespace
       {"ACCEPTED THE INVITE  ·  JOINING", "ПРИНЯЛ ПРИГЛАШЕНИЕ  ·  ПОДКЛЮЧАЕТСЯ", "HAT ANGENOMMEN  ·  VERBINDET",
        "A ACCEPTÉ  ·  CONNEXION", "HA ACEPTADO  ·  CONECTANDO", "HA ACCETTATO  ·  IN CONNESSIONE"},
       {"DECLINED THE INVITE", "ОТКЛОНИЛ ПРИГЛАШЕНИЕ", "HAT ABGELEHNT", "A REFUSÉ", "HA RECHAZADO", "HA RIFIUTATO"},
+      {"REMOVED YOU FROM THE LOBBY", "ИСКЛЮЧИЛ ВАС ИЗ ЛОББИ", "HAT DICH AUS DER LOBBY ENTFERNT", "VOUS A EXCLU DU SALON",
+       "TE HA EXPULSADO DE LA SALA", "TI HA RIMOSSO DALLA LOBBY"},
 
       // --- The campaign's split-screen: who plays with what ---
       {"SPLIT-SCREEN", "РАЗДЕЛЁННЫЙ ЭКРАН", "SPLITSCREEN", "ÉCRAN PARTAGÉ", "PANTALLA DIVIDIDA", "SCHERMO CONDIVISO"},
@@ -648,6 +650,7 @@ namespace
       {"LIST / DECLINE", "LISTA / RECUSAR"},
       {"ACCEPTED THE INVITE  ·  JOINING", "ACEITOU O CONVITE  ·  ENTRANDO"},
       {"DECLINED THE INVITE", "RECUSOU O CONVITE"},
+      {"REMOVED YOU FROM THE LOBBY", "REMOVEU VOCÊ DO LOBBY"},
       {"SPLIT-SCREEN", "TELA DIVIDIDA"},
       {"Each player presses any button on their own device: the keyboard or a gamepad.", "Cada jogador aperta um botão no seu dispositivo: teclado ou controle."},
       {"PLAYER 1", "JOGADOR 1"},

@@ -54,6 +54,7 @@
 
 #include "aspect_ratio.h"
 #include "coop.h"
+#include "coop_invite.h"
 #include "debug_menu.h"
 #include "gpu/native/renderer.h"
 #include "graphics_menu.h"
@@ -1499,7 +1500,9 @@ namespace
   // game, invite 3 of your friends to the game setup screen..."). A
   // confirmation that comes up within a few seconds of the lobby is closed
   // with A (its Continue), held for a few polls so the scene sees the press;
-  // later ones (asked for by the player) are left alone.
+  // later ones (asked for by the player) are left alone. Only where this game hosts: a player joining
+  // has the same scene, with the join's own progress box over it (UIScene_Confirmation too) whose button is
+  // Cancel - pressed, the join was given up (QuitCoopClientLobby) a few seconds after every invite.
   template <typename Store>
   void SkipLobbyNote(const uint8_t *base, const std::vector<uint32_t> &scenes, uint16_t &buttons, Store &store)
   {
@@ -1521,7 +1524,7 @@ namespace
     }
     uint32_t top = scenes.empty() ? 0 : scenes.back();
     if (hold == 0 && lobby && top && top != lobby && top != closed && confirmation &&
-        ao2::ue3::IsA(base, top, confirmation) && GetTickCount() - lobby_since < 5000)
+        ao2::ue3::IsA(base, top, confirmation) && GetTickCount() - lobby_since < 5000 && ao2::invite::HostsGame())
     {
       closed = top;
       hold = 4;

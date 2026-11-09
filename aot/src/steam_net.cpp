@@ -1193,6 +1193,17 @@ namespace
       Leave();
       joining_ = true;
       Log("joining lobby %llx", (unsigned long long)id);
+      // The host (its "host" key) invites as soon as this player enters its lobby, often before this
+      // side hears that the join went through (OnJoined): its invite is taken by itself from now on.
+      const uint64_t host = std::strtoull(SteamMatchmaking()->GetLobbyData(CSteamID(id), "host"), nullptr, 10);
+      if (host && host != SteamUser()->GetSteamID().ConvertToUint64())
+      {
+        if (Peer *p = bridge.AddPeer(host))
+        {
+          std::lock_guard lock(shared().mutex);
+          shared().auto_accept[p->ip] = Clock::now() + std::chrono::seconds(60);
+        }
+      }
       join_call_.Set(SteamMatchmaking()->JoinLobby(CSteamID(id)), this, &Session::OnJoined);
     }
 
@@ -1325,6 +1336,9 @@ namespace
           }
         };
         set("ao2", "1");
+        // Who hosts: a player joining takes the invite by itself from the start (Join), not only once
+        // its join's answer is in - the invite sent when it enters often comes first.
+        set("host", std::to_string(SteamUser()->GetSteamID().ConvertToUint64()));
         set("name", h.name);
         set("build", h.build);
         set("mode", h.versus ? "versus" : "coop");

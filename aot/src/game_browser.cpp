@@ -296,10 +296,9 @@ namespace
       return text;
     }
 
-    // The match's details next to the mouse: the game's choices and the host's rules
-    // (steam_net.cpp "rules", coop_invite.cpp UpdateSteamHosting).
-    // The selected row's match (a mouse over a row selects it too, so the keyboard and a pad get it as well):
-    // beside the list (panel_mn / panel_mx), level with the row (row_y).
+    // The match's details: the game's choices and the host's rules (steam_net.cpp "rules",
+    // coop_invite.cpp UpdateSteamHosting). Only for the row under the mouse (the keyboard's and a
+    // pad's selection shows none): beside the list (panel_mn / panel_mx), level with the row (row_y).
     void Details(ImDrawList *dl, const Lobby &l, float a, ImVec2 panel_mn, ImVec2 panel_mx, float row_y)
     {
       const float s = ui::Scale();
@@ -520,7 +519,7 @@ namespace
         }
       }
       const bool mouse_moved = std::abs(ImGui::GetIO().MouseDelta.x) + std::abs(ImGui::GetIO().MouseDelta.y) > 0.0f;
-      int details = -1; // the selected row: its match's details
+      int details = -1; // the row under the mouse: its match's details
       float details_y = 0.0f;
       for (int i = top_; i < int(rows_.size()) && i < top_ + kVisibleRows; ++i)
       {
@@ -532,7 +531,7 @@ namespace
         {
           sel_ = i;
         }
-        if (versus_ && live && i == sel_)
+        if (versus_ && hovered)
         {
           details = i;
           details_y = ry;

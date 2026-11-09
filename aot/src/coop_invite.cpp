@@ -560,6 +560,9 @@ namespace
     int tries = 0;
     Clock::time_point next_send;
     Clock::time_point since = Clock::now(); // sent, or answered
+    // Sent because the player entered this game's Steam lobby (InviteAddress): its game takes it by itself, and
+    // its answer brings no notice here either (the player chose this game, nobody was asked anything).
+    bool quiet = false;
   };
 
   // An invite nobody joined through this long may be sent again.
@@ -590,6 +593,25 @@ namespace
     std::vector<Address> manual; // added in the players window
     std::vector<SentInvite> sent;
     std::vector<ReceivedInvite> received; // newest last
+    // Kicks sent (Kick): resent a few times, the packets go over UDP.
+    struct PendingKick
+    {
+      Address to;
+      std::string packet;
+      int left = 0;
+      Clock::time_point next;
+    };
+    std::vector<PendingKick> kicks;
+    // Players kicked from this game's lobby (their IP and XUID): entering its Steam lobby again invites them
+    // no more for a while (InviteAddress); this player's own invite from the players window still goes.
+    struct Kicked
+    {
+      uint32_t ip = 0;
+      uint64_t xuid = 0;
+      Clock::time_point until;
+    };
+    std::vector<Kicked> kicked;
+    Clock::time_point last_kicked_out; // this game was kicked from a lobby (one KICK acted on, its resends not)
     bool have_accepted = false;
     ReceivedInvite accepted; // what XInviteGetAcceptedInfo answers
     // Invites already answered (sender, id -> when): the sender resends until its ACK arrives, and a resend
@@ -919,6 +941,7 @@ namespace
   void ShowInviteNotice();
   void ShowAnswerNotice(const std::string &who, bool accepted);
   void Answer(const ReceivedInvite &inv, bool accept);
+  void OnKicked(const Address &from, const Fields &f);
   void TrackGame();
   void PumpRejoin();
 
@@ -1102,11 +1125,29 @@ namespace
       }
       Log("invite %u from %s (%s), session %016llx, server %s", id, inv.name.c_str(), IpString(from.ip).c_str(),
           (unsigned long long)inv.session_id, inv.server_ip.c_str());
-      if (ao2::steam::TakeAutoAccept(from.ip))
+      // The host whose Steam lobby this player joined: its invite is taken without a notice. It may come over
+      // another address of the same game than the Steam one the join knows (the two PCs on one LAN: the host
+      // invites the LAN address it found the player at), so its other addresses count too (by its XUID).
+      std::vector<uint32_t> host_ips{from.ip};
+      if (inv.inviter_xuid)
       {
-        Log("its Steam lobby was joined here: accepted");
-        Answer(inv, true);
-        return;
+        std::lock_guard lock(st.mutex);
+        for (const auto &[address, peer] : st.peers)
+        {
+          if (peer.xuid == inv.inviter_xuid && address.ip != from.ip)
+          {
+            host_ips.push_back(address.ip);
+          }
+        }
+      }
+      for (uint32_t ip : host_ips)
+      {
+        if (ao2::steam::TakeAutoAccept(ip))
+        {
+          Log("its Steam lobby was joined here: accepted");
+          Answer(inv, true);
+          return;
+        }
       }
       bool rejoin = false;
       {
@@ -1126,10 +1167,15 @@ namespace
       }
       ShowInviteNotice();
     }
+    else if (type == "KICK")
+    {
+      OnKicked(from, f);
+    }
     else if (type == "ACK" || type == "ANSWER")
     {
       uint32_t id = uint32_t(std::strtoul(Get(f, "id").c_str(), nullptr, 10));
       std::string who;
+      bool quiet = false;
       SentState result = SentState::kDelivered;
       {
         std::lock_guard lock(st.mutex);
@@ -1157,13 +1203,18 @@ namespace
             s.since = now;
             result = s.state;
             who = s.name;
+            quiet = s.quiet;
           }
         }
       }
       if (type == "ANSWER" && !who.empty())
       {
-        Log("%s %s invite %u", who.c_str(), result == SentState::kAccepted ? "accepted" : "declined", id);
-        ShowAnswerNotice(who, result == SentState::kAccepted);
+        Log("%s %s invite %u%s", who.c_str(), result == SentState::kAccepted ? "accepted" : "declined", id,
+            quiet ? " (entered the Steam lobby: no notice)" : "");
+        if (!quiet)
+        {
+          ShowAnswerNotice(who, result == SentState::kAccepted);
+        }
       }
     }
   }
@@ -1374,6 +1425,17 @@ namespace
           s.next_send = now + std::chrono::milliseconds(700);
           resend.emplace_back(s.to, s.packet);
         }
+        for (State::PendingKick &k : st.kicks)
+        {
+          if (k.left > 0 && now >= k.next)
+          {
+            --k.left;
+            k.next = now + std::chrono::milliseconds(400);
+            resend.emplace_back(k.to, k.packet);
+          }
+        }
+        std::erase_if(st.kicks, [](const State::PendingKick &k) { return k.left <= 0; });
+        std::erase_if(st.kicked, [&](const State::Kicked &k) { return now >= k.until; });
       }
       if (beacon)
       {
@@ -1428,7 +1490,7 @@ namespace
   // -------------------------------------------------------------------------
 
   // Invites the player at `to`; false (and why) when this game hosts nothing.
-  bool Invite(const Address &to, const std::string &name, std::string *error)
+  bool Invite(const Address &to, const std::string &name, std::string *error, bool quiet = false)
   {
     ao2::ea::HostedGame game;
     if (!MyHostedGame(&game))
@@ -1442,6 +1504,7 @@ namespace
     s.id = rng() % 1000000000u;
     s.to = to;
     s.name = name;
+    s.quiet = quiet;
     char session[32], xuid[32];
     std::snprintf(session, sizeof(session), "%016llx", (unsigned long long)game.session_id);
     std::snprintf(xuid, sizeof(xuid), "%016llx", (unsigned long long)game.host_xuid);
@@ -1457,14 +1520,99 @@ namespace
                                 {"playgroup", game.playgroup ? "1" : "0"},
                                 {"versus", game.playgroup || game.max_players > 2 ? "1" : "0"},
                                 {"server", server_text},
+                                {"lobby", quiet ? "1" : "0"},
                                 {"build", BuildHash()}});
     s.next_send = Clock::now();
     Log("inviting %s (%s:%u) to game %u, session %s", name.c_str(), IpString(to.ip).c_str(), to.port, game.gid,
         session);
     std::lock_guard lock(st.mutex);
     std::erase_if(st.sent, [&](const SentInvite &o) { return o.to == to; });
+    if (!quiet)
+    {
+      // Invited by hand: a kick of that player is forgiven.
+      std::erase_if(st.kicked, [&](const State::Kicked &k) { return k.ip == to.ip; });
+    }
     st.sent.push_back(std::move(s));
     return true;
+  }
+
+  // Removes the player at `to` (XUID `xuid`) from the lobby this game hosts. The game's own kick
+  // (PKickPlayer <lobby index>: AO2PlasmaController.KickPlayer) does nothing in a versus party - not even a
+  // message to the lobby server - so the kicked player's game is told (KICK, with the hosted session) and
+  // leaves by itself, as its own Back would (OnKicked). Entering this game's Steam lobby again brings no
+  // invite for a few minutes.
+  void Kick(const Address &to, const std::string &name, uint64_t xuid)
+  {
+    ao2::ea::HostedGame game;
+    if (!MyHostedGame(&game))
+    {
+      return;
+    }
+    char session[32];
+    std::snprintf(session, sizeof(session), "%016llx", (unsigned long long)game.session_id);
+    Log("kick %s (%s:%u, xuid %016llx)", name.c_str(), IpString(to.ip).c_str(), to.port, (unsigned long long)xuid);
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    const auto now = Clock::now();
+    st.kicked.push_back({to.ip, xuid, now + std::chrono::minutes(3)});
+    std::erase_if(st.sent, [&](const SentInvite &o) { return o.to.ip == to.ip; });
+    // Every address of that player's game (LAN and Steam): one of them may not get through.
+    std::vector<Address> addresses{to};
+    for (const auto &[address, peer] : st.peers)
+    {
+      if (xuid && peer.xuid == xuid && !(address == to))
+      {
+        addresses.push_back(address);
+        st.kicked.push_back({address.ip, xuid, now + std::chrono::minutes(3)});
+      }
+    }
+    const std::string packet = Build("KICK", {{"session", session}});
+    for (const Address &a : addresses)
+    {
+      st.kicks.push_back({a, packet, 5, now});
+    }
+  }
+
+  void ShowKickedNotice(const std::string &host);
+
+  // A KICK from the host of the lobby this game is in: out of it, as its Back does.
+  void OnKicked(const Address &from, const Fields &f)
+  {
+    auto &st = state();
+    const uint64_t session = std::strtoull(Get(f, "session").c_str(), nullptr, 16);
+    std::string host;
+    {
+      std::lock_guard lock(st.mutex);
+      if (!st.have_accepted || !session || st.accepted.session_id != session)
+      {
+        return; // not the game this one joined (or a stray packet)
+      }
+      bool from_host = st.accepted.from.ip == from.ip;
+      if (auto it = st.peers.find(from); !from_host && it != st.peers.end())
+      {
+        from_host = st.accepted.inviter_xuid && it->second.xuid == st.accepted.inviter_xuid;
+      }
+      if (!from_host)
+      {
+        return;
+      }
+      const auto now = Clock::now();
+      if (now - st.last_kicked_out < std::chrono::seconds(10))
+      {
+        return; // its resends
+      }
+      st.last_kicked_out = now;
+      host = st.accepted.name;
+    }
+    if (OwnState() != "lobby")
+    {
+      Log("kicked by %s, but this game is not in its lobby (%s): nothing to leave", host.c_str(), OwnState().c_str());
+      return;
+    }
+    Log("kicked from the lobby by %s: leaving it", host.c_str());
+    // What the game's own Back in a joined lobby causes (split_join.log: QuitCoopClientLobby).
+    ao2::console::Queue("exec causeevent QuitCoopClientLobby");
+    ShowKickedNotice(host);
   }
 
   void Answer(const ReceivedInvite &inv, bool accept)
@@ -1703,12 +1851,12 @@ namespace
     });
   }
 
-  // The answer to an invite this game sent: a short notice.
-  void ShowAnswerNotice(const std::string &who, bool accepted)
+  // A short notice: `who` over `line`, a check (accepted) or a cross.
+  void ShowResultNotice(const std::string &who, const std::string &line, bool accepted)
   {
     constexpr float kLife = 6.0f, kOut = 0.35f;
     auto clock = std::make_shared<NoticeClock>();
-    ao2::menu::SetNotice([clock, who, accepted]() {
+    ao2::menu::SetNotice([clock, who, line, accepted]() {
       namespace ui = ao2::ui;
       using ui::FontKind;
       float since = clock->Since();
@@ -1751,9 +1899,21 @@ namespace
       float tx = mn.x + 80.0f * s;
       ui::Text(dl, FontKind::kHeading, ImVec2(tx, mn.y + 10.0f * s), ui::Fade(ui::kText, a), who.c_str());
       ui::Text(dl, FontKind::kSmall, ImVec2(tx, mn.y + 44.0f * s), ui::Fade(accepted ? ui::kText : ui::kMuted, a),
-               accepted ? Tr("ACCEPTED THE INVITE  ·  JOINING") : Tr("DECLINED THE INVITE"));
+               line.c_str());
       return true;
     });
+  }
+
+  // The answer to an invite this game sent.
+  void ShowAnswerNotice(const std::string &who, bool accepted)
+  {
+    ShowResultNotice(who, accepted ? Tr("ACCEPTED THE INVITE  ·  JOINING") : Tr("DECLINED THE INVITE"), accepted);
+  }
+
+  // This game was kicked from `host`'s lobby (OnKicked).
+  void ShowKickedNotice(const std::string &host)
+  {
+    ShowResultNotice(host, Tr("REMOVED YOU FROM THE LOBBY"), false);
   }
 
   // -------------------------------------------------------------------------
@@ -2373,7 +2533,7 @@ namespace
         ImVec2 bp(mx.x - 12.0f * s - bw, mn.y + (rh - bh) * 0.5f);
         float mid = mn.y + rh * 0.5f;
         // Left of the invite: the player's Steam profile (overlay) and, in the
-        // lobby this PC hosts, Kick (the game's own: PKickPlayer <lobby index>).
+        // lobby this PC hosts, Kick (Kick: a KICK to that player's game, which leaves by itself).
         float ex = bp.x - 10.0f * s; // the extra buttons' left edge so far
         const float sbw = 110.0f * s;
         const int lobby_index = hosting ? LobbyIndexOf(p.xuid) : -1;
@@ -2395,8 +2555,7 @@ namespace
           if (ui::Button(("kick" + key).c_str(), ImVec2(ex, bp.y), ImVec2(sbw, bh), Tr("KICK"),
                          ui::ButtonStyle::kOutline, live && rt >= 1.0f, ra))
           {
-            Log("kick %s (lobby index %d)", p.name.c_str(), lobby_index);
-            ao2::console::Queue("exec PKickPlayer " + std::to_string(lobby_index));
+            Kick(p.address, p.name, p.xuid);
           }
           ex -= 8.0f * s;
         }
@@ -2736,6 +2895,8 @@ namespace ao2::invite
   {
     // The name that player's game goes by (its HELLO), not the Steam one: the same as in its lobby and invites.
     std::string name = steam_name;
+    uint64_t xuid = 0;
+    bool kicked = false;
     {
       std::lock_guard lock(state().mutex);
       for (const auto &[address, peer] : state().peers)
@@ -2743,15 +2904,30 @@ namespace ao2::invite
         if (address.ip == ip && !peer.name.empty())
         {
           name = peer.name;
+          xuid = peer.xuid;
           break;
         }
       }
+      kicked = std::any_of(state().kicked.begin(), state().kicked.end(), [&](const State::Kicked &k) {
+        return k.ip == ip || (xuid && k.xuid == xuid);
+      });
+    }
+    if (kicked)
+    {
+      Log("not invited %s: kicked from this lobby a moment ago", name.c_str());
+      return;
     }
     std::string error;
-    if (g_started && !Invite({ip, Port()}, name, &error))
+    if (g_started && !Invite({ip, Port()}, name, &error, /*quiet=*/true))
     {
       Log("not invited %s: %s", name.c_str(), error.c_str());
     }
+  }
+
+  bool HostsGame()
+  {
+    ao2::ea::HostedGame game;
+    return g_started && MyHostedGameAsGame(&game);
   }
 
   bool HasPendingInvite()

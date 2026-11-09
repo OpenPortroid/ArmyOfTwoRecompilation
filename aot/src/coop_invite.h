@@ -30,6 +30,9 @@ namespace ao2::invite
   // port) to the game this machine hosts, as the players window's INVITE.
   void InviteAddress(uint32_t ip, const std::string &name);
 
+  // Whether this game hosts a lobby game (co-op game or versus party) now.
+  bool HostsGame();
+
   // Any thread (coop_net_status.cpp): the co-op game ended because the
   // partner at `ip` (its game's address) dropped out - no connection, or
   // `desync`. With ao2_coop_rejoin the host's next co-op lobby invites it
