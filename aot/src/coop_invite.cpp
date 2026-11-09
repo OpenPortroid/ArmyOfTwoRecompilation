@@ -774,6 +774,37 @@ namespace
     return -1;
   }
 
+  // The XUIDs of the players in the Plasma lobby (as LobbyIndexOf reads it), "x,y,..." in hex; empty when there is
+  // no lobby. For the hosted game's Steam lobby: who is really in the game, not only in the Steam lobby.
+  std::string LobbyXuids()
+  {
+    const uint8_t *base = rex::Runtime::instance() ? rex::Runtime::instance()->virtual_membase() : nullptr;
+    if (!base)
+    {
+      return {};
+    }
+    auto u32 = [&](uint32_t addr) {
+      uint32_t v;
+      std::memcpy(&v, base + addr, 4);
+      return std::byteswap(v);
+    };
+    const uint32_t lobby = u32(0x831F3024);
+    const uint32_t list = lobby ? u32(lobby + 4016) : 0;
+    std::string out;
+    for (uint32_t slot = 2; list && slot <= 5; ++slot)
+    {
+      const uint32_t player = u32(list + 4 * slot);
+      const uint64_t xuid = player ? uint64_t(u32(player + 56)) << 32 | u32(player + 60) : 0;
+      if (xuid)
+      {
+        char text[24];
+        std::snprintf(text, sizeof(text), "%s%016llx", out.empty() ? "" : ",", (unsigned long long)xuid);
+        out += text;
+      }
+    }
+    return out;
+  }
+
   std::string XuidText(uint64_t xuid)
   {
     char text[24];
@@ -809,14 +840,55 @@ namespace
     std::string own_state = OwnState();
     steam.in_game = own_state == "game";
     steam.session = own_state != "menu";
+    // A started versus match is the game's session, not the party any more: with one player its 2 seats made
+    // it a co-op game in the server list (a match alone has no lockstep either: "lobby" here all along). Its map
+    // tells it (versus M01_map_world.. M04, co-op a checkpoint to load); with neither ("Any"), the mode the
+    // lobby had stays while this player hosts (called every second; a few seconds without a game - the game
+    // between its screens - keep it).
+    {
+      std::string map = hosted.map;
+      std::transform(map.begin(), map.end(), map.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+      const bool versus_map = map.size() > 2 && map[0] == 'm' && map[1] == '0' && std::isdigit((unsigned char)map[2]);
+      const bool coop_map = map.find("checkpointtoload") != std::string::npos;
+      static bool lobby_versus = false;
+      static int off_seconds = 0;
+      off_seconds = steam.on ? 0 : off_seconds + 1;
+      if (!steam.on)
+      {
+        if (off_seconds > 10)
+        {
+          lobby_versus = false;
+        }
+      }
+      else
+      {
+        if (coop_map)
+        {
+          lobby_versus = false;
+        }
+        steam.versus = steam.versus || versus_map || (lobby_versus && !coop_map);
+        lobby_versus = steam.versus;
+      }
+    }
     steam.players = hosted.players;
-    steam.max = hosted.max_players;
+    // A versus party (a playgroup) is a 2v2 match: four seats, whatever its session says (2).
+    steam.max = steam.versus ? std::max(hosted.max_players, 4) : hosted.max_players;
     steam.map = hosted.map;
     steam.game_type = hosted.game_type;
     steam.difficulty = hosted.difficulty;
     steam.mode = hosted.mode;
     steam.name = LocalName();
     steam.build = BuildHash();
+    steam.self_xuid = g_own_xuid.load(std::memory_order_relaxed);
+    if (steam.on)
+    {
+      // Only a list with this player in it is the hosted game's (else the lobby is not read right: none).
+      std::string members = LobbyXuids();
+      if (steam.self_xuid && members.find(XuidText(steam.self_xuid)) != std::string::npos)
+      {
+        steam.members = std::move(members);
+      }
+    }
     if (steam.versus)
     {
       // For the server list's details (game_browser.cpp): r round minutes (0 the
@@ -1097,10 +1169,12 @@ namespace
           SendTo(from, Build("ANSWER", {{"id", std::to_string(id)}, {"accepted", done->second.second ? "1" : "0"}}));
           return;
         }
-        // The game this player is in already (gone there another way, or by another invite of it): no
-        // notice either.
+        // The same game's invite again right after one was accepted (its other way, LAN or Steam, or a resend
+        // with a new id): taken as answered, no notice. Only for a moment: the network session says nothing here
+        // (versus is in one in all its menus), and a new invite of the same host after the game was left - its
+        // lobby entered again, Find a Match - must go through, not be answered "accepted" and dropped.
         if (st.have_accepted && st.accepted.session_id == inv.session_id && st.accepted.from.ip == from.ip &&
-            ao2::coop::network_session.load(std::memory_order_relaxed))
+            now - st.accepted.received < std::chrono::seconds(15))
         {
           SendTo(from, Build("ANSWER", {{"id", std::to_string(id)}, {"accepted", "1"}}));
           return;
@@ -1529,8 +1603,13 @@ namespace
     std::erase_if(st.sent, [&](const SentInvite &o) { return o.to == to; });
     if (!quiet)
     {
-      // Invited by hand: a kick of that player is forgiven.
-      std::erase_if(st.kicked, [&](const State::Kicked &k) { return k.ip == to.ip; });
+      // Invited by hand: a kick of that player is forgiven, at every address of its game (by its XUID).
+      uint64_t xuid = 0;
+      if (auto it = st.peers.find(to); it != st.peers.end())
+      {
+        xuid = it->second.xuid;
+      }
+      std::erase_if(st.kicked, [&](const State::Kicked &k) { return k.ip == to.ip || (xuid && k.xuid == xuid); });
     }
     st.sent.push_back(std::move(s));
     return true;
@@ -1674,6 +1753,21 @@ namespace
       rex::cvar::SetFlagByName("net_title_server_ip", server);
       rex::cvar::SetFlagByName("ao2_coop_host", host);
       Log("EA server: %s -> %s", current.c_str(), server.c_str());
+    }
+    // The runtime finds the inviter's sessions by asking hosts (xlive_net.cpp QuerySessionById: net_host_ip, else a
+    // LAN broadcast). A versus party's guest looks the party's own session up by its ID right after joining; with
+    // nobody asked (a Steam host, or a LAN with a VPN adapter taking the broadcast) nothing was found and the game
+    // left the party a few seconds later. Only the address the invite came from: the game reaches the inviter
+    // there, and an answer from its other address (the LAN one of a Steam host) made the party's host another
+    // machine than the lobby's - the guest left the party a few seconds after it joined.
+    {
+      const std::string hosts = IpString(inv.from.ip);
+      // Nor the LAN broadcast for an inviter over Steam: its LAN address would answer first.
+      rex::cvar::SetFlagByName("net_lan_discovery", ao2::steam::IsVirtual(inv.from.ip) ? "false" : "true");
+      if (rex::cvar::SetFlagByName("net_host_ip", hosts))
+      {
+        Log("session queries go to %s", hosts.c_str());
+      }
     }
     Log("accepted invite %u from %s: XN_LIVE_INVITE_ACCEPTED", inv.id, inv.name.c_str());
     if (auto *ks = rex::system::kernel_state())

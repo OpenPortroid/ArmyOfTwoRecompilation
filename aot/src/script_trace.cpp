@@ -143,7 +143,52 @@ namespace
     std::fflush(Log());
     last = std::move(line);
   }
+  // The last script calls (object, function), always kept: who caused an event is written out when it comes
+  // (split_join.cpp, QuitCoopClientLobby). Raw pointers only here; names are read when written out.
+  constexpr uint32_t kRecent = 64;
+  uint32_t g_recent_object[kRecent], g_recent_function[kRecent];
+  uint32_t g_recent_next = 0;
 } // namespace
+
+namespace ao2::script_trace
+{
+  // The script functions run last, oldest first ("Object Class.Function", repeats folded).
+  std::string Recent(const uint8_t *base, uint32_t count)
+  {
+    count = count > kRecent ? kRecent : count;
+    std::string out, last;
+    int repeats = 0;
+    auto flush = [&]() {
+      if (!last.empty())
+      {
+        out += "  " + last + (repeats > 1 ? " (x" + std::to_string(repeats) + ")" : std::string()) + "\n";
+      }
+    };
+    for (uint32_t i = 0; i < count; ++i)
+    {
+      uint32_t slot = (g_recent_next + kRecent - count + i) % kRecent;
+      uint32_t object = g_recent_object[slot], function = g_recent_function[slot];
+      if (!Plausible(function))
+      {
+        continue;
+      }
+      uint32_t owner = LoadU32(base, function + kOuter);
+      std::string line = (Plausible(object) ? ao2::ue3::ObjectName(base, object) : std::string("?")) + " " +
+                         (Plausible(owner) ? ao2::ue3::ObjectName(base, owner) : std::string("?")) + "." +
+                         ao2::ue3::ObjectName(base, function);
+      if (line == last)
+      {
+        ++repeats;
+        continue;
+      }
+      flush();
+      last = std::move(line);
+      repeats = 1;
+    }
+    flush();
+    return out;
+  }
+} // namespace ao2::script_trace
 
 // UObject::ProcessInternal (r3 = object, r4 = FFrame, r5 = result).
 extern "C" REX_FUNC(__imp__sub_82445C30);
@@ -155,6 +200,9 @@ extern "C" REX_FUNC(sub_82445C30)
   }
   // FFrame +4: its Node, the function.
   const uint32_t function = LoadU32(base, ctx.r4.u32 + 4);
+  g_recent_object[g_recent_next] = ctx.r3.u32;
+  g_recent_function[g_recent_next] = function;
+  g_recent_next = (g_recent_next + 1) % kRecent;
   if (function == ao2::split_join::g_login_status)
   {
     ao2::split_join::OnLoginStatus(ctx, base);

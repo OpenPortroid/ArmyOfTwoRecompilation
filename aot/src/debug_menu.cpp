@@ -84,6 +84,13 @@
 #include <vector>
 
 #include <imgui.h>
+
+namespace ao2::browser
+{
+  // game_browser.cpp: a versus match's details card beside a server list's row (drawn over everything).
+  void MatchDetails(const ao2::steam::Lobby &l, float alpha, ImVec2 list_mn, ImVec2 list_mx, float row_y, float row_h);
+  void MatchDetailsHidden();
+}
 #include <imgui_internal.h>
 
 #include <rex/cvar.h>
@@ -2696,6 +2703,8 @@ namespace
                  ui::Fade(ui::kMuted, a), line2);
         return y + eh + 8.0f * s;
       }
+      const ao2::steam::Lobby *details = nullptr; // the versus row under the mouse: its match's details
+      float details_y = 0.0f, details_h = 0.0f;
       for (const ao2::steam::Lobby *lp : rows)
       {
         const ao2::steam::Lobby &l = *lp;
@@ -2709,6 +2718,12 @@ namespace
         {
           join(l.id);
         }
+        if (row_hovered && l.versus)
+        {
+          details = &l;
+          details_y = mn.y;
+          details_h = rh;
+        }
         RowBack(dl, mn, mx, Eased(id.c_str(), row_hovered || l.id == joining_), a, l.own ? ui::kGreen : ui::kAccent);
         float ty = mn.y + (rh - ui::FontSize(FontKind::kBody)) * 0.5f - 1.0f * s;
         auto cell = [&](int c, ImU32 col, const std::string &text) {
@@ -2718,7 +2733,6 @@ namespace
         };
         // The host, with its notes under it.
         dl->PushClipRect(mn, ImVec2(col_end[0] - 10.0f * s, mx.y), true);
-        ui::Text(dl, FontKind::kBody, ImVec2(cols[0], mn.y + 8.0f * s), ui::Fade(ui::kText, a), l.name.c_str());
         std::string notes;
         auto note = [&](const char *t) { notes += (notes.empty() ? "" : "  \xC2\xB7  ") + std::string(t); };
         if (l.in_game)
@@ -2729,8 +2743,12 @@ namespace
         {
           note(Tr("friends only"));
         }
+        // No notes: the name in the middle of the row, as the other cells.
+        const bool other_build = ao2::invite::IsOtherBuild(l.build) && !l.own;
+        ui::Text(dl, FontKind::kBody, ImVec2(cols[0], notes.empty() && !other_build ? ty : mn.y + 8.0f * s),
+                 ui::Fade(ui::kText, a), l.name.c_str());
         ui::Text(dl, FontKind::kSmall, ImVec2(cols[0], mn.y + 32.0f * s), ui::Fade(ui::kMuted, a), notes.c_str());
-        if (ao2::invite::IsOtherBuild(l.build) && !l.own)
+        if (other_build)
         {
           float nx = cols[0] + ui::TextSize(FontKind::kSmall, notes.c_str()).x;
           std::string other = std::string(notes.empty() ? "" : "  \xC2\xB7  ") + Tr("different version");
@@ -2781,6 +2799,14 @@ namespace
           join(l.id);
         }
         y += rh + 6.0f * s;
+      }
+      if (details)
+      {
+        ao2::browser::MatchDetails(*details, a, ImVec2(x0, y), ImVec2(x1, y), details_y, details_h);
+      }
+      else
+      {
+        ao2::browser::MatchDetailsHidden();
       }
       y += 6.0f * s;
       ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(ui::kMuted, a),

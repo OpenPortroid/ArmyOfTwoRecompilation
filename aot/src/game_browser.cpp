@@ -45,6 +45,12 @@ namespace ao2::lobby_visibility
   void BackToMenu(bool versus);
 }
 
+namespace ao2::browser
+{
+  void MatchDetails(const ao2::steam::Lobby &l, float alpha, ImVec2 list_mn, ImVec2 list_mx, float row_y, float row_h);
+  void MatchDetailsHidden();
+}
+
 namespace
 {
   using ao2::text::Tr;
@@ -54,7 +60,6 @@ namespace
 
   constexpr double kGrace = 0.25;   // what chose the menu's button is no press here
   constexpr double kRefresh = 15.0; // the list is asked for again this often
-  constexpr double kJoinWait = 15.0;   // to enter the lobby
   constexpr double kInviteWait = 30.0; // from the join to the host's game
   constexpr int kVisibleRows = 6;
 
@@ -65,7 +70,7 @@ namespace
 
   void Log(const std::string &what)
   {
-    static FILE *log = ao2::OpenLogFile("lobby_visibility.log");
+    static FILE *log = ao2::OpenLogFile("game_browser.log"); // not lobby_visibility.log: two "w" opens clobber
     REXLOG_INFO("game_browser: {}", what);
     if (log)
     {
@@ -142,9 +147,11 @@ namespace
           in_lobby_ = true;
           Log("in the lobby of " + it->name + ": waiting for the invite");
         }
-        if (now - joining_since_ > (in_lobby_ ? kInviteWait : kJoinWait))
+        // "joined" is the host's word that this player is in its game (steam_net.cpp): it comes after the invite,
+        // so one wait covers the Steam lobby, the invite and the game's own join.
+        if (now - joining_since_ > kInviteWait)
         {
-          Log(in_lobby_ ? "join: no invite in time" : "join: no lobby in time");
+          Log(in_lobby_ ? "join: no invite in time" : "join: not in the host's game in time");
           joining_ = 0;
           in_lobby_ = false;
           join_failed_ = true;
@@ -279,145 +286,6 @@ namespace
         return true;
       }
       return false;
-    }
-
-    // "$500K", "$1.5M".
-    static std::string Money(int value)
-    {
-      char text[32];
-      if (value >= 1000000)
-      {
-        std::snprintf(text, sizeof(text), value % 1000000 ? "$%.1fM" : "$%.0fM", value / 1000000.0);
-      }
-      else
-      {
-        std::snprintf(text, sizeof(text), "$%dK", value / 1000);
-      }
-      return text;
-    }
-
-    // The match's details: the game's choices and the host's rules (steam_net.cpp "rules",
-    // coop_invite.cpp UpdateSteamHosting). Only for the row under the mouse (the keyboard's and a
-    // pad's selection shows none): beside the list (panel_mn / panel_mx), level with the row (row_y).
-    void Details(ImDrawList *dl, const Lobby &l, float a, ImVec2 panel_mn, ImVec2 panel_mx, float row_y)
-    {
-      const float s = ui::Scale();
-      std::map<std::string, int> r;
-      for (size_t at = 0; at < l.rules.size();)
-      {
-        size_t end = l.rules.find(';', at);
-        if (end == std::string::npos)
-        {
-          end = l.rules.size();
-        }
-        std::string item = l.rules.substr(at, end - at);
-        size_t eq = item.find('=');
-        if (eq != std::string::npos)
-        {
-          r[item.substr(0, eq)] = std::atoi(item.c_str() + eq + 1);
-        }
-        at = end + 1;
-      }
-      auto get = [&](const char *key, int fallback) {
-        auto it = r.find(key);
-        return it == r.end() ? fallback : it->second;
-      };
-      std::vector<std::pair<std::string, std::string>> lines;
-      lines.emplace_back(Tr("Map"), ao2::steam::MissionName(l.map, true));
-      lines.emplace_back(Tr("Mode"), ao2::steam::ModeName(true, l.game_type));
-      lines.emplace_back(Tr("Players"), std::to_string(std::min(l.players, l.max)) + " / " + std::to_string(l.max));
-      lines.emplace_back(Tr("Host"), l.in_game           ? Tr("in a match")
-                                     : l.menu == "setup" ? Tr("in Game Setup")
-                                     : l.menu == "ready" ? Tr("in the ready room")
-                                                         : "\xE2\x80\x94");
-      if (!r.empty())
-      {
-        char text[64];
-        const int round = get("r", 0);
-        if (round > 0)
-        {
-          std::snprintf(text, sizeof(text), "%d %s", round, Tr("min"));
-        }
-        lines.emplace_back(Tr("Round length"), round > 0 ? text : Tr("Lobby's"));
-        const int cash = get("c", 0);
-        lines.emplace_back(Tr("Cash goal"), cash > 0 ? Money(cash) : Tr("Off"));
-        const int ff = get("f", 0);
-        lines.emplace_back(Tr("Friendly fire"), Tr(ff == 1 ? "Off" : ff == 2 ? "Full" : "Half"));
-        const int price = get("p", 0);
-        lines.emplace_back(Tr("Respawn price"), Money(price > 0 ? price : 10000));
-        const int step = get("s", 0);
-        lines.emplace_back(Tr("Respawn price increase"), step > 0 ? "+" + Money(step) : Tr("None"));
-        std::string bots = Tr("Off");
-        if (get("b", 0))
-        {
-          static const char *kDifficulty[] = {"Easy", "Normal", "Hard"};
-          const int d = get("d", -1);
-          bots = Tr(d >= 0 && d < 3 ? kDifficulty[d] : "Custom");
-          if (get("u", 0))
-          {
-            bots += std::string("  \xC2\xB7  ") + Tr("buy");
-          }
-          if (get("a", 0))
-          {
-            bots += std::string("  \xC2\xB7  ") + Tr("infinite ammo");
-          }
-        }
-        lines.emplace_back(Tr("Bots"), bots);
-      }
-
-      const float pad = 18.0f * s, lh = ui::FontSize(FontKind::kSmall) + 8.0f * s, col_gap = 24.0f * s;
-      const char *title = Tr("MATCH DETAILS");
-      float label_w = 0.0f, value_w = 0.0f;
-      for (const auto &[label, value] : lines)
-      {
-        label_w = std::max(label_w, ui::TextSize(FontKind::kSmall, label.c_str()).x);
-        value_w = std::max(value_w, ui::TextSize(FontKind::kSmall, value.c_str()).x);
-      }
-      const char *older = r.empty() ? Tr("The host's game is an older version: no match rules listed.") : nullptr;
-      float width = std::max(label_w + col_gap + value_w, ui::CapsSize(FontKind::kLabel, title).x);
-      if (older)
-      {
-        width = std::max(width, ui::TextSize(FontKind::kSmall, older).x);
-      }
-      const ImVec2 size(width + pad * 2.0f, pad * 2.0f + ui::FontSize(FontKind::kLabel) + 12.0f * s +
-                                                 lh * float(lines.size()) + (older ? lh + 6.0f * s : 0.0f));
-      // Right of the list, else left of it, else over the list's right edge; kept on the screen.
-      const ImGuiViewport *vp = ImGui::GetMainViewport();
-      const float gap = 16.0f * s;
-      ImVec2 mn(panel_mx.x + gap, row_y);
-      if (mn.x + size.x > vp->Pos.x + vp->Size.x - 8.0f * s)
-      {
-        mn.x = panel_mn.x - gap - size.x;
-        if (mn.x < vp->Pos.x + 8.0f * s)
-        {
-          mn.x = panel_mx.x - 24.0f * s - size.x;
-        }
-      }
-      if (mn.y + size.y > vp->Pos.y + vp->Size.y - 8.0f * s)
-      {
-        mn.y = vp->Pos.y + vp->Size.y - 8.0f * s - size.y;
-      }
-      mn.x = std::max(mn.x, vp->Pos.x + 8.0f * s);
-      mn.y = std::max(mn.y, vp->Pos.y + 8.0f * s);
-      const ImVec2 mx(mn.x + size.x, mn.y + size.y);
-      dl->AddRectFilled(ImVec2(mn.x + 4.0f * s, mn.y + 6.0f * s), ImVec2(mx.x + 4.0f * s, mx.y + 6.0f * s),
-                        ui::Fade(ui::kInk, 0.5f * a));
-      ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.98f * a));
-      ui::Frame(dl, mn, mx, ui::Fade(ui::kAccent, 0.35f * a), 1.0f * s);
-      float y = mn.y + pad - 4.0f * s;
-      ui::Caps(dl, FontKind::kLabel, ImVec2(mn.x + pad, y), ui::Fade(ui::kAccentLight, a), title);
-      y += ui::FontSize(FontKind::kLabel) + 12.0f * s;
-      for (const auto &[label, value] : lines)
-      {
-        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad, y), ui::Fade(ui::kMuted, a), label.c_str());
-        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad + label_w + col_gap, y), ui::Fade(ui::kText, a),
-                 value.c_str());
-        y += lh;
-      }
-      if (older)
-      {
-        ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + pad, y + 6.0f * s), ui::Fade(ui::kMuted, 0.8f * a), older);
-      }
     }
 
     void Paint(double now, bool live)
@@ -655,7 +523,11 @@ namespace
       hint({"Esc", "B"}, Tr("Back"));
       if (details >= 0)
       {
-        Details(dl, rows_[details], a, mn, mx, details_y);
+        ao2::browser::MatchDetails(rows_[details], a, mn, mx, details_y, rh);
+      }
+      else
+      {
+        ao2::browser::MatchDetailsHidden();
       }
       ImGui::End();
       if (created)
@@ -709,4 +581,351 @@ namespace ao2::browser
   }
 
   bool IsOpen() { return g_open.load(); }
+} // namespace ao2::browser
+
+// ---------------------------------------------------------------------------
+// The match details card (Find a Match here, F1 > Online > Servers in debug_menu.cpp)
+// ---------------------------------------------------------------------------
+namespace
+{
+  // "$500K", "$1.5M".
+  std::string Money(int value)
+  {
+    char text[32];
+    if (value >= 1000000)
+    {
+      std::snprintf(text, sizeof(text), value % 1000000 ? "$%.1fM" : "$%.0fM", value / 1000000.0);
+    }
+    else
+    {
+      std::snprintf(text, sizeof(text), "$%dK", value / 1000);
+    }
+    return text;
+  }
+
+  // The lobby's "rules" (coop_invite.cpp UpdateSteamHosting: "r=..;c=..;...") as key -> number.
+  std::map<std::string, int> ParseRules(const std::string &rules)
+  {
+    std::map<std::string, int> r;
+    for (size_t at = 0; at < rules.size();)
+    {
+      size_t end = rules.find(';', at);
+      if (end == std::string::npos)
+      {
+        end = rules.size();
+      }
+      std::string item = rules.substr(at, end - at);
+      size_t eq = item.find('=');
+      if (eq != std::string::npos)
+      {
+        r[item.substr(0, eq)] = std::atoi(item.c_str() + eq + 1);
+      }
+      at = end + 1;
+    }
+    return r;
+  }
+
+  // The card's motion: it fades and slides in when it comes and follows the row under the mouse smoothly (UI thread
+  // only).
+  struct DetailsMotion
+  {
+    double shown_at = -1.0; // the current lobby's card came
+    double drawn_at = -1.0; // the last frame it was drawn (a card not drawn for a while comes in anew)
+    float y = 0.0f;         // the card's top, eased toward its target
+    bool placed = false;
+  };
+  DetailsMotion g_details;
+} // namespace
+
+namespace ao2::browser
+{
+  void MatchDetailsHidden() { g_details.drawn_at = -1.0; }
+
+  // The details of `l`'s match beside the list (list_mn / list_mx), pointing at its row (row_y, row_h): what the
+  // lobby says of itself (map, mode, the host's menu, players, ping) and the host's rules. Drawn over everything
+  // (the foreground list): the F1 menu's list scrolls inside a child window that would clip it.
+  void MatchDetails(const ao2::steam::Lobby &l, float alpha, ImVec2 list_mn, ImVec2 list_mx, float row_y, float row_h)
+  {
+    namespace ui = ao2::ui;
+    using ui::FontKind;
+    using ao2::text::Tr;
+    const double now = ImGui::GetTime();
+    DetailsMotion &m = g_details;
+    // From one row to the next the card stays and glides over; it comes in anew after a while unseen.
+    if (now - m.drawn_at > 0.2)
+    {
+      m.shown_at = now;
+      m.placed = false;
+    }
+    m.drawn_at = now;
+    const float since = float(now - m.shown_at);
+    const float in = ui::EaseOutCubic(since / 0.22f);
+    const float a = alpha * ui::Clamp01(since / 0.15f);
+
+    ImDrawList *dl = ImGui::GetForegroundDrawList();
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    const float s = ui::Scale();
+    const std::map<std::string, int> r = ParseRules(l.rules);
+    auto get = [&](const char *key, int fallback) {
+      auto it = r.find(key);
+      return it == r.end() ? fallback : it->second;
+    };
+
+    // --- What it says ---
+    const std::string map = ao2::steam::MissionName(l.map, true);
+    const std::string mode = ao2::steam::ModeName(true, l.game_type);
+    const char *status = l.in_game           ? Tr("MATCH IN PROGRESS")
+                         : l.menu == "setup" ? Tr("IN GAME SETUP")
+                         : l.menu == "ready" ? Tr("IN THE READY ROOM")
+                                             : Tr("IN THE LOBBY");
+    const ImU32 status_col = l.in_game ? ui::kRed : l.menu == "ready" ? ui::kGreen : ui::kAccent;
+    struct Tile
+    {
+      std::string label, value;
+      bool off = false; // a muted value ("Off", "None")
+    };
+    std::vector<Tile> tiles;
+    std::string bots;
+    std::vector<std::string> bot_tags;
+    bool bots_on = false;
+    if (!r.empty())
+    {
+      char text[64];
+      const int round = get("r", 0);
+      std::snprintf(text, sizeof(text), "%d %s", round, Tr("min"));
+      tiles.push_back({Tr("Round length"), round > 0 ? text : Tr("Lobby's")});
+      const int cash = get("c", 0);
+      tiles.push_back({Tr("Cash goal"), cash > 0 ? Money(cash) : Tr("Off"), cash <= 0});
+      const int ff = get("f", 0);
+      tiles.push_back({Tr("Friendly fire"), Tr(ff == 1 ? "Off" : ff == 2 ? "Full" : "Half"), ff == 1});
+      const int price = get("p", 0);
+      tiles.push_back({Tr("Respawn price"), Money(price > 0 ? price : 10000)});
+      const int step = get("s", 0);
+      tiles.push_back({Tr("Respawn price increase"), step > 0 ? "+" + Money(step) : Tr("None"), step <= 0});
+      bots_on = get("b", 0) != 0;
+      if (bots_on)
+      {
+        static const char *kDifficulty[] = {"Easy", "Normal", "Hard"};
+        const int d = get("d", -1);
+        bots = Tr(d >= 0 && d < 3 ? kDifficulty[d] : "Custom");
+        if (get("u", 0))
+        {
+          bot_tags.push_back(Tr("buy"));
+        }
+        if (get("a", 0))
+        {
+          bot_tags.push_back(Tr("infinite ammo"));
+        }
+      }
+      else
+      {
+        bots = Tr("Off");
+      }
+    }
+    const bool other = ao2::invite::IsOtherBuild(l.build) && !l.own;
+
+    // --- Layout ---
+    const float pad = 22.0f * s, gap = 10.0f * s;
+    const float width = std::min(400.0f * s, vp->Size.x - 32.0f * s);
+    const float inner = width - pad * 2.0f;
+    const float tile_w = (inner - gap) * 0.5f;
+    const float tile_h = ui::FontSize(FontKind::kLabel) + ui::FontSize(FontKind::kBody) + 26.0f * s;
+    const float head_h = ui::FontSize(FontKind::kLabel) + 8.0f * s + ui::FontSize(FontKind::kHeading) + 6.0f * s +
+                         ui::FontSize(FontKind::kSmall);
+    const float chip_h = 30.0f * s;
+    const int tile_rows = int((tiles.size() + 1) / 2);
+    const char *older = r.empty() ? Tr("The host's game is an older version: no match rules listed.") : nullptr;
+    float height = pad + head_h + 16.0f * s + chip_h + 18.0f * s;
+    if (!tiles.empty())
+    {
+      height += 1.0f * s + 18.0f * s + float(tile_rows) * (tile_h + gap) + tile_h; // divider, tiles, the bots
+    }
+    if (older)
+    {
+      height += ui::FontSize(FontKind::kSmall) + 8.0f * s;
+    }
+    if (other)
+    {
+      height += ui::FontSize(FontKind::kSmall) + 12.0f * s;
+    }
+    height += pad;
+
+    // Beside the list (right, else left), else over its right side under or above the row; level with the row.
+    const float margin = 18.0f * s, edge = 10.0f * s;
+    const float row_mid = row_y + row_h * 0.5f;
+    float x = 0.0f, target_y = row_mid - height * 0.35f;
+    int side = 0; // +1: right of the list (the arrow on its left), -1: left of it, 0: over it
+    if (list_mx.x + margin + width <= vp->Pos.x + vp->Size.x - edge)
+    {
+      x = list_mx.x + margin;
+      side = 1;
+    }
+    else if (list_mn.x - margin - width >= vp->Pos.x + edge)
+    {
+      x = list_mn.x - margin - width;
+      side = -1;
+    }
+    else
+    {
+      x = list_mx.x - width - 24.0f * s;
+      const bool below = row_y + row_h + 8.0f * s + height <= vp->Pos.y + vp->Size.y - edge;
+      target_y = below ? row_y + row_h + 8.0f * s : row_y - 8.0f * s - height;
+    }
+    target_y = std::clamp(target_y, vp->Pos.y + edge,
+                          std::max(vp->Pos.y + edge, vp->Pos.y + vp->Size.y - edge - height));
+    if (!m.placed)
+    {
+      m.y = target_y;
+      m.placed = true;
+    }
+    m.y = ui::Approach(m.y, target_y, 18.0f);
+    if (a <= 0.0f)
+    {
+      return;
+    }
+    const float slide = (1.0f - in) * 14.0f * s * float(side);
+    const ImVec2 mn(x + slide, m.y), mx(x + slide + width, m.y + height);
+
+    // --- The card ---
+    for (int i = 3; i >= 1; --i) // a soft shadow
+    {
+      const float g = float(i) * 4.0f * s;
+      dl->AddRectFilled(ImVec2(mn.x - g * 0.5f, mn.y + g * 0.3f), ImVec2(mx.x + g * 0.5f, mx.y + g),
+                        ui::Fade(ui::kInk, 0.16f * a), 12.0f * s);
+    }
+    ui::Card(dl, mn, mx, ui::Fade(ui::kPanel, 0.985f * a));
+    // A glow of the status colour from the top.
+    dl->AddRectFilledMultiColor(mn, ImVec2(mx.x, mn.y + 110.0f * s), ui::Fade(status_col, 0.13f * a),
+                                ui::Fade(status_col, 0.13f * a), ui::Fade(status_col, 0.0f), ui::Fade(status_col, 0.0f));
+    ui::Frame(dl, mn, mx, ui::Fade(status_col, 0.40f * a), 1.0f * s);
+    if (side != 0)
+    {
+      // The arrow to the row.
+      const float ay = std::clamp(row_mid, mn.y + 22.0f * s, mx.y - 22.0f * s);
+      const float ax = side > 0 ? mn.x : mx.x, d = 9.0f * s * float(side);
+      dl->AddTriangleFilled(ImVec2(ax - d, ay), ImVec2(ax + 1.0f * s * float(side), ay - 9.0f * s),
+                            ImVec2(ax + 1.0f * s * float(side), ay + 9.0f * s), ui::Fade(ui::kPanel, 0.985f * a));
+      dl->AddLine(ImVec2(ax - d, ay), ImVec2(ax, ay - 9.0f * s), ui::Fade(status_col, 0.40f * a), 1.0f * s);
+      dl->AddLine(ImVec2(ax - d, ay), ImVec2(ax, ay + 9.0f * s), ui::Fade(status_col, 0.40f * a), 1.0f * s);
+    }
+
+    const float x0 = mn.x + pad, x1 = mx.x - pad;
+    float y = mn.y + pad - 2.0f * s;
+    // The kicker with the ping, the map, the mode and host.
+    ui::Caps(dl, FontKind::kLabel, ImVec2(x0, y), ui::Fade(ui::kMuted, 0.9f * a), Tr("MATCH DETAILS"));
+    if (l.ping >= 0)
+    {
+      char ping[24];
+      std::snprintf(ping, sizeof(ping), "%d ms", l.ping);
+      const ImU32 pc = l.ping < 80 ? ui::kGreen : l.ping < 150 ? ui::kAccent : ui::kRed;
+      const ImVec2 ts = ui::TextSize(FontKind::kSmall, ping);
+      const float dot = 4.0f * s;
+      ui::Text(dl, FontKind::kSmall, ImVec2(x1 - ts.x, y - 1.0f * s), ui::Fade(pc, a), ping);
+      dl->AddCircleFilled(ImVec2(x1 - ts.x - dot - 6.0f * s, y + ts.y * 0.5f - 1.0f * s), dot, ui::Fade(pc, a));
+    }
+    y += ui::FontSize(FontKind::kLabel) + 8.0f * s;
+    dl->PushClipRect(ImVec2(x0, y), ImVec2(x1, y + ui::FontSize(FontKind::kHeading) + 4.0f * s), true);
+    ui::Text(dl, FontKind::kHeading, ImVec2(x0, y), ui::Fade(ui::kAccentLight, a), map.c_str());
+    dl->PopClipRect();
+    y += ui::FontSize(FontKind::kHeading) + 6.0f * s;
+    const std::string sub = mode + "  \xC2\xB7  " + l.name;
+    dl->PushClipRect(ImVec2(x0, y), ImVec2(x1, y + ui::FontSize(FontKind::kSmall) + 4.0f * s), true);
+    ui::Text(dl, FontKind::kSmall, ImVec2(x0, y), ui::Fade(ui::kText, 0.85f * a), sub.c_str());
+    dl->PopClipRect();
+    y += ui::FontSize(FontKind::kSmall) + 16.0f * s;
+
+    // The host's state as a chip, the places as pips.
+    {
+      const ImVec2 cs = ui::CapsSize(FontKind::kLabel, status);
+      const float cw = cs.x + 34.0f * s;
+      const ImVec2 cmn(x0, y), cmx(x0 + cw, y + chip_h);
+      dl->AddRectFilled(cmn, cmx, ui::Fade(status_col, 0.16f * a), chip_h * 0.5f);
+      dl->AddRect(cmn, cmx, ui::Fade(status_col, 0.55f * a), chip_h * 0.5f, 0, 1.0f * s);
+      const float pulse = 0.5f + 0.5f * std::sin(float(now) * 4.0f);
+      const ImVec2 dc(cmn.x + 13.0f * s, cmn.y + chip_h * 0.5f);
+      dl->AddCircleFilled(dc, 3.5f * s, ui::Fade(status_col, a));
+      dl->AddCircle(dc, (3.5f + 3.0f * pulse) * s, ui::Fade(status_col, (1.0f - pulse) * 0.8f * a), 16, 1.0f * s);
+      ui::Caps(dl, FontKind::kLabel, ImVec2(cmn.x + 24.0f * s, cmn.y + (chip_h - cs.y) * 0.5f),
+               ui::Fade(status_col, a), status);
+
+      const int max = std::max(l.max, 1), players = std::clamp(l.players, 0, max);
+      char count[16];
+      std::snprintf(count, sizeof(count), "%d / %d", players, max);
+      const ImVec2 ns = ui::TextSize(FontKind::kBody, count);
+      const float pip = 6.0f * s, pip_gap = 6.0f * s;
+      float px = x1 - ns.x;
+      ui::Text(dl, FontKind::kBody, ImVec2(px, y + (chip_h - ns.y) * 0.5f - 1.0f * s), ui::Fade(ui::kText, a), count);
+      px -= 12.0f * s + float(max) * (pip * 2.0f + pip_gap) - pip_gap;
+      for (int i = 0; i < max; ++i)
+      {
+        const ImVec2 c(px + pip + float(i) * (pip * 2.0f + pip_gap), y + chip_h * 0.5f);
+        if (i < players)
+        {
+          dl->AddCircleFilled(c, pip, ui::Fade(ui::kAccent, a));
+        }
+        else
+        {
+          dl->AddCircle(c, pip - 0.5f * s, ui::Fade(ui::kMuted, 0.6f * a), 16, 1.5f * s);
+        }
+      }
+    }
+    y += chip_h + 18.0f * s;
+
+    // The rules: tiles two by two (an odd last one across), then the bots across.
+    if (!tiles.empty())
+    {
+      dl->AddRectFilled(ImVec2(x0, y), ImVec2(x1, y + 1.0f * s), ui::Fade(ui::kWhite, 0.10f * a));
+      y += 1.0f * s + 18.0f * s;
+      auto tile = [&](ImVec2 tmn, float tw, const std::string &label, const std::string &value, bool off) {
+        const ImVec2 tmx(tmn.x + tw, tmn.y + tile_h);
+        dl->AddRectFilled(tmn, tmx, ui::Fade(ui::kWhite, 0.045f * a), 8.0f * s);
+        dl->AddRect(tmn, tmx, ui::Fade(ui::kWhite, 0.07f * a), 8.0f * s, 0, 1.0f * s);
+        dl->PushClipRect(tmn, ImVec2(tmx.x - 8.0f * s, tmx.y), true);
+        ui::Caps(dl, FontKind::kLabel, ImVec2(tmn.x + 12.0f * s, tmn.y + 9.0f * s), ui::Fade(ui::kMuted, 0.85f * a),
+                 label.c_str());
+        ui::Text(dl, FontKind::kBody, ImVec2(tmn.x + 12.0f * s, tmn.y + 13.0f * s + ui::FontSize(FontKind::kLabel)),
+                 ui::Fade(off ? ui::kMuted : ui::kText, a), value.c_str());
+        dl->PopClipRect();
+      };
+      for (size_t i = 0; i < tiles.size(); ++i)
+      {
+        const float tx = x0 + float(i % 2) * (tile_w + gap);
+        const float ty = y + float(i / 2) * (tile_h + gap);
+        const bool wide = i + 1 == tiles.size() && i % 2 == 0;
+        tile(ImVec2(tx, ty), wide ? inner : tile_w, tiles[i].label, tiles[i].value, tiles[i].off);
+      }
+      y += float(tile_rows) * (tile_h + gap);
+      // The bots: their difficulty, and what they may do as tags.
+      const ImVec2 bmn(x0, y), bmx(x1, y + tile_h);
+      const ImU32 bc = bots_on ? ui::kAccent : ui::kWhite;
+      dl->AddRectFilled(bmn, bmx, ui::Fade(bc, (bots_on ? 0.08f : 0.045f) * a), 8.0f * s);
+      dl->AddRect(bmn, bmx, ui::Fade(bc, (bots_on ? 0.30f : 0.07f) * a), 8.0f * s, 0, 1.0f * s);
+      ui::Caps(dl, FontKind::kLabel, ImVec2(bmn.x + 12.0f * s, bmn.y + 9.0f * s), ui::Fade(ui::kMuted, 0.85f * a),
+               Tr("Bots"));
+      ui::Text(dl, FontKind::kBody, ImVec2(bmn.x + 12.0f * s, bmn.y + 13.0f * s + ui::FontSize(FontKind::kLabel)),
+               ui::Fade(bots_on ? ui::kText : ui::kMuted, a), bots.c_str());
+      float tx = bmx.x - 10.0f * s;
+      for (auto it = bot_tags.rbegin(); it != bot_tags.rend(); ++it)
+      {
+        const ImVec2 ts = ui::TextSize(FontKind::kSmall, it->c_str());
+        const float th = ts.y + 6.0f * s, tw = ts.x + 16.0f * s;
+        const ImVec2 tmn(tx - tw, bmn.y + (tile_h - th) * 0.5f), tmx(tx, tmn.y + th);
+        dl->AddRectFilled(tmn, tmx, ui::Fade(ui::kAccent, 0.16f * a), th * 0.5f);
+        ui::Text(dl, FontKind::kSmall, ImVec2(tmn.x + 8.0f * s, tmn.y + 3.0f * s), ui::Fade(ui::kAccentLight, a),
+                 it->c_str());
+        tx -= tw + 6.0f * s;
+      }
+      y += tile_h;
+    }
+    if (older)
+    {
+      ui::Text(dl, FontKind::kSmall, ImVec2(x0, y + 8.0f * s), ui::Fade(ui::kMuted, 0.85f * a), older);
+      y += ui::FontSize(FontKind::kSmall) + 8.0f * s;
+    }
+    if (other)
+    {
+      ui::Text(dl, FontKind::kSmall, ImVec2(x0, y + 12.0f * s), ui::Fade(ui::kRed, a),
+               Tr("Different version: update the game to join."));
+    }
+  }
 } // namespace ao2::browser

@@ -66,6 +66,10 @@ namespace ao2::steam
     std::string mode;
     std::string menu;  // versus: "setup" (Game Setup), "ready" (the ready room), "" (neither)
     std::string rules; // versus: the host's match rules and bots, "key=value;..." (coop_invite.cpp)
+    // The XUIDs (hex, comma-separated) of the players in the hosted game's lobby, this one among them; empty when
+    // unknown. A joining player is "joined" only once its own XUID is there (steam_net.cpp UpdateJoinedLobby).
+    std::string members;
+    uint64_t self_xuid = 0; // this player's XUID (also when it hosts nothing)
   };
   void SetHosting(const Hosting &hosting);
 
@@ -95,6 +99,7 @@ namespace ao2::steam
     int ping = -1; // ms, estimated from the host's ping location (-1: unknown)
     std::string menu;  // Hosting::menu
     std::string rules; // Hosting::rules
+    std::string members; // Hosting::members (empty: an older host's lobby)
   };
   // Quick join's choice among the open lobbies (lower is better): the ping, less 60 ms for each player there
   // already, so a fuller game wins over an emptier one unless its ping is clearly worse (an unknown ping counts

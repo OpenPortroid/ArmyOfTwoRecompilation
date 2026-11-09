@@ -10,7 +10,8 @@
 //   SteamID (IsVirtual / VirtualIp), the same on every PC; Windows takes the
 //   whole 127/8 as loopback, nothing has to be set up.
 // - For every Steam player it knows (a peer) this bridge binds the peer's
-//   address on those ports: UDP 1000, the link's and the presence port, TCP
+//   address on those ports: UDP 1000, the link's, the presence port and the
+//   runtime's session discovery (net_discovery_port), TCP
 //   listeners on the lobby server's ports. A UDP port without such a socket
 //   would land in this game's own socket on 0.0.0.0. Windows lets a socket bound to one address
 //   share a port with the game's own socket bound to all of them (0.0.0.0).
@@ -283,9 +284,26 @@ namespace
     return htonl(host);
   }
 
+  // Whether `xuid` is in a lobby's "members" (Hosting::members).
+  bool InMembers(const std::string &members, uint64_t xuid)
+  {
+    char text[24];
+    std::snprintf(text, sizeof(text), "%016llx", (unsigned long long)xuid);
+    return xuid && members.find(text) != std::string::npos;
+  }
+
   uint16_t PresencePort()
   {
     return uint16_t(REXCVAR_GET(ao2_invite_port));
+  }
+
+  // The runtime's session discovery (xlive_net.cpp, net_discovery_port): a joining game finds the host's sessions
+  // by asking it there (XSessionSearchByID for a versus party). Without it bridged the question never reached a
+  // Steam host, the search found nothing and the game left the party a few seconds after it joined.
+  uint16_t DiscoveryPort()
+  {
+    const int port = std::atoi(rex::cvar::GetFlagByName("net_discovery_port").c_str());
+    return uint16_t(port > 0 && port < 65536 ? port : 36020);
   }
 
   SteamNetworkingIdentity Identity(uint64_t steam_id)
@@ -430,7 +448,7 @@ namespace
       p.id = id;
       p.ip = VirtualIp(id);
       p.name = SteamFriends()->GetFriendPersonaName(CSteamID(id));
-      for (uint16_t port : {kGamePort, ao2::coop::link::kPort, PresencePort()})
+      for (uint16_t port : {kGamePort, ao2::coop::link::kPort, PresencePort(), DiscoveryPort()})
       {
         Udp(p, port);
       }
@@ -1117,12 +1135,24 @@ namespace
       const char *difficulty = SteamMatchmaking()->GetLobbyData(id, "difficulty");
       l.difficulty = *difficulty ? std::atoi(difficulty) : -1;
       l.versus = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "mode"), "versus") == 0;
+      // A versus map (M01_map_world.. M04) is a versus match whatever an older host said (its started match
+      // alone was listed as co-op).
+      if (const std::string &m = l.map; m.size() > 2 && (m[0] == 'm' || m[0] == 'M') && m[1] == '0' &&
+                                        std::isdigit((unsigned char)m[2]))
+      {
+        l.versus = true;
+      }
       l.is_private = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "private"), "1") == 0;
       l.in_game = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "state"), "game") == 0;
       l.players = std::atoi(SteamMatchmaking()->GetLobbyData(id, "players"));
       l.max = SteamMatchmaking()->GetLobbyMemberLimit(id);
+      if (l.versus)
+      {
+        l.max = std::max(l.max, 4); // a 2v2 match (older hosts gave their party session's 2)
+      }
       l.menu = SteamMatchmaking()->GetLobbyData(id, "menu");
       l.rules = SteamMatchmaking()->GetLobbyData(id, "rules");
+      l.members = SteamMatchmaking()->GetLobbyData(id, "members");
       SteamNetworkPingLocation_t loc;
       const char *where = SteamMatchmaking()->GetLobbyData(id, "loc");
       if (*where && SteamNetworkingUtils()->ParsePingLocationString(where, loc))
@@ -1256,7 +1286,38 @@ namespace
       }
       joined_session_before_ = h.session;
       const char *why = nullptr;
-      if (!joined_session_seen_)
+      // The host says who is in its game (its "members"): that decides, not this game's network session (versus
+      // is in one in all its menus, so a game that left the party, or never got in, still counted as joined).
+      const std::string members = SteamMatchmaking()->GetLobbyData(CSteamID(lobby_), "members");
+      if (!members.empty() && h.self_xuid)
+      {
+        if (InMembers(members, h.self_xuid))
+        {
+          member_seen_ = true;
+          member_lost_ = {};
+          SetJoinedActive(true);
+        }
+        else
+        {
+          SetJoinedActive(false);
+          if (member_seen_)
+          {
+            if (member_lost_ == Clock::time_point{})
+            {
+              member_lost_ = now;
+            }
+            if (now - member_lost_ > std::chrono::seconds(8))
+            {
+              why = "its game is over here (not in the host's lobby)";
+            }
+          }
+          else if (now - joined_since_ > std::chrono::seconds(40))
+          {
+            why = "its game was not entered (never in the host's lobby)";
+          }
+        }
+      }
+      else if (!joined_session_seen_)
       {
         if ((!h.session || hold_hosting_) && now - joined_since_ > std::chrono::seconds(30))
         {
@@ -1351,6 +1412,7 @@ namespace
         set("state", h.in_game ? "game" : "lobby");
         set("menu", h.menu);
         set("rules", h.rules);
+        set("members", h.members);
         // Where this PC is, for the others' ping (ready once the relays answered).
         SteamNetworkPingLocation_t loc;
         if (SteamNetworkingUtils()->GetLocalPingLocation(loc) >= 0.0f)
@@ -1408,6 +1470,8 @@ namespace
       joined_since_ = Clock::now();
       joined_session_seen_ = false;
       joined_session_ended_ = {};
+      member_seen_ = false;
+      member_lost_ = {};
       {
         std::lock_guard lock(shared().mutex);
         joined_session_before_ = shared().hosting.session;
@@ -1485,6 +1549,8 @@ namespace
     bool joined_session_before_ = false; // the session state last seen (UpdateJoinedLobby)
     bool joined_session_seen_ = false;   // a session started since the lobby was joined
     Clock::time_point joined_session_ended_;
+    bool member_seen_ = false;     // this player was in the host's "members" since the join
+    Clock::time_point member_lost_; // ... and is not any more since (zero: it is, or never was)
     Clock::time_point hosting_seen_;
     Clock::time_point next_friends_;
     CCallResult<Session, LobbyCreated_t> create_call_;
@@ -1779,7 +1845,10 @@ namespace ao2::steam
     for (Lobby &l : list)
     {
       l.own = l.id == shared().lobby && shared().own_lobby;
-      l.joined = l.own || (l.id == shared().lobby && shared().joined_active);
+      // In the host's game, as its lobby says (its "members"); an older host's lobby says nothing: as before.
+      const bool listed = !l.members.empty() && shared().hosting.self_xuid &&
+                          InMembers(l.members, shared().hosting.self_xuid);
+      l.joined = l.own || (l.id == shared().lobby && (l.members.empty() ? shared().joined_active : listed));
     }
     return list;
   }

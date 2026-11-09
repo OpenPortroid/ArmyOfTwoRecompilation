@@ -66,6 +66,10 @@ namespace ao2::lobby_visibility
 {
   void BackToMenu(bool versus); // lobby_visibility.cpp
 }
+namespace ao2::script_trace
+{
+  std::string Recent(const uint8_t *base, uint32_t count); // script_trace.cpp
+}
 
 namespace ao2::split_join
 {
@@ -634,6 +638,17 @@ namespace ao2::split_join
     char what[128];
     std::snprintf(what, sizeof(what), "CauseEvent %s", event.c_str());
     Log(what);
+    if (event == "QuitCoopClientLobby")
+    {
+      // Who left a joined lobby: the script run before it (a join cancelled a few seconds in, half the time).
+      SYSTEMTIME t;
+      GetLocalTime(&t);
+      char when[64];
+      std::snprintf(when, sizeof(when), "  at %02d:%02d:%02d.%03d, after:", t.wHour, t.wMinute, t.wSecond,
+                    t.wMilliseconds);
+      Log(when);
+      Log(ao2::script_trace::Recent(base, 40).c_str());
+    }
     // Back to the main menu from Multiplayer or Campaign Mode: no network
     // session is left. EA's game manager starts listening as soon as the
     // Multiplayer menu connects (coop.h network_session) and, with no game
