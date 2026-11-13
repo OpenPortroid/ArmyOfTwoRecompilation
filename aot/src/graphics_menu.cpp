@@ -656,9 +656,29 @@ namespace
   uint32_t g_defaults_button = 0;                    // its "Default keys" button
   uint32_t g_defaults_armed = 0;                     // GetTickCount of a first press of it, 0 none
 
+  // A scene remembered from an earlier screen may be gone: after a level the
+  // pause menu's Options screen is collected, its memory keeps the name for
+  // a while and its other fields are whatever was written there since (a
+  // SceneClient read from it was no object, and A in the main menu crashed
+  // in TopScene). An object is live while the object table still has it at
+  // its own index.
+  bool LiveObject(const uint8_t *base, uint32_t object)
+  {
+    constexpr uint32_t kObjects = 0x831E4E3C; // GObjObjects TArray
+    constexpr uint32_t kObjectIndex = 4;
+    auto plausible = [](uint32_t p) { return p >= 0x40000000 && p < 0x80000000 && !(p & 3); };
+    if (!plausible(object))
+    {
+      return false;
+    }
+    uint32_t index = LoadU32(base, object + kObjectIndex);
+    uint32_t data = LoadU32(base, kObjects), count = LoadU32(base, kObjects + 4);
+    return plausible(data) && index < count && LoadU32(base, data + index * 4) == object;
+  }
+
   bool IsSceneNamed(const uint8_t *base, uint32_t scene)
   {
-    return scene && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene", 0) == 0 &&
+    return LiveObject(base, scene) && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene", 0) == 0 &&
            ao2::ue3::Name(base, LoadU32(base, scene + kSceneTag)) == "AllOptionsUIScene";
   }
 
@@ -666,7 +686,7 @@ namespace
   // device button there, its TV type row opens the Graphics page instead.
   bool IsPauseOptions(const uint8_t *base, uint32_t scene)
   {
-    return scene && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene_IGPM", 0) == 0;
+    return LiveObject(base, scene) && ao2::ue3::ObjectName(base, scene).rfind("AllOptionsUIScene_IGPM", 0) == 0;
   }
 
   bool IsPage(const uint8_t *base, uint32_t scene, Page page)
@@ -733,6 +753,10 @@ namespace
   // The scene on top of the scene client's stack.
   uint32_t TopScene(const uint8_t *base, uint32_t client)
   {
+    if (!LiveObject(base, client))
+    {
+      return 0;
+    }
     uint32_t data = LoadU32(base, client + kActiveScenes);
     uint32_t count = LoadU32(base, client + kActiveScenes + 4);
     return data && count && count < 64 ? LoadU32(base, data + (count - 1) * 4) : 0;
@@ -1532,6 +1556,10 @@ namespace
   // number `tag`; 0 if none opened.
   bool OnStack(const uint8_t *base, uint32_t client, uint32_t scene)
   {
+    if (!LiveObject(base, client))
+    {
+      return false;
+    }
     uint32_t data = LoadU32(base, client + kActiveScenes);
     uint32_t count = LoadU32(base, client + kActiveScenes + 4);
     for (uint32_t i = 0; scene && data && i < count && i < 64; ++i)
