@@ -21,7 +21,7 @@
 #include "perf_waits.h"
 
 REXCVAR_DEFINE_BOOL(ao2_perf_waits, false, "Debug",
-                    "Log the time each game thread spends in guest waits (native_gpu.log, every 2 s)");
+                    "Log the time each game thread spends in guest waits (logs/gpu/native_gpu.log, every 2 s)");
 
 namespace
 {

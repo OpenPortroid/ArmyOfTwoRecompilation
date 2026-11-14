@@ -41,7 +41,7 @@ REXCVAR_DEFINE_BOOL(ao2_coop_ragdoll_pool_fix, true, "Online",
                     "Online co-op: the corpse limit picks the corpse to remove by age and distance only, not by "
                     "what this machine's camera sees (desync)");
 REXCVAR_DEFINE_BOOL(ao2_coop_ragdoll_log, false, "Online",
-                    "Online co-op: log the corpse pool (removals, order) to coop_ragdoll.log");
+                    "Online co-op: log the corpse pool (removals, order) to logs/sim/coop_ragdoll.log");
 
 namespace
 {

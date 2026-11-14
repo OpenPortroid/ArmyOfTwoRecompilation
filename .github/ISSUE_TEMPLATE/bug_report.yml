@@ -64,5 +64,6 @@ body:
       label: Logs
       description: >
         In the launcher, Settings → Advanced, enter --log_to_files=true in Extra arguments and run the game until the
-        problem happens. Attach the newest logs\armyoftworecomp_NNN.log and logs\launcher.log from the game folder, and
-        any crash_*.txt next to the game. In co-op or versus, the other player's logs too, if you can.
+        problem happens. Then attach the whole logs folder of the game folder (one archive: the
+        runtime log armyoftworecomp_NNN.log, launcher.log and the port's logs by area) and any
+        crash_*.txt next to the game. In co-op or versus, the other player's logs folder too, if you can.

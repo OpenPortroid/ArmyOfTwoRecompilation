@@ -73,7 +73,7 @@ REXCVAR_DECLARE(bool, ao2_native_gpu_debug_layer);
 REXCVAR_DECLARE(std::string, ao2_native_gpu_adapter);
 REXCVAR_DECLARE(bool, ao2_native_gpu_async_pipelines);
 REXCVAR_DEFINE_BOOL(ao2_prompts_debug, false, "Debug",
-                    "Log where split-screen button pictures are drawn (native_gpu.log)");
+                    "Log where split-screen button pictures are drawn (logs/gpu/native_gpu.log)");
 REXCVAR_DECLARE(double, ao2_native_gpu_resolution_scale);
 REXCVAR_DEFINE_STRING(ao2_ambient_occlusion, "off", "GPU",
                       "Ambient occlusion added to the scene: off, ssao, hbao or gtao");

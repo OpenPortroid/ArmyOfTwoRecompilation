@@ -3,7 +3,25 @@
 Army of Two's online co-op works again: one player hosts, the other joins over
 a LAN or a virtual network (Radmin VPN, ZeroTier, Tailscale...).
 
+Every log the port and the runtime write goes to the game's `logs` folder, by
+area: `logs/net` (this co-op: the link, lobbies, invites, Steam), `logs/sim`,
+`logs/gpu`, `logs/perf`, `logs/ui`, `logs/audio`, `logs/debug` (traces a flag
+asked for), with the runtime's own `logs/armyoftworecomp_NNN.log` and
+`logs/net.log` in it ([`src/log_files.h`](../src/log_files.h) maps every file).
+
 ## Playing
+
+Online play goes one of three ways (`ao2_net_mode`, the launcher's *Network*):
+
+- **steam** (default): LAN or a virtual network (Radmin VPN, ZeroTier,
+  Tailscale...) with the roles below, and Steam friends and lobbies while
+  Steam runs (*Over Steam*).
+- **lan**: the same without Steam.
+- **openportroid**: the OpenPortroid server, **aot.bhop.pw/aot1/**
+  (repository ArmyOfTwoOpenPortroid). Anyone on the internet, no VPN, Steam
+  or ports to open, no roles: the host is whoever creates a game in the menu,
+  and *Search Co-op Game* / *Quick Match* find the public games of everyone on
+  the server. See *Over the OpenPortroid server* below.
 
 Both players need the **same build** (`armyoftworecomp.exe` + `rexruntime.dll`)
 and their own game files in `assets/`. Settings live in
@@ -109,7 +127,7 @@ What the game needs (found by tracing it, `--ao2_coop_debug=true`):
   and VPN work without choosing adapters.
 
 The lobby library is EA DirtySock; its debug output (normally discarded) goes
-to `coop_debug.log` with `--ao2_coop_debug=true` (hooks of `sub_82217260` /
+to `logs/net/coop_debug.log` with `--ao2_coop_debug=true` (hooks of `sub_82217260` /
 `sub_822172B0` in `src/coop_debug.cpp`), together with the join flow, leave
 reasons and the lockstep frame state.
 
@@ -167,7 +185,7 @@ Here a presence service in every game (UDP 18491, text packets
   build but other values gets a banner naming them, as `key mine/theirs`. It
   warns and changes nothing.
 
-`invite.log` (with `log_to_files`) shows players found, invites and answers.
+`logs/net/invite.log` (with `log_to_files`) shows players found, invites and answers.
 
 ### Over Steam (`src/steam_net.cpp`)
 
@@ -216,9 +234,59 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   from the sender's address to the PC's own virtual address. The lobby
   server and the invites treat these addresses as other PCs, not loopback.
 
+### Over the OpenPortroid server (`src/openportroid_net.cpp`, the tunnel in `src/ea_server.cpp`)
+
+The 40th Day's OpenPortroid server built for this game; the server is its own
+repository, ArmyOfTwoOpenPortroid (`aot1_server` on cube next to The 40th
+Day's, `http://aot.bhop.pw/aot1/`, UDP 18501). Its lobby is this repository's
+`ea_server.cpp` (copied there by its `tools/sync_aot1.sh`; built with
+`AO2_OPENPORTROID_SERVER`, which adds the relay and the player names), so a
+change to the lobby is made here and synced. What the game and the server
+share is in `src/openportroid.h`.
+
+- **Lobby through HTTP.** With `ao2_net_mode = openportroid` the game runs no
+  server and Steam stays off. It listens on its own loopback address
+  (127.0.0.1, or `net_bind_ip`) at TCP 18480 / 18485 / 13505 and sets
+  `net_title_server_ip` to it; each connection becomes a request to
+  `http://<ao2_openportroid_server>/aot1/<fesl | theater | messenger>` with
+  `Upgrade: aot1-tunnel`, the player's key (`X-AO2-Key`) and that loopback
+  address (`X-AO2-Local`); nginx passes it on with `X-Real-IP`, the server
+  answers 101 and both sides then carry the lobby's own bytes. Every player
+  is on one server, so a public game is found by the game's own search (a
+  player through the tunnel is not this PC's own, so no Steam quick match).
+- **Game traffic on a virtual LAN.** Every game signs in to the server's UDP
+  port (`ao2_openportroid_port`, 18501) with its key and gets an address in
+  127.128.0.0/10 (Steam's are 127.64.0.0/10); the lobby shows the player at
+  it. For every player it knows the bridge binds that address on UDP 1000
+  (the game), 1002 (the link) and 18491 (presence), the Steam bridge's way,
+  and sends what the game sends there to that player: straight once NAT
+  punching worked (the server introduces both players when the lobby pairs
+  them: EGRQ), else through the server. `ao2_openportroid_direct = false`
+  sends everything through the server. `logs/net/openportroid.log` shows each peer's
+  way.
+- **Invites and the players window.** The players this game knows get the
+  presence announcements; the game a player hosts comes from the server
+  (`GET /aot1/gameq?name=`); an invite from an OpenPortroid player keeps this
+  game on the same server. The window's address field takes a player's name
+  too (`/aot1/find?name=`: online at its virtual address, offline, unknown).
+- **Player names.** The launcher makes a key once (`op_key`, copy / paste on
+  the Network page), passes it as `ao2_openportroid_key` and claims the name
+  on Play (`/aot1/claim?name=`): a name (1-15 of `A-Z a-z 0-9 _ -`) belongs
+  to the first key that claims it, free again after 180 days unused. A player
+  who signs in with another key's name is shown as `Guest-xxxx`.
+
+Tested 2026-11-08 on one PC, the server on Windows (`aot1_server
+--tunnel-port 18101 --udp-port 18501`), both games with
+`ao2_openportroid_server = 127.0.0.1:18101` and their own `net_bind_ip`
+(127.0.0.1 / 127.0.0.2; without it the first game's 0.0.0.0:1000 loses its
+traffic to the second game's bridge on the same PC): both signed in, the
+second found the first's public game (Search Co-op Game), straight at once,
+the lockstep ran into the level. Not tested: two PCs, real NAT, the relay
+path, invites, the server on cube behind nginx.
+
 `steam_api64.dll` is linked to load late: without it (or without Steam) the
 game plays as before. Built only when `steamworks/sdk` holds the Steamworks
-SDK. `steam.log` shows peers, lobbies and tunnels.
+SDK. `logs/net/steam.log` shows peers, lobbies and tunnels.
 
 ### Automatic role selection (launcher)
 
@@ -291,7 +359,7 @@ frame times averaged over 10), so both machines replay a frame's records on
 the same simulation frame. Checked on a real two-PC game: identical
 latency / lead values on the same frames.
 
-`--ao2_coop_sync_trace=true` (on both machines) writes `sync_trace.log`: per
+`--ao2_coop_sync_trace=true` (on both machines) writes `logs/debug/sync_trace.log`: per
 lockstep frame the checksum words, the `rand()` state, how many numbers the
 simulation took (and how many extra draws took - put back by decouple.cpp),
 each controller's look rotation and pawn location / rotation / health, and
@@ -341,7 +409,7 @@ on the joining machine it had two listeners, the second one's
 `PortalVolume` a dead pointer (6; earlier text and floats such as
 `0x42860000`). Before every collection a listener volume that is not a live
 `PortalVolume` (`GObjObjects[obj+4] == obj`) is cleared
-(`ao2_audio_listener_guard`, on; `audio_listener_guard.log` when it fires).
+(`ao2_audio_listener_guard`, on; `logs/audio/audio_listener_guard.log` when it fires).
 The crash report (`hang_watchdog.cpp`) also lists the collector's queue
 (`collector queue`) to name who queued a bad object.
 
@@ -380,7 +448,7 @@ and the cutscene skip see the record and put back afterwards. God mode is per
 player (that record's controller); a checkpoint loads for both with the
 lobby's URL (`Checkpoint?LoadSaveGame?CheckpointToLoad=<name>?Difficulty=<d>?`),
 so both PCs need that checkpoint (DLC included). The load runs at the next engine pad poll, not inside the replay: started there it tore the level down while the frame sync was still replaying the other player's record, and the garbage collector crashed a minute later. The load itself goes through the co-op manager (`[0x831F3024]`, `sub_82A16488`), as the game's own co-op checkpoint restart (`sub_82A168B8`, after both players voted) does: the plain script travel event on both machines left references to the old level in the HUD and the audio device. Only while the lockstep
-runs; `coop_cmd.log` shows each block, each record with one (key indices)
+runs; `logs/sim/coop_cmd.log` shows each block, each record with one (key indices)
 and what ran on which frame. `--ao2_coop_test_local=true` runs it in single
 player.
 
@@ -410,7 +478,7 @@ partner in the last second, and its input margin wish.
   most one wait a second, 8 ms less. A wish holds from a lockstep frame 120
   frames ahead and goes to the partner with that frame; both PCs use the
   larger wish from its frame on, so the margin stays the same on both, as
-  `SharedSettings` asks of `ao2_coop_input_margin_ms`. `coop_delay.log` has
+  `SharedSettings` asks of `ao2_coop_input_margin_ms`. `logs/net/coop_delay.log` has
   each wish and each change in force.
 - **Rejoin** (`ao2_coop_rejoin`, `ao2_coop_rejoin_minutes` = 5): a game
   that ends its network session says `bye` over the link. When a session
@@ -420,8 +488,8 @@ partner in the last second, and its input margin wish.
   `ao2::invite::OnPartnerLost` takes over: the host's next two-player co-op
   lobby invites the partner's address (again every 10 s until it is in),
   and the partner's game accepts an invite from the host's address by itself.
-  Not for versus. `coop_net.log` shows each session's end and the decision;
-  `invite.log` the rejoin.
+  Not for versus. `logs/net/coop_net.log` shows each session's end and the decision;
+  `logs/net/invite.log` the rejoin.
 
 ### SDK fixes this needed
 
@@ -430,7 +498,7 @@ partner in the last second, and its input margin wish.
   thread waits for any of its events while holding a lock, so closing a socket
   deadlocked the game.
 - `XUserMuteListQuery` (`0x0005800E`) is answered.
-- `net.log`: wall-clock timestamps, every XGI/XLiveBase message, per-socket
+- `logs/net.log`: wall-clock timestamps, every XGI/XLiveBase message, per-socket
   traffic every 5 s, socket/bind/close details.
 
 ### Functions only reached through pointers
@@ -455,7 +523,7 @@ simulation's state and replayed right after the first record of each frame
 (only inside the replay does the viewport hand input to the controller). The
 bots walk along a network built from the level's navigation points and the
 AI's cover nodes (`AO2CoverNode`: the versus maps have few navigation points),
-shoot enemies in sight and log to `versus_bots.log`. Its links are checked with
+shoot enemies in sight and log to `logs/sim/versus_bots.log`. Its links are checked with
 traces against the collision characters walk against: a small box (a bullet's
 line goes through invisible walls), a slope's terrain bulge passed over, and a
 vault (Y) only through an `AO2GameplayMechanicsVolume` - nothing else can be
@@ -482,7 +550,7 @@ XUserGetSigninInfo (`sub_82B07E10`) has `XUSER_INFO_FLAG_GUEST` (info +8,
 (`input_player2`) but never as a guest. `ao2_versus_guest` (on) makes the
 users 1-3 signed in when the guest sign-in UI opens (`sub_82A209D0`,
 `sub_82A055C8`) guests until their sign-in state is 0 or this PC has been out of every
-lobby and match for 2 s; `versus_guest.log` says when. On the console the guest brings its own controller; here the
+lobby and match for 2 s; `logs/net/versus_guest.log` says when. On the console the guest brings its own controller; here the
 automatic assignment gives every device to player 1 (the launcher's
 `input_share_pads`), so with nobody else signed in the sign-in opens the
 window of `src/split_join.cpp`: each player presses a button on their device
@@ -509,7 +577,7 @@ a button, then player 2, and each gets what they pressed on (a key or mouse
 button: the keyboard and mouse; a pad button: that pad;
 `rex_input_split_players`). The command then runs again and goes through once
 player 2 is signed in (up to 600 ms). Another of those buttons or the main menu
-after a level gives the devices back. `split_join.log` says what happened.
+after a level gives the devices back. `logs/net/split_join.log` says what happened.
 
 The match numbers the local players by their places (a guest on a place
 before the host's makes the guest's LocalPlayer GamePlayers[0] and gives the
@@ -525,7 +593,7 @@ another player has (they swap Origin and Size); laying out again
 (`PlayerController.bViewportLayoutDirty`) gave the same layout.
 `--ao2_script_trace=true` (`src/script_trace.cpp`) logs the UnrealScript
 functions the main menu runs (`UObject::ProcessInternal`, `sub_82445C30`) to
-`script_trace.log`: two runs side by side found this. Tested on one PC: host
+`logs/debug/script_trace.log`: two runs side by side found this. Tested on one PC: host
 and guest against two bots (Iraq), then the campaign's split-screen. A guest with
 players of other PCs is not tested yet.
 

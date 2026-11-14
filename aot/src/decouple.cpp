@@ -66,7 +66,7 @@ REXCVAR_DEFINE_BOOL(ao2_decouple, false, "Gameplay",
                     "Online co-op: the lobby server's setting is used by both players");
 REXCVAR_DEFINE_INT32(ao2_sim_hz, 60, "Gameplay", "Simulation steps per second with ao2_decouple")
     .range(20, 240);
-REXCVAR_DEFINE_BOOL(ao2_decouple_debug, false, "Debug", "Log ao2_decouple frame statistics to decouple.log");
+REXCVAR_DEFINE_BOOL(ao2_decouple_debug, false, "Debug", "Log ao2_decouple frame statistics to logs/perf/decouple.log");
 REXCVAR_DEFINE_BOOL(ao2_coop_no_extra_draws, false, "Debug",
                     "Online lockstep test: no render-only draws between the steps and none while waiting for the partner "
                     "(the picture is drawn once per step): tells whether the game's draw changes the simulation");

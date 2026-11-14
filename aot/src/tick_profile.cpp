@@ -23,7 +23,7 @@
 #include "log_files.h"
 
 REXCVAR_DEFINE_INT32(ao2_tick_profile_ms, 0, "Debug",
-                     "Log where every engine tick of this many ms or longer went (tick_profile.log, 0 = off)")
+                     "Log where every engine tick of this many ms or longer went (logs/perf/tick_profile.log, 0 = off)")
     .range(0, 1000);
 
 namespace

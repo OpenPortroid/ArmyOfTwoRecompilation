@@ -103,7 +103,7 @@ REXCVAR_DEFINE_DOUBLE(ao2_mouse_stick_sensitivity, 1.0, "Input",
 REXCVAR_DEFINE_BOOL(ao2_predict_camera, true, "Input",
                     "Draw this player's mouse turn at once, before the simulation has it (online co-op: before "
                     "the input delay); only the drawn view, the game state is not changed");
-REXCVAR_DEFINE_BOOL(ao2_mouse_debug, false, "Debug", "Log native mouse aiming to mouse_aim.log");
+REXCVAR_DEFINE_BOOL(ao2_mouse_debug, false, "Debug", "Log native mouse aiming to logs/sim/mouse_aim.log");
 REXCVAR_DEFINE_BOOL(ao2_coop_test_local, false, "Debug",
                     "Send the mouse through the lockstep input in single player too (tests the online co-op path)");
 

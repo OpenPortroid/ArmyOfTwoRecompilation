@@ -12,8 +12,8 @@
 # launch_host.request appears). Joiner = this PC ("Join co-op.bat" flags).
 # Both get the menus through input.script (no window focus needed); the
 # timings are the ones that worked on 2026-10-07 (menus drop presses that come
-# too early). Results: tools/coop/results/<time>/ - both sync_trace.log and
-# coop_debug.log, and the sync_diff.py report.
+# too early). Results: tools/coop/results/<time>/ - both logs\debug\sync_trace.log
+# and logs\net\coop_debug.log, and the sync_diff.py report.
 set -u
 RIGHTS=${1:-2}
 MINUTES=${2:-6}
@@ -41,8 +41,8 @@ log "stopping old games"
 R "taskkill /im armyoftworecomp.exe /f >nul 2>&1" || true
 taskkill //im armyoftworecomp.exe //f >/dev/null 2>&1 || true
 sleep 3
-R "del /q $HOST_DIR\\sync_trace.log $HOST_DIR\\coop_debug.log $HOST_DIR\\input.script 2>nul"
-rm -f "$GAME/sync_trace.log" "$GAME/coop_debug.log" "$GAME/input.script"
+R "del /q $HOST_DIR\\logs\\debug\\sync_trace.log $HOST_DIR\\logs\\net\\coop_debug.log $HOST_DIR\\input.script 2>nul"
+rm -f "$GAME/logs/debug/sync_trace.log" "$GAME/logs/net/coop_debug.log" "$GAME/input.script"
 
 log "starting the host (launcher on the partner PC)"
 R "type nul > $HOST_DIR\\launch_host.request"
@@ -78,15 +78,15 @@ echo a > "$GAME/input.script"
 log "waiting for the lockstep"
 for i in $(seq 1 120); do
   sleep 3
-  [ -f "$GAME/sync_trace.log" ] && [ "$(grep -c '^F ' "$GAME/sync_trace.log")" -gt 60 ] && break
+  [ -f "$GAME/logs/debug/sync_trace.log" ] && [ "$(grep -c '^F ' "$GAME/logs/debug/sync_trace.log")" -gt 60 ] && break
 done
-if ! [ -f "$GAME/sync_trace.log" ]; then
+if ! [ -f "$GAME/logs/debug/sync_trace.log" ]; then
   log "no lockstep on this PC - check the lobby"; exit 1
 fi
 # The lockstep runs from the lobby on; the level has started when the trace
 # lists pawns. "Mid-mission Shopping?" comes up on both then: B = Cancel.
 for i in $(seq 1 120); do
-  tail -c 200000 "$GAME/sync_trace.log" | grep -q "^P [0-9]* AO2Char" && break
+  tail -c 200000 "$GAME/logs/debug/sync_trace.log" | grep -q "^P [0-9]* AO2Char" && break
   sleep 2
 done
 sleep 4
@@ -100,7 +100,7 @@ log "lockstep running; up to $MINUTES min, stops at the first checksum mismatch 
 # (positions from this PC's trace - the same state on both while in sync;
 # host = player 0, joiner = player 1). Set FIGHT=0 to only wait.
 NAV="$(cygpath -w "$REPO/tools/coop/nav.py")"
-TRACE="$(cygpath -w "$GAME/sync_trace.log")"
+TRACE="$(cygpath -w "$GAME/logs/debug/sync_trace.log")"
 ROUTE="$(cygpath -w "$REPO/tools/coop/iraq_route.txt")" # the route to the first fight (Iraq start)
 steer() { # <player id> -> input.script steps
   local out mx dist pos last
@@ -129,9 +129,9 @@ while [ $SECONDS -lt $end ]; do
     steer 1 > "$GAME/input.script"
   fi
   sleep 2.5
-  if grep -q "flag52=1" "$GAME/coop_debug.log" 2>/dev/null; then
+  if grep -q "flag52=1" "$GAME/logs/net/coop_debug.log" 2>/dev/null; then
     desync=1
-    log "checksum mismatch: $(grep -m1 'flag52=1' "$GAME/coop_debug.log" | grep -o 'frame=[0-9]*' | head -1)"
+    log "checksum mismatch: $(grep -m1 'flag52=1' "$GAME/logs/net/coop_debug.log" | grep -o 'frame=[0-9]*' | head -1)"
     sleep 30
     break
   fi
@@ -139,9 +139,9 @@ done
 [ $desync = 0 ] && log "no mismatch in $MINUTES min"
 
 log "collecting logs -> $OUT"
-cp "$GAME/sync_trace.log" "$OUT/A_sync_trace.log"
-cp "$GAME/coop_debug.log" "$OUT/A_coop_debug.log"
-scp -q -i "$KEY" -o IdentitiesOnly=yes "$HOST:$HOST_DIR_SCP/sync_trace.log" "$OUT/B_sync_trace.log"
-scp -q -i "$KEY" -o IdentitiesOnly=yes "$HOST:$HOST_DIR_SCP/coop_debug.log" "$OUT/B_coop_debug.log"
+cp "$GAME/logs/debug/sync_trace.log" "$OUT/A_sync_trace.log"
+cp "$GAME/logs/net/coop_debug.log" "$OUT/A_coop_debug.log"
+scp -q -i "$KEY" -o IdentitiesOnly=yes "$HOST:$HOST_DIR_SCP/logs/debug/sync_trace.log" "$OUT/B_sync_trace.log"
+scp -q -i "$KEY" -o IdentitiesOnly=yes "$HOST:$HOST_DIR_SCP/logs/net/coop_debug.log" "$OUT/B_coop_debug.log"
 python "$REPO/tools/sync_diff.py" "$OUT/A_sync_trace.log" "$OUT/B_sync_trace.log" --context 1 > "$OUT/diff.txt" 2>&1
 head -40 "$OUT/diff.txt" | cut -c1-300

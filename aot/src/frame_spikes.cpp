@@ -21,7 +21,7 @@
 #include "log_files.h"
 
 REXCVAR_DEFINE_BOOL(ao2_spike_log, false, "Debug",
-                    "Log what the game, GPU and present threads did before each long frame (frame_spikes.log)");
+                    "Log what the game, GPU and present threads did before each long frame (logs/perf/frame_spikes.log)");
 
 namespace
 {

@@ -24,6 +24,8 @@
 
 #include <rex/ppc.h>
 
+#include "log_files.h"
+
 namespace
 {
   uint32_t LoadU32(const uint8_t *base, uint32_t addr)
@@ -129,7 +131,7 @@ namespace
       g_ring[g_next++ % 64] = std::move(entry);
       return;
     }
-    if (FILE *f = std::fopen("io_failure.log", "a"))
+    if (FILE *f = std::fopen(ao2::LogPath("io_failure.log").c_str(), "a"))
     {
       std::fprintf(f, "=== disc error; the last file operations before it:
 ");

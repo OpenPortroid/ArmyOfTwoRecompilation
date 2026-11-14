@@ -77,7 +77,7 @@ REXCVAR_DEFINE_BOOL(ao2_interp_camera, true, "Gameplay",
                     "With ao2_decouple: draw the camera between simulation steps (smooth at any frame rate, "
                     "one step behind)");
 REXCVAR_DEFINE_INT32(ao2_interp_debug, 0, "Debug",
-                     "Log this many interpolated views (step, alpha, yaw in and out) to interp.log");
+                     "Log this many interpolated views (step, alpha, yaw in and out) to logs/sim/interp.log");
 REXCVAR_DEFINE_BOOL(ao2_predict_camera_orbit, true, "Input",
                     "With ao2_predict_camera: turn the camera location around the character with the predicted "
                     "turn (third-person orbit), not only the view direction");

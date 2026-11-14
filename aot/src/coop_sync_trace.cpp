@@ -43,9 +43,9 @@
 
 REXCVAR_DEFINE_INT32(ao2_coop_sync_dump, 0, "Debug",
                      "With ao2_coop_sync_trace: every N lockstep frames dump the raw memory of each enemy pawn, "
-                     "its mesh and controller to sync_dump.bin (tools/sync_dump_diff.py); 0 = off");
+                     "its mesh and controller to logs/debug/sync_dump.bin (tools/sync_dump_diff.py); 0 = off");
 REXCVAR_DEFINE_BOOL(ao2_coop_sync_trace, false, "Debug",
-                    "Log the lockstep checksums, rand() callers and players of every frame to sync_trace.log "
+                    "Log the lockstep checksums, rand() callers and players of every frame to logs/debug/sync_trace.log "
                     "(compare two machines with tools/sync_diff.py)");
 
 namespace
@@ -349,7 +349,7 @@ namespace
   // bytes as in guest memory, big endian).
   void DumpPawns(const uint8_t *base, uint32_t frame, uint32_t any_pawn)
   {
-    static FILE *f = std::fopen("sync_dump.bin", "wb");
+    static FILE *f = std::fopen(ao2::LogPath("sync_dump.bin").c_str(), "wb");
     const Offsets &o = GetOffsets(base);
     static int32_t mesh = -2, controller = -1;
     if (mesh == -2)

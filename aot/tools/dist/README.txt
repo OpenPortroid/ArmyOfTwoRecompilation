@@ -60,7 +60,8 @@ ao2_lobby_server.exe — тот же сервер лобби, что запус�
 - Партнёр не находит игру: хост должен быть уже в лобби; проверьте адрес и
   брандмауэр (пункт 1 первого запуска) на обоих ПК; в локальной сети — что
   ПК видят друг друга (ping адреса хоста), через интернет — что Radmin подключён.
-- "Connection Lost" в игре: пришлите логи из папки игры с обоих ПК:
-  coop_debug.log, net.log, ea_server.log (у хоста), mouse_aim.log.
+- "Connection Lost" в игре: пришлите папку logs из папки игры с обоих ПК —
+  в ней всё по областям (logs\net — сеть: coop_debug.log, coop_link.log,
+  net.log, ea_server.log у хоста; logs\sim — симуляция: mouse_aim.log).
 - Игра закрылась с ошибкой: пришлите файл из %LOCALAPPDATA%\CrashDumps
   (armyoftworecomp.exe.*.dmp) и папку logs из папки игры.

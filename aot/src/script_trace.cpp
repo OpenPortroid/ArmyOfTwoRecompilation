@@ -35,7 +35,7 @@ namespace ao2::lobby_visibility
 }
 
 REXCVAR_DEFINE_BOOL(ao2_script_trace, false, "Debug",
-                    "Debug: log the UnrealScript functions run in the main menu to script_trace.log");
+                    "Debug: log the UnrealScript functions run in the main menu to logs/debug/script_trace.log");
 
 namespace
 {

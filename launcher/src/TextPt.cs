@@ -329,6 +329,47 @@ namespace AO2Launcher
             p("The name your partner sees (up to 15 characters). Leave empty to use the computer's name.",
               "O nome que seu parceiro vê (até 15 caracteres). Vazio: o nome do computador.");
             p("Host IP", "IP do anfitrião");
+            // Network: the OpenPortroid server (Nicks.cs).
+            p("Network", "Rede");
+            p("LAN + Steam: the local network or a VPN (Radmin VPN, ZeroTier...), and Steam friends and lobbies " +
+              "while Steam runs. OpenPortroid: play with anyone on the internet through the OpenPortroid server " +
+              "(aot.bhop.pw), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
+              "Both players need the same choice.",
+              "LAN + Steam: a rede local ou uma VPN (Radmin VPN, ZeroTier...), e amigos e lobbies da Steam enquanto a Steam está aberta. " +
+              "OpenPortroid: jogar com qualquer pessoa na internet pelo servidor OpenPortroid (aot.bhop.pw), sem VPN, Steam ou portas abertas. " +
+              "LAN: só a rede local ou uma VPN. Os dois jogadores precisam da mesma escolha.");
+            p("The name your partner sees (up to 15 characters). Empty: the computer's name. On the OpenPortroid " +
+              "server only Latin letters, digits, _ and -, and it is yours alone: the first to take it keeps it " +
+              "(it is freed after 180 days unused), and friends find you by it.",
+              "O nome que seu parceiro vê (até 15 caracteres). Vazio: o nome do computador. No servidor OpenPortroid " +
+              "só letras latinas, dígitos, _ e -, e ele é só seu: quem pega primeiro fica com ele " +
+              "(é liberado após 180 dias sem uso), e os amigos encontram você por ele.");
+            p("Player key", "Chave do jogador");
+            p("COPY", "COPIAR");
+            p("Load a key", "Carregar uma chave");
+            p("PASTE", "COLAR");
+            p("Key copied. Keep it secret: it owns your name", "Chave copiada. Guarde em segredo: ela é dona do seu nome");
+            p("Could not copy the key", "Não foi possível copiar a chave");
+            p("The key is your account on the OpenPortroid server, without a password: whoever has it owns your name. " +
+              "Copy it to move your name to another PC or to keep it safe. Do not give it to anyone.",
+              "A chave é sua conta no servidor OpenPortroid, sem senha: quem a tiver é dono do seu nome. " +
+              "Copie-a para levar seu nome a outro PC ou para guardá-la. Não a dê a ninguém.");
+            p("The clipboard has no key (32 characters 0-9, a-f)", "A área de transferência não tem uma chave (32 caracteres 0-9, a-f)");
+            p("This key is already in use", "Esta chave já está em uso");
+            p("Key loaded: your name is now the one claimed with it", "Chave carregada: seu nome agora é o reservado com ela");
+            p("Takes a key copied on another PC from the clipboard: your name comes with it. " +
+              "The current key is replaced - copy it first if its name matters.",
+              "Pega da área de transferência uma chave copiada em outro PC: seu nome vem junto. " +
+              "A chave atual é substituída - copie-a antes se o nome dela importa.");
+            p("The name {0} is yours.", "O nome {0} é seu.");
+            p("The name {0} is free: it becomes yours when you press Play.", "O nome {0} está livre: vira seu quando você apertar Jogar.");
+            p("The name {0} is taken by another player: choose another.", "O nome {0} é de outro jogador: escolha outro.");
+            p("Only Latin letters, digits, _ and - (up to 15).", "Só letras latinas, dígitos, _ e - (até 15).");
+            p("Checking the name {0}…", "Verificando o nome {0}…");
+            p("The OpenPortroid server does not answer: the name could not be checked.",
+              "O servidor OpenPortroid não responde: não foi possível verificar o nome.");
+            p("CHECKING THE NAME…", "VERIFICANDO O NOME…");
+            p("The name {0} is taken: choose another in Settings → Network", "O nome {0} já tem dono: escolha outro em Configurações → Rede");
             p("Leave empty: the host is found automatically on the local network or Radmin VPN. " +
               "Enter an address only if the host is not found, for example over the internet.",
               "Deixe vazio: o anfitrião é encontrado automaticamente na rede local ou no Radmin VPN. " +
@@ -345,8 +386,8 @@ namespace AO2Launcher
               "Permitir conexões de entrada para o jogo em todos os tipos de rede (o Windows trata o Radmin como pública). " +
               "Exige direitos de administrador: o Windows vai pedir confirmação. Feito uma vez nos dois PCs.");
             p("Co-op log", "Registro do coop");
-            p("Writes coop_debug.log to the game folder to help investigate desyncs. Costs a little performance.",
-              "Grava o coop_debug.log na pasta do jogo, necessário para investigar dessincronizações. Custa um pouco de desempenho.");
+            p("Writes logs/net/coop_debug.log to the game folder to help investigate desyncs. Costs a little performance.",
+              "Grava o logs/net/coop_debug.log na pasta do jogo, necessário para investigar dessincronizações. Custa um pouco de desempenho.");
             p("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
               "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
               "the first player's game has started. Then both, in the game: Campaign Mode → Search Co-op Game.",

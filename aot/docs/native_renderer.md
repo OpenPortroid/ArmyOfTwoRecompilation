@@ -65,7 +65,7 @@ Findings on the way (each one was a visible bug):
   GEQUAL test fail (every black pixel's depth had the float's low 3 bits zero). Depth between surfaces of one format
   now keeps the host's 32-bit value.
 - Display gamma ramp: the game writes a non-linear 256-entry `DC_LUT_30_COLOR` table (16 -> 24/1023, 128 -> 462);
-  the present blit applies it (Pm4Consumer keeps the table, `gamma ramp` lines in native_gpu.log).
+  the present blit applies it (Pm4Consumer keeps the table, `gamma ramp` lines in logs/gpu/native_gpu.log).
 - Rect-list extents from vertex data are only valid for vertex shaders exporting the fetched x/y unchanged
   (D3D's clear VS); a depth restore VS turning 0..1 texcoords into NDC claimed a quarter of the screen.
 

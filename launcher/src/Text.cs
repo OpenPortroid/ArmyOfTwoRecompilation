@@ -788,6 +788,129 @@ namespace AO2Launcher
               "El nombre que ve tu compañero (hasta 15 caracteres). Vacío: el nombre del equipo.",
               "Il nome che vede il tuo compagno (fino a 15 caratteri). Vuoto: il nome del computer.");
             a("Host IP", "IP хоста", "IP de l'hôte", "Host-IP", "IP del anfitrión", "IP dell'host");
+            // --- Network: the OpenPortroid server (Nicks.cs) ---
+            a("Network", "Сеть", "Réseau", "Netzwerk", "Red", "Rete");
+            a("LAN + Steam: the local network or a VPN (Radmin VPN, ZeroTier...), and Steam friends and lobbies " +
+              "while Steam runs. OpenPortroid: play with anyone on the internet through the OpenPortroid server " +
+              "(aot.bhop.pw), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
+              "Both players need the same choice.",
+              "LAN + Steam: локальная сеть или VPN (Radmin VPN, ZeroTier...), а пока запущен Steam — ещё друзья и лобби Steam. " +
+              "OpenPortroid: игра с кем угодно в интернете через сервер OpenPortroid (aot.bhop.pw), без VPN, Steam и открытых портов. " +
+              "LAN: только локальная сеть или VPN. У обоих игроков должно быть выбрано одно и то же.",
+              "LAN + Steam : le réseau local ou un VPN (Radmin VPN, ZeroTier...), et les amis et salons Steam quand Steam est lancé. " +
+              "OpenPortroid : jouer avec n'importe qui sur Internet via le serveur OpenPortroid (aot.bhop.pw), sans VPN, Steam ni ports ouverts. " +
+              "LAN : le réseau local ou un VPN seulement. Les deux joueurs doivent choisir la même chose.",
+              "LAN + Steam: das lokale Netz oder ein VPN (Radmin VPN, ZeroTier...), dazu Steam-Freunde und -Lobbys, solange Steam läuft. " +
+              "OpenPortroid: mit jedem im Internet über den OpenPortroid-Server (aot.bhop.pw) spielen, ohne VPN, Steam oder offene Ports. " +
+              "LAN: nur das lokale Netz oder ein VPN. Beide Spieler brauchen dieselbe Wahl.",
+              "LAN + Steam: la red local o una VPN (Radmin VPN, ZeroTier...), y amigos y salas de Steam mientras Steam está abierto. " +
+              "OpenPortroid: jugar con cualquiera en internet a través del servidor OpenPortroid (aot.bhop.pw), sin VPN, Steam ni puertos abiertos. " +
+              "LAN: solo la red local o una VPN. Ambos jugadores deben elegir lo mismo.",
+              "LAN + Steam: la rete locale o una VPN (Radmin VPN, ZeroTier...), più amici e lobby di Steam mentre Steam è aperto. " +
+              "OpenPortroid: gioca con chiunque su Internet tramite il server OpenPortroid (aot.bhop.pw), senza VPN, Steam o porte aperte. " +
+              "LAN: solo la rete locale o una VPN. Entrambi i giocatori devono scegliere lo stesso.");
+            a("The name your partner sees (up to 15 characters). Empty: the computer's name. On the OpenPortroid " +
+              "server only Latin letters, digits, _ and -, and it is yours alone: the first to take it keeps it " +
+              "(it is freed after 180 days unused), and friends find you by it.",
+              "Имя, которое видит напарник (до 15 символов). Пусто — имя компьютера. На сервере OpenPortroid — только латиница, " +
+              "цифры, _ и -, и ник только твой: его оставляет за собой первый, кто занял (освобождается через 180 дней без игры), " +
+              "и друзья находят тебя по нему.",
+              "Le nom que voit ton partenaire (15 caractères max). Vide : le nom de l'ordinateur. Sur le serveur OpenPortroid, " +
+              "seulement lettres latines, chiffres, _ et -, et il n'est qu'à toi : le premier qui le prend le garde " +
+              "(libéré après 180 jours sans jouer), et tes amis te trouvent avec.",
+              "Der Name, den dein Partner sieht (bis 15 Zeichen). Leer: der Name des Computers. Auf dem OpenPortroid-Server " +
+              "nur lateinische Buchstaben, Ziffern, _ und -, und er gehört nur dir: wer ihn zuerst nimmt, behält ihn " +
+              "(frei nach 180 Tagen ohne Nutzung), und Freunde finden dich darüber.",
+              "El nombre que ve tu compañero (hasta 15 caracteres). Vacío: el nombre del ordenador. En el servidor OpenPortroid " +
+              "solo letras latinas, cifras, _ y -, y es solo tuyo: quien lo toma primero se lo queda " +
+              "(se libera tras 180 días sin uso), y tus amigos te encuentran por él.",
+              "Il nome che vede il compagno (fino a 15 caratteri). Vuoto: il nome del computer. Sul server OpenPortroid " +
+              "solo lettere latine, cifre, _ e -, ed è solo tuo: chi lo prende per primo lo tiene " +
+              "(si libera dopo 180 giorni senza uso), e gli amici ti trovano con quello.");
+            a("Player key", "Ключ игрока", "Clé du joueur", "Spielerschlüssel", "Clave del jugador", "Chiave del giocatore");
+            a("COPY", "КОПИРОВАТЬ", "COPIER", "KOPIEREN", "COPIAR", "COPIA");
+            a("Load a key", "Загрузить ключ", "Charger une clé", "Schlüssel laden", "Cargar una clave", "Carica una chiave");
+            a("PASTE", "ВСТАВИТЬ", "COLLER", "EINFÜGEN", "PEGAR", "INCOLLA");
+            a("Key copied. Keep it secret: it owns your name",
+              "Ключ скопирован. Никому не давай: он владеет твоим ником",
+              "Clé copiée. Garde-la secrète : elle possède ton nom",
+              "Schlüssel kopiert. Halte ihn geheim: ihm gehört dein Name",
+              "Clave copiada. Mantenla en secreto: es dueña de tu nombre",
+              "Chiave copiata. Tienila segreta: possiede il tuo nome");
+            a("Could not copy the key", "Не удалось скопировать ключ", "Impossible de copier la clé",
+              "Schlüssel konnte nicht kopiert werden", "No se pudo copiar la clave", "Impossibile copiare la chiave");
+            a("The key is your account on the OpenPortroid server, without a password: whoever has it owns your name. " +
+              "Copy it to move your name to another PC or to keep it safe. Do not give it to anyone.",
+              "Ключ — это твой аккаунт на сервере OpenPortroid, без пароля: у кого ключ, тому и принадлежит ник. " +
+              "Скопируй его, чтобы перенести ник на другой ПК или сохранить на всякий случай. Никому не давай.",
+              "La clé est ton compte sur le serveur OpenPortroid, sans mot de passe : qui l'a possède ton nom. " +
+              "Copie-la pour emporter ton nom sur un autre PC ou la garder en sûreté. Ne la donne à personne.",
+              "Der Schlüssel ist dein Konto auf dem OpenPortroid-Server, ohne Passwort: wer ihn hat, besitzt deinen Namen. " +
+              "Kopiere ihn, um deinen Namen auf einen anderen PC mitzunehmen oder ihn aufzubewahren. Gib ihn niemandem.",
+              "La clave es tu cuenta en el servidor OpenPortroid, sin contraseña: quien la tenga es dueño de tu nombre. " +
+              "Cópiala para llevar tu nombre a otro PC o guardarla a salvo. No se la des a nadie.",
+              "La chiave è il tuo account sul server OpenPortroid, senza password: chi la ha possiede il tuo nome. " +
+              "Copiala per portare il nome su un altro PC o per conservarla. Non darla a nessuno.");
+            a("The clipboard has no key (32 characters 0-9, a-f)",
+              "В буфере обмена нет ключа (32 символа 0-9, a-f)",
+              "Le presse-papiers ne contient pas de clé (32 caractères 0-9, a-f)",
+              "Die Zwischenablage enthält keinen Schlüssel (32 Zeichen 0-9, a-f)",
+              "El portapapeles no tiene una clave (32 caracteres 0-9, a-f)",
+              "Gli appunti non contengono una chiave (32 caratteri 0-9, a-f)");
+            a("This key is already in use", "Этот ключ уже используется", "Cette clé est déjà utilisée",
+              "Dieser Schlüssel wird schon verwendet", "Esta clave ya está en uso", "Questa chiave è già in uso");
+            a("Key loaded: your name is now the one claimed with it",
+              "Ключ загружен: теперь твой ник — тот, что занят с этим ключом",
+              "Clé chargée : ton nom est désormais celui pris avec elle",
+              "Schlüssel geladen: dein Name ist jetzt der damit belegte",
+              "Clave cargada: tu nombre es ahora el reservado con ella",
+              "Chiave caricata: il tuo nome è ora quello preso con essa");
+            a("Takes a key copied on another PC from the clipboard: your name comes with it. " +
+              "The current key is replaced - copy it first if its name matters.",
+              "Берёт из буфера обмена ключ, скопированный на другом ПК, вместе с ним приходит твой ник. " +
+              "Текущий ключ заменится — сначала скопируй его, если его ник тебе нужен.",
+              "Prend dans le presse-papiers une clé copiée sur un autre PC : ton nom vient avec. " +
+              "La clé actuelle est remplacée - copie-la d'abord si son nom compte.",
+              "Übernimmt einen auf einem anderen PC kopierten Schlüssel aus der Zwischenablage: dein Name kommt mit. " +
+              "Der aktuelle Schlüssel wird ersetzt - kopiere ihn zuerst, wenn sein Name dir wichtig ist.",
+              "Toma del portapapeles una clave copiada en otro PC: tu nombre viene con ella. " +
+              "La clave actual se reemplaza: cópiala antes si su nombre te importa.",
+              "Prende dagli appunti una chiave copiata su un altro PC: il tuo nome arriva con essa. " +
+              "La chiave attuale viene sostituita: copiala prima se il suo nome ti interessa.");
+            a("The name {0} is yours.", "Ник {0} твой.", "Le nom {0} est à toi.", "Der Name {0} gehört dir.", "El nombre {0} es tuyo.", "Il nome {0} è tuo.");
+            a("The name {0} is free: it becomes yours when you press Play.",
+              "Ник {0} свободен: станет твоим, когда нажмёшь «Играть».",
+              "Le nom {0} est libre : il sera à toi quand tu appuieras sur Jouer.",
+              "Der Name {0} ist frei: er gehört dir, sobald du Spielen drückst.",
+              "El nombre {0} está libre: será tuyo al pulsar Jugar.",
+              "Il nome {0} è libero: diventa tuo quando premi Gioca.");
+            a("The name {0} is taken by another player: choose another.",
+              "Ник {0} занят другим игроком: выбери другой.",
+              "Le nom {0} est pris par un autre joueur : choisis-en un autre.",
+              "Der Name {0} ist von einem anderen Spieler belegt: wähle einen anderen.",
+              "El nombre {0} lo usa otro jugador: elige otro.",
+              "Il nome {0} è di un altro giocatore: scegline un altro.");
+            a("Only Latin letters, digits, _ and - (up to 15).",
+              "Только латиница, цифры, _ и - (до 15).",
+              "Seulement lettres latines, chiffres, _ et - (15 max.).",
+              "Nur lateinische Buchstaben, Ziffern, _ und - (bis 15).",
+              "Solo letras latinas, dígitos, _ y - (hasta 15).",
+              "Solo lettere latine, cifre, _ e - (fino a 15).");
+            a("Checking the name {0}…", "Проверка ника {0}…", "Vérification du nom {0}…", "Name {0} wird geprüft…",
+              "Comprobando el nombre {0}…", "Verifica del nome {0}…");
+            a("The OpenPortroid server does not answer: the name could not be checked.",
+              "Сервер OpenPortroid не отвечает: ник не проверить.",
+              "Le serveur OpenPortroid ne répond pas : le nom n'a pas pu être vérifié.",
+              "Der OpenPortroid-Server antwortet nicht: der Name konnte nicht geprüft werden.",
+              "El servidor OpenPortroid no responde: no se pudo comprobar el nombre.",
+              "Il server OpenPortroid non risponde: impossibile verificare il nome.");
+            a("CHECKING THE NAME…", "ПРОВЕРКА НИКА…", "VÉRIFICATION DU NOM…", "NAME WIRD GEPRÜFT…", "COMPROBANDO EL NOMBRE…", "VERIFICA DEL NOME…");
+            a("The name {0} is taken: choose another in Settings → Network",
+              "Ник {0} занят: выбери другой в Настройки → Сеть",
+              "Le nom {0} est pris : choisis-en un autre dans Paramètres → Réseau",
+              "Der Name {0} ist belegt: wähle einen anderen unter Einstellungen → Netzwerk",
+              "El nombre {0} está ocupado: elige otro en Ajustes → Red",
+              "Il nome {0} è occupato: scegline un altro in Impostazioni → Rete");
             a("Leave empty: the host is found automatically on the local network or Radmin VPN. " +
               "Enter an address only if the host is not found, for example over the internet.",
               "Оставьте пустым — хост найдётся сам в локальной сети или Radmin VPN. Вводите адрес, только если хост " +
@@ -831,14 +954,14 @@ namespace AO2Launcher
               "Consenti le connessioni in entrata al gioco su ogni tipo di rete (Windows considera Radmin pubblica). " +
               "Servono i diritti di amministratore: Windows chiederà conferma. Va fatto una volta su entrambi i PC.");
             a("Co-op log", "Лог кооператива", "Journal coop", "Koop-Protokoll", "Registro cooperativo", "Registro cooperativa");
-            a("Writes coop_debug.log to the game folder to help investigate desyncs. Costs a little performance.",
-              "Записывает coop_debug.log в папку игры для разбора рассинхронов. Немного снижает производительность.",
-              "Écrit coop_debug.log dans le dossier du jeu, utile pour analyser les désynchronisations. Coûte un peu " +
+            a("Writes logs/net/coop_debug.log to the game folder to help investigate desyncs. Costs a little performance.",
+              "Записывает logs/net/coop_debug.log в папку игры для разбора рассинхронов. Немного снижает производительность.",
+              "Écrit logs/net/coop_debug.log dans le dossier du jeu, utile pour analyser les désynchronisations. Coûte un peu " +
               "de performances.",
-              "Schreibt coop_debug.log in den Spielordner, nötig zur Untersuchung von Desyncs. Kostet etwas Leistung.",
-              "Escribe coop_debug.log en la carpeta del juego; sirve para investigar desincronizaciones. Cuesta algo " +
+              "Schreibt logs/net/coop_debug.log in den Spielordner, nötig zur Untersuchung von Desyncs. Kostet etwas Leistung.",
+              "Escribe logs/net/coop_debug.log en la carpeta del juego; sirve para investigar desincronizaciones. Cuesta algo " +
               "de rendimiento.",
-              "Scrive coop_debug.log nella cartella del gioco, utile per analizzare le desincronizzazioni. Costa un " +
+              "Scrive logs/net/coop_debug.log nella cartella del gioco, utile per analizzare le desincronizzazioni. Costa un " +
               "po' di prestazioni.");
             // The menu names as the game shows them in each language.
             a("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +

@@ -47,17 +47,17 @@ Your distribution or SteamOS version, GPU and driver, the Proton version, and fo
 | 2 | The launcher's gamepad navigation works | |
 | 3 | The launcher installs the game | `ao2_install` output on the launcher's screen |
 | 4 | The game starts and reaches the main menu | `crash_*.txt`, `steam-<appid>.log` in your home folder |
-| 5 | Shaders compile: no missing or broken surfaces, no long freezes after the first minutes | `native_gpu.log` |
+| 5 | Shaders compile: no missing or broken surfaces, no long freezes after the first minutes | `logs/gpu/native_gpu.log` |
 | 6 | A level plays for ten minutes; frame rate and frame pacing | the performance overlay (F2) |
 | 7 | Sound | |
 | 8 | Keyboard, mouse and gamepad in game | |
 | 9 | The F1 menu and invite cards are readable, in your language | |
 | 10 | Russian text in the game itself, if you use it (its letters are drawn through GDI) | a screenshot |
 | 11 | Saving and loading a checkpoint | |
-| 12 | Co-op over a LAN or VPN with a Windows player | `invite.log`, `net.log` |
-| 13 | Co-op over Steam | `steam.log` |
+| 12 | Co-op over a LAN or VPN with a Windows player | `logs/net/invite.log`, `logs/net.log` |
+| 13 | Co-op over Steam | `logs/net/steam.log` |
 | 14 | The launcher finds and installs an update | `logs/launcher.log` |
 
 Line 13 is the one most likely to fail. The Steam bridge binds each player's address on the game's ports next to the
-game's sockets on `0.0.0.0`; Windows allows that, while Linux normally refuses it. `not bound` in `steam.log` means this
+game's sockets on `0.0.0.0`; Windows allows that, while Linux normally refuses it. `not bound` in `logs/net/steam.log` means this
 is what happened. Co-op over a LAN or VPN does not use the bridge.

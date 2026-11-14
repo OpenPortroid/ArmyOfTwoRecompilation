@@ -285,7 +285,18 @@ namespace AO2Launcher
                 a.Add("--cache_root=" + Path.Combine(Profiles.MainRoot, "cache"));
             }
 
-            if (!string.IsNullOrEmpty(hostIp))
+            // steam: the LAN roles below and Steam when it runs; lan: the same without Steam; openportroid: the
+            // OpenPortroid server, no roles (the host is whoever creates a game in the menu), the key is this
+            // player's account there (the name claimed with it).
+            string mode = s["net_mode"];
+            bool openportroid = mode == "openportroid";
+            a.Add("--ao2_net_mode=" + (openportroid ? "openportroid" : mode == "lan" ? "lan" : "steam"));
+            if (openportroid)
+            {
+                a.Add("--no-ao2_coop_server");
+                a.Add("--ao2_openportroid_key=" + Nicks.Key(s));
+            }
+            else if (!string.IsNullOrEmpty(hostIp))
             {
                 a.Add("--no-ao2_coop_server");
                 a.Add("--ao2_coop_host=" + hostIp);
@@ -298,7 +309,8 @@ namespace AO2Launcher
             {
                 a.Add("--ao2_coop_debug");
             }
-            string tag = s["gamertag"].Trim();
+            // On the OpenPortroid server always a valid name (the one claimed on Play).
+            string tag = openportroid ? Nicks.Name(s) : s["gamertag"].Trim();
             if (tag.Length > 0)
             {
                 a.Add("--net_gamertag=" + tag);

@@ -48,7 +48,7 @@ player steps by 1/`ao2_sim_hz`, or by as many periods as the step is late
 in slow motion, x0.5 at 30 FPS); the lockstep keeps the game's own
 step (the players now report the step length), and its input lead
 (`coop_input_delay.cpp`) is counted in simulation steps.
-`--ao2_decouple_debug=true` logs once a second to `decouple.log` (frames,
+`--ao2_decouple_debug=true` logs once a second to `logs/perf/decouple.log` (frames,
 steps, step gaps, engine tick and render-only draw times, rand restores).
 
 Tested 2026-10-06 on one PC (fresh user data, scale 1):
@@ -119,7 +119,7 @@ Each draw's step and alpha travel from `BeginRenderingViewFamily`
 `sub_82567630` in a host queue alongside the render commands. A proxy is only
 written while it still holds the matrix remembered for it (deleted proxies);
 jumps over 1500 units are not interpolated; bounds are not changed.
-`--ao2_interp_objects_debug=true` -> `interp_objects.log` once a second.
+`--ao2_interp_objects_debug=true` -> `logs/sim/interp_objects.log` once a second.
 
 Checked 2026-10-07 (training level, 144 FPS, walking and turning): every draw
 gets its entry (none missing or dropped), ~35 objects placed per draw, no

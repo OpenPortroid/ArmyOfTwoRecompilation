@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 echo Army of Two - join an online co-op game, with the lockstep sync trace
-echo (sync_trace.log: what each frame simulated, to find where the two PCs part).
+echo (logs\debug\sync_trace.log: what each frame simulated, to find where the two PCs part).
 echo The host must run with the trace too. The game may run a little slower.
 echo.
 set "HOSTIP="
@@ -20,5 +20,6 @@ if not defined HOSTIP goto ask
 echo.
 echo Connecting to %HOSTIP%. When the host is in the lobby:
 echo Campaign Mode - Public Co-op Game - any map and difficulty.
-echo After a "Connection Lost" keep sync_trace.log and coop_debug.log for the host.
+echo After a "Connection Lost" keep the logs folder: logs\debug\sync_trace.log and
+echo logs\net\coop_debug.log for the host.
 start "" armyoftworecomp.exe --ao2_coop_host=%HOSTIP% --ao2_coop_debug=true --ao2_coop_sync_trace=true --log_to_files=true

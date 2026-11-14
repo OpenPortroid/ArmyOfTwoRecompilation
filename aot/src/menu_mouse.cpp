@@ -89,7 +89,7 @@ REXCVAR_DEFINE_BOOL(ao2_skip_lobby_note, true, "Online",
                     "multiplayer game, invite 3 of your friends...\") as if Continue were pressed");
 REXCVAR_DEFINE_STRING(ao2_menu_mouse_test_file, "", "Debug",
                       "Testing: a file whose \"x y\" (picture pixels) is the cursor in the menus instead of the "
-                      "mouse; what is pointed at goes to menu_mouse.log");
+                      "mouse; what is pointed at goes to logs/ui/menu_mouse.log");
 
 namespace
 {
