@@ -1,6 +1,6 @@
 // coop_debug.cpp - Tracing for online co-op (EA Theater lobby, join flow).
 //
-// --ao2_coop_debug=true writes coop_debug.log in the working directory: the
+// --ao2_coop_debug=true writes logs\net\coop_debug.log (log_files.h): the
 // lobby replies the game builds (EGRS: whether the host lets a player in and
 // why not) with the host call stack (exe offsets, symbolize with
 // llvm-symbolizer --obj=armyoftworecomp.exe 0x140000000+offset).
@@ -31,7 +31,7 @@ REXCVAR_DECLARE(bool, ao2_mouse_aim);
 REXCVAR_DECLARE(bool, ao2_god_mode);
 int32_t CoopLeadFrames(int32_t latency_ms);
 
-REXCVAR_DEFINE_BOOL(ao2_coop_debug, false, "Debug", "Log the online co-op lobby flow to coop_debug.log");
+REXCVAR_DEFINE_BOOL(ao2_coop_debug, false, "Debug", "Log the online co-op lobby flow to logs/net/coop_debug.log");
 REXCVAR_DEFINE_BOOL(ao2_versus_client_server, false, "Online",
                     "Versus party: the host connects to an invited player the co-op way (client-server) "
                     "instead of peer to peer; only for a player that joined the party as a game");

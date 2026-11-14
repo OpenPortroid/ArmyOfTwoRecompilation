@@ -1,7 +1,7 @@
 param([int]$Seconds = 5, [string]$Name = "armyoftworecomp")
 # CPU load of the running game: whole process and the busiest threads (% of
-# one core), and CPU time per presented frame (ms/frame, FPS from native_gpu.log).
-$log = "C:\aot2\aot\out\build\win-amd64-release\native_gpu.log"
+# one core), and CPU time per presented frame (ms/frame, FPS from logs\gpu\native_gpu.log).
+$log = "C:\aot2\aot\out\build\win-amd64-release\logs\gpu\native_gpu.log"
 $p = Get-Process $Name
 $t0 = @{}
 foreach ($t in $p.Threads) { $t0[$t.Id] = $t.TotalProcessorTime.TotalMilliseconds }

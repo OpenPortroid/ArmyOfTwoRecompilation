@@ -39,7 +39,7 @@ int main()
     std::printf("On the partner PC: ao2_coop_host = this PC's address from the list above\n"
                 "                   (no Radmin VPN adapter found - is Radmin VPN running?)\n");
   }
-  std::printf("\nLeave this window open while you play. Log: ea_server.log\n\n");
+  std::printf("\nLeave this window open while you play. Log: logs\\net\\ea_server.log\n\n");
   for (;;)
   {
     std::this_thread::sleep_for(std::chrono::hours(1));

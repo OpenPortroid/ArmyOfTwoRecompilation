@@ -1819,7 +1819,7 @@ namespace AO2Launcher
                            "Needs administrator rights: Windows will ask to confirm. Done once on both PCs."
                 },
                 Toggle("Co-op log", "coop_debug",
-                    "Writes coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance."),
+                    "Writes logs/net/coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance."),
                 new Row
                 {
                     Kind = RowKind.Info,

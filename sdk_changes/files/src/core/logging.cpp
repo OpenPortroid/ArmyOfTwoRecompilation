@@ -43,7 +43,7 @@ REXCVAR_DEFINE_STRING(log_level, "info", "Log",
 REXCVAR_DEFINE_STRING(log_file, "", "Log", "Log file path (empty = auto sequential naming)");
 
 REXCVAR_DEFINE_BOOL(log_to_files, false, "Log",
-                    "Write log files: the runtime log (logs/<app>_NNN.log), net.log, krnl.log and the "
+                    "Write log files: the runtime log (logs/<app>_NNN.log), logs/net.log, logs/krnl.log and the "
                     "game's own *.log. Off = no log files (an explicit log_file still is written)");
 
 REXCVAR_DEFINE_BOOL(log_verbose, false, "Log", "Enable verbose logging (sets level to trace)")

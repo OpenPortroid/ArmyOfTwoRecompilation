@@ -67,9 +67,9 @@ REXCVAR_DEFINE_STRING(ao2_native_gpu_skip_shaders, "", "GPU",
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_debug_upload_vertices, false, "GPU",
                     "Native renderer debugging: upload fetched vertex pages on every draw (ignore write tracking)");
 REXCVAR_DEFINE_BOOL(ao2_native_gpu_debug_layer, false, "GPU",
-                    "Native renderer: enable the D3D12 debug layer, messages go to native_gpu.log (slow)");
+                    "Native renderer: enable the D3D12 debug layer, messages go to logs/gpu/native_gpu.log (slow)");
 REXCVAR_DEFINE_INT32(ao2_native_gpu_stats_every, 600, "GPU",
-                     "Native renderer: write native_gpu.log stats every N frames (0 = never)");
+                     "Native renderer: write logs/gpu/native_gpu.log stats every N frames (0 = never)");
 REXCVAR_DEFINE_DOUBLE(ao2_native_gpu_resolution_scale, 2.0, "GPU",
                       "Native renderer: internal resolution multiplier in steps of 0.25 (1 = 1280x720 at 16:9, "
                       "1.5 = 1920x1080, 2 = 2560x1440, up to 4)");

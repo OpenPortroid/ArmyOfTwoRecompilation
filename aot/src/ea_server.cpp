@@ -151,7 +151,7 @@ namespace ao2::ea
 #endif
 
     // ---------------------------------------------------------------------
-    // Log (ea_server.log in the working directory)
+    // Log (logs\net\ea_server.log, log_files.h)
     // ---------------------------------------------------------------------
 
     std::mutex g_log_mutex;

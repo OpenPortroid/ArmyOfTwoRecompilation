@@ -64,7 +64,7 @@ REXCVAR_DEFINE_DOUBLE(ao2_fov_scope, 25.0, "Gameplay",
 REXCVAR_DEFINE_BOOL(ao2_fov_crosshair_fix, true, "Gameplay",
                     "With a field of view other than the game's: shift the picture so that the hip-fire crosshair "
                     "stays over where the shots go");
-REXCVAR_DEFINE_INT32(ao2_fov_debug, 0, "Debug", "Log this many views (crosshair, lens shift) to fov.log");
+REXCVAR_DEFINE_INT32(ao2_fov_debug, 0, "Debug", "Log this many views (crosshair, lens shift) to logs/sim/fov.log");
 
 namespace ao2::fov
 {

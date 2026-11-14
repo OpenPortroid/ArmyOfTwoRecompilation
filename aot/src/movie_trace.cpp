@@ -18,7 +18,7 @@
 #include "log_files.h"
 #include "ue3_reflect.h"
 
-REXCVAR_DEFINE_BOOL(ao2_movie_debug, false, "Debug", "Debug: log full-screen movie natives to movie_trace.log");
+REXCVAR_DEFINE_BOOL(ao2_movie_debug, false, "Debug", "Debug: log full-screen movie natives to logs/sim/movie_trace.log");
 
 namespace
 {

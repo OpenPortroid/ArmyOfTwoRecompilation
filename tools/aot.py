@@ -453,7 +453,7 @@ def cmd_host(a):
     every address, the settings files' window. Lobby with --map / --difficulty, then Start Game once
     the partner is in (its join, EGRS pid=2, in coop_debug.log), and on into the level."""
     H = Inst(a.inst)
-    debug = os.path.join(H.dir, 'coop_debug.log')
+    debug = os.path.join(H.dir, 'logs', 'net', 'coop_debug.log')
     H.start(['--ao2_coop_debug=true'] + list(a.game_args), host=True, ip='', test_window=False)
     H.boot_to_menu()
     if not enter_public_lobby(H, a.map, a.difficulty):
@@ -577,7 +577,7 @@ def _autopilot(a):
         if len(fixed) < 2:
             raise SystemExit('%s: fewer than 2 points' % file)
     st = {'using': None, 'done': set(), 'last_try': 0}
-    logf = os.path.join(i.dir, 'autopilot.log')
+    logf = os.path.join(i.dir, 'logs', 'debug', 'autopilot.log')
     start = os.path.getsize(logf) if os.path.exists(logf) else 0
     end, last_press, last_report, last_vis = time.time() + a.timeout, 0, 0, 0
     best, best_time, pos, shown, waiting = -1, time.time(), '', None, False

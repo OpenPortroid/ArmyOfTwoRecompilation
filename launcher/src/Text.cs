@@ -956,14 +956,14 @@ namespace AO2Launcher
               "Consenti le connessioni in entrata al gioco su ogni tipo di rete (Windows considera Radmin pubblica). " +
               "Servono i diritti di amministratore: Windows chiederà conferma. Va fatto una volta su entrambi i PC.");
             a("Co-op log", "Лог кооператива", "Journal coop", "Koop-Protokoll", "Registro cooperativo", "Registro cooperativa");
-            a("Writes coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance.",
-              "Пишет coop_debug.log в папку игры — нужен для разбора рассинхронов. Немного снижает производительность.",
-              "Écrit coop_debug.log dans le dossier du jeu, utile pour analyser les désynchronisations. Coûte un peu " +
+            a("Writes logs/net/coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance.",
+              "Пишет logs/net/coop_debug.log в папку игры — нужен для разбора рассинхронов. Немного снижает производительность.",
+              "Écrit logs/net/coop_debug.log dans le dossier du jeu, utile pour analyser les désynchronisations. Coûte un peu " +
               "de performances.",
-              "Schreibt coop_debug.log in den Spielordner, nötig zur Untersuchung von Desyncs. Kostet etwas Leistung.",
-              "Escribe coop_debug.log en la carpeta del juego; sirve para investigar desincronizaciones. Cuesta algo " +
+              "Schreibt logs/net/coop_debug.log in den Spielordner, nötig zur Untersuchung von Desyncs. Kostet etwas Leistung.",
+              "Escribe logs/net/coop_debug.log en la carpeta del juego; sirve para investigar desincronizaciones. Cuesta algo " +
               "de rendimiento.",
-              "Scrive coop_debug.log nella cartella del gioco, utile per analizzare le desincronizzazioni. Costa un " +
+              "Scrive logs/net/coop_debug.log nella cartella del gioco, utile per analizzare le desincronizzazioni. Costa un " +
               "po' di prestazioni.");
             // The menu names as the game shows them in each language.
             a("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +

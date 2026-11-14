@@ -51,11 +51,12 @@
 #include <rex/cvar.h>
 
 #include "coop.h"
+#include "log_files.h"
 #include "ue3_reflect.h"
 
 REXCVAR_DEFINE_INT32(ao2_coop_state_hash, 0, "Debug",
                      "Every N lockstep frames write every changed property of the level's objects to "
-                     "state_hash.log (compare two machines with tools/state_diff.py); 0 = off");
+                     "logs/debug/state_hash.log (compare two machines with tools/state_diff.py); 0 = off");
 REXCVAR_DEFINE_BOOL(ao2_coop_state_hash_solo, false, "Debug",
                     "ao2_coop_state_hash also in single player (its local lockstep)");
 REXCVAR_DEFINE_STRING(ao2_coop_state_hash_skip, "ParticleSystemComponent,AudioComponent", "Debug",
@@ -816,8 +817,9 @@ namespace ao2::coop
     {
       return;
     }
-    // A debug dump asked for by its flag, not a log (log_files.h).
-    static FILE *file = std::fopen("state_hash.log", "w");
+    // A debug dump asked for by its flag, not a log (log_files.h): it goes to
+    // logs\debug\ all the same, so that one folder has everything.
+    static FILE *file = std::fopen(ao2::LogPath("state_hash.log").c_str(), "w");
     if (!file)
     {
       return;

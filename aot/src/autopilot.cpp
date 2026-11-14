@@ -98,7 +98,7 @@ REXCVAR_DEFINE_DOUBLE(ao2_autopilot_drive_predict, 0.59, "Debug",
                       "Autopilot at the wheel: steer from where the vehicle will be in this many seconds at its "
                       "current velocity (its momentum), not from where it is");
 REXCVAR_DEFINE_BOOL(ao2_autopilot_drive_telemetry, false, "Debug",
-                    "Autopilot at the wheel: write drive_telemetry.csv (30 Hz: time, position, heading, velocity, "
+                    "Autopilot at the wheel: write logs/debug/drive_telemetry.csv (30 Hz: time, position, heading, velocity, "
                     "inputs, route segment) for tools/boat_model.py");
 REXCVAR_DEFINE_DOUBLE(ao2_autopilot_steer, 3.19, "Debug",
                       "Autopilot at the wheel: left stick per radian of heading error");

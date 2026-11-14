@@ -14,8 +14,11 @@
 #include <chrono>
 #include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <random>
 #include <set>
+#include <string>
+#include <system_error>
 #include <thread>
 
 #include <rex/cvar.h>
@@ -25,6 +28,18 @@
 #include <rex/system/xmemory.h>
 
 #include <spdlog/sinks/basic_file_sink.h>
+
+namespace {
+// Where the runtime's logs go: the logs folder next to the game's own logs
+// (armyoftworecomp_NNN.log and the port's logs by area, log_files.h), not the
+// game folder itself. Made here: these are written before the runtime's own
+// log is opened.
+std::string LogFilePath(const char* name) {
+  std::error_code ec;
+  std::filesystem::create_directories("logs", ec);
+  return (std::filesystem::path("logs") / name).string();
+}
+}  // namespace
 
 #if REX_PLATFORM_WIN32
 #include <WinSock2.h>
@@ -52,7 +67,7 @@ REXCVAR_DEFINE_BOOL(net_lan_discovery, true, "Network",
                     "Broadcast session searches on the local network.");
 REXCVAR_DECLARE(bool, log_to_files);
 REXCVAR_DEFINE_BOOL(net_trace_kernel, false, "Network",
-                    "Write all kernel (XAM/xboxkrnl) log messages at debug level to krnl.log.");
+                    "Write all kernel (XAM/xboxkrnl) log messages at debug level to logs/krnl.log.");
 REXCVAR_DEFINE_UINT32(net_search_timeout_ms, 1200, "Network",
                       "How long a session search waits for hosts to answer.");
 
@@ -426,7 +441,7 @@ void ResponderLoop() {
 void Start() {
   auto& st = state();
   if (REXCVAR_GET(net_trace_kernel) && REXCVAR_GET(log_to_files)) {
-    auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("krnl.log", true);
+    auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(LogFilePath("krnl.log"), true);
     rex::AddSink(rex::log::krnl(), sink);
     rex::SetCategoryLevel(rex::log::krnl(), spdlog::level::debug);
     if (auto logger = rex::GetLogger(rex::log::krnl())) {
@@ -577,7 +592,9 @@ uint32_t PropertySize(uint32_t id) {
 
 void NetLogLine(const std::string& line) {
   static std::mutex log_mutex;
-  static FILE* file = REXCVAR_GET(log_to_files) ? std::fopen("net.log", "w") : nullptr;
+  static FILE* file = REXCVAR_GET(log_to_files)
+                          ? std::fopen(LogFilePath("net.log").c_str(), "w")
+                          : nullptr;
   // Local wall-clock time, to line up with the EA emulator and game logs.
   auto now = std::chrono::system_clock::now();
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();

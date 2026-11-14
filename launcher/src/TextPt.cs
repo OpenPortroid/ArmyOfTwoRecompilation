@@ -388,8 +388,8 @@ namespace AO2Launcher
               "Permitir conexões de entrada para o jogo em todos os tipos de rede (o Windows trata o Radmin como pública). " +
               "Exige direitos de administrador: o Windows vai pedir confirmação. Feito uma vez nos dois PCs.");
             p("Co-op log", "Registro do coop");
-            p("Writes coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance.",
-              "Grava o coop_debug.log na pasta do jogo, necessário para investigar dessincronizações. Custa um pouco de desempenho.");
+            p("Writes logs/net/coop_debug.log in the game folder, needed to investigate desyncs. Costs a little performance.",
+              "Grava o logs/net/coop_debug.log na pasta do jogo, necessário para investigar dessincronizações. Custa um pouco de desempenho.");
             p("The role is chosen automatically: on Play the launcher looks for a host on the local network. If one is " +
               "found you join it, otherwise you become the host. The second player presses Play a few seconds after " +
               "the first player's game has started. Then both, in the game: Campaign Mode → Search Co-op Game.",

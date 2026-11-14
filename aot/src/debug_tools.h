@@ -11,6 +11,7 @@
 #include <rex/system/function_dispatcher.h>
 
 #include "game_constants.h"
+#include "log_files.h"
 
 namespace debug_tools
 {
@@ -26,7 +27,7 @@ namespace debug_tools
       return;
     }
 
-    static FILE *stub_log = std::fopen("logs/stub_sweep.txt", "w");
+    static FILE *stub_log = std::fopen(ao2::LogPath("stub_sweep.txt").c_str(), "w");
     static std::mutex stub_mutex;
     static std::unordered_map<uint32_t, uint32_t> stub_hits;
 
@@ -74,7 +75,7 @@ namespace debug_tools
       return;
     }
 
-    FILE *log = std::fopen("logs/missed_functions.txt", "w");
+    FILE *log = std::fopen(ao2::LogPath("missed_functions.txt").c_str(), "w");
     if (!log)
     {
       return;

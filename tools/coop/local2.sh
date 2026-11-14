@@ -31,7 +31,7 @@ for name in A B; do
   mkdir -p "$dir"
   [ -d "$dir/shader_cache" ] || cp -r "$GAME/shader_cache" "$dir/shader_cache"
   [ -d "$dir/user" ] || cp -r "$PROFILE" "$dir/user"
-  rm -f "$dir/sync_trace.log" "$dir/sync_dump.bin" "$dir/coop_debug.log" "$dir/input.script"
+  rm -f "$dir/logs/debug/sync_trace.log" "$dir/logs/debug/sync_dump.bin" "$dir/logs/net/coop_debug.log" "$dir/input.script"
 done
 common="--fullscreen=false --window_width=1280 --window_height=720 --ao2_native_gpu_resolution_scale=1 --log_to_files=true --ao2_coop_debug=true --ao2_coop_sync_dump=${SYNC_DUMP:-5} ${EXTRA:-}"
 start_one() { # <name> <ip> <extra args>

@@ -33,6 +33,7 @@
 #include "gpu/native/renderer.h"
 #include "game_patches.h"
 #include "cutscene_skip.h"
+#include "log_files.h"
 #include "mouse_aim.h"
 #include "ui_text.h"
 #include "utils.h"
@@ -84,6 +85,9 @@ public:
   void OnPostSetup() override
   {
     utils::LoadSettingsFiles();
+    // The logs folder: what it is and what to send with a bug report
+    // (logs\README.txt, log_files.h). With log files off nothing is written.
+    ao2::WriteLogsReadme();
     if (!std::filesystem::exists(utils::SettingsDir() / "mapping.toml"))
     {
       REXLOG_WARN("{} not found (was the game moved without its settings folder?): default keys",

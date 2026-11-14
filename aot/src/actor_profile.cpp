@@ -25,7 +25,7 @@
 #include "ue3_reflect.h"
 
 REXCVAR_DEFINE_BOOL(ao2_actor_profile, false, "Debug",
-                    "Log the actor classes whose ticks take the most game-thread time to actor_profile.log (every 5 s)");
+                    "Log the actor classes whose ticks take the most game-thread time to logs/perf/actor_profile.log (every 5 s)");
 
 extern "C" REX_FUNC(__imp__sub_8279CEE0);
 extern "C" REX_FUNC(__imp__sub_827B1AA8);

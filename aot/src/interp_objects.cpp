@@ -58,7 +58,7 @@
 REXCVAR_DEFINE_BOOL(ao2_interp_objects, true, "Gameplay",
                     "With ao2_decouple: draw moving objects between simulation steps (with the camera)");
 REXCVAR_DEFINE_BOOL(ao2_interp_objects_debug, false, "Debug",
-                    "Log object interpolation statistics once a second to interp_objects.log");
+                    "Log object interpolation statistics once a second to logs/sim/interp_objects.log");
 
 namespace
 {
