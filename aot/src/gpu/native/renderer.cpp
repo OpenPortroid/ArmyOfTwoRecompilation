@@ -7120,7 +7120,9 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       s.aa = aa == "fxaa" ? 1u : aa == "smaa" ? 2u : 0u;
       // Never in the main menu and the lobby (the front end).
       s.motion_blur = ao2::mouse::InFrontEnd() ? 0 : std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
-      s.dof = REXCVAR_GET(ao2_depth_of_field) > 0 ? 1 : 0;
+      // Not in the front end either: its 3D scenes are posed close up and
+      // their characters blurred (#50).
+      s.dof = !ao2::mouse::InFrontEnd() && REXCVAR_GET(ao2_depth_of_field) > 0 ? 1 : 0;
       g_post.settings = s;
       return g_post.settings;
     }

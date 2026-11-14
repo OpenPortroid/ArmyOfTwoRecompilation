@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -82,9 +83,13 @@ namespace AO2Launcher
             return gameDir;
         }
 
+        // A folder of the user's for the game files (the install_dir setting): assets\ and dlc\ go there and
+        // the game gets them by --game_data_root and --marketplace_content_root. Null: the game's folder.
+        public static string CustomRoot;
+
         public static string AssetsDir(string gameDir)
         {
-            return Path.Combine(DataRoot(gameDir), "assets");
+            return Path.Combine(string.IsNullOrEmpty(CustomRoot) ? DataRoot(gameDir) : CustomRoot, "assets");
         }
 
         static string Sha1(string file)
@@ -122,7 +127,7 @@ namespace AO2Launcher
         // Where the game reads downloadable content (aot\src\dlc_folder.cpp).
         public static string DlcRoot(string gameDir)
         {
-            return Path.Combine(DataRoot(gameDir), "dlc");
+            return Path.Combine(string.IsNullOrEmpty(CustomRoot) ? DataRoot(gameDir) : CustomRoot, "dlc");
         }
 
         // Where earlier versions put it, in the main profile's user data folder.
@@ -393,16 +398,37 @@ namespace AO2Launcher
             }
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GetDiskFreeSpaceEx(string directory, out ulong freeToCaller, out ulong total, out ulong free);
+
+        // Free space for the folder itself, not for the root of its drive: under Wine / Proton (the Steam Deck) Z:\
+        // is the Linux root, whose free space its drive reports, while the folder may be on /home or an SD card.
+        public static long FreeSpace(string dir)
+        {
+            string d = Path.GetFullPath(dir);
+            while (d != null && !Directory.Exists(d))
+            {
+                d = Path.GetDirectoryName(d);
+            }
+            ulong caller, total, free;
+            if (d != null && GetDiskFreeSpaceEx(d.EndsWith("\\") ? d : d + "\\", out caller, out total, out free))
+            {
+                return (long)caller;
+            }
+            return new DriveInfo(Path.GetPathRoot(Path.GetFullPath(dir))).AvailableFreeSpace;
+        }
+
         static void CheckSpace(string dir, long need)
         {
             try
             {
-                var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(dir)));
-                Log.Write("space on {0}: {1} free, {2} needed (+64 MB reserve)", drive.Name, drive.AvailableFreeSpace, need);
-                if (drive.AvailableFreeSpace < need + (64L << 20))
+                long freeBytes = FreeSpace(dir);
+                Log.Write("space in {0}: {1} free, {2} needed (+64 MB reserve)", dir, freeBytes, need);
+                if (freeBytes < need + (64L << 20))
                 {
-                    throw new InstallException(L.F("Not enough space on {0}: {1} needed, {2} free",
-                        drive.Name, Size(need), Size(drive.AvailableFreeSpace)));
+                    throw new InstallException(L.F("Not enough space in {0}: {1} needed, {2} free",
+                        dir, Size(need), Size(freeBytes)));
                 }
             }
             catch (InstallException)
@@ -523,7 +549,8 @@ namespace AO2Launcher
                 if (game != null)
                 {
                     Log.Write("step: game");
-                    CheckSpace(gameDir, game.Bytes);
+                    Directory.CreateDirectory(Path.GetDirectoryName(assets));
+                    CheckSpace(Path.GetDirectoryName(assets), game.Bytes);
                     DeleteDir(temp);
                     Directory.CreateDirectory(temp);
                     report(L.T("Checking the game version"), 0);

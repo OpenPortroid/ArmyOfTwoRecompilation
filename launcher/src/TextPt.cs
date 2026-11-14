@@ -420,6 +420,14 @@ namespace AO2Launcher
             p("Could not create the shortcut", "Não foi possível criar o atalho");
             p("Create an \"Army of Two\" shortcut on the desktop that starts this launcher.",
               "Criar na área de trabalho um atalho \"Army of Two\" que abre este launcher.");
+            p("Install folder", "Pasta de instalação");
+            p("the game's folder", "a pasta do jogo");
+            p("{0} free", "{0} livres");
+            p("Folder for the game files (about 5.5 GB)", "Pasta para os arquivos do jogo (cerca de 5,5 GB)");
+            p("Where the game files are copied: the game's folder, or another one with enough space (another drive, " +
+              "the SD card on a Steam Deck). Files installed earlier stay where they are.",
+              "Para onde os arquivos do jogo são copiados: a pasta do jogo ou outra com espaço suficiente (outro disco, " +
+              "o cartão SD de um Steam Deck). Arquivos já instalados ficam onde estão.");
             p("Game path", "Caminho do jogo");
             p("CHANGE", "ALTERAR");
             p("Locate armyoftworecomp.exe manually if the launcher is not in the game folder.",
@@ -497,7 +505,7 @@ namespace AO2Launcher
               "Esta pasta não tem o jogo extraído (default.xex e AO2Game)");
             p("{0}: no game on this disc (default.xex)", "{0}: não há jogo neste disco (default.xex)");
             p("{0}: this package belongs to another game ({1})", "{0}: este pacote é de outro jogo ({1})");
-            p("Not enough space on {0}: {1} needed, {2} free", "Espaço insuficiente em {0}: {1} necessários, {2} livres");
+            p("Not enough space in {0}: {1} needed, {2} free", "Espaço insuficiente em {0}: {1} necessários, {2} livres");
             p("This version of the game is not supported: the European release of Army of Two for Xbox 360 is required (4541084C)",
               "Esta versão do jogo não é compatível: é necessária a versão europeia de Army of Two para Xbox 360 (4541084C)");
             p("This is the wrong update: Title Update 2 of the European release is required (TU_12K222C_…)",

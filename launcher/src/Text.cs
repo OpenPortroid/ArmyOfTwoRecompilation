@@ -1047,6 +1047,26 @@ namespace AO2Launcher
               "Eine Verknüpfung „Army of Two“ auf dem Desktop erstellen, die diesen Launcher startet.",
               "Crear en el escritorio un acceso directo «Army of Two» que abre este lanzador.",
               "Crea sul desktop un collegamento «Army of Two» che avvia questo launcher.");
+            a("Install folder", "Папка установки", "Dossier d'installation", "Installationsordner",
+              "Carpeta de instalación", "Cartella di installazione");
+            a("the game's folder", "папка игры", "le dossier du jeu", "der Ordner des Spiels", "la carpeta del juego",
+              "la cartella del gioco");
+            a("{0} free", "свободно {0}", "{0} libres", "{0} frei", "{0} libres", "{0} liberi");
+            a("Folder for the game files (about 5.5 GB)", "Папка для файлов игры (около 5,5 ГБ)",
+              "Dossier des fichiers du jeu (environ 5,5 Go)", "Ordner für die Spieldateien (etwa 5,5 GB)",
+              "Carpeta para los archivos del juego (unos 5,5 GB)", "Cartella per i file del gioco (circa 5,5 GB)");
+            a("Where the game files are copied: the game's folder, or another one with enough space (another drive, " +
+              "the SD card on a Steam Deck). Files installed earlier stay where they are.",
+              "Куда копируются файлы игры: в папку игры или в другую, где хватает места (другой диск, " +
+              "SD-карта на Steam Deck). Уже установленные файлы остаются на месте.",
+              "Où copier les fichiers du jeu : le dossier du jeu, ou un autre avec assez de place (un autre disque, " +
+              "la carte SD d'un Steam Deck). Les fichiers déjà installés restent où ils sont.",
+              "Wohin die Spieldateien kopiert werden: in den Ordner des Spiels oder einen anderen mit genug Platz " +
+              "(ein anderes Laufwerk, die SD-Karte eines Steam Deck). Bereits installierte Dateien bleiben, wo sie sind.",
+              "Dónde se copian los archivos del juego: la carpeta del juego u otra con espacio suficiente (otro disco, " +
+              "la tarjeta SD de una Steam Deck). Los archivos ya instalados se quedan donde están.",
+              "Dove vengono copiati i file del gioco: la cartella del gioco o un'altra con spazio sufficiente (un altro " +
+              "disco, la scheda SD di uno Steam Deck). I file già installati restano dove sono.");
             a("Game path", "Путь к игре", "Chemin du jeu", "Spielpfad", "Ruta del juego", "Percorso del gioco");
             a("CHANGE", "ИЗМЕНИТЬ", "CHANGER", "ÄNDERN", "CAMBIAR", "CAMBIA");
             a("Locate armyoftworecomp.exe manually if the launcher is not in the game folder.",
@@ -1237,9 +1257,9 @@ namespace AO2Launcher
             a("{0}: this package belongs to another game ({1})", "{0}: этот пакет от другой игры ({1})",
               "{0} : ce paquet appartient à un autre jeu ({1})", "{0}: dieses Paket gehört zu einem anderen Spiel ({1})",
               "{0}: este paquete es de otro juego ({1})", "{0}: questo pacchetto appartiene a un altro gioco ({1})");
-            a("Not enough space on {0}: {1} needed, {2} free", "Недостаточно места на {0}: нужно {1}, свободно {2}",
-              "Espace insuffisant sur {0} : {1} nécessaires, {2} libres", "Nicht genug Platz auf {0}: {1} nötig, {2} frei",
-              "No hay espacio suficiente en {0}: se necesitan {1}, libres {2}", "Spazio insufficiente su {0}: servono {1}, liberi {2}");
+            a("Not enough space in {0}: {1} needed, {2} free", "Недостаточно места в {0}: нужно {1}, свободно {2}",
+              "Espace insuffisant dans {0} : {1} nécessaires, {2} libres", "Nicht genug Platz in {0}: {1} nötig, {2} frei",
+              "No hay espacio suficiente en {0}: se necesitan {1}, libres {2}", "Spazio insufficiente in {0}: servono {1}, liberi {2}");
             a("This version of the game is not supported: the European release of Army of Two for Xbox 360 is required (4541084C)",
               "Эта версия игры не поддерживается: нужно европейское издание Army of Two для Xbox 360 (4541084C)",
               "Cette version du jeu n'est pas prise en charge : il faut l'édition européenne d'Army of Two pour Xbox 360 (4541084C)",

@@ -348,6 +348,13 @@ namespace AO2Launcher
             a.Add(Flag("pad_invert_right_y", s.Bool("pad_invert_right_y")));
             // The game's Graphics page (Options) saves its changes here too.
             a.Add("--ao2_launcher_settings=" + s.FilePath);
+            // The game files in a folder of the user's (the install screen's Install folder).
+            string installDir = s["install_dir"];
+            if (installDir.Length > 0)
+            {
+                a.Add("--game_data_root=" + Path.Combine(installDir, "assets"));
+                a.Add("--marketplace_content_root=" + Path.Combine(installDir, "dlc"));
+            }
             return a;
         }
 

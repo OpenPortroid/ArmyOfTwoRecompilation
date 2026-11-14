@@ -56,8 +56,8 @@ REXCVAR_DEFINE_BOOL(ao2_pad_rapid_trigger, true, "Input",
                     "it again as a new press, so quick shots do not need the trigger all the way out. Not at the "
                     "wheel, where it is the gas");
 REXCVAR_DEFINE_BOOL(ao2_fire_buffer, true, "Input",
-                    "A shot asked for (right trigger, left mouse button) while the weapon's firing animation still "
-                    "runs is fired when it ends, instead of being lost");
+                    "A shot asked for (right trigger, left mouse button) before the weapon can fire again (its firing "
+                    "animation, its refire interval) is fired as soon as it can, instead of being lost");
 
 namespace
 {
@@ -113,19 +113,41 @@ namespace
     return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3];
   }
 
-  // Single shots fire from the firing animation (AO2Weapon
-  // .bFiringControlledByAnimNotifies, AO2Character.FiringWeapon): the state
-  // stays until the animation's end (FiredFromNotifyEndTime), and only then
-  // asks whether fire is held. A press and release before that is lost, so
-  // shots at an even pace hit or miss the end by chance and every so often one
-  // does not come. A press in that time is held until the next shot has been
-  // fired (the end time changes) or a moment after the end.
-  constexpr float kBufferLimit = 0.25f; // seconds past the end
+  // A shot asked for while the weapon cannot fire yet is lost:
+  //  - single shots fire from the firing animation (AO2Weapon
+  //    .bFiringControlledByAnimNotifies, AO2Character.FiringWeapon): the state
+  //    stays until the animation's end (FiredFromNotifyEndTime) and only then
+  //    asks whether fire is held;
+  //  - the other weapons (pistols, shotguns) fire again from the weapon's
+  //    refire timer (Weapon.WeaponFiring.RefireCheckTimer, FireInterval), which
+  //    fires only while PendingFire is set, and a release (StopFire) clears it;
+  //  - between shots the character's FiringWeapon_Done state is left a moment
+  //    later, a press and release in it start nothing.
+  // So taps at an even pace hit or miss those moments by chance and every so
+  // often a shot does not come (#45). A press is held until a shot has been
+  // fired: the firing pawn's FlashLocation changes with every instant hit shot
+  // (Pawn.SetFlashLocation moves an equal one by 1), FlashCount with every
+  // projectile, FiredFromNotifyEndTime with every animation shot. Presses
+  // during a held one are counted (up to kMaxQueued) and fired one after
+  // another; one the weapon does not fire in its interval and a moment is
+  // dropped (reloading, sprinting, no ammo).
+  constexpr float kBufferLimit = 0.25f; // seconds past the shot's earliest time
+  constexpr float kBufferMax = 1.5f;    // seconds at most from the press
+  constexpr int kMaxQueued = 2;
+  struct ShotMark
+  {
+    uint32_t flash[3] = {};
+    uint8_t flash_count = 0;
+    uint32_t end = 0; // FiredFromNotifyEndTime's bits
+    bool operator==(const ShotMark &) const = default;
+  };
   struct FireBuffer
   {
     bool pressed = false;
-    bool queued = false;
-    float end = 0.0f; // the end time when it was queued
+    int queued = 0;
+    uint32_t weapon = 0;
+    ShotMark mark;
+    float until = 0.0f; // world seconds the held press is given up at
   };
   FireBuffer g_fire_buffer[4];
 
@@ -136,7 +158,12 @@ namespace
     bool edge = pressed && !b.pressed;
     b.pressed = pressed;
     static const int32_t pawn_weapon = ao2::ue3::PropertyOffset(base, "Pawn", "Weapon");
+    static const int32_t instigator = ao2::ue3::PropertyOffset(base, "Actor", "Instigator");
+    static const int32_t flash_location = ao2::ue3::PropertyOffset(base, "Pawn", "FlashLocation");
+    static const int32_t flash_count = ao2::ue3::PropertyOffset(base, "Pawn", "FlashCount");
     static const int32_t end_time = ao2::ue3::PropertyOffset(base, "AO2Weapon", "FiredFromNotifyEndTime");
+    static const int32_t fire_interval = ao2::ue3::PropertyOffset(base, "Weapon", "FireInterval");
+    static const int32_t fire_mode = ao2::ue3::PropertyOffset(base, "Weapon", "CurrentFireMode");
     static const int32_t world_info = ao2::ue3::PropertyOffset(base, "Actor", "WorldInfo");
     static const int32_t seconds = ao2::ue3::PropertyOffset(base, "WorldInfo", "TimeSeconds");
     static const uint32_t weapon_class = ao2::ue3::FindClass(base, "AO2Weapon");
@@ -144,31 +171,78 @@ namespace
     static uint32_t by_anim_mask = 0;
     static const bool has_anim =
         ao2::ue3::BoolProperty(base, "AO2Weapon", "bFiringControlledByAnimNotifies", by_anim, by_anim_mask);
+    auto drop = [&] {
+      b.queued = 0;
+      b.weapon = 0;
+      return pulled;
+    };
     uint32_t pawn = ao2::mouse::AimTogglePawn(ctx, base, user);
     uint32_t weapon = pawn && pawn_weapon >= 0 ? LoadBe32(base, pawn + uint32_t(pawn_weapon)) : 0;
-    if (!weapon || !has_anim || end_time < 0 || world_info < 0 || seconds < 0 || !weapon_class ||
-        !ao2::ue3::IsA(base, weapon, weapon_class) || !(LoadBe32(base, weapon + uint32_t(by_anim)) & by_anim_mask))
+    if (!weapon || instigator < 0 || flash_location < 0 || flash_count < 0 || world_info < 0 || seconds < 0 ||
+        !weapon_class || !ao2::ue3::IsA(base, weapon, weapon_class))
     {
-      b.queued = false;
-      return pulled;
+      return drop();
     }
+    uint32_t shooter = LoadBe32(base, weapon + uint32_t(instigator));
     uint32_t world = LoadBe32(base, weapon + uint32_t(world_info));
-    if (!world)
+    if (!shooter || !world)
     {
-      b.queued = false;
-      return pulled;
+      return drop();
     }
+    bool anim = has_anim && (LoadBe32(base, weapon + uint32_t(by_anim)) & by_anim_mask);
+    ShotMark mark;
+    for (int i = 0; i < 3; ++i)
+    {
+      mark.flash[i] = LoadBe32(base, shooter + uint32_t(flash_location) + 4 * i);
+    }
+    mark.flash_count = base[shooter + uint32_t(flash_count)];
+    mark.end = anim && end_time >= 0 ? LoadBe32(base, weapon + uint32_t(end_time)) : 0;
     float now = std::bit_cast<float>(LoadBe32(base, world + uint32_t(seconds)));
-    float end = std::bit_cast<float>(LoadBe32(base, weapon + uint32_t(end_time)));
-    if (edge && now < end)
+    if (b.queued && weapon != b.weapon)
     {
-      b.queued = true;
-      b.end = end;
+      b.queued = 0;
     }
-    else if (b.queued && (end != b.end || now > b.end + kBufferLimit))
+    if (b.queued)
     {
-      b.queued = false;
+      // ClearFlashLocation (the weapon stopping) zeroes it: that is no shot.
+      bool cleared = mark.flash[0] == 0 && mark.flash[1] == 0 && mark.flash[2] == 0 &&
+                     mark.flash_count == b.mark.flash_count && mark.end == b.mark.end;
+      if (!cleared && mark != b.mark)
+      {
+        --b.queued;
+      }
+      else if (now > b.until)
+      {
+        b.queued = 0;
+      }
     }
+    if (edge)
+    {
+      b.queued = std::min(b.queued + 1, kMaxQueued);
+    }
+    if (b.queued && (edge || mark != b.mark))
+    {
+      // (Re)armed: the shot may come within the weapon's interval, or past
+      // the firing animation's end, and a moment.
+      float wait = 0.0f;
+      if (fire_interval >= 0)
+      {
+        uint32_t data = LoadBe32(base, weapon + uint32_t(fire_interval));
+        uint32_t count = LoadBe32(base, weapon + uint32_t(fire_interval) + 4);
+        uint32_t mode = fire_mode >= 0 ? base[weapon + uint32_t(fire_mode)] : 0;
+        if (data && mode < count && count < 16)
+        {
+          wait = std::bit_cast<float>(LoadBe32(base, data + 4 * mode));
+        }
+      }
+      if (anim)
+      {
+        wait = std::max(wait, std::bit_cast<float>(mark.end) - now);
+      }
+      b.until = now + std::clamp(wait, 0.0f, kBufferMax) + kBufferLimit;
+    }
+    b.mark = mark;
+    b.weapon = weapon;
     return b.queued ? uint8_t(255) : pulled;
   }
 

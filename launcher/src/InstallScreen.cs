@@ -13,10 +13,11 @@ namespace AO2Launcher
     // the downloadable content. Files can also be dropped on the window.
     sealed partial class LauncherForm
     {
-        const float InstX = 280, InstW = 640, InstDescTop = 500;
+        const float InstX = 280, InstW = 640, InstDescTop = 516;
 
-        const int InstRows = 4; // game, update, DLC, shortcut; then the install button
-        const float InstTop = 160, InstRowH = 58;
+        const int InstRows = 5; // game, update, DLC, shortcut, folder; then the install button
+        const float InstTop = 152, InstRowH = 50;
+        const int InstFolderRow = 4;
 
         InstallSource srcGame, srcUpdate;
         readonly List<InstallSource> srcDlc = new List<InstallSource>();
@@ -28,6 +29,8 @@ namespace AO2Launcher
         string instStep = "";
         double instProgress;
         string instError;
+        string freeFolder, freeText; // the install folder's free space as last asked
+        DateTime freeAt;
 
         static readonly Color Good = Color.FromArgb(128, 200, 140);
         static readonly Color Bad = Color.FromArgb(236, 120, 110);
@@ -216,11 +219,67 @@ namespace AO2Launcher
                 S["desktop_shortcut"] = S.Bool("desktop_shortcut") ? "0" : "1";
                 S.Save();
             }
+            else if (i == InstFolderRow)
+            {
+                PickInstallFolder();
+            }
             else if (CanInstall)
             {
                 StartInstall();
             }
             Invalidate();
+        }
+
+        // The folder the game files go to: the game's own (default) or one of the user's, e.g. on another drive
+        // or, on the Steam Deck, on the SD card. Choosing the game's folder goes back to the default.
+        void PickInstallFolder()
+        {
+            using (var dlg = new FolderBrowserDialog())
+            {
+                dlg.Description = L.T("Folder for the game files (about 5.5 GB)");
+                dlg.ShowNewFolderButton = true;
+                string current = InstallFolder;
+                if (current != null && Directory.Exists(current))
+                {
+                    dlg.SelectedPath = current;
+                }
+                if (dlg.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(dlg.SelectedPath))
+                {
+                    return;
+                }
+                string picked = Path.GetFullPath(dlg.SelectedPath);
+                if (picked.Length > 3)
+                {
+                    picked = picked.TrimEnd('\\'); // not a drive's root: C:\ stays
+                }
+                string own = GameDir == null ? null : Installer.DataRoot(GameDir).TrimEnd('\\');
+                // The game's own folder, or its assets\ picked by mistake: the default.
+                if (own != null && (string.Equals(picked, own, StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(picked, Path.Combine(own, "assets"), StringComparison.OrdinalIgnoreCase)))
+                {
+                    picked = "";
+                }
+                else if (string.Equals(Path.GetFileName(picked), "assets", StringComparison.OrdinalIgnoreCase))
+                {
+                    picked = Path.GetDirectoryName(picked);
+                }
+                S["install_dir"] = picked;
+                S.Save();
+                Installer.CustomRoot = picked;
+                Log.Write("install folder: {0}", picked.Length > 0 ? picked : "the game's folder");
+                instError = null;
+                RefreshInstalled();
+            }
+        }
+
+        // Where the game files go (assets\ and dlc\ in it).
+        string InstallFolder
+        {
+            get
+            {
+                string custom = S["install_dir"];
+                return custom.Length > 0 ? custom : GameDir == null ? null : Installer.DataRoot(GameDir);
+            }
         }
 
         void StartInstall()
@@ -362,6 +421,8 @@ namespace AO2Launcher
             "Optional: the Veteran Map Pack and SSC Challenge: Versus Mode Pack 1 packages (on the console: Content\\0000000000000000\\" +
             "454107F8\\00000002). Can be added later. In co-op both players need the same content.",
             "Create an \"Army of Two\" shortcut on the desktop that starts this launcher.",
+            "Where the game files are copied: the game's folder, or another one with enough space (another drive, " +
+            "the SD card on a Steam Deck). Files installed earlier stay where they are.",
             "Copy the selected files. After that, the game runs without the disc image.",
         };
 
@@ -391,6 +452,30 @@ namespace AO2Launcher
                 !InstRowEnabled(2) ? TextOff : srcDlc.Count > 0 || dlcCount > 0 ? Good : TextDim, L.T("ADD"));
             DrawInstRow(g, 3, L.T("Desktop shortcut"), L.T("created after installation"), TextDim,
                 L.T(S.Bool("desktop_shortcut") ? "YES" : "NO"));
+            string folder = InstallFolder;
+            string folderStatus = folder == null ? L.T("the game's folder") : folder;
+            if (folder != null)
+            {
+                // Asked again every 2 s at most: the screen is painted for every pad poll.
+                if (folder != freeFolder || DateTime.UtcNow > freeAt)
+                {
+                    freeFolder = folder;
+                    freeAt = DateTime.UtcNow.AddSeconds(2);
+                    try
+                    {
+                        freeText = L.F("{0} free", Installer.Size(Installer.FreeSpace(folder)));
+                    }
+                    catch
+                    {
+                        freeText = null;
+                    }
+                }
+                if (freeText != null)
+                {
+                    folderStatus += " · " + freeText;
+                }
+            }
+            DrawInstRow(g, InstFolderRow, L.T("Install folder"), folderStatus, TextDim, L.T("CHANGE"));
 
             float by = InstTop + InstRows * InstRowH + 22;
             if (installing)

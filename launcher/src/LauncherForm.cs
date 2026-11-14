@@ -188,6 +188,7 @@ namespace AO2Launcher
             {
                 S["avx1"] = "1";
             }
+            Installer.CustomRoot = S["install_dir"];
             gameExe = Game.Find(S);
             // The launcher always opens on the main screen; without the game files its button reads
             // INSTALL and leads to the installation.

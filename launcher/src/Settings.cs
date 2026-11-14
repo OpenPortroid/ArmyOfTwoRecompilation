@@ -63,6 +63,8 @@ namespace AO2Launcher
             { "close_on_launch", "1" },
             { "desktop_shortcut", "1" },
             { "game_path", "" },
+            // Where the game files (assets\, dlc\) go; empty: the game's own folder.
+            { "install_dir", "" },
             { "tab", "0" },
             // The game built for CPUs without AVX2 (avx1-version.aot), on CPUs that have it too; always on
             // without AVX2 (Game.Avx1Mode).
