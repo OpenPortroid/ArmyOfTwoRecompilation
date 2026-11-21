@@ -72,6 +72,8 @@ namespace ao2
       {"coop_delay.log", "net"},
       {"invite.log", "net"},
       {"ea_server.log", "net"},
+      {"lobby_router.log", "net"},
+      {"identity.log", "net"},
       {"steam.log", "net"},
       {"openportroid.log", "net"},
       {"lobby_visibility.log", "net"},

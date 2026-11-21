@@ -110,6 +110,7 @@ namespace
   void Watch()
   {
     bool session = false;
+    uint32_t session_id = 0;
     bool decide = false;
     clock::time_point ended;
     bool lockstep_at_end = false;
@@ -120,20 +121,22 @@ namespace
     while (true)
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
-      bool now_session = ao2::coop::network_session.load(std::memory_order_relaxed);
+      const bool now_session = ao2::coop::network_session.load(std::memory_order_acquire);
+      const uint32_t now_id = ao2::coop::link::SessionId();
       auto now = clock::now();
+      if (now_session && now_id != session_id)
+      {
+        session_id = now_id;
+        lockstep_seen = {};
+        g_bad_max.store(0, std::memory_order_relaxed);
+        decide = false;
+        Logf("network session %u started", session_id);
+      }
       if (InLockstep())
       {
         lockstep_seen = now;
       }
-      if (now_session && !session)
-      {
-        ao2::coop::link::ResetQuality();
-        g_bad_max.store(0, std::memory_order_relaxed);
-        decide = false;
-        Logf("network session started");
-      }
-      else if (!now_session && session)
+      if (!now_session && session && now_id == session_id)
       {
         // How things stood when it ended.
         lockstep_at_end = lockstep_seen != clock::time_point{} && now - lockstep_seen < std::chrono::seconds(5);
@@ -142,12 +145,11 @@ namespace
         peer_at_end = ao2::coop::link::GamePeer();
         ended = now;
         decide = true;
-        ao2::coop::link::SendBye();
         Logf("network session over: lockstep %d, partner silent %lld ms, out of sync %u frames at most",
              lockstep_at_end ? 1 : 0, (long long)silent_at_end, bad_at_end);
       }
       session = now_session;
-      if (session || (decide && now - ended < std::chrono::seconds(5)))
+      if (session || decide)
       {
         ao2::coop::link::Pump();
       }
@@ -158,7 +160,7 @@ namespace
         bool bye = ao2::coop::link::PartnerSaidBye();
         bool silent = silent_at_end >= kSilentDropMs; // never heard: unknown, no drop
         bool desync = bad_at_end >= kDesyncDropFrames;
-        if (lockstep_at_end && (desync || (silent && !bye)))
+        if (session_id == ao2::coop::link::SessionId() && lockstep_at_end && (desync || (silent && !bye)))
         {
           Logf("partner lost: %s", desync ? "out of sync" : "no connection");
           ao2::invite::OnPartnerLost(peer_at_end, desync && !silent);

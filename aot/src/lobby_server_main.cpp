@@ -21,6 +21,7 @@ int main()
     std::getchar();
     return 1;
   }
+  ao2::ea::StartInviteQueries();
   std::string radmin;
   for (const auto &a : ao2::ea::LocalAddresses())
   {

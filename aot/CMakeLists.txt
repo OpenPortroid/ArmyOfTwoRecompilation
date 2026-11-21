@@ -135,6 +135,8 @@ set(ARMYOFTWORECOMP_SOURCES
     src/ea_server.cpp
     src/openportroid_net.cpp
     src/coop_invite.cpp
+    src/lobby_router.cpp
+    src/identity.cpp
     src/ui_text.cpp
     src/ui_theme.cpp
     src/graphics_menu.cpp
@@ -186,7 +188,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(WIN32)
-    target_link_libraries(armyoftworecomp PRIVATE d3d12 dxgi d3dcompiler ws2_32 iphlpapi synchronization dbghelp pdh gdi32 winmm)
+    target_link_libraries(armyoftworecomp PRIVATE d3d12 dxgi d3dcompiler ws2_32 iphlpapi synchronization dbghelp pdh gdi32 winmm bcrypt)
 endif()
 
 # Online play over Steam (src/steam_net.cpp) with the Steamworks SDK in

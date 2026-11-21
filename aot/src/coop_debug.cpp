@@ -18,6 +18,7 @@
 #include <windows.h>
 
 #include "coop.h"
+#include "coop_link.h"
 #include "log_files.h"
 
 #include <rex/cvar.h>
@@ -212,7 +213,7 @@ namespace
     if (text.find("GameManager listening") != std::string::npos || text.find("StartGame()") != std::string::npos ||
         text.find("Game Start Received") != std::string::npos)
     {
-      ao2::coop::network_session = true;
+      ao2::coop::link::BeginSession();
     }
   }
 } // namespace
@@ -423,9 +424,13 @@ extern "C" REX_FUNC(sub_8223BE38)
     uint8_t *p = base + game + offset;
     return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3];
   };
-  ao2::coop::network_session = false;
+  const int32_t reason = int32_t(field(520));
+  const int32_t code = int32_t(field(524));
+  // EndGame on the host and the guest's normal leave have reasons 1 and 2.
+  // Failure paths must not tell the other side to suppress its rejoin.
+  ao2::coop::link::EndSession((reason == 1 || reason == 2) && code == 0);
   Log("GameManager destroy game mgr=%08X game=%08X end reason %d code %d sub %d", ctx.r3.u32, game,
-      int32_t(field(520)), int32_t(field(524)), int32_t(field(528)));
+      reason, code, int32_t(field(528)));
   LogStack();
   __imp__sub_8223BE38(ctx, base);
 }

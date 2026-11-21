@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,7 +16,7 @@ namespace AO2Launcher
         public const int MaxLen = 15;
 
         // The game's ao2_openportroid_server and the path of its lobby tunnel (aot/src/openportroid.h).
-        public const string Host = "aot.bhop.pw";
+        public const string Host = "openportroid.com";
         const string Path = "/aot1/";
 
         public static bool Allowed(char c)
@@ -52,15 +53,40 @@ namespace AO2Launcher
             return k;
         }
 
-        // The name the game signs in with: the player name, or the computer's name made valid.
+        public static string ConfiguredName(Settings s)
+        {
+            string name = s["gamertag"].Trim();
+            return s["net_mode"] == "openportroid" ? Sanitize(name) : name;
+        }
+
+        public static string GenerateName()
+        {
+            var bytes = new byte[4];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            uint random = BitConverter.ToUInt32(bytes, 0);
+            string prefix = (random & 1) == 0 ? "Rios" : "Salem";
+            return prefix + ((random >> 1) % 1000000).ToString("D6", CultureInfo.InvariantCulture);
+        }
+
+        public static string FallbackName(Settings s)
+        {
+            string name = s["generated_gamertag"];
+            if (name.Length == 0)
+            {
+                name = GenerateName();
+                s["generated_gamertag"] = name;
+                s.Save();
+            }
+            return name;
+        }
+
         public static string Name(Settings s)
         {
-            string n = Sanitize(s["gamertag"].Trim());
-            if (n.Length == 0)
-            {
-                n = Sanitize(Environment.MachineName);
-            }
-            return n.Length > 0 ? n : "Player";
+            string name = ConfiguredName(s);
+            return name.Length > 0 ? name : FallbackName(s);
         }
 
         // "free", "yours", "taken", "invalid"; null when the server does not answer.

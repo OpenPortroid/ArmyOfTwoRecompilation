@@ -95,16 +95,15 @@ namespace AO2Launcher
                 new Row
                 {
                     Kind = RowKind.Text, Label = "Player 1 name", Key = "gamertag", MaxLen = 15,
-                    Placeholder = () => Shorten(Environment.MachineName, 15),
-                    Desc = "Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty to use the computer's name."
+                    Placeholder = () => Nicks.FallbackName(S),
+                    Desc = "Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty for a generated name."
                 },
                 new Row
                 {
                     Kind = RowKind.Text, Label = "Player 2 name", Key = "gamertag2", MaxLen = 15,
                     Placeholder = () =>
                     {
-                        string p1 = S["gamertag"].Trim().Length > 0 ? S["gamertag"].Trim() : Environment.MachineName;
-                        return Shorten(p1, 12) + "(1)";
+                        return Shorten(Nicks.Name(S), 12) + "(1)";
                     },
                     Desc = "Gamertag of player 2 (up to 15 characters); their own profile and settings. " +
                            "Empty: player 1's name with (1) after it."

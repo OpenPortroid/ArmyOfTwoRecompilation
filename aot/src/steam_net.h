@@ -70,6 +70,8 @@ namespace ao2::steam
     // unknown. A joining player is "joined" only once its own XUID is there (steam_net.cpp UpdateJoinedLobby).
     std::string members;
     uint64_t self_xuid = 0; // this player's XUID (also when it hosts nothing)
+    bool quick_play = false; // a Quick Play host waiting for a partner (coop_invite.cpp PumpQuickPlay)
+    std::string player_id;   // the host's Player ID (identity.h): who joins whom between two of them
   };
   void SetHosting(const Hosting &hosting);
 
@@ -100,6 +102,9 @@ namespace ao2::steam
     std::string menu;  // Hosting::menu
     std::string rules; // Hosting::rules
     std::string members; // Hosting::members (empty: an older host's lobby)
+    std::string mode;      // Hosting::mode (B-U-Mode, what a quick match filters on)
+    bool quick_play = false;
+    std::string player_id; // Hosting::player_id (empty: an older host)
   };
   // Quick join's choice among the open lobbies (lower is better): the ping, less 60 ms for each player there
   // already, so a fuller game wins over an emptier one unless its ping is clearly worse (an unknown ping counts

@@ -29,7 +29,7 @@
 // actually sees that player at (and the host's with the address the partner
 // reached the server at), so LAN and VPN setups work without configuration.
 //
-// The same file is the OpenPortroid server's lobby (aot.bhop.pw/aot1/: the
+// The same file is the OpenPortroid server's lobby (openportroid.com/aot1/: the
 // ArmyOfTwoOpenPortroid repository builds a copy of it on Linux with
 // AO2_STANDALONE_SERVER and AO2_OPENPORTROID_SERVER, next to its relay and
 // player names). Its players reach it through the HTTP tunnel ("Tunnel"
@@ -44,6 +44,7 @@
 #include "relay_server.h"
 #endif
 #ifndef AO2_STANDALONE_SERVER
+#include "lobby_router.h"
 #include "openportroid_net.h"
 #endif
 
@@ -84,6 +85,7 @@ inline int WSAGetLastError() { return errno; }
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <utility>
@@ -96,7 +98,7 @@ REXCVAR_DEFINE_STRING(ao2_net_mode, "steam", "Online",
                       "Online play: steam (LAN / VPN with ao2_coop_server / ao2_coop_host, and Steam when it "
                       "runs, ao2_steam), lan (the same without Steam) or openportroid (the OpenPortroid server, "
                       "ao2_openportroid_server: anyone on the internet, no VPN or open ports; no Steam).");
-REXCVAR_DEFINE_STRING(ao2_openportroid_server, "aot.bhop.pw", "Online",
+REXCVAR_DEFINE_STRING(ao2_openportroid_server, ao2::opnet::kDefaultServer, "Online",
                       "The OpenPortroid server (ao2_net_mode = openportroid): the lobby over HTTP (port 80, or "
                       "host:port), the game traffic over UDP ao2_openportroid_port.");
 REXCVAR_DEFINE_UINT32(ao2_openportroid_port, 18501, "Online",
@@ -115,7 +117,16 @@ REXCVAR_DEFINE_BOOL(ao2_public_game_search, true, "Online",
                     "over Steam) and host only when there is none. Off: they host at once, a public game "
                     "everyone sees in the server list (F1 > Online > Servers); Create Co-op Game > Public "
                     "does that too.");
+REXCVAR_DEFINE_BOOL(ao2_quick_play, true, "Online",
+                    "Search Co-op Game / Find Match as Quick Play: a game on this PC's server is joined, else "
+                    "the game hosts a public one at once and keeps looking (LAN, OpenPortroid, Steam) while it "
+                    "waits alone (coop_invite.cpp). Off: the search waits up to ~15 s for a Steam lobby first.");
 #endif
+
+namespace ao2::lobby_visibility
+{
+  int PrivateOverride();
+}
 
 namespace ao2::ea
 {
@@ -129,6 +140,21 @@ namespace ao2::ea
       return false;
 #endif
     }
+
+    bool QuickPlayOn()
+    {
+#ifndef AO2_STANDALONE_SERVER
+      return REXCVAR_GET(ao2_quick_play);
+#else
+      return false;
+#endif
+    }
+
+    // The last quick match of this PC's own game that found nothing here
+    // (Quick Play: the game hosts now), and its mode.
+    std::mutex g_quick_play_mutex;
+    std::chrono::steady_clock::time_point g_quick_play_at;
+    std::string g_quick_play_mode;
 
     constexpr uint16_t kFeslPort = 18480;
     constexpr uint16_t kTheaterPort = 18485;
@@ -156,6 +182,7 @@ namespace ao2::ea
 
     std::mutex g_log_mutex;
     bool g_log_console = false;
+    std::atomic<bool> g_own_server{false}; // StartServer listens
 
     void Log(const char *fmt, ...)
     {
@@ -552,12 +579,25 @@ namespace ao2::ea
 
     class TheaterConn;
 
+#ifdef AO2_OPENPORTROID_SERVER
+    constexpr bool kCoopOnly = true;
+#else
+    constexpr bool kCoopOnly = false;
+#endif
+
+    bool IsCoopLobby(const Fields &fields)
+    {
+      return Get(fields, "TYPE") == "G" && Get(fields, "B-U-Mode") == "0" &&
+             Get(fields, "MAX-PLAYERS") == "2";
+    }
+
     struct Game
     {
       uint32_t gid = 0;
       std::shared_ptr<TheaterConn> host;
       Fields fields; // CGAM, updated by UGAM
-      int joined = 1;
+      std::set<uint64_t> members; // Theater connections admitted to this game
+      int Players() const { return 1 + int(members.size()); }
       std::string xnaddr; // host's R-XNADDR
       // Player ids count within the game, the host's own entry is 1: the game manager
       // decides which of two peers opens the connection by comparing them (versus mesh).
@@ -694,7 +734,8 @@ namespace ao2::ea
     class TheaterConn : public Conn
     {
     public:
-      explicit TheaterConn(SOCKET s) : Conn(s, "THEATER") {}
+      explicit TheaterConn(SOCKET s, bool own_game = false)
+          : Conn(s, "THEATER"), own_game_(own_game) {}
 
       bool SendT(const std::string &type, const Fields &fields, const char (&status)[5])
       {
@@ -708,8 +749,18 @@ namespace ao2::ea
 
       void OnClose() override
       {
-        std::lock_guard lock(state().mutex);
-        auto &games = state().games;
+        auto &st = state();
+        std::lock_guard lock(st.mutex);
+        for (auto &[gid, game] : st.games)
+        {
+          game.members.erase(connection_id_);
+        }
+        std::erase_if(st.pending, [&](const auto &entry) {
+          auto player = entry.second.joiner.lock();
+          auto game = st.games.find(entry.first.first);
+          return !player || player.get() == this || game == st.games.end() || game->second.host.get() == this;
+        });
+        auto &games = st.games;
         for (auto it = games.begin(); it != games.end();)
         {
           if (it->second.host.get() == this)
@@ -762,13 +813,13 @@ namespace ao2::ea
                     {"N", Get(game.fields, "NAME", game.host->name())},
                     {"I", IpString(host_ip)},
                     {"P", Get(game.fields, "PORT", "1000")},
-                    {"JP", std::to_string(game.joined)},
+                    {"JP", std::to_string(game.Players())},
                     {"QP", "0"},
-                    {"AP", std::to_string(game.joined)},
+                    {"AP", std::to_string(game.Players())},
                     {"MP", Get(game.fields, "MAX-PLAYERS", "2")},
                     {"PL", "XBOX360"},
                     {"TYPE", Get(game.fields, "TYPE", "G")},
-                    {"J", "O"},
+                    {"J", Get(game.fields, "JOIN", "O")},
                     {"F", "0"},
                     {"NF", "0"},
                     {"PW", "0"}};
@@ -784,7 +835,16 @@ namespace ao2::ea
 
       void OnPacket(const Packet &p) override
       {
-        const Fields &f = p.fields;
+        Fields f = p.fields;
+#ifndef AO2_STANDALONE_SERVER
+        if (own_game_ && (p.type == "CGAM" || p.type == "UGAM"))
+        {
+          if (int visibility = ao2::lobby_visibility::PrivateOverride(); visibility >= 0)
+          {
+            Set(f, "B-U-Private", visibility == 0 ? "0" : "1");
+          }
+        }
+#endif
         std::string tid = Get(f, "TID", "0");
         const std::string &t = p.type;
         auto &st = state();
@@ -843,13 +903,19 @@ namespace ao2::ea
             std::lock_guard lock(st.mutex);
             for (const auto &[gid, g] : st.games)
             {
-              players += g.joined;
+              players += g.Players();
             }
           }
           Send("PCNT", 0, {{"TID", tid}, {"LID", Get(f, "LID", "1")}, {"COUNT", std::to_string(players)}});
         }
         else if (t == "CGAM")
         {
+          if (kCoopOnly && !IsCoopLobby(f))
+          {
+            Log("OpenPortroid rejected a non-co-op lobby from %s", name_.c_str());
+            SendT("CGAM", {{"TID", tid}, {"LID", Get(f, "LID", "1")}}, "jden");
+            return;
+          }
           Game game;
           game.host = self();
           game.fields = f;
@@ -875,12 +941,22 @@ namespace ao2::ea
         else if (t == "UGAM")
         {
           std::lock_guard lock(st.mutex);
-          auto it = st.games.find(gid_);
-          if (it != st.games.end())
+          const uint32_t gid = uint32_t(ToU64(Get(f, "GID", std::to_string(gid_))));
+          auto it = st.games.find(gid);
+          if (it != st.games.end() && it->second.host.get() == this)
           {
+            Fields updated = it->second.fields;
             for (const auto &[k, v] : f)
             {
-              Set(it->second.fields, k, v);
+              Set(updated, k, v);
+            }
+            if (!kCoopOnly || IsCoopLobby(updated))
+            {
+              it->second.fields = std::move(updated);
+            }
+            else
+            {
+              Log("OpenPortroid rejected a non-co-op update to game %u", gid);
             }
           }
           // No reply expected.
@@ -895,7 +971,13 @@ namespace ao2::ea
             // The game named (a versus host removes its party after creating the
             // game the party moves to, which is gid_ by then).
             std::lock_guard lock(st.mutex);
-            st.games.erase(uint32_t(ToU64(Get(f, "GID", std::to_string(gid_)))));
+            uint32_t gid = uint32_t(ToU64(Get(f, "GID", std::to_string(gid_))));
+            auto game = st.games.find(gid);
+            if (game != st.games.end() && game->second.host.get() == this)
+            {
+              st.games.erase(game);
+              std::erase_if(st.pending, [gid](const auto &entry) { return entry.first.first == gid; });
+            }
           }
           Send("RGAM", 0, {{"TID", tid}});
         }
@@ -906,6 +988,8 @@ namespace ao2::ea
           // Versus: the host's party session (TYPE=P, "Custom Match" screen) lives on
           // next to its game (TYPE=G, ready room); a quick match must find the game.
           std::string type = Get(f, "TYPE");
+          std::string mode = Get(f, "FILTER-ATTR-U-Mode");
+          const bool allowed = !kCoopOnly || ((type.empty() || type == "G") && (mode.empty() || mode == "0"));
           std::vector<Fields> found;
           bool hosts_party = false; // this player leads a versus party (its own TYPE=P game here)
           {
@@ -917,7 +1001,9 @@ namespace ao2::ea
               {
                 hosts_party = true;
               }
-              if (g.host.get() == this || g.host->closed() || uint64_t(g.joined) >= max ||
+              if (!allowed || g.host.get() == this || g.host->closed() || g.xnaddr.empty() ||
+                  uint64_t(g.Players()) >= max || Get(g.fields, "JOIN", "O") != "O" ||
+                  (!mode.empty() && Get(g.fields, "B-U-Mode") != mode) ||
                   (not_private && Get(g.fields, "B-U-Private") == "1") ||
                   (!type.empty() && Get(g.fields, "TYPE", "G") != type))
               {
@@ -934,8 +1020,8 @@ namespace ao2::ea
           // sees in the server list).
           // A party's leader looks for a match game the same way when the party starts (then creates one): that
           // is no quick match, the party must not be taken to somebody else's lobby.
-          bool own_quick = not_private && IsLoopback(peer_ip()) && Get(f, "TYPE", "G") == "G" && !hosts_party;
-          if (hosts_party && not_private && IsLoopback(peer_ip()))
+          bool own_quick = not_private && own_game_ && Get(f, "TYPE", "G") == "G" && !hosts_party;
+          if (hosts_party && not_private && own_game_)
           {
             Log("game list of a party's leader: this server only");
           }
@@ -944,9 +1030,17 @@ namespace ao2::ea
             Log("public game: hosting (no search)");
             found.clear();
           }
+          else if (found.empty() && own_quick && QuickPlayOn())
+          {
+            // Quick Play: no waiting - the game hosts a public game at once
+            // and the invites' matchmaker keeps looking while it is alone.
+            Log("quick play (mode %s): nothing here, hosting and looking on", mode.c_str());
+            std::lock_guard lock(g_quick_play_mutex);
+            g_quick_play_at = std::chrono::steady_clock::now();
+            g_quick_play_mode = mode;
+          }
           else if (found.empty() && own_quick && hook)
           {
-            std::string mode = Get(f, "FILTER-ATTR-U-Mode");
             Log("quick match (mode %s): nothing here, looking further", mode.c_str());
             if (hook(mode))
             {
@@ -1006,7 +1100,7 @@ namespace ao2::ea
             std::lock_guard lock(st.mutex);
             uint32_t gid = uint32_t(ToU64(Get(f, "GID", "0")));
             std::erase_if(st.pending, [&](const auto &kv) {
-              return kv.first.first == gid && kv.second.joiner.lock().get() == this;
+              return (!gid || kv.first.first == gid) && kv.second.joiner.lock().get() == this;
             });
           }
           Send("ECNL", 0, {{"TID", tid}, {"LID", Get(f, "LID", "1")}, {"GID", Get(f, "GID", "0")}});
@@ -1019,10 +1113,13 @@ namespace ao2::ea
         {
           {
             std::lock_guard lock(st.mutex);
-            auto it = st.games.find(gid_);
-            if (it != st.games.end() && it->second.joined > 1)
+            uint32_t gid = uint32_t(ToU64(Get(f, "GID")));
+            for (auto &[id, game] : st.games)
             {
-              it->second.joined--;
+              if (!gid || gid == id)
+              {
+                game.members.erase(connection_id_);
+              }
             }
           }
           Send("PLVT", 0, {{"TID", tid}});
@@ -1039,6 +1136,14 @@ namespace ao2::ea
       {
         auto &st = state();
         uint32_t gid = uint32_t(ToU64(Get(f, "GID")));
+        const std::string type = Get(f, "TYPE");
+        const std::string xnaddr = Get(f, "R-XNADDR");
+        const auto own = Base64Decode(xnaddr);
+        if ((kCoopOnly && !type.empty() && type != "G") || own.size() != 36)
+        {
+          SendT("EGAM", {{"TID", tid}, {"LID", "1"}, {"GID", std::to_string(gid)}}, "ngam");
+          return;
+        }
         std::shared_ptr<TheaterConn> host;
         uint32_t pid = 0;
         std::string xuid;
@@ -1048,11 +1153,12 @@ namespace ao2::ea
           {
             // Joining from an invite: no GID, but the inviter's XUID (TYPE=G,
             // then TYPE=P) - the game that player hosts.
-            std::string want = Get(f, "XUID");
+            const uint64_t want = ToU64(Get(f, "XUID"));
             for (const auto &[id, g] : st.games)
             {
               auto x = g.host ? st.xuids.find(g.host->uid()) : st.xuids.end();
-              if (x != st.xuids.end() && x->second == want && !g.host->closed())
+              if (want && x != st.xuids.end() && ToU64(x->second) == want && !g.host->closed() &&
+                  !g.xnaddr.empty() && (type.empty() || Get(g.fields, "TYPE", "G") == type))
               {
                 gid = id;
                 Log("%s enters %s's game %u by XUID (invite)", name_.c_str(), g.host->name().c_str(), id);
@@ -1060,23 +1166,19 @@ namespace ao2::ea
               }
             }
           }
-          if (!gid)
+          if (!gid && Get(f, "XUID").empty())
           {
             gid = gid_;
           }
           auto it = st.games.find(gid);
-          if (it != st.games.end())
+          if (it != st.games.end() && !it->second.host->closed())
           {
             host = it->second.host;
             if (host.get() == this)
             {
-              it->second.xnaddr = Get(f, "R-XNADDR");
+              it->second.xnaddr = xnaddr;
             }
-            std::vector<uint8_t> own = Base64Decode(Get(f, "R-XNADDR"));
-            if (own.size() == 36)
-            {
-              std::memcpy(&own_ip_, own.data(), 4);
-            }
+            std::memcpy(&own_ip_, own.data(), 4);
             pid = it->second.next_pid++;
             st.pending[{gid, pid}] = {self(), {}, std::chrono::steady_clock::now()};
           }
@@ -1107,7 +1209,7 @@ namespace ao2::ea
                       {"INT-IP", ip_text},
                       {"INT-PORT", Get(f, "R-INT-PORT", port)},
                       {"PTYPE", Get(f, "PTYPE", "P")},
-                      {"R-XNADDR", host.get() == this ? Get(f, "R-XNADDR") : RewriteXnAddr(Get(f, "R-XNADDR"), ip)},
+                      {"R-XNADDR", host.get() == this ? xnaddr : RewriteXnAddr(xnaddr, ip)},
                       {"LID", "1"},
                       {"GID", std::to_string(gid)}};
         for (const auto &[k, v] : f)
@@ -1149,7 +1251,9 @@ namespace ao2::ea
         uint32_t id = uint32_t(ToU64(Get(f, "GID", std::to_string(gid_))));
         {
           std::lock_guard lock(st.mutex);
-          auto p = st.pending.find({id, pid});
+          auto it = st.games.find(id);
+          const bool owns_game = it != st.games.end() && it->second.host.get() == this;
+          auto p = owns_game ? st.pending.find({id, pid}) : st.pending.end();
           if (p != st.pending.end())
           {
             joiner = p->second.joiner.lock();
@@ -1169,12 +1273,11 @@ namespace ao2::ea
               st.pending.erase(p);
             }
           }
-          auto it = st.games.find(id);
-          if (it != st.games.end())
+          if (owns_game)
           {
-            if (joiner && joiner.get() != this && Get(f, "ALLOWED", "1") == "1")
+            if (joiner && joiner.get() != this && !joiner->closed() && Get(f, "ALLOWED", "1") == "1")
             {
-              it->second.joined++;
+              it->second.members.insert(joiner->connection_id_);
             }
             game = it->second;
             have_game = true;
@@ -1258,6 +1361,9 @@ namespace ao2::ea
       }
 
     private:
+      inline static std::atomic<uint64_t> next_connection_id_{1};
+      const uint64_t connection_id_ = next_connection_id_++;
+      const bool own_game_;
       uint64_t uid_ = 0;
       uint32_t gid_ = 0;
       uint32_t own_ip_ = 0; // the address in the player's own XNADDR (EGAM)
@@ -1692,7 +1798,7 @@ namespace ao2::ea
             if (g.host && !g.host->closed())
             {
               games++;
-              in_games += g.joined;
+              in_games += g.Players();
             }
           }
         }
@@ -1803,6 +1909,14 @@ namespace ao2::ea
 
     void ForwardToTunnel(SOCKET local, const std::string &kind)
     {
+      // With no relay address the server would advertise this machine's public IP
+      // while its game is behind NAT. Let the next login retry sign-in instead.
+      if (!opnet::SelfIp(5000))
+      {
+        Log("tunnel %s: UDP sign-in timed out", kind.c_str());
+        closesocket(local);
+        return;
+      }
       std::string head, rest;
       std::string key = opnet::KeyHex();
       SOCKET remote = TunnelOpen("GET " + TunnelPath(kind) + " HTTP/1.1\r\nHost: " + g_tunnel_host + "\r\nUpgrade: " +
@@ -1829,7 +1943,16 @@ namespace ao2::ea
       {
         SendAll(local, rest);
       }
-      std::thread up([local, remote]() { Pump(local, remote); });
+      std::thread up([local, remote, &kind]() {
+        if (kind == "theater")
+        {
+          ao2::router::ForwardTheater(local, remote);
+        }
+        else
+        {
+          Pump(local, remote);
+        }
+      });
       Pump(remote, local);
       up.join();
       closesocket(remote);
@@ -1837,39 +1960,6 @@ namespace ao2::ea
       Log("tunnel %s closed", kind.c_str());
     }
 
-    // 127.0.0.1:port -> the tunnel. False when the port is taken (another
-    // game on this PC already forwards it, or runs a server).
-    bool ListenTunnel(uint16_t port, const std::string &kind)
-    {
-      SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-      sockaddr_in addr = {};
-      addr.sin_family = AF_INET;
-      addr.sin_port = htons(port);
-      addr.sin_addr.s_addr = g_tunnel_local;
-      if (s == INVALID_SOCKET || bind(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) != 0 ||
-          listen(s, 16) != 0)
-      {
-        if (s != INVALID_SOCKET)
-        {
-          closesocket(s);
-        }
-        return false;
-      }
-      std::thread([s, kind]() {
-        while (true)
-        {
-          SOCKET c = accept(s, nullptr, nullptr);
-          if (c == INVALID_SOCKET)
-          {
-            break;
-          }
-          int nodelay = 1;
-          setsockopt(c, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(nodelay));
-          std::thread([c, kind]() { ForwardToTunnel(c, kind); }).detach();
-        }
-      }).detach();
-      return true;
-    }
 #endif
   } // namespace
 
@@ -1977,7 +2067,32 @@ namespace ao2::ea
     {
       StartDiscoveryResponder();
     }
+    g_own_server = ok;
     return ok;
+  }
+
+  bool OwnServerRunning()
+  {
+    return g_own_server;
+  }
+
+  void ServeLocal(uint16_t port, uintptr_t socket, bool own_game)
+  {
+    SOCKET c = SOCKET(socket);
+    std::shared_ptr<Conn> conn;
+    if (port == kFeslPort)
+    {
+      conn = std::make_shared<FeslConn>(c);
+    }
+    else if (port == kTheaterPort)
+    {
+      conn = std::make_shared<TheaterConn>(c, own_game);
+    }
+    else
+    {
+      conn = std::make_shared<MessengerConn>(c);
+    }
+    conn->Run();
   }
 
   void LogMessage(const std::string &text) { Log("%s", text.c_str()); }
@@ -1999,7 +2114,7 @@ namespace ao2::ea
       auto x = st.xuids.find(g.host->uid());
       out->host_xuid = x != st.xuids.end() ? ToU64(x->second) : 0;
       out->is_private = Get(g.fields, "B-U-Private") == "1";
-      out->players = g.joined;
+      out->players = g.Players();
       out->playgroup = Get(g.fields, "TYPE") == "P";
       out->max_players = int(ToU64(Get(g.fields, "MAX-PLAYERS", "2"), 2));
       out->map = Get(g.fields, "B-U-Map");
@@ -2016,6 +2131,16 @@ namespace ao2::ea
   void SetQuickMatchHook(QuickMatchHook hook)
   {
     g_quick_match = hook;
+  }
+
+  std::chrono::steady_clock::time_point QuickPlayHosted(std::string *mode)
+  {
+    std::lock_guard lock(g_quick_play_mutex);
+    if (mode)
+    {
+      *mode = g_quick_play_mode;
+    }
+    return g_quick_play_at;
   }
 
 #ifdef AO2_STANDALONE_SERVER
@@ -2065,9 +2190,24 @@ namespace ao2::ea
   }
 
 #ifndef AO2_STANDALONE_SERVER
+  void ForwardTunnel(uint16_t port, uintptr_t socket)
+  {
+    ForwardToTunnel(SOCKET(socket), port == kFeslPort ? "fesl" : port == kTheaterPort ? "theater" : "messenger");
+  }
+
   bool TunnelActive()
   {
     return g_tunnel;
+  }
+
+  std::string TunnelEndpoint()
+  {
+    if (!g_tunnel)
+    {
+      return {};
+    }
+    return IpString(g_tunnel_ip) + ":" + std::to_string(g_tunnel_port) + "/" +
+           std::to_string(REXCVAR_GET(ao2_openportroid_port));
   }
 
   bool TunnelGameQuery(const std::string &name, std::string *packet)
@@ -2144,6 +2284,11 @@ namespace ao2::ea
       // "host" or "host:port" (the HTTP port, 80 by default; a test
       // without nginx gives the server's --tunnel-port).
       std::string server = REXCVAR_GET(ao2_openportroid_server);
+      // Migrate installations that saved the original default.
+      if (server == "aot.bhop.pw")
+      {
+        server = opnet::kDefaultServer;
+      }
       if (size_t colon = server.find(':'); colon != std::string::npos)
       {
         g_tunnel_port = uint16_t(std::atoi(server.c_str() + colon + 1));
@@ -2164,14 +2309,11 @@ namespace ao2::ea
       // Two games on one PC (tests) each have a loopback address of their own.
       uint32_t bind_ip = ParseIp(rex::cvar::GetFlagByName("net_bind_ip"));
       g_tunnel_local = IsLoopback(bind_ip) ? bind_ip : htonl(INADDR_LOOPBACK);
-      int bound = 0;
-      bound += ListenTunnel(kFeslPort, "fesl");
-      bound += ListenTunnel(kTheaterPort, "theater");
-      bound += ListenTunnel(kMessengerPort, "messenger");
       g_tunnel = true;
-      rex::cvar::SetFlagByName("net_title_server_ip", IpString(g_tunnel_local));
-      Log("OpenPortroid server %s (%s): lobby through the tunnel (%d of 3 ports here%s), this player %s", server.c_str(),
-          IpString(ip).c_str(), bound, bound < 3 ? ", the rest another game's on this PC" : "",
+      bool routed = ao2::router::Start(g_tunnel_local, {ao2::router::Kind::kTunnel, 0});
+      Log("OpenPortroid server %s (%s): lobby through the tunnel (router %s%s), this player %s", server.c_str(),
+          IpString(ip).c_str(), IpString(g_tunnel_local).c_str(),
+          routed ? "" : ", not all ports: another game on this PC has them",
           vip ? IpString(vip).c_str() : "not signed in yet (game traffic straight, no NAT punching)");
     }
   } // namespace
@@ -2189,24 +2331,67 @@ namespace ao2::ea
     }
     std::string host = REXCVAR_GET(ao2_coop_host);
     bool server = REXCVAR_GET(ao2_coop_server);
-    if (!host.empty())
+    // The game finds EA's servers (XOnlineGetServiceInfo) at the lobby
+    // router (lobby_router.h), which sends its logins home: this process's
+    // server for the host, the host's (ao2_coop_host) for the partner. A
+    // socket bound to a VPN address (net_bind_ip) reaches the router there,
+    // otherwise over loopback.
+    ao2::router::Target home;
+    if (server)
     {
-      // Partner: the game asks XOnlineGetServiceInfo for EA's servers.
-      rex::cvar::SetFlagByName("net_title_server_ip", host);
+      Log("Army of Two co-op server");
+      if (StartServer(false))
+      {
+        home = {ao2::router::Kind::kOwn, 0};
+      }
     }
-    if (!server)
+    if (home.kind == ao2::router::Kind::kNone && !host.empty())
     {
-      return;
+      if (uint32_t ip = ResolveIp(host))
+      {
+        home = {ao2::router::Kind::kDirect, ip};
+      }
+      else
+      {
+        Log("ao2_coop_host %s does not resolve", host.c_str());
+      }
     }
-    if (host.empty() && rex::cvar::GetFlagByName("net_title_server_ip").empty())
+    if (home.kind == ao2::router::Kind::kNone)
     {
-      // The host's own game uses its server; a socket bound to a VPN address
-      // (net_bind_ip) reaches it there, otherwise over loopback.
-      std::string bind = rex::cvar::GetFlagByName("net_bind_ip");
-      rex::cvar::SetFlagByName("net_title_server_ip", bind.empty() ? "127.0.0.1" : bind);
+      // A server named to the runtime itself (--net_title_server_ip).
+      if (uint32_t ip = ParseIp(rex::cvar::GetFlagByName("net_title_server_ip")))
+      {
+        home = {ao2::router::Kind::kDirect, ip};
+      }
     }
-    Log("Army of Two co-op server (game connects to %s)", rex::cvar::GetFlagByName("net_title_server_ip").c_str());
-    StartServer(false);
+    // Starting the executable directly in Steam mode should still allow hosting.
+    if (home.kind == ao2::router::Kind::kNone && NetMode() == "steam" && StartServer(false))
+    {
+      home = {ao2::router::Kind::kOwn, 0};
+    }
+    std::string bind = rex::cvar::GetFlagByName("net_bind_ip");
+    if (home.kind == ao2::router::Kind::kOwn && ParseIp(bind) == htonl(INADDR_LOOPBACK))
+    {
+      // DirtySock interprets 127.0.0.1 as the receiving instance itself
+      // when it builds the game tunnel. Use another loopback address for
+      // this instance; the built-in server still accepts LAN logins on .1.
+      bind = "127.1.0.1";
+      rex::cvar::SetFlagByName("net_bind_ip", bind);
+      Log("using %s for the local player's network sockets (127.0.0.1 is reserved by the game)", bind.c_str());
+    }
+    uint32_t local = bind.empty() ? htonl(INADDR_LOOPBACK) : ParseIp(bind);
+    if (!local)
+    {
+      local = htonl(INADDR_LOOPBACK);
+    }
+    if (home.kind == ao2::router::Kind::kDirect && home.ip == local)
+    {
+      // The lobby server is another process at this game's own address (a
+      // standalone server on this PC): the router stands aside of it.
+      local = htonl(0x7F2A0001); // 127.42.0.1
+    }
+    ao2::router::Start(local, home);
+    Log("game connects to the lobby router at %s", IpString(local).c_str());
   }
 #endif
 } // namespace ao2::ea

@@ -41,7 +41,7 @@ namespace ao2::opnet
   constexpr char kMagic[3] = {'O', 'P', 'N'};
   // The 40th Day's server has 18500 and /ao2/ on the same host.
   constexpr uint16_t kDefaultPort = 18501;
-  constexpr char kDefaultServer[] = "aot.bhop.pw";
+  constexpr char kDefaultServer[] = "openportroid.com";
   constexpr char kTunnelPath[] = "/aot1/";
   constexpr char kTunnelUpgrade[] = "aot1-tunnel";
   constexpr int kKeySize = 16;

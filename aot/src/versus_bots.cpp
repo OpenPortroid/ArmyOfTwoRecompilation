@@ -596,9 +596,16 @@ namespace
     {
       return 0;
     }
+    // Not a class (the "object" is freed memory used for something else): no
+    // flags, not cached, and its "superclasses" are not read.
+    auto pointer = [](uint32_t p) { return p >= 0x40000000 && p < 0x90000000 && !(p & 3); };
     uint8_t flags = 0;
     for (uint32_t c = cls, depth = 0; c && depth < 40; c = LoadU32(base, c + 60), ++depth)
     {
+      if (!pointer(c))
+      {
+        return 0;
+      }
       flags |= c == character ? kIsCharacter : c == ai ? kIsAI : c == civilian && civilian ? kIsCivilian : 0;
     }
     cache.emplace(cls, flags);
@@ -3170,6 +3177,19 @@ namespace
   Input Think(PPCContext &ctx, uint8_t *base, uint32_t id, Bot &bot, uint32_t frame)
   {
     Input in;
+    // The enemies remembered from earlier frames: only while they are among
+    // this frame's characters (the world's pawn list). A pawn destroyed since
+    // is freed by the garbage collector and its memory used again - reading
+    // its class from there crashed (the threat is kept for kThreatFrames,
+    // and for as long as the bot lies "dead").
+    if (bot.target && !FindCharacter(bot.target))
+    {
+      bot.target = 0;
+    }
+    if (bot.threat && !FindCharacter(bot.threat))
+    {
+      bot.threat = 0;
+    }
     uint32_t controller = bot.controller;
     uint32_t pawn = LoadU32(base, controller + kControllerPawn);
     uint32_t holder = LoadU32(base, controller + kLookHolder);

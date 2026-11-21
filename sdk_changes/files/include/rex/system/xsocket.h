@@ -13,6 +13,7 @@
  */
 
 #include <atomic>
+#include <condition_variable>
 #include <cstring>
 #include <mutex>
 #include <thread>
@@ -148,9 +149,11 @@ class XSocket : public XObject {
   bool broadcast_socket_ = false;
 
   std::mutex io_mutex_;
-  std::atomic<bool> cancel_{false};
+  std::condition_variable io_done_;
+  bool closing_ = false;
+  unsigned canceling_ = 0;
+  unsigned pending_receives_ = 0;
   Traffic traffic_;
-  std::vector<std::thread> pending_;
 };
 
 }  // namespace rex::system

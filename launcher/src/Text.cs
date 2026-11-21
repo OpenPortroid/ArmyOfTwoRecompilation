@@ -734,12 +734,12 @@ namespace AO2Launcher
               "Disposizione del controller ripristinata");
             a("Player 1 name", "Имя игрока 1", "Nom du joueur 1", "Name von Spieler 1", "Nombre del jugador 1", "Nome giocatore 1");
             a("Player 2 name", "Имя игрока 2", "Nom du joueur 2", "Name von Spieler 2", "Nombre del jugador 2", "Nome giocatore 2");
-            a("Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty to use the computer's name.",
-              "Геймертег игрока 1 (до 15 символов), то же, что «Сеть → Имя игрока». Если пусто — имя компьютера.",
-              "Gamertag du joueur 1 (15 caractères max.), le même que Réseau → Nom du joueur. Vide : le nom de l'ordinateur.",
-              "Gamertag von Spieler 1 (bis 15 Zeichen), wie Netzwerk → Spielername. Leer: der Name des Computers.",
-              "Gamertag del jugador 1 (hasta 15 caracteres), el mismo que Red → Nombre del jugador. Vacío: el nombre del PC.",
-              "Gamertag del giocatore 1 (fino a 15 caratteri), lo stesso di Rete → Nome giocatore. Vuoto: il nome del computer.");
+            a("Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty for a generated name.",
+              "Ник игрока 1 (до 15 символов), как в разделе «Сеть → Имя игрока». Если поле пустое, ник подбирается автоматически.",
+              "Gamertag du joueur 1 (15 caractères max.), le même que Réseau → Nom du joueur. Laissez vide pour générer un nom.",
+              "Gamertag von Spieler 1 (bis 15 Zeichen), wie Netzwerk → Spielername. Ohne Eingabe wird ein Name erzeugt.",
+              "Gamertag del jugador 1 (hasta 15 caracteres), el mismo que Red → Nombre del jugador. Déjalo vacío para generar un nombre.",
+              "Gamertag del giocatore 1 (fino a 15 caratteri), lo stesso di Rete → Nome giocatore. Lascia vuoto per generare un nome.");
             a("Gamertag of player 2 (up to 15 characters); their own profile and settings. " +
               "Empty: player 1's name with (1) after it.",
               "Геймертег игрока 2 (до 15 символов); у него свой профиль и настройки. " +
@@ -791,40 +791,40 @@ namespace AO2Launcher
             // --- Network: the OpenPortroid server (Nicks.cs) ---
             a("Network", "Сеть", "Réseau", "Netzwerk", "Red", "Rete");
             a("LAN + Steam: the local network or a VPN (Radmin VPN, ZeroTier...), and Steam friends and lobbies " +
-              "while Steam runs. OpenPortroid: play with anyone on the internet through the OpenPortroid server " +
-              "(aot.bhop.pw), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
+              "while Steam runs. OpenPortroid: play co-op online through the OpenPortroid server " +
+              "(openportroid.com), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
               "Both players need the same choice.",
               "LAN + Steam: локальная сеть или VPN (Radmin VPN, ZeroTier...), а пока запущен Steam — ещё друзья и лобби Steam. " +
-              "OpenPortroid: игра с кем угодно в интернете через сервер OpenPortroid (aot.bhop.pw), без VPN, Steam и открытых портов. " +
+              "OpenPortroid: кооператив по интернету через сервер OpenPortroid (openportroid.com), без VPN, Steam и открытых портов. " +
               "LAN: только локальная сеть или VPN. У обоих игроков должно быть выбрано одно и то же.",
               "LAN + Steam : le réseau local ou un VPN (Radmin VPN, ZeroTier...), et les amis et salons Steam quand Steam est lancé. " +
-              "OpenPortroid : jouer avec n'importe qui sur Internet via le serveur OpenPortroid (aot.bhop.pw), sans VPN, Steam ni ports ouverts. " +
+              "OpenPortroid : coop en ligne via le serveur OpenPortroid (openportroid.com), sans VPN, Steam ni ports ouverts. " +
               "LAN : le réseau local ou un VPN seulement. Les deux joueurs doivent choisir la même chose.",
               "LAN + Steam: das lokale Netz oder ein VPN (Radmin VPN, ZeroTier...), dazu Steam-Freunde und -Lobbys, solange Steam läuft. " +
-              "OpenPortroid: mit jedem im Internet über den OpenPortroid-Server (aot.bhop.pw) spielen, ohne VPN, Steam oder offene Ports. " +
+              "OpenPortroid: Online-Koop über den OpenPortroid-Server (openportroid.com), ohne VPN, Steam oder offene Ports. " +
               "LAN: nur das lokale Netz oder ein VPN. Beide Spieler brauchen dieselbe Wahl.",
               "LAN + Steam: la red local o una VPN (Radmin VPN, ZeroTier...), y amigos y salas de Steam mientras Steam está abierto. " +
-              "OpenPortroid: jugar con cualquiera en internet a través del servidor OpenPortroid (aot.bhop.pw), sin VPN, Steam ni puertos abiertos. " +
+              "OpenPortroid: cooperativo en línea a través del servidor OpenPortroid (openportroid.com), sin VPN, Steam ni puertos abiertos. " +
               "LAN: solo la red local o una VPN. Ambos jugadores deben elegir lo mismo.",
               "LAN + Steam: la rete locale o una VPN (Radmin VPN, ZeroTier...), più amici e lobby di Steam mentre Steam è aperto. " +
-              "OpenPortroid: gioca con chiunque su Internet tramite il server OpenPortroid (aot.bhop.pw), senza VPN, Steam o porte aperte. " +
+              "OpenPortroid: co-op online tramite il server OpenPortroid (openportroid.com), senza VPN, Steam o porte aperte. " +
               "LAN: solo la rete locale o una VPN. Entrambi i giocatori devono scegliere lo stesso.");
-            a("The name your partner sees (up to 15 characters). Empty: the computer's name. On the OpenPortroid " +
+            a("The name your partner sees (up to 15 characters). Leave empty for a generated name. On the OpenPortroid " +
               "server only Latin letters, digits, _ and -, and it is yours alone: the first to take it keeps it " +
               "(it is freed after 180 days unused), and friends find you by it.",
-              "Имя, которое видит напарник (до 15 символов). Пусто — имя компьютера. На сервере OpenPortroid — только латиница, " +
+              "Ник, который видит напарник (до 15 символов). Если поле пустое, ник подбирается автоматически. На сервере OpenPortroid — только латиница, " +
               "цифры, _ и -, и ник только твой: его оставляет за собой первый, кто занял (освобождается через 180 дней без игры), " +
               "и друзья находят тебя по нему.",
-              "Le nom que voit ton partenaire (15 caractères max). Vide : le nom de l'ordinateur. Sur le serveur OpenPortroid, " +
+              "Le nom que voit ton partenaire (15 caractères max). Laisse vide pour générer un nom. Sur le serveur OpenPortroid, " +
               "seulement lettres latines, chiffres, _ et -, et il n'est qu'à toi : le premier qui le prend le garde " +
               "(libéré après 180 jours sans jouer), et tes amis te trouvent avec.",
-              "Der Name, den dein Partner sieht (bis 15 Zeichen). Leer: der Name des Computers. Auf dem OpenPortroid-Server " +
+              "Der Name, den dein Partner sieht (bis 15 Zeichen). Ohne Eingabe wird ein Name erzeugt. Auf dem OpenPortroid-Server " +
               "nur lateinische Buchstaben, Ziffern, _ und -, und er gehört nur dir: wer ihn zuerst nimmt, behält ihn " +
               "(frei nach 180 Tagen ohne Nutzung), und Freunde finden dich darüber.",
-              "El nombre que ve tu compañero (hasta 15 caracteres). Vacío: el nombre del ordenador. En el servidor OpenPortroid " +
+              "El nombre que ve tu compañero (hasta 15 caracteres). Déjalo vacío para generar un nombre. En el servidor OpenPortroid " +
               "solo letras latinas, cifras, _ y -, y es solo tuyo: quien lo toma primero se lo queda " +
               "(se libera tras 180 días sin uso), y tus amigos te encuentran por él.",
-              "Il nome che vede il compagno (fino a 15 caratteri). Vuoto: il nome del computer. Sul server OpenPortroid " +
+              "Il nome che vede il compagno (fino a 15 caratteri). Lascia vuoto per generare un nome. Sul server OpenPortroid " +
               "solo lettere latine, cifre, _ e -, ed è solo tuo: chi lo prende per primo lo tiene " +
               "(si libera dopo 180 giorni senza uso), e gli amici ti trovano con quello.");
             a("Player key", "Ключ игрока", "Clé du joueur", "Spielerschlüssel", "Clave del jugador", "Chiave del giocatore");

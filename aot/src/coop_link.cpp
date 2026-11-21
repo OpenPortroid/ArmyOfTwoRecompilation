@@ -20,9 +20,8 @@
 //
 // UDP port kPort (the same program as the game, so the firewall rule of
 // "Allow through firewall" covers it). The partner's address is the one the
-// game sends its own traffic to (sendto, VDP port 1000); replies go back to
-// where hellos came from, so two games on one PC (one of them on another
-// port) find each other too.
+// current game sends its own traffic to (sendto, VDP port 1000); replies go
+// back to the source port learned at that address.
 #include "coop_link.h"
 
 #include <winsock2.h>
@@ -34,10 +33,12 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <map>
 #include <mutex>
 #include <random>
-#include <vector>
+#include <string>
 
+#include <rex/cvar.h>
 #include <rex/ppc.h>
 
 #include "coop.h"
@@ -51,6 +52,8 @@ namespace
   constexpr uint16_t kGamePort = 1000;
   constexpr uint32_t kMagic = 0x414F324C; // "AO2L"
   constexpr auto kRemoteSkipLifetime = std::chrono::milliseconds(1500);
+  constexpr auto kByeGrace = std::chrono::seconds(2);
+  constexpr int kReceiveBudget = 64;
 
   enum : uint32_t
   {
@@ -93,12 +96,11 @@ namespace
   };
   constexpr auto kQualityPeriod = std::chrono::milliseconds(200);
 
-  // What a received packet is read into (the largest message).
-  union Packet
+  struct Peer
   {
-    Message header;
-    SettingsMessage settings;
-    QualityMessage quality;
+    sockaddr_in address;
+    uint32_t quality_stamp = 0;
+    uint32_t skip_seq = 0;
   };
 
   std::mutex g_mutex;
@@ -106,10 +108,11 @@ namespace
   bool g_failed = false;
   uint32_t g_self = 0;
   uint32_t g_seq = 0;
-  std::vector<sockaddr_in> g_peers; // where to send: the game's peer + who said hello
+  std::map<uint32_t, Peer> g_peers; // addresses this session's VDP sends to
+  std::atomic<uint32_t> g_session_id{0};
   std::atomic<uint32_t> g_game_peer{0}; // IPv4 (network order) the game sends to
+  clock::time_point g_ended_at;
   clock::time_point g_last_hello;
-  uint32_t g_last_remote_seq = 0;
   std::atomic<int64_t> g_remote_skip{0}; // clock ticks of the partner's last skip
   // Simulation settings: this machine's (sent with hellos) and the
   // partner's (bit 63 = received; then flags << 48, sim_hz << 32, sender id).
@@ -181,9 +184,18 @@ namespace
     }
     u_long nonblocking = 1;
     ioctlsocket(g_socket, FIONBIO, &nonblocking);
+    constexpr DWORD kUdpConnReset = _WSAIOW(IOC_VENDOR, 12);
+    BOOL report_icmp = FALSE;
+    DWORD bytes = 0;
+    WSAIoctl(g_socket, kUdpConnReset, &report_icmp, sizeof(report_icmp), nullptr, 0, &bytes, nullptr, nullptr);
     sockaddr_in local{};
     local.sin_family = AF_INET;
     local.sin_addr.s_addr = htonl(INADDR_ANY);
+    const std::string bind_ip = rex::cvar::GetFlagByName("net_bind_ip");
+    if (!bind_ip.empty())
+    {
+      inet_pton(AF_INET, bind_ip.c_str(), &local.sin_addr);
+    }
     // kPort normally; the next ones when a second game on this PC has it.
     for (uint16_t port = kPort; port < kPort + 8; ++port)
     {
@@ -192,7 +204,7 @@ namespace
       {
         g_self = std::random_device{}() | 1;
         g_self_id.store(g_self, std::memory_order_relaxed);
-        Logf("listening on UDP %u", port);
+        Logf("listening on UDP %s", Text(local));
         return true;
       }
     }
@@ -203,27 +215,43 @@ namespace
     return false;
   }
 
-  void AddPeer(const sockaddr_in &a)
+  void NoteGamePeer(uint32_t ip)
   {
-    for (const sockaddr_in &p : g_peers)
+    if (!ao2::coop::network_session.load(std::memory_order_acquire) ||
+        g_game_peer.load(std::memory_order_relaxed) == ip)
     {
-      if (p.sin_addr.s_addr == a.sin_addr.s_addr && p.sin_port == a.sin_port)
-      {
-        return;
-      }
+      return;
     }
-    g_peers.push_back(a);
-    Logf("peer %s", Text(a));
+    std::lock_guard lock(g_mutex);
+    if (!ao2::coop::network_session.load(std::memory_order_relaxed))
+    {
+      return;
+    }
+    sockaddr_in address{};
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = ip;
+    address.sin_port = htons(kPort);
+    if (g_peers.try_emplace(ip, Peer{address}).second)
+    {
+      g_last_hello = {}; // send settings promptly to the new partner
+      Logf("peer %s", Text(address));
+    }
+    g_game_peer.store(ip, std::memory_order_relaxed);
+  }
+
+  template <typename T>
+  void SendToPeers(const T &message)
+  {
+    for (const auto &[ip, peer] : g_peers)
+    {
+      sendto(g_socket, reinterpret_cast<const char *>(&message), sizeof(message), 0,
+             reinterpret_cast<const sockaddr *>(&peer.address), sizeof(peer.address));
+    }
   }
 
   void SendAll(uint32_t type, uint32_t seq)
   {
-    Message m{htonl(kMagic), htonl(g_self), htonl(type), htonl(seq)};
-    for (const sockaddr_in &p : g_peers)
-    {
-      sendto(g_socket, reinterpret_cast<const char *>(&m), sizeof(m), 0, reinterpret_cast<const sockaddr *>(&p),
-             sizeof(p));
-    }
+    SendToPeers(Message{htonl(kMagic), htonl(g_self), htonl(type), htonl(seq)});
   }
 
   void SendSettings()
@@ -231,11 +259,7 @@ namespace
     uint64_t local = g_local_settings.load(std::memory_order_relaxed);
     SettingsMessage m{{htonl(kMagic), htonl(g_self), htonl(kSettings), 0}, htonl(uint32_t(local >> 32)),
                       htonl(uint32_t(local))};
-    for (const sockaddr_in &p : g_peers)
-    {
-      sendto(g_socket, reinterpret_cast<const char *>(&m), sizeof(m), 0, reinterpret_cast<const sockaddr *>(&p),
-             sizeof(p));
-    }
+    SendToPeers(m);
   }
 
   // Under g_mutex.
@@ -252,11 +276,7 @@ namespace
                      htonl(uint32_t(extra >> 32)),
                      htonl(uint32_t(extra)),
                      htonl(uint32_t(g_local_waits.load(std::memory_order_relaxed)))};
-    for (const sockaddr_in &p : g_peers)
-    {
-      sendto(g_socket, reinterpret_cast<const char *>(&m), sizeof(m), 0, reinterpret_cast<const sockaddr *>(&p),
-             sizeof(p));
-    }
+    SendToPeers(m);
   }
 
   // Under g_mutex.
@@ -287,75 +307,116 @@ namespace
   // Under g_mutex.
   void PumpLocked()
   {
-    if (!Open())
+    const bool active = ao2::coop::network_session.load(std::memory_order_relaxed);
+    if ((!active && (g_ended_at == clock::time_point{} || clock::now() - g_ended_at > kByeGrace)) ||
+        !Open() || g_peers.empty())
     {
       return;
     }
-    if (uint32_t ip = g_game_peer.load(std::memory_order_relaxed))
+    for (int i = 0; i < kReceiveBudget; ++i)
     {
-      sockaddr_in a{};
-      a.sin_family = AF_INET;
-      a.sin_addr.s_addr = ip;
-      a.sin_port = htons(kPort);
-      AddPeer(a);
-    }
-    for (;;)
-    {
-      Packet any;
-      SettingsMessage &packet = any.settings;
-      Message &m = any.header;
+      char datagram[sizeof(QualityMessage)];
       sockaddr_in from{};
       int from_len = sizeof(from);
-      int n = recvfrom(g_socket, reinterpret_cast<char *>(&any), sizeof(any), 0,
+      int n = recvfrom(g_socket, datagram, sizeof(datagram), 0,
                        reinterpret_cast<sockaddr *>(&from), &from_len);
       if (n < 0)
       {
-        break; // WSAEWOULDBLOCK: nothing more (or the peer is not there yet)
+        if (WSAGetLastError() == WSAEMSGSIZE)
+        {
+          continue; // a datagram larger than any packet in this protocol
+        }
+        break;
       }
-      if (n < int(sizeof(m)) || ntohl(m.magic) != kMagic || ntohl(m.sender) == g_self)
+      Message m;
+      if (n < int(sizeof(m)))
       {
         continue;
       }
-      AddPeer(from);
-      g_heard.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
-      uint32_t seq = ntohl(m.seq);
-      if (ntohl(m.type) == kQuality && n == int(sizeof(QualityMessage)))
+      std::memcpy(&m, datagram, sizeof(m));
+      if (ntohl(m.magic) != kMagic || ntohl(m.sender) == g_self)
       {
-        OnQuality(any.quality);
         continue;
       }
-      if (ntohl(m.type) == kSettings && n == int(sizeof(packet)))
+      auto peer = g_peers.find(from.sin_addr.s_addr);
+      const uint32_t type = ntohl(m.type);
+      if (peer == g_peers.end() || (!active && type != kBye))
       {
+        continue;
+      }
+      Peer &remote = peer->second;
+      if (type == kQuality && n == int(sizeof(QualityMessage)))
+      {
+        QualityMessage quality;
+        std::memcpy(&quality, datagram, sizeof(quality));
+        const uint32_t stamp = ntohl(quality.stamp);
+        const uint32_t advance = stamp - remote.quality_stamp;
+        if (!stamp || (remote.quality_stamp && (!advance || advance >= 0x80000000u)))
+        {
+          continue; // UDP reordering must not roll the partner's input margin back
+        }
+        remote.quality_stamp = stamp;
+        OnQuality(quality);
+      }
+      else if (type == kSettings && n == int(sizeof(SettingsMessage)))
+      {
+        SettingsMessage packet;
+        std::memcpy(&packet, datagram, sizeof(packet));
+        const uint32_t hz = ntohl(packet.sim_hz);
+        if (hz < 20 || hz > 240)
+        {
+          continue; // the sender may not have published its settings yet
+        }
         uint64_t settings = 1ull << 63 | uint64_t(ntohl(packet.flags) & 0x7FFF) << 48 |
-                            uint64_t(ntohl(packet.sim_hz) & 0xFFFF) << 32 | ntohl(m.sender);
+                            uint64_t(hz) << 32 | ntohl(m.sender);
         if (g_partner_settings.exchange(settings, std::memory_order_relaxed) != settings)
         {
           Logf("partner settings: decouple %u, sim %u Hz, server %u", ntohl(packet.flags) & kSettingsDecouple ? 1 : 0,
                ntohl(packet.sim_hz), ntohl(packet.flags) & kSettingsServer ? 1 : 0);
         }
       }
-      if (n != int(sizeof(m)))
+      else if (n != int(sizeof(Message)))
       {
         continue;
       }
-      if (ntohl(m.type) == kBye && !g_partner_bye.exchange(true, std::memory_order_relaxed))
+      else if (type == kBye)
       {
-        Logf("partner's network session is over (from %s)", Text(from));
+        if (!g_partner_bye.exchange(true, std::memory_order_relaxed))
+        {
+          Logf("partner left its network session (from %s)", Text(from));
+        }
+        continue;
       }
-      if (ntohl(m.type) == kSkipMovie && seq != g_last_remote_seq)
+      else if (type == kSkipMovie)
       {
-        g_last_remote_seq = seq;
+        const uint32_t seq = ntohl(m.seq);
+        const uint16_t advance = uint16_t(seq - remote.skip_seq);
+        if (!seq || (remote.skip_seq && (!advance || advance >= 0x8000u)))
+        {
+          continue;
+        }
+        remote.skip_seq = seq;
         g_remote_skip.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
         Logf("partner skips the movie (%u, from %s)", seq, Text(from));
       }
+      else if (type != kHello)
+      {
+        continue;
+      }
+      remote.address.sin_port = from.sin_port;
+      g_heard.store(clock::now().time_since_epoch().count(), std::memory_order_relaxed);
+    }
+    if (!active)
+    {
+      return;
     }
     auto now = clock::now();
-    if (!g_peers.empty() && ao2::coop::network_session.load(std::memory_order_relaxed) && now - g_last_quality >= kQualityPeriod)
+    if (now - g_last_quality >= kQualityPeriod)
     {
       g_last_quality = now;
       SendQuality();
     }
-    if (!g_peers.empty() && now - g_last_hello > std::chrono::seconds(1))
+    if (now - g_last_hello > std::chrono::seconds(1))
     {
       g_last_hello = now;
       SendAll(kHello, 0);
@@ -366,12 +427,70 @@ namespace
 
 namespace ao2::coop::link
 {
-  void Pump()
+  void BeginSession()
   {
-    if (!network_session.load(std::memory_order_relaxed) && !g_game_peer.load(std::memory_order_relaxed))
+    std::lock_guard lock(g_mutex);
+    if (network_session.load(std::memory_order_relaxed))
     {
       return;
     }
+    g_peers.clear();
+    g_game_peer.store(0, std::memory_order_relaxed);
+    g_ended_at = {};
+    g_last_hello = {};
+    g_last_quality = {};
+    g_echo = 0;
+    g_partner_bye.store(false, std::memory_order_relaxed);
+    g_partner_settings.store(0, std::memory_order_relaxed);
+    g_remote_skip.store(0, std::memory_order_relaxed);
+    g_ping.store(-1, std::memory_order_relaxed);
+    g_heard.store(0, std::memory_order_relaxed);
+    g_local_extra.store(0, std::memory_order_relaxed);
+    g_partner_extra.store(0, std::memory_order_relaxed);
+    g_local_waits.store(0, std::memory_order_relaxed);
+    g_partner_waits.store(-1, std::memory_order_relaxed);
+    if (g_socket != INVALID_SOCKET)
+    {
+      // Drop datagrams queued between matches, including a rematch with the same peer.
+      char stale[sizeof(QualityMessage)];
+      for (int i = 0; i < kReceiveBudget; ++i)
+      {
+        if (recv(g_socket, stale, sizeof(stale), 0) < 0 && WSAGetLastError() != WSAEMSGSIZE)
+        {
+          break;
+        }
+      }
+    }
+    g_session_id.fetch_add(1, std::memory_order_release);
+    network_session.store(true, std::memory_order_release);
+  }
+
+  void EndSession(bool voluntary)
+  {
+    std::lock_guard lock(g_mutex);
+    if (!network_session.load(std::memory_order_relaxed))
+    {
+      return;
+    }
+    if (voluntary && g_socket != INVALID_SOCKET && !g_peers.empty())
+    {
+      for (int i = 0; i < 3; ++i)
+      {
+        SendAll(kBye, 0);
+      }
+      Logf("bye sent to %zu address(es)", g_peers.size());
+    }
+    g_ended_at = clock::now();
+    network_session.store(false, std::memory_order_release);
+  }
+
+  uint32_t SessionId()
+  {
+    return g_session_id.load(std::memory_order_acquire);
+  }
+
+  void Pump()
+  {
     std::lock_guard lock(g_mutex);
     PumpLocked();
   }
@@ -380,7 +499,7 @@ namespace ao2::coop::link
   {
     std::lock_guard lock(g_mutex);
     PumpLocked();
-    if (g_socket == INVALID_SOCKET)
+    if (!network_session.load(std::memory_order_relaxed) || g_socket == INVALID_SOCKET || g_peers.empty())
     {
       return;
     }
@@ -420,6 +539,7 @@ namespace ao2::coop::link
     out->decouple = flags & kSettingsDecouple;
     out->server = flags & kSettingsServer;
     out->sim_hz = int32_t((v >> 32) & 0xFFFF);
+    out->sender_id = uint32_t(v);
     return true;
   }
 
@@ -471,36 +591,9 @@ namespace ao2::coop::link
     return g_partner_waits.load(std::memory_order_relaxed);
   }
 
-  void SendBye()
-  {
-    std::lock_guard lock(g_mutex);
-    if (g_socket == INVALID_SOCKET)
-    {
-      return;
-    }
-    for (int i = 0; i < 3; ++i)
-    {
-      SendAll(kBye, 0);
-    }
-    Logf("bye sent to %zu address(es)", g_peers.size());
-  }
-
   bool PartnerSaidBye()
   {
     return g_partner_bye.load(std::memory_order_relaxed);
-  }
-
-  void ResetQuality()
-  {
-    std::lock_guard lock(g_mutex);
-    g_partner_bye.store(false, std::memory_order_relaxed);
-    g_echo = 0;
-    g_ping.store(-1, std::memory_order_relaxed);
-    g_heard.store(0, std::memory_order_relaxed);
-    g_local_extra.store(0, std::memory_order_relaxed);
-    g_partner_extra.store(0, std::memory_order_relaxed);
-    g_local_waits.store(0, std::memory_order_relaxed);
-    g_partner_waits.store(-1, std::memory_order_relaxed);
   }
 
   bool SettingsAreMine(const SimSettings &mine, const SimSettings &partner)
@@ -509,8 +602,7 @@ namespace ao2::coop::link
     {
       return mine.server;
     }
-    uint32_t partner_id = uint32_t(g_partner_settings.load(std::memory_order_relaxed));
-    return g_self_id.load(std::memory_order_relaxed) < partner_id;
+    return g_self_id.load(std::memory_order_relaxed) < partner.sender_id;
   }
 } // namespace ao2::coop::link
 
@@ -529,9 +621,9 @@ extern "C" REX_FUNC(sub_82C19DB0)
     uint16_t port = uint16_t(a[2] << 8 | a[3]);
     uint32_t ip;
     std::memcpy(&ip, a + 4, 4); // network order, as in sockaddr_in
-    if (port == kGamePort && ip != 0 && ip != 0xFFFFFFFFu)
+    if (port == kGamePort && a[0] == 0 && a[1] == AF_INET && ip != 0 && ip != INADDR_BROADCAST)
     {
-      g_game_peer.store(ip, std::memory_order_relaxed);
+      NoteGamePeer(ip);
     }
     if (port == kGamePort)
     {

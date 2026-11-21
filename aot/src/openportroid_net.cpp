@@ -70,8 +70,14 @@ namespace
   constexpr auto kHelloRetry = std::chrono::seconds(1);
   constexpr auto kPunchTime = std::chrono::seconds(10);
   constexpr auto kPunchEvery = std::chrono::milliseconds(200);
-  constexpr auto kDirectKeepAlive = std::chrono::seconds(3);
-  constexpr auto kDirectLost = std::chrono::seconds(10);
+  constexpr auto kDirectKeepAlive = std::chrono::seconds(1);
+  constexpr auto kDirectLost = std::chrono::seconds(3);
+  uint16_t DiscoveryPort()
+  {
+    const std::string port = rex::cvar::GetFlagByName("net_discovery_port");
+    return port.empty() ? 36020 : uint16_t(std::strtoul(port.c_str(), nullptr, 10));
+  }
+
   constexpr auto kRetryIntroduce = std::chrono::seconds(30);
 
   void Log(const char *fmt, ...)
@@ -309,7 +315,7 @@ namespace
       }
       Peer &p = peers_[vip];
       p.vip = vip;
-      for (uint16_t port : {kGamePort, ao2::coop::link::kPort, PresencePort()})
+      for (uint16_t port : {kGamePort, ao2::coop::link::kPort, PresencePort(), DiscoveryPort()})
       {
         Udp(p, port);
       }
@@ -339,10 +345,11 @@ namespace
       bool changed = false;
       for (auto &[vip, p] : peers_)
       {
-        if (p.direct_up && now - p.heard > kDirectLost)
+        if (p.direct_up && (!REXCVAR_GET(ao2_openportroid_direct) || now - p.heard > kDirectLost))
         {
           p.direct_up = false;
           p.punch_until = now + kPunchTime;
+          p.next_introduce = now;
           changed = true;
           Log("peer %s: the straight way is silent, through the server", IpString(vip).c_str());
         }
@@ -510,15 +517,16 @@ namespace
         {
           Punch(p, from, 'k');
         }
-        p.heard = Clock::now();
-        if (!p.direct_up || !(p.direct == from))
+        // Only the reply to our probe confirms that we can send to this end.
+        // Receiving a probe alone is possible even on a one-way path.
+        if (type == 'k' && (!p.direct_up || p.direct == from))
         {
-          bool was = p.direct_up;
-          p.direct = from;
-          p.direct_up = true;
-          p.next_keepalive = p.heard + kDirectKeepAlive;
-          if (!was)
+          p.heard = Clock::now();
+          if (!p.direct_up)
           {
+            p.direct = from;
+            p.direct_up = true;
+            p.next_keepalive = p.heard + kDirectKeepAlive;
             Log("peer %s: straight at %s", IpString(vip).c_str(), EndString(from).c_str());
             Publish();
           }
@@ -529,11 +537,10 @@ namespace
         uint32_t vip;
         std::memcpy(&vip, d, 4);
         auto it = peers_.find(vip);
-        if (it == peers_.end() || !it->second.direct_up || !(it->second.direct == from))
+        if (it == peers_.end() || !IsEndOf(it->second, from))
         {
           return;
         }
-        it->second.heard = Clock::now();
         Deliver(it->second, d + 4, size - 4);
       }
     }

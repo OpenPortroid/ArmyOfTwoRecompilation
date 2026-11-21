@@ -265,11 +265,23 @@ X_STATUS XSocket::Initialize(AddressFamily af, Type type, Protocol proto) {
     return X_STATUS_UNSUCCESSFUL;
   }
 
+#if REX_PLATFORM_WIN32
+  if (type_ == X_SOCK_DGRAM) {
+    // Late ICMP errors from a departed peer must not abort a pending receive.
+    constexpr DWORD kUdpConnReset = _WSAIOW(IOC_VENDOR, 12);
+    BOOL report_icmp = FALSE;
+    DWORD bytes = 0;
+    WSAIoctl(native_handle_, kUdpConnReset, &report_icmp, sizeof(report_icmp), nullptr, 0,
+             &bytes, nullptr, nullptr);
+  }
+#endif
   return X_STATUS_SUCCESS;
 }
 
 X_STATUS XSocket::Close() {
-  CancelOverlapped();
+  std::unique_lock lock(io_mutex_);
+  closing_ = true;
+  io_done_.wait(lock, [this] { return pending_receives_ == 0; });
   if (native_handle_ == uint64_t(-1)) {
     return X_STATUS_SUCCESS;
   }
@@ -602,7 +614,11 @@ int XSocket::WSARecvFrom(uint32_t buffers_ptr, uint32_t num_buffers, uint32_t by
   auto overlapped =
       overlapped_ptr ? memory->TranslateVirtual<XWSAOVERLAPPED*>(overlapped_ptr) : nullptr;
 
-  std::unique_lock<std::mutex> lock(io_mutex_);
+  std::unique_lock lock(io_mutex_);
+  if (closing_ || canceling_) {
+    XThread::SetLastError(kWsaOperationAborted);
+    return -1;
+  }
 
   // Immediate completion when data is already waiting (or for blocking,
   // non-overlapped calls).
@@ -636,6 +652,7 @@ int XSocket::WSARecvFrom(uint32_t buffers_ptr, uint32_t num_buffers, uint32_t by
   overlapped->internal_high = 0;
   ResetEvent(kernel_state_, overlapped->event_handle);
 
+  ++pending_receives_;
   Retain();
   std::thread(&XSocket::PendingReceiveWorker, this, buffers_ptr, num_buffers, from_ptr,
               fromlen_ptr, overlapped_ptr)
@@ -650,40 +667,40 @@ void XSocket::PendingReceiveWorker(uint32_t buffers_ptr, uint32_t num_buffers, u
   auto memory = kernel_state_->memory();
   auto overlapped = memory->TranslateVirtual<XWSAOVERLAPPED*>(overlapped_ptr);
 
-  while (!cancel_ && native_handle_ != uint64_t(-1)) {
-    int ready = WaitReadable(native_handle_, 100);
-    if (ready == 0) {
-      continue;
-    }
-    std::unique_lock<std::mutex> lock(io_mutex_);
-    if (cancel_ || native_handle_ == uint64_t(-1)) {
+  std::unique_lock lock(io_mutex_);
+  while (true) {
+    if (closing_ || canceling_) {
+      overlapped->internal = kWsaOperationAborted;
       break;
     }
-    if (ready < 0) {
-      overlapped->internal = LastError();
-      SignalEvent(kernel_state_, overlapped->event_handle);
-      Release();
-      return;
-    }
-    int ret = ReceiveInto(buffers_ptr, num_buffers, from_ptr, fromlen_ptr);
-    if (ret < 0) {
-      uint32_t error = LastError();
-      if (error == 10035) {  // raced with another reader
-        continue;
+    if (WaitReadable(native_handle_, 0) > 0) {
+      int ret = ReceiveInto(buffers_ptr, num_buffers, from_ptr, fromlen_ptr);
+      if (ret >= 0) {
+        overlapped->internal_high = static_cast<uint32_t>(ret);
+        overlapped->offset = 0;
+        overlapped->internal = 0;
+        break;
       }
-      overlapped->internal = error;
-    } else {
-      overlapped->internal_high = static_cast<uint32_t>(ret);
-      overlapped->offset = 0;
-      overlapped->internal = 0;
+      uint32_t error = LastError();
+      if (error != 10035) {
+        overlapped->internal = error;
+        break;
+      }
     }
-    SignalEvent(kernel_state_, overlapped->event_handle);
-    Release();
-    return;
+    lock.unlock();
+    int ready = WaitReadable(native_handle_, 100);
+    uint32_t error = ready < 0 ? LastError() : 0;
+    lock.lock();
+    if (error && !closing_ && !canceling_) {
+      overlapped->internal = error;
+      break;
+    }
   }
 
-  overlapped->internal = kWsaOperationAborted;
   SignalEvent(kernel_state_, overlapped->event_handle);
+  --pending_receives_;
+  io_done_.notify_all();
+  lock.unlock();
   Release();
 }
 
@@ -692,10 +709,9 @@ bool XSocket::WSAGetOverlappedResult(uint32_t overlapped_ptr, uint32_t bytes_ptr
   auto memory = kernel_state_->memory();
   auto overlapped = memory->TranslateVirtual<XWSAOVERLAPPED*>(overlapped_ptr);
 
+  std::unique_lock lock(io_mutex_);
   if (wait) {
-    while (overlapped->internal == kStatusPending && !cancel_) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+    io_done_.wait(lock, [&] { return overlapped->internal != kStatusPending; });
   }
 
   uint32_t status = overlapped->internal;
@@ -719,7 +735,10 @@ bool XSocket::WSAGetOverlappedResult(uint32_t overlapped_ptr, uint32_t bytes_ptr
 }
 
 void XSocket::CancelOverlapped() {
-  cancel_ = true;
+  std::unique_lock lock(io_mutex_);
+  ++canceling_;
+  io_done_.wait(lock, [this] { return pending_receives_ == 0; });
+  --canceling_;
 }
 
 }  // namespace rex::system

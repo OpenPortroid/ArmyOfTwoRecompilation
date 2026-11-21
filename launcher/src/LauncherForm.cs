@@ -1763,16 +1763,15 @@ namespace AO2Launcher
                     Kind = RowKind.Choice, Label = "Network", Key = "net_mode",
                     Values = new[] { "steam", "openportroid", "lan" }, Names = new[] { "LAN + STEAM", "OPENPORTROID", "LAN" },
                     Desc = "LAN + Steam: the local network or a VPN (Radmin VPN, ZeroTier...), and Steam friends and lobbies " +
-                           "while Steam runs. OpenPortroid: play with anyone on the internet through the OpenPortroid server " +
-                           "(aot.bhop.pw), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
+                           "while Steam runs. OpenPortroid: play co-op online through the OpenPortroid server " +
+                           "(openportroid.com), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
                            "Both players need the same choice."
                 },
                 new Row
                 {
                     Kind = RowKind.Text, Label = "Player name", Key = "gamertag", MaxLen = 15,
-                    Placeholder = () => S["net_mode"] == "openportroid" ? Nicks.Sanitize(Environment.MachineName)
-                                                                         : Shorten(Environment.MachineName, 15),
-                    Desc = "The name your partner sees (up to 15 characters). Empty: the computer's name. On the OpenPortroid " +
+                    Placeholder = () => Nicks.FallbackName(S),
+                    Desc = "The name your partner sees (up to 15 characters). Leave empty for a generated name. On the OpenPortroid " +
                            "server only Latin letters, digits, _ and -, and it is yours alone: the first to take it keeps it " +
                            "(it is freed after 180 days unused), and friends find you by it."
                 },
@@ -2433,12 +2432,18 @@ namespace AO2Launcher
                 // Both games are the server's clients, nobody to look for. The name is claimed first (a name
                 // another player owns would show as a guest's in the lobby).
                 string name = Nicks.Name(S), key = Nicks.Key(S);
+                bool automaticName = Nicks.ConfiguredName(S).Length == 0;
                 searching = true;
                 searchLabel = "CHECKING THE NAME…";
                 Invalidate();
                 var ct = new System.Threading.Thread(() =>
                 {
                     string r = Nicks.Ask("claim", name, key);
+                    for (int attempt = 1; automaticName && r == "taken" && attempt < 3; ++attempt)
+                    {
+                        name = Nicks.GenerateName();
+                        r = Nicks.Ask("claim", name, key);
+                    }
                     try
                     {
                         BeginInvoke(new Action(() =>
@@ -2453,6 +2458,10 @@ namespace AO2Launcher
                                 return;
                             }
                             // Claimed, or the server is not answering (the game tries it anyway).
+                            if (automaticName)
+                            {
+                                S["generated_gamertag"] = name;
+                            }
                             StartGame(null);
                         }));
                     }

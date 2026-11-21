@@ -22,8 +22,8 @@
 //   server (ea_server.cpp FindHostedGame: XB360SESS = the Live session id,
 //   the host's XNADDR and XUID). The invited player sees a notice (debug_menu.h
 //   SetNotice) and accepts with ao2_invite_accept_key (F6) or in the players
-//   window; then its game is pointed at the inviter's EA server
-//   (net_title_server_ip) and gets XN_LIVE_INVITE_ACCEPTED (0x02000002).
+//   window; then its next EA login goes to the inviter's server (the lobby
+//   router, lobby_router.h) and it gets XN_LIVE_INVITE_ACCEPTED (0x02000002).
 // - Its notification pump (sub_8222D530) then calls XInviteGetAcceptedInfo
 //   (sub_82C41388, XMsgInProcessCall 0xFC / 0x58023; the SDK has no answer),
 //   answered here with the invite; EA's layer (sub_82236E30) checks the
@@ -53,7 +53,9 @@
 #include "coop.h"
 #include "debug_menu.h"
 #include "ea_server.h"
+#include "identity.h"
 #include "invite_checks.h"
+#include "lobby_router.h"
 #include "log_files.h"
 #include "menu_mouse.h"
 #include "openportroid.h"
@@ -89,6 +91,7 @@
 #include <mutex>
 #include <random>
 #include <span>
+#include <string_view>
 #include <string>
 #include <thread>
 #include <utility>
@@ -142,6 +145,7 @@ REXCVAR_DECLARE(bool, ao2_coop_ragdoll_pool_fix);
 REXCVAR_DECLARE(bool, ao2_coop_whole_level_visibility);
 REXCVAR_DECLARE(bool, ao2_coop_isolate_buoyancy_rand);
 REXCVAR_DECLARE(bool, ao2_coop_block_streaming);
+REXCVAR_DECLARE(bool, ao2_quick_play);
 
 extern "C" REX_FUNC(sub_82B07E10);
 
@@ -339,9 +343,7 @@ namespace
     std::string name = rex::cvar::GetFlagByName("net_gamertag");
     if (name.empty())
     {
-      char host[256] = {};
-      gethostname(host, sizeof(host) - 1);
-      name = host[0] ? host : "Player";
+      name = ao2::identity::DefaultGamertag();
     }
     if (name.size() > 15)
     {
@@ -464,6 +466,11 @@ namespace
     return std::string(fallback);
   }
 
+  std::string Hex(const std::vector<uint8_t> &bytes);
+  std::vector<uint8_t> Unhex(const std::string &text);
+
+  // A packet: its fields, then (with a key pair, identity.h) the sender's
+  // public key, the time and the signature of everything before it, last.
   std::string Build(const std::string &type, const Fields &fields)
   {
     std::string out = std::string(kMagic) + " " + type + "\n";
@@ -471,7 +478,65 @@ namespace
     {
       out += k + "=" + v + "\n";
     }
+    if (ao2::identity::Ready())
+    {
+      const auto &pk = ao2::identity::OwnPublicKey();
+      out += "pk=" + Hex(std::vector<uint8_t>(pk.begin(), pk.end())) + "\n";
+      out += "ts=" + std::to_string(std::time(nullptr)) + "\n";
+      const auto sig = ao2::identity::Sign(out);
+      out += "sig=" + Hex(std::vector<uint8_t>(sig.begin(), sig.end())) + "\n";
+    }
     return out;
+  }
+
+  // How far a signed packet's time may be from this PC's clock.
+  constexpr int64_t kSignedClockSlack = 15 * 60;
+
+  enum class Signed
+  {
+    kNo,    // an older build
+    kGood,  // `*player_id` signed it
+    kBad,   // a signature that does not hold, or a stale one: dropped
+  };
+
+  Signed CheckSignature(const char *data, size_t n, const Fields &fields, std::string *player_id)
+  {
+    std::string_view text(data, n);
+    size_t at = text.rfind("\nsig=");
+    std::string pk_hex = Get(fields, "pk");
+    if (at == std::string_view::npos)
+    {
+      return pk_hex.empty() ? Signed::kNo : Signed::kBad;
+    }
+    // The signature is the last line.
+    std::string_view tail = text.substr(at + 1);
+    size_t eol = tail.find('\n');
+    if (eol != std::string_view::npos && eol + 1 != tail.size())
+    {
+      return Signed::kBad;
+    }
+    std::vector<uint8_t> pk = Unhex(pk_hex);
+    std::vector<uint8_t> sig = Unhex(std::string(tail.substr(4, eol == std::string_view::npos ? tail.npos : eol - 4)));
+    if (pk.size() != ao2::identity::kPublicKeyBytes || sig.size() != ao2::identity::kSignatureBytes)
+    {
+      return Signed::kBad;
+    }
+    const int64_t ts = std::strtoll(Get(fields, "ts").c_str(), nullptr, 10);
+    const int64_t now = int64_t(std::time(nullptr));
+    if (ts < now - kSignedClockSlack || ts > now + kSignedClockSlack)
+    {
+      return Signed::kBad;
+    }
+    ao2::identity::PublicKey key;
+    ao2::identity::Signature signature;
+    std::copy(pk.begin(), pk.end(), key.begin());
+    std::copy(sig.begin(), sig.end(), signature.begin());
+    if (!ao2::identity::Verify(key, text.substr(0, at + 1), signature))
+    {
+      return Signed::kBad;
+    }
+    *player_id = ao2::identity::PlayerIdOf(key);
+    return Signed::kGood;
   }
 
   bool Parse(const char *data, size_t n, std::string *type, Fields *fields)
@@ -552,6 +617,11 @@ namespace
     std::string sync;  // SharedSettings of its game; empty = an older build
     bool hosting = false;
     uint64_t xuid = 0; // its player 1's XUID (Gamer Card -> Steam profile); 0 = an older build
+    std::string pid;   // its Player ID, from its signed packets (identity.h); empty = an older build
+    std::string code;  // ... as a friend code
+    bool open = false;       // hosts a public game with a free place, not started (Quick Play may join it)
+    bool quick_play = false; // ... and waits there through Quick Play
+    std::string mode;        // ... its B-U-Mode
     Clock::time_point seen;
   };
 
@@ -572,6 +642,7 @@ namespace
     Address to;
     std::string name;
     std::string packet;
+    std::string to_pid; // the invited player's ID when known: only it answers
     SentState state = SentState::kSending;
     int tries = 0;
     Clock::time_point next_send;
@@ -588,6 +659,7 @@ namespace
   {
     uint32_t id = 0;
     Address from;
+    uint32_t peer_ip = 0;        // gameplay address, which can differ from the invitation's return address
     std::string name;
     uint64_t inviter_xuid = 0;
     uint64_t session_id = 0;
@@ -595,6 +667,8 @@ namespace
     std::string server_ip;       // the inviter's EA server
     bool server_here = false;    // ... runs on this PC (seen at its Steam address)
     std::string build;           // the inviter's BuildHash
+    std::string pid, code;       // the inviter's Player ID (it signed the invite) and friend code
+    std::string sync;            // the inviter's SharedSettings: a guest plays with the host's
     bool is_private = false;
     bool playgroup = false;      // a versus party: joined with the playgroup manager
     bool versus = false;         // a versus game (party or match), not co-op
@@ -641,11 +715,32 @@ namespace
     Clock::time_point remote_game_seen;
     uint32_t game_query_ip = 0; // the server last asked: only its answer counts
     ao2::invite_checks::RateLimit invite_rate{ao2::invite_checks::kInviteBurst, ao2::invite_checks::kInviteBurstWindow};
-    // The EA server before an accepted invite pointed the game at the
-    // inviter's: put back once the inviter hosts nothing and this game is in
-    // the menus (else a game hosted later goes to the inviter's server).
-    bool switched = false;
-    std::string own_server, own_host;
+    // The inviter whose server the game visits (lobby_router.h): a later
+    // login of the game stays there while the inviter hosts (a versus party
+    // following its leader into a match), or stopped less than 10 s ago
+    // (between its screens); else it goes home (a game hosted later went to
+    // the inviter's server).
+    // Quick Play (PumpQuickPlay): the hosted game it made (its gid) and when.
+    uint32_t qp_gid = 0;
+    Clock::time_point qp_taken; // ea::QuickPlayHosted of that game
+    Clock::time_point qp_next_try, qp_refreshed;
+    std::map<std::string, Clock::time_point> qp_first_seen; // other Quick Play hosts with a greater ID: since
+    struct QuickJoin
+    {
+      uint32_t ip = 0;
+      std::string pid;
+      Clock::time_point until;
+    } qp_join; // a JOINQ sent: that host's invite is taken without asking
+    // The host's settings this game took as a guest (AdoptHostSettings): its own, to put back.
+    struct Adopted
+    {
+      bool on = false;
+      std::vector<std::pair<std::string, std::string>> own; // cvar, value before
+      std::string sync;                                      // what was taken
+      Clock::time_point since, menu_since;
+      bool entered = false; // was in the lobby or the game since
+    } adopted;
+    bool visiting = false;
     Address inviter;
     std::string inviter_name;
     bool inviter_hosted = false;     // seen hosting since the switch
@@ -681,10 +776,12 @@ namespace
     return id;
   }
 
-  // The lobby server's address (the game's net_title_server_ip).
+  // The lobby server the game is on (lobby_router.h: the visited one, else
+  // home: this game's own address for its own server).
   bool ServerAddress(Address *out)
   {
-    return ParseAddress(rex::cvar::GetFlagByName("net_title_server_ip"), out);
+    uint32_t ip = ao2::router::CurrentServer();
+    return ip && ParseAddress(IpString(ip), out);
   }
 
   // The lobby game this player hosts: on this process's server, or as the
@@ -697,7 +794,7 @@ namespace
     }
     auto &st = state();
     std::lock_guard lock(st.mutex);
-    if (st.remote_game.session_id && Clock::now() - st.remote_game_seen < std::chrono::seconds(12))
+    if (st.remote_game.session_id && Clock::now() - st.remote_game_seen < std::chrono::seconds(5))
     {
       *out = st.remote_game;
       return true;
@@ -829,12 +926,18 @@ namespace
   }
 
   // What this game is doing, for the other players' lists.
+  bool IsQuickPlayGame(const ao2::ea::HostedGame &game);
+
   Fields Presence()
   {
     ao2::ea::HostedGame game;
     bool hosting = MyHostedGame(&game);
     std::string st = OwnState();
-    return {{"name", LocalName()},
+    const bool open = hosting && !game.is_private && game.players < game.max_players && st == "lobby";
+    return {{"open", open ? "1" : "0"},
+            {"qp", open && IsQuickPlayGame(game) ? "1" : "0"},
+            {"mode", open ? game.mode : ""},
+            {"name", LocalName()},
             {"iid", InstanceId()},
             {"hosting", hosting ? "1" : "0"},
             {"state", st},
@@ -922,53 +1025,331 @@ namespace
                     ao2::menu::BotPreset());
       steam.rules = rules;
     }
+    steam.quick_play = steam.on && !steam.is_private && !steam.in_game && hosted.players <= 1 && IsQuickPlayGame(hosted);
+    steam.player_id = ao2::identity::OwnPlayerId();
     ao2::steam::SetHosting(steam);
   }
 
-  // The inviter's game over (it hosts nothing for a while, or is gone) and
-  // this game back in the menus: the EA server it used before the invite.
-  void RestoreOwnServer()
+  // Whether the inviter hosts (every second while the game visits its
+  // server): what InviterFollow asks.
+  void TrackInviter()
   {
     auto &st = state();
-    auto now = Clock::now();
-    std::string server, host, name;
+    std::lock_guard lock(st.mutex);
+    if (!st.visiting)
+    {
+      return;
+    }
+    auto it = st.peers.find(st.inviter);
+    if (it != st.peers.end() && it->second.hosting)
+    {
+      st.inviter_hosted = true;
+      st.inviter_ended = {};
+    }
+    else if (st.inviter_hosted && st.inviter_ended == Clock::time_point{})
+    {
+      st.inviter_ended = Clock::now();
+    }
+  }
+
+  // A login after the visit's own one: still the inviter's server? While it
+  // hosts, or stopped less than 10 s ago (its presence gone counts as
+  // stopped).
+  bool InviterFollow()
+  {
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    if (!st.visiting)
+    {
+      return false;
+    }
+    bool follow = st.inviter_ended == Clock::time_point{} ||
+                  Clock::now() - st.inviter_ended < std::chrono::seconds(10);
+    st.visiting = follow;
+    return follow;
+  }
+
+  // -------------------------------------------------------------------------
+  // The host's settings (SharedSettings): a guest plays with them
+  // -------------------------------------------------------------------------
+
+  // SharedSettings' keys and their cvars.
+  struct SharedKey
+  {
+    const char *key;
+    const char *cvar;
+    bool boolean;
+  };
+  constexpr SharedKey kSharedKeys[] = {
+      {"margin", "ao2_coop_input_margin_ms", false},
+      {"lod", "ao2_coop_force_lod", true},
+      {"scale", "ao2_coop_lod_scale", false},
+      {"god", "ao2_coop_god_mode", true},
+      {"pool", "ao2_coop_ragdoll_pool_fix", true},
+      {"vis", "ao2_coop_whole_level_visibility", true},
+      {"wave", "ao2_coop_isolate_buoyancy_rand", true},
+      {"block", "ao2_coop_block_streaming", true},
+  };
+
+  // A guest takes its host's settings (the lockstep needs them alike on both
+  // PCs) before the game starts; its own come back after (PumpAdopted).
+  // Not during a game: the lockstep runs with what both had at its start.
+  void AdoptHostSettings(const std::string &sync, const std::string &host)
+  {
+    if (sync.empty() || OwnState() == "game")
+    {
+      return;
+    }
+    auto &st = state();
+    std::vector<std::pair<std::string, std::string>> changes;
+    for (size_t at = 0; at < sync.size();)
+    {
+      size_t end = sync.find(' ', at);
+      std::string item = sync.substr(at, end == std::string::npos ? std::string::npos : end - at);
+      at = end == std::string::npos ? sync.size() : end + 1;
+      size_t colon = item.find(':');
+      if (colon == std::string::npos)
+      {
+        continue;
+      }
+      const std::string key = item.substr(0, colon), value = item.substr(colon + 1);
+      for (const SharedKey &k : kSharedKeys)
+      {
+        if (key != k.key || value.empty() || value.size() > 12 ||
+            value.find_first_not_of("0123456789.-") != std::string::npos)
+        {
+          continue;
+        }
+        std::string v = k.boolean ? (value == "0" ? "false" : "true") : value;
+        changes.emplace_back(k.cvar, v);
+      }
+    }
+    std::string applied;
     {
       std::lock_guard lock(st.mutex);
-      if (!st.switched)
+      if (!st.adopted.on)
       {
-        return;
+        st.adopted = {};
+        st.adopted.on = true;
+        st.adopted.since = Clock::now();
+        for (const SharedKey &k : kSharedKeys)
+        {
+          st.adopted.own.emplace_back(k.cvar, rex::cvar::GetFlagByName(k.cvar));
+        }
       }
-      auto it = st.peers.find(st.inviter);
-      bool hosting = it != st.peers.end() && it->second.hosting;
-      if (hosting)
-      {
-        st.inviter_hosted = true;
-        st.inviter_ended = {};
-        return;
-      }
-      if (!st.inviter_hosted)
-      {
-        return; // not seen hosting yet: its invite may still be on the way in
-      }
-      if (st.inviter_ended == Clock::time_point{})
-      {
-        st.inviter_ended = now;
-      }
-      // Some grace: a versus party between its matches, the game between
-      // its screens.
-      if (now - st.inviter_ended < std::chrono::seconds(10) || OwnState() != "menu")
-      {
-        return;
-      }
-      st.switched = false;
-      server = st.own_server;
-      host = st.own_host;
-      name = st.inviter_name;
+      st.adopted.sync = sync;
     }
-    std::string current = rex::cvar::GetFlagByName("net_title_server_ip");
-    rex::cvar::SetFlagByName("net_title_server_ip", server);
-    rex::cvar::SetFlagByName("ao2_coop_host", host);
-    Log("EA server: %s -> %s (%s hosts no game now)", current.c_str(), server.c_str(), name.c_str());
+    for (const auto &[cvar, value] : changes)
+    {
+      if (rex::cvar::GetFlagByName(cvar) != value && rex::cvar::SetFlagByName(cvar, value))
+      {
+        applied += (applied.empty() ? "" : ", ") + cvar + "=" + value;
+      }
+    }
+    if (!applied.empty())
+    {
+      Log("playing with %s's settings: %s", host.c_str(), applied.c_str());
+    }
+  }
+
+  // Every second: this game's own settings back once it left the host's game
+  // (10 s in the menus after the lobby or the game), or never got there (90 s).
+  void PumpAdopted()
+  {
+    auto &st = state();
+    const std::string own_state = OwnState();
+    const auto now = Clock::now();
+    std::vector<std::pair<std::string, std::string>> own;
+    {
+      std::lock_guard lock(st.mutex);
+      if (!st.adopted.on)
+      {
+        return;
+      }
+      if (own_state != "menu")
+      {
+        st.adopted.entered = true;
+        st.adopted.menu_since = {};
+        return;
+      }
+      if (st.adopted.menu_since == Clock::time_point{})
+      {
+        st.adopted.menu_since = now;
+      }
+      const bool left = st.adopted.entered && now - st.adopted.menu_since > std::chrono::seconds(10);
+      const bool never = !st.adopted.entered && now - st.adopted.since > std::chrono::seconds(90);
+      if (!left && !never)
+      {
+        return;
+      }
+      own = std::move(st.adopted.own);
+      st.adopted = {};
+    }
+    for (const auto &[cvar, value] : own)
+    {
+      rex::cvar::SetFlagByName(cvar, value);
+    }
+    Log("own settings back (out of the host's game)");
+  }
+
+  // -------------------------------------------------------------------------
+  // Quick Play: host at once, keep looking while alone
+  // -------------------------------------------------------------------------
+
+  // Whether the game this player hosts came from Quick Play (a public quick
+  // match that found nothing here a moment before the game was created).
+  bool IsQuickPlayGame(const ao2::ea::HostedGame &game)
+  {
+    if (!REXCVAR_GET(ao2_quick_play) || game.is_private)
+    {
+      return false;
+    }
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    if (game.gid != st.qp_gid)
+    {
+      const auto at = ao2::ea::QuickPlayHosted(nullptr);
+      if (at == Clock::time_point{} || at == st.qp_taken || Clock::now() - at > std::chrono::seconds(30))
+      {
+        return false;
+      }
+      st.qp_gid = game.gid;
+      st.qp_taken = at;
+      st.qp_first_seen.clear();
+      Log("quick play: game %u hosted, looking for others while alone", game.gid);
+    }
+    return true;
+  }
+
+  // An invite from the host a JOINQ went to: taken without asking.
+  bool TakeQuickJoin(const ReceivedInvite &inv)
+  {
+    auto &st = state();
+    std::lock_guard lock(st.mutex);
+    if (Clock::now() > st.qp_join.until || (inv.from.ip != st.qp_join.ip && inv.pid != st.qp_join.pid))
+    {
+      return false;
+    }
+    st.qp_join = {};
+    return true;
+  }
+
+  // Every second while this player's Quick Play game waits alone: an open
+  // game of the same mode and build elsewhere is joined - over the LAN, the
+  // OpenPortroid network or Steam (a friend's game: presence; anyone's: the
+  // Steam lobbies), the most direct and the best ping first. Of two Quick
+  // Play hosts the one with the greater Player ID goes to the other; the
+  // other goes after 12 s if it does not come (it may not see this one).
+  void PumpQuickPlay()
+  {
+    ao2::ea::HostedGame game;
+    if (!REXCVAR_GET(ao2_quick_play) || !MyHostedGame(&game) || !IsQuickPlayGame(game) || game.players > 1 ||
+        OwnState() != "lobby")
+    {
+      return;
+    }
+    auto &st = state();
+    const auto now = Clock::now();
+    const std::string &own_id = ao2::identity::OwnPlayerId();
+    struct Candidate
+    {
+      int score = 0; // lower first: the way (LAN, OpenPortroid, Steam), then the ping
+      bool quick_play = false;
+      std::string pid, name;
+      Address address; // a presence peer
+      uint64_t lobby = 0; // ... or a Steam lobby
+    };
+    std::vector<Candidate> found;
+    {
+      std::lock_guard lock(st.mutex);
+      if (now < st.qp_next_try)
+      {
+        return;
+      }
+      for (const auto &[address, p] : st.peers)
+      {
+        if (!p.open || p.mode != game.mode || OtherBuild(p.build) || p.pid.empty() || p.pid == own_id ||
+            now - p.seen > kPeerTimeout)
+        {
+          continue;
+        }
+        Candidate c;
+        c.score = ao2::steam::IsVirtual(address.ip) ? 2000 : ao2::opnet::IsVirtual(address.ip) ? 1000 : 0;
+        c.quick_play = p.quick_play;
+        c.pid = p.pid;
+        c.name = p.name;
+        c.address = address;
+        found.push_back(c);
+      }
+    }
+    if (ao2::steam::Running())
+    {
+      bool refresh = false;
+      {
+        std::lock_guard lock(st.mutex);
+        refresh = now - st.qp_refreshed > std::chrono::seconds(5);
+        if (refresh)
+        {
+          st.qp_refreshed = now;
+        }
+      }
+      if (refresh && !ao2::steam::Refreshing())
+      {
+        ao2::steam::RefreshLobbies();
+      }
+      for (const ao2::steam::Lobby &l : ao2::steam::Lobbies())
+      {
+        if (l.own || l.joined || l.is_private || l.in_game || l.players >= l.max || l.build != BuildHash() ||
+            l.mode != game.mode || l.player_id.empty() || l.player_id == own_id ||
+            std::any_of(found.begin(), found.end(), [&](const Candidate &c) { return c.pid == l.player_id; }))
+        {
+          continue;
+        }
+        Candidate c;
+        c.score = 3000 + ao2::steam::QuickScore(l);
+        c.quick_play = l.quick_play;
+        c.pid = l.player_id;
+        c.name = l.name;
+        c.lobby = l.id;
+        found.push_back(c);
+      }
+    }
+    std::sort(found.begin(), found.end(), [](const Candidate &a, const Candidate &b) { return a.score < b.score; });
+    for (const Candidate &c : found)
+    {
+      {
+        std::lock_guard lock(st.mutex);
+        if (c.quick_play && c.pid > own_id)
+        {
+          // Its ID is the greater: it comes here; only if it does not, this one goes there.
+          auto seen = st.qp_first_seen.try_emplace(c.pid, now).first->second;
+          if (now - seen < std::chrono::seconds(12))
+          {
+            continue;
+          }
+        }
+        st.qp_next_try = now + std::chrono::seconds(20);
+        if (!c.lobby)
+        {
+          st.qp_join = {c.address.ip, c.pid, now + std::chrono::seconds(15)};
+        }
+      }
+      if (c.lobby)
+      {
+        Log("quick play: joining %s's Steam lobby %llx%s", c.name.c_str(), (unsigned long long)c.lobby,
+            c.quick_play ? " (another Quick Play host)" : "");
+        ao2::steam::JoinLobby(c.lobby);
+      }
+      else
+      {
+        Log("quick play: asking %s (%s) to take this player%s", c.name.c_str(), IpString(c.address.ip).c_str(),
+            c.quick_play ? " (another Quick Play host)" : "");
+        const std::string packet = Build("JOINQ", {{"to", c.pid}, {"mode", game.mode}});
+        SendTo(c.address, packet);
+        SendTo(c.address, packet); // UDP: twice
+      }
+      return;
+    }
   }
 
   void TakeRemoteGame(const Fields &f, bool from_server);
@@ -989,6 +1370,10 @@ namespace
     for (const Address &a : ParseList(REXCVAR_GET(ao2_coop_host)))
     {
       targets.push_back(a);
+    }
+    if (uint32_t visited = ao2::router::VisitIp())
+    {
+      targets.push_back({visited, Port()}); // the visited server's presence service
     }
     for (uint32_t ip : ao2::steam::PeerAddresses())
     {
@@ -1015,13 +1400,18 @@ namespace
     {
       SendTo(a, packet);
     }
-    // Our game on a lobby server in another process (its presence answers).
+  }
+
+  // External servers own the authoritative copy of the hosted game.
+  void QueryHostedGame()
+  {
     ao2::ea::HostedGame local;
     Address server;
-    if (ao2::ea::FindHostedGame(LocalName(), &local))
+    if (OwnState() == "menu" || ao2::ea::FindHostedGame(LocalName(), &local))
     {
+      return;
     }
-    else if (ao2::ea::TunnelActive())
+    if (ao2::ea::TunnelActive())
     {
       // The OpenPortroid server: over HTTP, off this thread.
       static std::atomic<bool> asking{false};
@@ -1041,6 +1431,7 @@ namespace
     }
     else if (ServerAddress(&server))
     {
+      auto &st = state();
       {
         std::lock_guard lock(st.mutex);
         st.game_query_ip = server.ip;
@@ -1071,6 +1462,7 @@ namespace
       {
         return;
       }
+      std::string host_sync;
       {
         std::lock_guard lock(st.mutex);
         if (st.peers.size() >= ao2::invite_checks::kMaxPeers && !st.peers.contains(from))
@@ -1079,6 +1471,13 @@ namespace
         }
         Peer &p = st.peers[from];
         std::string build = ao2::invite_checks::CleanText(Get(f, "build"), ao2::invite_checks::kMaxFieldBytes);
+        const std::string pid = Get(f, "_pid");
+        if (!p.pid.empty() && pid != p.pid && now - p.seen < kPeerTimeout)
+        {
+          // The entry is a signed player's: another sender at its address
+          // (unsigned, or another key) cannot take its name over.
+          return;
+        }
         if (!p.name.empty() && p.build == BuildHash() && build != p.build && now - p.seen < kPeerTimeout)
         {
           // Another game behind the same address (a second copy on that PC,
@@ -1098,7 +1497,30 @@ namespace
         p.state = ao2::invite_checks::CleanText(Get(f, "state", "menu"), ao2::invite_checks::kMaxFieldBytes);
         p.hosting = Get(f, "hosting") == "1";
         p.xuid = std::strtoull(Get(f, "xuid").c_str(), nullptr, 16);
+        if (!pid.empty())
+        {
+          if (p.pid != pid)
+          {
+            Log("%s at %s:%u is player %s", name.c_str(), IpString(from.ip).c_str(), from.port,
+                ao2::identity::FriendCodeOf(pid).c_str());
+          }
+          p.pid = pid;
+          p.code = ao2::identity::FriendCodeOf(pid);
+          p.xuid = ao2::identity::XuidOf(pid); // its XUID is its ID's, whatever the packet says
+        }
+        p.open = Get(f, "open") == "1";
+        p.quick_play = p.open && Get(f, "qp") == "1";
+        p.mode = ao2::invite_checks::CleanText(Get(f, "mode"), ao2::invite_checks::kMaxFieldBytes);
         p.seen = now;
+        // The host this game is a guest of changed a setting in the lobby: taken again.
+        if (st.adopted.on && st.have_accepted && !pid.empty() && pid == st.accepted.pid && p.sync != st.adopted.sync)
+        {
+          host_sync = p.sync;
+        }
+      }
+      if (!host_sync.empty())
+      {
+        AdoptHostSettings(host_sync, name);
       }
       if (type == "HELLO")
       {
@@ -1136,10 +1558,10 @@ namespace
     else if (type == "INVITE")
     {
       uint32_t id = uint32_t(std::strtoul(Get(f, "id").c_str(), nullptr, 10));
-      SendTo(from, Build("ACK", {{"id", std::to_string(id)}}));
       ReceivedInvite inv;
       inv.id = id;
       inv.from = from;
+      inv.peer_ip = from.ip;
       inv.name = ao2::invite_checks::CleanText(Get(f, "name"), ao2::invite_checks::kMaxNameBytes);
       if (inv.name.empty())
       {
@@ -1153,6 +1575,18 @@ namespace
       // Older builds send no "versus": their versus invites are the parties.
       inv.versus = Get(f, "versus") == "1" || inv.playgroup;
       inv.build = ao2::invite_checks::CleanText(Get(f, "build"), ao2::invite_checks::kMaxFieldBytes);
+      inv.pid = Get(f, "_pid");
+      if (inv.pid.empty())
+      {
+        return; // unsigned: an older build (it could not play with this one anyway) or a forged invite
+      }
+      if (inv.versus && (ao2::opnet::IsVirtual(from.ip) || ao2::ea::NetMode() == "openportroid"))
+      {
+        return;
+      }
+      inv.code = ao2::identity::FriendCodeOf(inv.pid);
+      inv.inviter_xuid = ao2::identity::XuidOf(inv.pid);
+      inv.sync = ao2::invite_checks::CleanText(Get(f, "sync"), ao2::invite_checks::kMaxFieldBytes);
       // The inviter's lobby server (invite_checks.h says which it may be).
       uint32_t server_ip = ao2::invite_checks::ChooseInviteServer(Get(f, "server"), from.ip, IsVirtual);
       inv.server_ip = IpString(server_ip);
@@ -1175,11 +1609,24 @@ namespace
           }
         }
       }
-      // An OpenPortroid player plays on the same server as this game: the
-      // lobby stays where it is (its "server" is its own tunnel, 127.0.0.1).
-      if (ao2::opnet::IsVirtual(from.ip) && ao2::ea::TunnelActive())
+      // A signed invite can arrive over LAN even though the game is hosted
+      // on OpenPortroid. Its return address is only for invitation replies.
+      const std::string tunnel = Get(f, "tunnel");
+      const bool from_openportroid = ao2::opnet::IsVirtual(from.ip);
+      if (!tunnel.empty())
       {
-        inv.server_ip = rex::cvar::GetFlagByName("net_title_server_ip");
+        uint32_t vip = 0;
+        if (tunnel != ao2::ea::TunnelEndpoint() ||
+            !ao2::invite_checks::ParseNumericIp(Get(f, "tunnel_peer"), &vip) || !ao2::opnet::IsVirtual(vip) ||
+            (from_openportroid && vip != from.ip) || vip == ao2::opnet::SelfIp())
+        {
+          return;
+        }
+        inv.peer_ip = vip;
+      }
+      if (!tunnel.empty() || (from_openportroid && ao2::ea::TunnelActive()))
+      {
+        inv.server_ip = IpString(ao2::router::LocalAddress());
         inv.server_here = true;
       }
       inv.received = now;
@@ -1187,11 +1634,12 @@ namespace
       {
         return; // not logged: anybody can send these, and the log would grow with them
       }
+      SendTo(from, Build("ACK", {{"id", std::to_string(id)}}));
       // The inviter's XNADDR as this machine reaches it (ina, inaOnline and
       // abOnline[0..3], see ea_server.cpp RewriteXnAddr).
       for (int offset : {0, 4, 16})
       {
-        std::memcpy(inv.xnaddr.data() + offset, &from.ip, 4);
+        std::memcpy(inv.xnaddr.data() + offset, &inv.peer_ip, 4);
       }
       {
         std::lock_guard lock(st.mutex);
@@ -1253,6 +1701,12 @@ namespace
           }
         }
       }
+      if (TakeQuickJoin(inv))
+      {
+        Log("the host Quick Play asked: accepted");
+        Answer(inv, true);
+        return;
+      }
       for (uint32_t ip : host_ips)
       {
         if (ao2::steam::TakeAutoAccept(ip))
@@ -1280,6 +1734,29 @@ namespace
       }
       ShowInviteNotice();
     }
+    else if (type == "JOINQ")
+    {
+      // Signed, for this player (the receive loop checked "to"); an open
+      // public game of its mode with a free place: invited, quietly (its
+      // game takes the invite by itself).
+      ao2::ea::HostedGame game;
+      const std::string pid = Get(f, "_pid");
+      if (pid.empty() || !MyHostedGame(&game) || game.is_private || game.players >= game.max_players ||
+          OwnState() != "lobby" || Get(f, "mode") != game.mode)
+      {
+        return;
+      }
+      std::string name = "?";
+      {
+        std::lock_guard lock(st.mutex);
+        if (auto it = st.peers.find(from); it != st.peers.end() && it->second.pid == pid)
+        {
+          name = it->second.name;
+        }
+      }
+      Log("quick play: %s asks to join: invited", name.c_str());
+      ao2::invite::InviteAddress(from.ip, name);
+    }
     else if (type == "KICK")
     {
       OnKicked(from, f);
@@ -1297,6 +1774,10 @@ namespace
           if (s.id != id || !(s.to.ip == from.ip))
           {
             continue;
+          }
+          if (!s.to_pid.empty() && Get(f, "_pid") != s.to_pid)
+          {
+            continue; // not the invited player's own answer
           }
           if (type == "ACK")
           {
@@ -1383,7 +1864,7 @@ namespace
     for (const auto &[addr, p] : st.peers)
     {
       std::string difference = ao2::invite_checks::SettingsDifference(mine, p.sync);
-      if (p.state != "menu" && !OtherBuild(p.build) && !difference.empty())
+      if (p.state != "menu" && !OtherBuild(p.build) && !difference.empty() && p.pid.empty())
       {
         out.push_back(p.name + " (" + difference + ")");
       }
@@ -1557,8 +2038,11 @@ namespace
       if (now >= next_steam_hosting)
       {
         next_steam_hosting = now + std::chrono::seconds(1);
+        QueryHostedGame();
         UpdateSteamHosting();
-        RestoreOwnServer();
+        TrackInviter();
+        PumpQuickPlay();
+        PumpAdopted();
         TrackGame();
         PumpRejoin();
       }
@@ -1593,6 +2077,33 @@ namespace
       if (Get(fields, "iid") == InstanceId())
       {
         continue; // our own broadcast
+      }
+      std::erase_if(fields, [](const auto &kv) { return kv.first == "_pid"; });
+      std::string pid;
+      Signed sig = CheckSignature(buf, size_t(n), fields, &pid);
+      if (sig == Signed::kBad)
+      {
+        static Clock::time_point last_bad;
+        if (Clock::now() - last_bad > std::chrono::seconds(10))
+        {
+          last_bad = Clock::now();
+          Log("dropped %s from %s: its signature does not hold (or its clock is %lld+ s off)", type.c_str(),
+              IpString(a.ip).c_str(), (long long)kSignedClockSlack);
+        }
+        continue;
+      }
+      if (sig == Signed::kGood)
+      {
+        if (pid == ao2::identity::OwnPlayerId() && ao2::identity::Ready())
+        {
+          continue; // this player's own packet (another of its addresses)
+        }
+        fields.emplace_back("_pid", pid);
+      }
+      // A packet for one player (an invite, a kick) is for this one only.
+      if (std::string to = Get(fields, "to"); !to.empty() && to != ao2::identity::OwnPlayerId())
+      {
+        continue;
       }
       OnPacket(a, type, fields);
     }
@@ -1646,17 +2157,38 @@ namespace
     // As a number: the receiver looks no name up, and without one it takes this PC for the server.
     Address server;
     std::string server_text = ServerAddress(&server) ? IpString(server.ip) : std::string();
-    s.packet = Build("INVITE", {{"id", std::to_string(s.id)},
-                                {"name", LocalName()},
-                                {"xuid", xuid},
-                                {"session", session},
-                                {"xnaddr", Hex(game.xnaddr)},
-                                {"private", game.is_private ? "1" : "0"},
-                                {"playgroup", game.playgroup ? "1" : "0"},
-                                {"versus", game.playgroup || game.max_players > 2 ? "1" : "0"},
-                                {"server", server_text},
-                                {"lobby", quiet ? "1" : "0"},
-                                {"build", BuildHash()}});
+    {
+      std::lock_guard lock(st.mutex);
+      if (auto it = st.peers.find(to); it != st.peers.end())
+      {
+        s.to_pid = it->second.pid;
+      }
+    }
+    Fields fields = {{"to", s.to_pid},
+                     {"id", std::to_string(s.id)},
+                     {"name", LocalName()},
+                     {"xuid", xuid},
+                     {"session", session},
+                     {"xnaddr", Hex(game.xnaddr)},
+                     {"private", game.is_private ? "1" : "0"},
+                     {"playgroup", game.playgroup ? "1" : "0"},
+                     {"versus", game.playgroup || game.max_players > 2 ? "1" : "0"},
+                     {"server", server_text},
+                     {"lobby", quiet ? "1" : "0"},
+                     {"sync", SharedSettings()},
+                     {"build", BuildHash()}};
+    if (ao2::ea::TunnelActive())
+    {
+      const uint32_t vip = ao2::opnet::SelfIp();
+      if (!vip)
+      {
+        *error = Tr("The server did not answer, try again.");
+        return false;
+      }
+      fields.emplace_back("tunnel", ao2::ea::TunnelEndpoint());
+      fields.emplace_back("tunnel_peer", IpString(vip));
+    }
+    s.packet = Build("INVITE", fields);
     s.next_send = Clock::now();
     Log("inviting %s (%s:%u) to game %u, session %s", name.c_str(), IpString(to.ip).c_str(), to.port, game.gid,
         session);
@@ -1706,7 +2238,17 @@ namespace
         st.kicked.push_back({address.ip, xuid, now + std::chrono::minutes(3)});
       }
     }
-    const std::string packet = Build("KICK", {{"session", session}});
+    std::string to_pid;
+    if (auto it = st.peers.find(to); it != st.peers.end())
+    {
+      to_pid = it->second.pid;
+    }
+    Fields kick = {{"session", session}};
+    if (!to_pid.empty())
+    {
+      kick.emplace_back("to", to_pid);
+    }
+    const std::string packet = Build("KICK", kick);
     for (const Address &a : addresses)
     {
       st.kicks.push_back({a, packet, 5, now});
@@ -1731,6 +2273,11 @@ namespace
       if (auto it = st.peers.find(from); !from_host && it != st.peers.end())
       {
         from_host = st.accepted.inviter_xuid && it->second.xuid == st.accepted.inviter_xuid;
+      }
+      // Signed by the inviter's key, whatever address it came from.
+      if (!st.accepted.pid.empty())
+      {
+        from_host = Get(f, "_pid") == st.accepted.pid;
       }
       if (!from_host)
       {
@@ -1777,54 +2324,52 @@ namespace
       Log("declined invite %u from %s", inv.id, inv.name.c_str());
       return;
     }
-    // The game must reach the inviter's EA server (Theater) to enter its game.
-    // One on this PC (the inviter's game was on it) is reached as before any
-    // invite, not through this PC's own Steam address.
-    std::string current = rex::cvar::GetFlagByName("net_title_server_ip");
-    std::string server = inv.server_ip, host = inv.server_ip;
-    if (!server.empty())
+    // The game must reach the inviter's EA server (Theater) to enter its game:
+    // its next login goes there (lobby_router.h). One on this PC (the
+    // inviter's game was on it) is home, not this PC's own Steam address.
+    uint32_t server = 0;
+    ao2::invite_checks::ParseNumericIp(inv.server_ip, &server);
+    if (inv.server_here || !server)
     {
-      std::lock_guard lock(st.mutex);
-      if (inv.server_here)
       {
-        server = st.switched ? st.own_server : current;
-        host = st.switched ? st.own_host : rex::cvar::GetFlagByName("ao2_coop_host");
-        st.switched = false;
+        std::lock_guard lock(st.mutex);
+        st.visiting = false;
       }
-      else
+      ao2::router::Home(ao2::opnet::IsVirtual(inv.peer_ip) ? "an invite on this OpenPortroid server"
+                                                        : "an invite to a game on the home server");
+    }
+    else
+    {
       {
-        if (!st.switched && current != server)
-        {
-          st.switched = true;
-          st.own_server = current;
-          st.own_host = rex::cvar::GetFlagByName("ao2_coop_host");
-        }
-        else if (st.switched && server == st.own_server)
-        {
-          st.switched = false; // back on this player's own server
-        }
+        std::lock_guard lock(st.mutex);
+        st.visiting = true;
         st.inviter = inv.from;
         st.inviter_name = inv.name;
-        st.inviter_hosted = false;
+        st.inviter_hosted = true; // its invite carries the game it hosts
         st.inviter_ended = {};
       }
+      // For co-op this login is enough. A later login must be able to host
+      // again even if the previous host is still online or unreachable.
+      ao2::router::Visit(server, inv.name, inv.versus ? InviterFollow : std::function<bool()>{});
+      Log("lobby: logins go to %s (%s's server)", inv.server_ip.c_str(), inv.name.c_str());
     }
-    if (!server.empty() && current != server)
+    // The host's settings, before its game starts (a versus party's own
+    // setting stays: its matches are hosted by the party's leader anyway).
+    if (!inv.versus)
     {
-      rex::cvar::SetFlagByName("net_title_server_ip", server);
-      rex::cvar::SetFlagByName("ao2_coop_host", host);
-      Log("EA server: %s -> %s", current.c_str(), server.c_str());
+      AdoptHostSettings(inv.sync, inv.name);
     }
     // The runtime finds the inviter's sessions by asking hosts (xlive_net.cpp QuerySessionById: net_host_ip, else a
     // LAN broadcast). A versus party's guest looks the party's own session up by its ID right after joining; with
     // nobody asked (a Steam host, or a LAN with a VPN adapter taking the broadcast) nothing was found and the game
     // left the party a few seconds later. Only the address the invite came from: the game reaches the inviter
-    // there, and an answer from its other address (the LAN one of a Steam host) made the party's host another
+    // at its gameplay address, and an answer from its other address (the LAN one of a Steam host) made the party's host another
     // machine than the lobby's - the guest left the party a few seconds after it joined.
     {
-      const std::string hosts = IpString(inv.from.ip);
-      // Nor the LAN broadcast for an inviter over Steam: its LAN address would answer first.
-      rex::cvar::SetFlagByName("net_lan_discovery", ao2::steam::IsVirtual(inv.from.ip) ? "false" : "true");
+      ao2::opnet::Connect(inv.peer_ip);
+      const std::string hosts = IpString(inv.peer_ip);
+      // No LAN discovery for a virtual peer: its physical address could answer first.
+      rex::cvar::SetFlagByName("net_lan_discovery", IsVirtual(inv.peer_ip) ? "false" : "true");
       if (rex::cvar::SetFlagByName("net_host_ip", hosts))
       {
         Log("session queries go to %s", hosts.c_str());
@@ -1845,10 +2390,10 @@ namespace
   // proves nothing, so this is what the player can tell a stranger by. Steam players' addresses mean nothing to them.
   std::string InviteOrigin(const ReceivedInvite &inv)
   {
-    std::string out;
+    std::string out = inv.code;
     if (!IsVirtual(inv.from.ip))
     {
-      out = IpString(inv.from.ip);
+      out += (out.empty() ? "" : "  ·  ") + IpString(inv.from.ip);
     }
     if (!inv.server_here && inv.server_ip != IpString(inv.from.ip))
     {
@@ -2275,6 +2820,31 @@ namespace
         }
         sent = st.sent;
       }
+      {
+        // One row per player (its Player ID): of its addresses the most
+        // direct - the LAN, then the OpenPortroid network, then Steam.
+        auto rank = [](uint32_t ip) { return ao2::steam::IsVirtual(ip) ? 2 : ao2::opnet::IsVirtual(ip) ? 1 : 0; };
+        std::vector<Peer> merged;
+        std::map<std::string, size_t> by_pid;
+        for (Peer &p : peers)
+        {
+          if (p.pid.empty())
+          {
+            merged.push_back(std::move(p));
+            continue;
+          }
+          auto [it, added] = by_pid.try_emplace(p.pid, merged.size());
+          if (added)
+          {
+            merged.push_back(std::move(p));
+          }
+          else if (rank(p.address.ip) < rank(merged[it->second].address.ip))
+          {
+            merged[it->second] = std::move(p);
+          }
+        }
+        peers = std::move(merged);
+      }
       std::sort(peers.begin(), peers.end(), [](const Peer &x, const Peer &y) { return x.name < y.name; });
 
       const ImGuiViewport *vp = ImGui::GetMainViewport();
@@ -2680,7 +3250,8 @@ namespace
         std::string sub = (IsVirtual(p.address.ip) ? std::string(VirtualName(p.address.ip)) +
                                                          (way.empty() ? "" : std::string(", ") + Tr(way.c_str()))
                                                    : IpString(p.address.ip)) +
-                          "  ·  " + StateText(p.state) + (p.hosting ? Tr("  ·  hosting a game") : "");
+                          "  ·  " + StateText(p.state) + (p.hosting ? Tr("  ·  hosting a game") : "") +
+                          (p.code.empty() ? "" : "  ·  " + p.code);
         ui::Text(dl, FontKind::kSmall, ImVec2(mn.x + 42.0f * s, mn.y + 32.0f * s), ui::Fade(ui::kMuted, ra),
                  sub.c_str());
         if (OtherBuild(p.build))
@@ -2832,7 +3403,14 @@ namespace
         }
       }
       y += 14.0f * s;
-      section(by_name ? Tr("BY NAME OR ADDRESS") : Tr("BY ADDRESS"), -1);
+      section(by_name ? Tr("BY CODE, NAME OR ADDRESS") : Tr("BY CODE OR ADDRESS"), -1);
+      if (ao2::identity::Ready())
+      {
+        char mine[96];
+        std::snprintf(mine, sizeof(mine), Tr("Your friend code: %s"), ao2::identity::OwnFriendCode().c_str());
+        ui::Text(dl, FontKind::kSmall, ImVec2(cx0, y), ui::Fade(ui::kMuted, a), mine);
+        y += ui::FontSize(FontKind::kSmall) + 10.0f * s;
+      }
       ImGui::PushFont(ui::Font(FontKind::kBody), ui::FontSize(FontKind::kBody));
       ImGui::PushStyleVar(ImGuiStyleVar_Alpha, a);
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f * s, 8.0f * s));
@@ -2848,7 +3426,7 @@ namespace
       ImGui::SetCursorScreenPos(ImVec2(cx0, y));
       float field_w = 320.0f * s;
       ImGui::SetNextItemWidth(field_w);
-      bool enter = ImGui::InputTextWithHint("##address", by_name ? Tr("Friend's name or IP") : Tr("IP or IP:port"),
+      bool enter = ImGui::InputTextWithHint("##address", by_name ? Tr("Friend code, name or IP") : Tr("Friend code or IP"),
                                             address, sizeof(address), ImGuiInputTextFlags_EnterReturnsTrue);
       float field_h = ImGui::GetItemRectSize().y;
       ImGui::PopStyleColor(7);
@@ -2873,7 +3451,31 @@ namespace
         // On the OpenPortroid server a word without a dot is a name (not a
         // host name to look up).
         bool name_like = by_name && text.find('.') == std::string::npos && text.find(':') == std::string::npos;
-        if (!name_like && ParseAddress(text, &addr))
+        const std::string code = ao2::identity::NormalizeFriendCode(text);
+        const Peer *coded = nullptr;
+        for (const Peer &p : peers)
+        {
+          if (!code.empty() && p.code == code)
+          {
+            coded = &p;
+          }
+        }
+        if (coded)
+        {
+          error.clear();
+          char line[160];
+          std::snprintf(line, sizeof(line), Tr("%s has that code: in the list above."), coded->name.c_str());
+          note = line;
+          row_flash[coded->name + "@" + IpString(coded->address.ip)] = now;
+        }
+        else if (!code.empty() && (!by_name || text.find('-') != std::string::npos))
+        {
+          char line[160];
+          std::snprintf(line, sizeof(line),
+                        Tr("Nobody with the code %s is on your network or Steam now."), code.c_str());
+          error = line;
+        }
+        else if (!name_like && ParseAddress(text, &addr))
         {
           std::lock_guard lock(st.mutex);
           if (std::find(st.manual.begin(), st.manual.end(), addr) == st.manual.end())

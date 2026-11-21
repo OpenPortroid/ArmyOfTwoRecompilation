@@ -51,6 +51,7 @@ namespace AO2Launcher
             { "op_key", "" },
             { "host_ip", "" },
             { "gamertag", "" },
+            { "generated_gamertag", "" },
             { "name_source", "steam" },
             { "gamertag2", "" },
             { "pad_left_stick", "LS" },

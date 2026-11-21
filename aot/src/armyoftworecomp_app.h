@@ -24,6 +24,7 @@
 #include "coop_invite.h"
 #include "coop_net_status.h"
 #include "ea_server.h"
+#include "identity.h"
 #include "game_cvars.h"
 #include "hang_watchdog.h"
 #include "game_language.h"
@@ -44,6 +45,7 @@
 #endif
 
 REXCVAR_DECLARE(std::string, ao2_native_gpu);
+REXCVAR_DECLARE(std::string, ao2_generated_gamertag);
 
 class ArmyoftworecompApp : public rex::ReXApp
 {
@@ -110,13 +112,20 @@ public:
     // and for the launcher.
     ao2::ach::Setup(runtime()->cache_root());
 
+    // The player's key pair: one ID (and XUID) on every network, signed presence.
+    ao2::identity::Start();
+    if (rex::cvar::GetFlagByName("net_gamertag").find_first_not_of(" \t\r\n") == std::string::npos)
+    {
+      const std::string name = REXCVAR_GET(ao2_generated_gamertag);
+      rex::cvar::SetFlagByName("net_gamertag", name.empty() ? ao2::identity::DefaultGamertag() : name);
+    }
     // Online co-op: where the game finds EA's (emulated) servers, and the
     // built-in server when this player hosts.
     ao2::ea::Start();
+    // Steam can supply the gamertag before presence announces it.
+    ao2::steam::Start();
     // Invites (Private Co-op): finds the other players, carries invites.
     ao2::invite::Start();
-    // Steam (Spacewar): friends, lobbies and the traffic through its relays.
-    ao2::steam::Start();
     // Online co-op: the connection overlay and a dropped partner's rejoin.
     ao2::coop::status::Start();
 

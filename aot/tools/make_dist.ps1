@@ -32,7 +32,8 @@ if (-not (Test-Path $d3dc)) { throw "Windows SDK D3DCompiler redist not found: $
 Copy-Item $d3dc "$Out\D3DCompiler_47.dll" -Force
 
 New-Item -ItemType Directory -Force "$Out\settings" | Out-Null
-Copy-Item "$repo\settings\*" "$Out\settings" -Force
+# Not the player's key pair (identity.key): the other PC would be the same player.
+Copy-Item "$repo\settings\*" "$Out\settings" -Force -Exclude "identity.key*"
 robocopy "$repo\localization" "$Out\localization" /E /NFL /NDL /NJH /NJS /NP | Out-Null
 robocopy "$build\shader_cache" "$Out\shader_cache" /E /NFL /NDL /NJH /NJS /NP | Out-Null
 if (-not $NoAssets) {

@@ -9,6 +9,12 @@ namespace ao2::coop::link
   // The Steam bridge (steam_net.cpp) carries it like the game's own ports.
   inline constexpr uint16_t kPort = 1002;
 
+  // Called at the GameManager session boundaries. The ID changes once per
+  // session, even when a rematch uses the same address and frame numbers.
+  void BeginSession();
+  void EndSession(bool voluntary);
+  uint32_t SessionId();
+
   // Receives what the partner sent and says hello once a second (any game
   // thread; cheap when there is nothing to do).
   void Pump();
@@ -27,6 +33,7 @@ namespace ao2::coop::link
     bool decouple = false;
     int32_t sim_hz = 0;
     bool server = false; // runs the EA lobby server (ao2_coop_server)
+    uint32_t sender_id = 0; // set by PartnerSettings
   };
   void SetLocalSettings(const SimSettings &settings);
   // The partner's last settings; false before any arrived.
@@ -52,11 +59,6 @@ namespace ao2::coop::link
   // sent along for the partner's overlay; the partner's last count (-1: none).
   void SetLocalWaits(int32_t waits);
   int32_t PartnerWaits();
-  // A new network session: what was measured for the last partner is gone.
-  void ResetQuality();
-  // This game's network session ended: tells the partner it was not a drop
-  // (a game that crashed or lost its connection sends nothing).
-  void SendBye();
-  // The partner's game said its session ended (since ResetQuality).
+  // The partner's game said it left this session on purpose.
   bool PartnerSaidBye();
 } // namespace ao2::coop::link

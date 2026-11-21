@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <random>
 #include <set>
+#include <cstdlib>
 #include <string>
 #include <system_error>
 #include <thread>
@@ -61,6 +62,9 @@ REXCVAR_DEFINE_STRING(net_host_ip, "", "Network",
                       "Leave empty to only search the local network.");
 REXCVAR_DEFINE_STRING(net_gamertag, "", "Network",
                       "Gamertag shown to other players (empty = computer name).");
+REXCVAR_DEFINE_STRING(net_xuid, "", "Network",
+                      "The online XUID of player 1, hex (empty = made from the gamertag, the computer's name and "
+                      "address). The port sets it from the player's key pair, the same over every network.");
 REXCVAR_DEFINE_UINT32(net_discovery_port, 36020, "Network",
                       "UDP port used for session discovery between players.");
 REXCVAR_DEFINE_BOOL(net_lan_discovery, true, "Network",
@@ -641,6 +645,14 @@ uint64_t LocalXuid(uint32_t user_index) {
   EnsureStarted();
   // Online XUIDs live in the 0x0009xxxxxxxxxxxx range.
   uint64_t base = 0x0009000000000000ull | (state().identity_hash & 0x0000FFFFFFFFFFF0ull);
+  // The game's own identity (net_xuid): the same on every network and address.
+  const std::string fixed = REXCVAR_GET(net_xuid);
+  if (!fixed.empty()) {
+    uint64_t v = std::strtoull(fixed.c_str(), nullptr, 16);
+    if ((v & 0xFFFF000000000000ull) == 0x0009000000000000ull) {
+      base = v & ~0xFull;
+    }
+  }
   return base | (user_index & 0xF);
 }
 

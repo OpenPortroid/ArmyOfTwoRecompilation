@@ -1,6 +1,7 @@
 // ea_server.h - Built-in EA online server for Army of Two co-op.
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -19,6 +20,16 @@ namespace ao2::ea
   // (and where the 40th Day's server has 18485 / 13505).
   bool StartServer(bool log_to_console, bool listen = true);
   void LogMessage(const std::string &text);
+
+  // Whether this process's server listens (StartServer), and a connection
+  // the lobby router (lobby_router.cpp) accepted on `port` (18480 FESL, 18485
+  // Theater, 13505 Messenger) served by it as if it had come in itself. The
+  // socket is the server's from then on.
+  bool OwnServerRunning();
+  void ServeLocal(uint16_t port, uintptr_t socket, bool own_game = false);
+  // ... or carried through the OpenPortroid tunnel (ao2_net_mode =
+  // openportroid). Returns when the connection ends.
+  void ForwardTunnel(uint16_t port, uintptr_t socket);
 
   // The server's address on the internet ("1.2.3.4" or a host name), for a
   // server behind NAT: players outside the LAN are sent it instead of the
@@ -45,6 +56,8 @@ namespace ao2::ea
   // through the tunnel, and the server's GAME answer (coop_invite.cpp's
   // presence packet) for the game the player `name` hosts there.
   bool TunnelActive();
+  // Shared identity of the lobby and UDP relay, for signed invitations.
+  std::string TunnelEndpoint();
   bool TunnelGameQuery(const std::string &name, std::string *packet);
   // Finds a player by the name claimed on the server: "online" (its virtual
   // address in *vip), "offline", "unknown" (no such name) or "error".
@@ -88,4 +101,9 @@ namespace ao2::ea
   // on through the invite), false to answer "no games" (the game hosts).
   using QuickMatchHook = bool (*)(const std::string &mode);
   void SetQuickMatchHook(QuickMatchHook hook);
+
+  // Quick Play (ao2_quick_play): when this PC's own game last searched and
+  // found nothing here, so that it hosts a public game now (its mode, the
+  // quick match's FILTER-ATTR-U-Mode, in *mode). Zero: never.
+  std::chrono::steady_clock::time_point QuickPlayHosted(std::string *mode);
 } // namespace ao2::ea

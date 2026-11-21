@@ -343,6 +343,11 @@ u32 NetDll_WSAGetOverlappedResult_entry(u32 caller, u32 socket_handle, u32 overl
 
 u32 NetDll_WSACancelOverlappedIO_entry(u32 caller, u32 socket_handle) {
   NET_TRACE();
+  auto socket = LookupSocket(socket_handle);
+  if (!socket) {
+    return ~0u;
+  }
+  socket->CancelOverlapped();
   return 0;
 }
 

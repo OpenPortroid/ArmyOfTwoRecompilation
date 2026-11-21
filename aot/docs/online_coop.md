@@ -17,11 +17,12 @@ Online play goes one of three ways (`ao2_net_mode`, the launcher's *Network*):
   Tailscale...) with the roles below, and Steam friends and lobbies while
   Steam runs (*Over Steam*).
 - **lan**: the same without Steam.
-- **openportroid**: the OpenPortroid server, **aot.bhop.pw/aot1/**
+- **openportroid**: the OpenPortroid server, **openportroid.com/aot1/**
   (repository ArmyOfTwoOpenPortroid). Anyone on the internet, no VPN, Steam
   or ports to open, no roles: the host is whoever creates a game in the menu,
   and *Search Co-op Game* / *Quick Match* find the public games of everyone on
-  the server. See *Over the OpenPortroid server* below.
+  the server. OpenPortroid serves co-op only. Select *LAN + Steam* or *LAN*
+  in the launcher for Versus. See *Over the OpenPortroid server* below.
 
 Both players need the **same build** (`armyoftworecomp.exe` + `rexruntime.dll`)
 and their own game files in `assets/`. Settings live in
@@ -61,9 +62,10 @@ and D3DCompiler, settings, shader cache, game files, `Host co-op.bat` /
 *Create Co-op Game* (the disc's Private Co-op Game) and Versus' *Create Match*
 (the disc's Custom Match) first ask who finds the game (`src/lobby_visibility.cpp`):
 **Private** - by invitation only, a friends-only Steam lobby; **Public** - also
-in everyone's server list (F1 → Online → Servers). The game hosts the same way
-either time; the pick stands in for its `B-U-Private` in the Steam lobby, the
-invites and the Players window, until Search Co-op Game or Find Match is chosen.
+in everyone's server list (F1 → Online → Servers). The pick sets the Theater
+game's `B-U-Private` for LAN and OpenPortroid search,
+and also controls the Steam lobby, invites and the Players window until Search
+Co-op Game or Find Match is chosen.
 *Search Co-op Game* (the disc's Public Co-op Game) and Versus' *Find Match* (the disc's Quick Match)
 open, while Steam runs, a list of the public Steam lobbies of their mode
 (`src/game_browser.cpp`: host, mission, difficulty or game type, players, ping;
@@ -92,6 +94,37 @@ Native mouse aiming works in co-op too: the turn travels with the pad input
 (vehicles, turrets, cutscenes) the mouse drives the right stick, as in single
 player.
 
+### Quick Play (`ao2_quick_play`, on)
+
+*Search Co-op Game* and Versus' *Find Match* never wait. The game's own
+search (`GLST` with `FILTER-NOT-PRIVATE=1` from this PC's game) gets the
+open games of this PC's server; with none the list comes back empty at once
+and the game hosts a public game (`ea::QuickPlayHosted` marks it). While that
+game waits alone in its lobby, the invites' matchmaker (`PumpQuickPlay`,
+every second) looks for an open public game of the same mode (`B-U-Mode`) and
+build: the players this game knows (their `HELLO` says `open`, `qp`, `mode`;
+LAN first, then the OpenPortroid network, then Steam) and the public Steam
+lobbies (`qp`, `pid`, `umode` in the lobby data; `steam::QuickScore`). A
+player is asked with a signed `JOINQ`; its game, if it hosts such a game with
+a free place, invites this one quietly (`InviteAddress`) and the invite is
+taken without asking. A Steam lobby is joined as from the server list. Of two
+Quick Play hosts that see each other the one with the greater Player ID goes;
+the other goes after 12 s if nobody came (it may see the first while the
+first does not see it). After a try the next waits 20 s. With Steam the
+server list no longer opens on these buttons (F1 → Online → Servers has it);
+`ao2_quick_play = false` brings back the list and the ~15 s Steam search.
+Not on the OpenPortroid server yet: there the game's search runs on the
+server, so two players searching at once both host (it needs the server to
+pair them).
+
+**The host's settings.** A guest plays with the host's `SharedSettings`
+(input margin, the shared LOD, god mode, the co-op fixes): they come with the
+invite (`sync`) and with the host's `HELLO` while in its lobby, and are set
+before the game starts, never during it (`AdoptHostSettings`). This player's
+own values come back 10 s after it is back in the menus (90 s when it never
+got to the lobby). The banner about different settings stays only for older
+builds, which take nothing. Not for a versus party.
+
 ## How it works
 
 ### EA lobby (built-in server, `src/ea_server.cpp`)
@@ -99,9 +132,40 @@ player.
 The game logs in to EA (FESL, TCP 18480), then uses Theater (TCP 18485) to
 create, list and enter games and Messenger (TCP 13505) for presence. The game
 asks for the server with `XOnlineGetServiceInfo` (services `45410004`,
-`45410805`); the SDK answers with `net_title_server_ip`, which
-`ao2_coop_server` / `ao2_coop_host` set. Packets: 4-byte type, u32 BE flags,
-u32 BE length, `key=value\n` lines, NUL.
+`45410805`); the SDK answers with `net_title_server_ip`, the lobby router's
+address (below). Packets: 4-byte type, u32 BE flags, u32 BE length,
+`key=value\n` lines, NUL.
+
+### Lobby router (`src/lobby_router.cpp`)
+
+`net_title_server_ip` is set once at start to the router (127.0.0.1, or
+`net_bind_ip`) and never changes. The router listens there on TCP 18480 /
+18485 / 13505, next to the game's own server on 0.0.0.0 (a connection to the
+more specific address goes to it), and decides for each connection which
+lobby server it goes to:
+
+- **home**, where the game's logins go by themselves: this process's server
+  (`ao2_coop_server`; the socket is handed to it, `ea::ServeLocal`), the host
+  at `ao2_coop_host` (or a `--net_title_server_ip` given to the runtime),
+  or the OpenPortroid server through its tunnel (`ea::ForwardTunnel`);
+- a **visit**, after an accepted invite: the inviter's server.
+
+The game logs in to EA anew every time it goes online and out when it leaves
+(the FESL, Theater and Messenger connections close together), so a login is
+the unit. A FESL connection of the game starts a login and gets its target;
+Theater and Messenger go where the newest open login went. A server at an
+address names its own Theater / Messenger address in the FESL `Hello`; the
+router rewrites both to itself and keeps them for that login, so every lobby
+connection of the game passes the router. A visit holds for the first login
+after the accept (a first login more than 60 s later is asked like a later
+one). In co-op the next login goes home. In versus it stays on the inviter's server while the inviter hosts or
+stopped less than 10 s ago (a versus party following its leader into a
+match), else it goes home. Connections from anything but the game's own
+address (`net_bind_ip`, else 127.0.0.1: another game on this PC joining this
+one) go to this process's server. A lobby server in another process at the
+game's own address (a standalone server on this PC with `ao2_coop_host =
+127.0.0.1`) moves the router to 127.42.0.1. `logs/net/lobby_router.log` shows
+each login, its target and the visits.
 
 What the game needs (found by tracing it, `--ao2_coop_debug=true`):
 
@@ -131,10 +195,38 @@ to `logs/net/coop_debug.log` with `--ao2_coop_debug=true` (hooks of `sub_8221726
 `sub_822172B0` in `src/coop_debug.cpp`), together with the join flow, leave
 reasons and the lockstep frame state.
 
+### Player identity (`src/identity.cpp`)
+
+Every player has a P-256 key pair (Windows CNG), made on the first start in
+`settings/identity.key` (`ao2_identity_file`: a second copy on one PC needs a
+file of its own - `coop_start.ps1` gives each instance one). From its public
+key come the **Player ID** (SHA-256, 16 bytes), the **friend code** (its first
+40 bits in Crockford base 32, `XXXX-XXXX`) and the online **XUID**
+(`0x0009…` from the Player ID): the game sets the runtime's `net_xuid` to it,
+where the runtime made one from the gamertag, the computer's name and its
+address (another one after every change of address or VPN). The same ID and
+XUID on the LAN, over Steam and on the OpenPortroid server; the saves keep
+the offline profile's XUID. `logs/net/identity.log` says which key was loaded.
+
+Every presence packet ends with the sender's public key (`pk`), the time
+(`ts`, within 15 min of this PC's clock) and `sig`, the ECDSA signature of
+everything before it. A packet whose signature does not hold is dropped; an
+unsigned one is an older build's (listed, never trusted). A peer entry that a
+key signed is that key's: another sender at its address cannot take its name
+over, and its XUID is its ID's whatever the packet says. `INVITE` must be
+signed and names the invited player (`to`), `ACK` / `ANSWER` count only from
+the invited player's key, `KICK` only from the key of the host whose invite
+was accepted. The players window shows one row per player (of its addresses
+the LAN one, then OpenPortroid, then Steam), its friend code, this player's
+own code, and its field takes a friend code: the player with it among those
+found. Not yet: finding a code on the OpenPortroid server (it needs the
+server's `/aot1/find` by code) and signing in there with the key instead of
+`X-AO2-Key`.
+
 ### Invites (`src/coop_invite.cpp`)
 
-Presence packets are plain UDP: players share no secret, so a packet proves nothing about who sent it, and its name can
-be anybody's. `src/invite_checks.h` limits what one can do (test: `tools/invite_checks_test.cpp`): text fields are cut and
+Presence packets are plain UDP: players share no secret beyond their public keys, so an unsigned packet proves nothing
+about who sent it (signed ones: *Player identity* above). `src/invite_checks.h` limits what one can do (test: `tools/invite_checks_test.cpp`): text fields are cut and
 stripped of control characters, the server in an invite is a number that is never looked up and must fit the sender (no
 loopback from another PC, only Steam addresses over Steam, no local address from outside the network), the lists and new
 invites are limited in number, and a `GAME` answer counts only from the server asked. An invite naming a third machine's
@@ -159,7 +251,7 @@ Here a presence service in every game (UDP 18491, text packets
   the window open) to every adapter's broadcast address, `ao2_friends`,
   `ao2_coop_host`, the addresses typed in and the players already known.
 - `INVITE` (id, inviter name / XUID, session id, host XNADDR, the inviter's
-  `net_title_server_ip`), `ACK`, `ANSWER` (accepted). The session comes from
+  lobby server: `router::CurrentServer`), `ACK`, `ANSWER` (accepted). The session comes from
   the lobby game the inviter hosts (`ea::FindHostedGame`: CGAM `XB360SESS`,
   the host's own EGAM `R-XNADDR`); a host whose lobby server runs in another
   process asks that server's presence service (`GAMEQ` / `GAME`).
@@ -167,15 +259,16 @@ Here a presence service in every game (UDP 18491, text packets
   (`sub_82B07EB0` / `sub_82B07E60`) open the Players window
   (`debug_menu.h` OpenWindow: modal, the game gets no input); the invite
   notice is drawn without input (SetNotice, the frame rate overlay's layer);
-  accepting points `net_title_server_ip` at the inviter's server, then
-  broadcasts the notification; `sub_82C41388` answers with the invite (the
+  accepting makes the router's next login a visit to the inviter's server,
+  then broadcasts the notification; `sub_82C41388` answers with the invite (the
   invitee XUID read through `sub_82B07E10(user, 5, &info)` as EA reads it).
-- The server before the invite comes back once the inviter has hosted
-  nothing for 10 s (its `HELLO` says so, or it is gone) and this game is in
-  the menus (`RestoreOwnServer`). Without that a game hosted later went to
-  the inviter's server: no Steam lobby, "nogame" to a knock, and a whole
-  party's matches over a relay to a PC that had left. An invite whose server
-  is this PC's own Steam address keeps this PC's own server.
+- A co-op visit is for one login. A versus visit ends at the first login
+  after the inviter has hosted nothing for 10 s (its `HELLO` says so, or it
+  is gone; *Lobby router* above).
+  Without that a game hosted later went to the inviter's server: no Steam
+  lobby, "nogame" to a knock, and a whole party's matches over a relay to a
+  PC that had left. An invite whose server is this PC's own (its Steam or
+  LAN address) is no visit.
 - A second game behind a player's address (a test copy, another build) does
   not take over the entry of the player with this build.
 
@@ -208,7 +301,8 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
   30 s when its game was never entered: it would keep a place of the host's
   lobby taken. Joining another lobby while hosting makes no new lobby for the
   hosted game until the join fails or that game ends.
-- **Search Co-op Game / Find Match** (the game's quick match, `GLST` with
+- With `ao2_quick_play = false` (else *Quick Play* above):
+  **Search Co-op Game / Find Match** (the game's quick match, `GLST` with
   `FILTER-NOT-PRIVATE=1` from the PC's own game) searches first
   (`ao2_public_game_search`, on by default; off: an empty list at once, so the
   game hosts a public game whose Steam lobby is in everyone's server list). A search that finds
@@ -238,16 +332,17 @@ as Spacewar (app 480) and needs no VPN or forwarded ports:
 
 The 40th Day's OpenPortroid server built for this game; the server is its own
 repository, ArmyOfTwoOpenPortroid (`aot1_server` on cube next to The 40th
-Day's, `http://aot.bhop.pw/aot1/`, UDP 18501). Its lobby is this repository's
+Day's, `http://openportroid.com/aot1/`, UDP 18501). Older settings that
+still point to `aot.bhop.pw` use the new host automatically. Its lobby is this repository's
 `ea_server.cpp` (copied there by its `tools/sync_aot1.sh`; built with
 `AO2_OPENPORTROID_SERVER`, which adds the relay and the player names), so a
 change to the lobby is made here and synced. What the game and the server
 share is in `src/openportroid.h`.
 
 - **Lobby through HTTP.** With `ao2_net_mode = openportroid` the game runs no
-  server and Steam stays off. It listens on its own loopback address
-  (127.0.0.1, or `net_bind_ip`) at TCP 18480 / 18485 / 13505 and sets
-  `net_title_server_ip` to it; each connection becomes a request to
+  server and Steam stays off. The lobby router (its home is the tunnel)
+  listens on its own loopback address (127.0.0.1, or `net_bind_ip`) at TCP
+  18480 / 18485 / 13505; each connection becomes a request to
   `http://<ao2_openportroid_server>/aot1/<fesl | theater | messenger>` with
   `Upgrade: aot1-tunnel`, the player's key (`X-AO2-Key`) and that loopback
   address (`X-AO2-Local`); nginx passes it on with `X-Real-IP`, the server
@@ -258,7 +353,8 @@ share is in `src/openportroid.h`.
   port (`ao2_openportroid_port`, 18501) with its key and gets an address in
   127.128.0.0/10 (Steam's are 127.64.0.0/10); the lobby shows the player at
   it. For every player it knows the bridge binds that address on UDP 1000
-  (the game), 1002 (the link) and 18491 (presence), the Steam bridge's way,
+  (the game), 1002 (the link), 18491 (presence) and 36020 (Xbox session
+  discovery), the Steam bridge's way,
   and sends what the game sends there to that player: straight once NAT
   punching worked (the server introduces both players when the lobby pairs
   them: EGRQ), else through the server. `ao2_openportroid_direct = false`
@@ -466,6 +562,11 @@ and how long it was held (so each side measures its own round trip over the
 same route as the game's traffic), the frames the sender waited for its
 partner in the last second, and its input margin wish.
 
+The game's UDP destinations determine which peers the link accepts in each
+session. Starting a session clears the previous peers, queued link packets
+and the adaptive margin. Older or duplicate quality updates from a peer
+are ignored, including across timestamp wraparound.
+
 - **Overlay** (`ao2_coop_net_hud`: 0 off, 1 only on trouble (default), 2
   always), top right in the frame rate overlay's layer: ping, input delay in
   frames (+ the adaptive margin), waits per second here and at the partner;
@@ -480,8 +581,8 @@ partner in the last second, and its input margin wish.
   larger wish from its frame on, so the margin stays the same on both, as
   `SharedSettings` asks of `ao2_coop_input_margin_ms`. `logs/net/coop_delay.log` has
   each wish and each change in force.
-- **Rejoin** (`ao2_coop_rejoin`, `ao2_coop_rejoin_minutes` = 5): a game
-  that ends its network session says `bye` over the link. When a session
+- **Rejoin** (`ao2_coop_rejoin`, `ao2_coop_rejoin_minutes` = 5): the host
+  ending the game or a guest leaving normally says `bye` over the link. When a session
   ends within 5 s of the lockstep running and the partner had been silent
   for 3 s without a bye (a crash, a lost connection), or the checksums had
   been out of step for 300+ frames, the game puts up a notice and
@@ -608,7 +709,8 @@ virtual pad either (`SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD=1` was
 tried: nothing). RawInput, Windows.Gaming.Input and HIDAPI see nothing too.
 A copy of `XInput1_4.dll` under another name is not hooked, so the runtime's
 SDL driver (`UseUnhookedXInput`, `hid_xinput_past_steam`, on by default)
-copies it to `%TEMP%ex_xinput1_4.dll` and points SDL's XInput entry points
+copies it to `%TEMP%
+ex_xinput1_4.dll` and points SDL's XInput entry points
 there once SDL's gamepad subsystem is up. With that off, Steam's Spacewar →
 Controller → Disable Steam Input, or `ao2_steam=false`, gives the pad back. The runtime's SDL
 driver also opens the pads SDL lists whose `SDL_EVENT_GAMEPAD_ADDED` never

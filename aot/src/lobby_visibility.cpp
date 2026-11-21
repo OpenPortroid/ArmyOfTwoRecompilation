@@ -30,6 +30,7 @@
 // Create Match with Public picked (CreatePublic). Without Steam they go through.
 #include "console_cmd.h"
 #include "debug_menu.h"
+#include "ea_server.h"
 #include "log_files.h"
 #include "steam_net.h"
 #include "ui_text.h"
@@ -46,8 +47,11 @@
 
 #include <imgui.h>
 
+#include <rex/cvar.h>
 #include <rex/logging.h>
 #include <rex/ppc.h>
+
+REXCVAR_DECLARE(bool, ao2_quick_play);
 
 namespace ao2::split_join
 {
@@ -71,6 +75,7 @@ namespace
 
   constexpr char kCoopEvent[] = "MissionSetup_HostPrivate";
   constexpr char kVersusEvent[] = "Multiplayer_CustomMatch";
+  constexpr char kVersusSearch[] = "Multiplayer_QuickMatch";
   constexpr double kGrace = 0.25; // what chose the menu's button is no pick here
   constexpr double kDoneShow = 0.22;
 
@@ -89,6 +94,34 @@ namespace
       std::fprintf(log, "%s\n", what.c_str());
       std::fflush(log);
     }
+  }
+
+  bool BlockOpenPortroidVersus()
+  {
+    if (ao2::ea::NetMode() != "openportroid")
+    {
+      return false;
+    }
+    const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(6);
+    ao2::menu::SetNotice([until]() {
+      if (std::chrono::steady_clock::now() >= until)
+      {
+        return false;
+      }
+      const auto *viewport = ImGui::GetMainViewport();
+      auto *draw = ImGui::GetForegroundDrawList();
+      const float s = ui::Scale();
+      const char *title = Tr("OpenPortroid is for co-op");
+      const char *hint = Tr("For Versus, select LAN + Steam or LAN in the launcher.");
+      const float width = std::max(ui::TextSize(FontKind::kHeading, title).x, ui::TextSize(FontKind::kBody, hint).x);
+      const ImVec2 min(viewport->GetCenter().x - width / 2 - 20 * s, viewport->Pos.y + 30 * s);
+      const ImVec2 max(min.x + width + 40 * s, min.y + 76 * s);
+      ui::Card(draw, min, max, ui::kPanel);
+      ui::Text(draw, FontKind::kHeading, ImVec2(min.x + 20 * s, min.y + 12 * s), ui::kText, title);
+      ui::Text(draw, FontKind::kBody, ImVec2(min.x + 20 * s, min.y + 43 * s), ui::kMuted, hint);
+      return true;
+    });
+    return true;
   }
 
   class VisibilityWindow
@@ -293,6 +326,10 @@ namespace ao2::lobby_visibility
   // Any thread: the list's Create - the create button's event again, public.
   void CreatePublic(bool versus)
   {
+    if (versus && BlockOpenPortroidVersus())
+    {
+      return;
+    }
     const std::string event = versus ? kVersusEvent : kCoopEvent;
     g_override = 0;
     g_resume = true;
@@ -304,7 +341,19 @@ namespace ao2::lobby_visibility
   bool OnCauseEvent(PPCContext &ctx, uint8_t *base)
   {
     const std::string event = ao2::split_join::CauseEventName(base, ctx.r4.u32);
-    if (event == "MissionSetup_HostPublic" || event == "Multiplayer_QuickMatch")
+    if ((event == kVersusEvent || event == kVersusSearch) && BlockOpenPortroidVersus())
+    {
+      // The menu's Kismet sequence closes its scene after these actions.
+      static std::chrono::steady_clock::time_point reopen_after;
+      const auto now = std::chrono::steady_clock::now();
+      if (now >= reopen_after)
+      {
+        reopen_after = now + std::chrono::milliseconds(500);
+        BackToMenu(true);
+      }
+      return true;
+    }
+    if (event == "MissionSetup_HostPublic" || event == kVersusSearch)
     {
       if (g_override.exchange(-1) != -1)
       {
@@ -312,9 +361,12 @@ namespace ao2::lobby_visibility
       }
       // The list instead of the disc's search (once per PlayerController: held
       // back while it is open).
-      if (ao2::steam::Running())
+      // Quick Play (ao2_quick_play): the game's own search, which hosts at
+      // once when this PC's server has no game (ea_server.cpp GLST) while
+      // the invites keep looking; the list stays in F1 > Online > Servers.
+      if (ao2::steam::Running() && !REXCVAR_GET(ao2_quick_play))
       {
-        ao2::browser::Open(event == "Multiplayer_QuickMatch");
+        ao2::browser::Open(event == kVersusSearch);
         return true;
       }
       return false;

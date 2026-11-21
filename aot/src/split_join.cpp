@@ -35,6 +35,7 @@
 // and match), not in the main menu, where the lobby also is.
 #include "console_cmd.h"
 #include "coop.h"
+#include "coop_link.h"
 #include "debug_menu.h"
 #include "log_files.h"
 #include "ue3_reflect.h"
@@ -654,8 +655,9 @@ namespace ao2::split_join
     // Multiplayer menu connects (coop.h network_session) and, with no game
     // made, nothing ended it: cheats and checkpoints stayed "network only".
     if ((event == "Multiplayer_BackSelected" || event == "MissionSetup_BackSelected") &&
-        ao2::coop::network_session.exchange(false))
+        ao2::coop::network_session.load(std::memory_order_acquire))
     {
+      ao2::coop::link::EndSession(true);
       Log("network session over (back to the main menu)");
     }
     constexpr char kPrefix[] = "MissionSetup_";

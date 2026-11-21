@@ -309,8 +309,8 @@ namespace AO2Launcher
             p("Default gamepad layout restored", "Layout padrão do controle restaurado");
             p("Player 1 name", "Nome do jogador 1");
             p("Player 2 name", "Nome do jogador 2");
-            p("Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty to use the computer's name.",
-              "Gamertag do jogador 1 (até 15 caracteres), a mesma de Rede → Nome do jogador. Vazio: o nome do computador.");
+            p("Player 1's gamertag (up to 15 characters), same as Network → Player name. Leave empty for a generated name.",
+              "Gamertag do jogador 1 (até 15 caracteres), a mesma de Rede → Nome do jogador. Deixe em branco para gerar um nome.");
             p("Gamertag of player 2 (up to 15 characters); their own profile and settings. " +
               "Empty: player 1's name with (1) after it.",
               "Gamertag do jogador 2 (até 15 caracteres); com perfil e configurações próprios. " +
@@ -332,16 +332,16 @@ namespace AO2Launcher
             // Network: the OpenPortroid server (Nicks.cs).
             p("Network", "Rede");
             p("LAN + Steam: the local network or a VPN (Radmin VPN, ZeroTier...), and Steam friends and lobbies " +
-              "while Steam runs. OpenPortroid: play with anyone on the internet through the OpenPortroid server " +
-              "(aot.bhop.pw), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
+              "while Steam runs. OpenPortroid: play co-op online through the OpenPortroid server " +
+              "(openportroid.com), no VPN, Steam or open ports. LAN: the local network or a VPN only. " +
               "Both players need the same choice.",
               "LAN + Steam: a rede local ou uma VPN (Radmin VPN, ZeroTier...), e amigos e lobbies da Steam enquanto a Steam está aberta. " +
-              "OpenPortroid: jogar com qualquer pessoa na internet pelo servidor OpenPortroid (aot.bhop.pw), sem VPN, Steam ou portas abertas. " +
+              "OpenPortroid: co-op online pelo servidor OpenPortroid (openportroid.com), sem VPN, Steam ou portas abertas. " +
               "LAN: só a rede local ou uma VPN. Os dois jogadores precisam da mesma escolha.");
-            p("The name your partner sees (up to 15 characters). Empty: the computer's name. On the OpenPortroid " +
+            p("The name your partner sees (up to 15 characters). Leave empty for a generated name. On the OpenPortroid " +
               "server only Latin letters, digits, _ and -, and it is yours alone: the first to take it keeps it " +
               "(it is freed after 180 days unused), and friends find you by it.",
-              "O nome que seu parceiro vê (até 15 caracteres). Vazio: o nome do computador. No servidor OpenPortroid " +
+              "O nome que seu parceiro vê (até 15 caracteres). Deixe em branco para gerar um nome. No servidor OpenPortroid " +
               "só letras latinas, dígitos, _ e -, e ele é só seu: quem pega primeiro fica com ele " +
               "(é liberado após 180 dias sem uso), e os amigos encontram você por ele.");
             p("Player key", "Chave do jogador");

@@ -224,6 +224,7 @@ namespace ao2::steam
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <utility>
 
@@ -395,6 +396,7 @@ namespace
     uint16_t port = 0;
     bool steam_up = false;    // the Steam connection is connected
     bool local_up = false;    // the local socket is connected
+    bool local_eof = false;   // the local socket ended; flush the Steam queue
     std::string to_steam;     // read locally before the Steam connection was up
     std::string to_local;     // received over Steam, not written yet
     bool closing = false;     // the far side closed: write out to_local, then close
@@ -416,6 +418,11 @@ namespace
     {
       self_ = SteamUser()->GetSteamID().ConvertToUint64();
       self_ip_ = VirtualIp(self_);
+      in_addr bind_address{};
+      const std::string bind_ip = rex::cvar::GetFlagByName("net_bind_ip");
+      udp_destination_ = inet_pton(AF_INET, bind_ip.c_str(), &bind_address) == 1 && bind_address.s_addr
+                             ? bind_address.s_addr
+                             : self_ip_;
       {
         std::lock_guard lock(shared().mutex);
         shared().self_ip = self_ip_;
@@ -541,9 +548,17 @@ namespace
           }
           NonBlocking(s);
           sockaddr_in to = Sockaddr(self_ip_, ls->second);
-          connect(s, reinterpret_cast<sockaddr *>(&to), sizeof(to));
+          const bool connected = connect(s, reinterpret_cast<sockaddr *>(&to), sizeof(to)) == 0;
+          if (!connected && WSAGetLastError() != WSAEWOULDBLOCK)
+          {
+            Log("TCP %u from %s: local lobby connection failed (%d)", ls->second, p->name.c_str(), WSAGetLastError());
+            closesocket(s);
+            SteamNetworkingSockets()->CloseConnection(conn, 0, nullptr, false);
+            return;
+          }
           auto t = std::make_unique<Tunnel>();
           t->local = s;
+          t->local_up = connected;
           t->conn = conn;
           t->peer = peer;
           t->port = ls->second;
@@ -615,7 +630,8 @@ namespace
       size_t first_tunnel = fds.size();
       for (auto &t : tunnels_)
       {
-        SHORT ev = t->closing ? 0 : POLLRDNORM;
+        const bool can_read = !t->closing && !t->local_eof && t->to_steam.size() < (1u << 20);
+        SHORT ev = can_read ? POLLRDNORM : 0;
         if (!t->local_up || !t->to_local.empty())
         {
           ev |= POLLWRNORM;
@@ -655,6 +671,12 @@ namespace
           t->local = s;
           t->local_up = true;
           t->conn = SteamNetworkingSockets()->ConnectP2P(id, port, 0, nullptr);
+          if (t->conn == k_HSteamNetConnection_Invalid)
+          {
+            closesocket(s);
+            Log("TCP %u to %s: could not start Steam connection", port, p.name.c_str());
+            continue;
+          }
           t->peer = p.id;
           t->port = port;
           Log("TCP %u to %s: connecting", port, p.name.c_str());
@@ -676,9 +698,10 @@ namespace
           std::memcpy(buf, &src, 2);
           std::memcpy(buf + 2, &port, 2);
           SteamNetworkingIdentity id = Identity(p.id);
+          const int flags = port == PresencePort() ? k_nSteamNetworkingSend_ReliableNoNagle
+                                                   : k_nSteamNetworkingSend_UnreliableNoNagle;
           SteamNetworkingMessages()->SendMessageToUser(
-              id, buf, uint32_t(got + 4),
-              k_nSteamNetworkingSend_UnreliableNoNagle | k_nSteamNetworkingSend_AutoRestartBrokenSession, 0);
+              id, buf, uint32_t(got + 4), flags | k_nSteamNetworkingSend_AutoRestartBrokenSession, 0);
         }
       }
       for (size_t i = first_tunnel; i < fds.size(); ++i)
@@ -686,17 +709,21 @@ namespace
         Tunnel &t = *tunnels_[i - first_tunnel];
         if (!t.local_up && (fds[i].revents & POLLWRNORM))
         {
+          int error = 0;
+          int size = sizeof(error);
+          if (getsockopt(t.local, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&error), &size) != 0 || error)
+          {
+            Close(t, "local connect failed");
+            continue;
+          }
           t.local_up = true;
           BOOL on = TRUE;
           setsockopt(t.local, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&on), sizeof(on));
         }
-        if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+        if (!t.local_eof && !(fds[i].revents & POLLRDNORM) &&
+            (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)))
         {
-          if (!(fds[i].revents & POLLRDNORM))
-          {
-            Close(t, "local socket error");
-            continue;
-          }
+          t.local_eof = true;
         }
         if (fds[i].revents & POLLRDNORM)
         {
@@ -705,19 +732,11 @@ namespace
           {
             if (got == 0 || WSAGetLastError() != WSAEWOULDBLOCK)
             {
-              Close(t, "closed locally");
+              t.local_eof = true;
             }
             continue;
           }
-          if (t.steam_up)
-          {
-            SteamNetworkingSockets()->SendMessageToConnection(t.conn, buf, uint32_t(got),
-                                                              k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
-          }
-          else
-          {
-            t.to_steam.append(buf, size_t(got));
-          }
+          t.to_steam.append(buf, size_t(got));
         }
       }
     }
@@ -740,7 +759,7 @@ namespace
             SOCKET s = Udp(*p, src);
             if (s != INVALID_SOCKET)
             {
-              sockaddr_in to = Sockaddr(self_ip_, dst);
+              sockaddr_in to = Sockaddr(udp_destination_, dst);
               sendto(s, static_cast<const char *>(m->m_pData) + 4, m->m_cbSize - 4, 0,
                      reinterpret_cast<sockaddr *>(&to), sizeof(to));
             }
@@ -773,11 +792,26 @@ namespace
         {
           continue;
         }
-        if (t.steam_up && !t.to_steam.empty())
+        if (t.steam_up && !t.closing && !t.to_steam.empty())
         {
-          SteamNetworkingSockets()->SendMessageToConnection(t.conn, t.to_steam.data(), uint32_t(t.to_steam.size()),
-                                                            k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
-          t.to_steam.clear();
+          const uint32_t size = uint32_t(std::min<size_t>(t.to_steam.size(), 65536));
+          EResult result = SteamNetworkingSockets()->SendMessageToConnection(
+              t.conn, t.to_steam.data(), size, k_nSteamNetworkingSend_ReliableNoNagle, nullptr);
+          if (result == k_EResultOK)
+          {
+            t.to_steam.erase(0, size);
+          }
+          else if (result != k_EResultLimitExceeded)
+          {
+            Log("TCP %u: Steam send failed (%d)", t.port, int(result));
+            Close(t, "Steam write failed");
+            continue;
+          }
+        }
+        if (t.local_eof && (t.closing || t.to_steam.empty()))
+        {
+          Close(t, "closed locally");
+          continue;
         }
         if (!t.closing)
         {
@@ -825,6 +859,7 @@ namespace
 
     uint64_t self_ = 0;
     uint32_t self_ip_ = 0;
+    uint32_t udp_destination_ = 0;
     std::map<uint64_t, Peer> peers_;
     std::map<HSteamListenSocket, uint16_t> listen_;
     std::vector<std::unique_ptr<Tunnel>> tunnels_;
@@ -1017,13 +1052,15 @@ namespace
       {
         auto &sh = shared();
         std::lock_guard lock(sh.mutex);
-        if (sh.quick == Shared::Quick::kWanted)
+        // Steam permits only one RequestLobbyList at a time.
+        const bool can_search = !list_call_.IsActive() && !quick_call_.IsActive();
+        if (can_search && sh.quick == Shared::Quick::kWanted)
         {
           sh.quick = Shared::Quick::kSearching;
           quick = true;
           quick_mode_ = sh.quick_mode;
         }
-        refresh = std::exchange(sh.refresh, false);
+        refresh = can_search && !quick && std::exchange(sh.refresh, false);
         join = std::exchange(sh.join, 0);
         code = std::exchange(sh.code_join, 0);
         invite_dialog = std::exchange(sh.invite_dialog, false);
@@ -1153,6 +1190,9 @@ namespace
       l.menu = SteamMatchmaking()->GetLobbyData(id, "menu");
       l.rules = SteamMatchmaking()->GetLobbyData(id, "rules");
       l.members = SteamMatchmaking()->GetLobbyData(id, "members");
+      l.mode = SteamMatchmaking()->GetLobbyData(id, "umode");
+      l.quick_play = std::strcmp(SteamMatchmaking()->GetLobbyData(id, "qp"), "1") == 0;
+      l.player_id = SteamMatchmaking()->GetLobbyData(id, "pid");
       SteamNetworkPingLocation_t loc;
       const char *where = SteamMatchmaking()->GetLobbyData(id, "loc");
       if (*where && SteamNetworkingUtils()->ParsePingLocationString(where, loc))
@@ -1201,6 +1241,10 @@ namespace
 
     void Join(uint64_t id)
     {
+      if (joining_)
+      {
+        return;
+      }
       if (id == lobby_)
       {
         bool active;
@@ -1251,6 +1295,7 @@ namespace
       }
       SetLobby(0, false);
       lobby_host_ = 0;
+      lobby_type_.reset();
     }
 
     void SetLobby(uint64_t id, bool own)
@@ -1377,11 +1422,13 @@ namespace
       {
         return;
       }
-      if (!own_lobby_ && !creating_)
+      if (!own_lobby_ && !creating_ && now >= next_create_)
       {
         Leave();
         creating_ = true;
-        create_call_.Set(SteamMatchmaking()->CreateLobby(h.is_private ? k_ELobbyTypeFriendsOnly : k_ELobbyTypePublic,
+        next_create_ = now + std::chrono::seconds(3);
+        creating_type_ = h.is_private ? k_ELobbyTypeFriendsOnly : k_ELobbyTypePublic;
+        create_call_.Set(SteamMatchmaking()->CreateLobby(creating_type_,
                                                          std::max(h.max, 2)),
                          this, &Session::OnCreated);
         Log("creating a lobby (%s, %s)", h.versus ? "versus" : "co-op", h.is_private ? "friends only" : "public");
@@ -1390,13 +1437,17 @@ namespace
       if (own_lobby_)
       {
         CSteamID lobby(lobby_);
+        const auto type = h.is_private ? k_ELobbyTypeFriendsOnly : k_ELobbyTypePublic;
+        if (lobby_type_ != type && SteamMatchmaking()->SetLobbyType(lobby, type))
+        {
+          lobby_type_ = type;
+        }
         auto set = [&](const char *key, const std::string &value) {
           if (value != SteamMatchmaking()->GetLobbyData(lobby, key))
           {
             SteamMatchmaking()->SetLobbyData(lobby, key, value.c_str());
           }
         };
-        set("ao2", "1");
         // Who hosts: a player joining takes the invite by itself from the start (Join), not only once
         // its join's answer is in - the invite sent when it enters often comes first.
         set("host", std::to_string(SteamUser()->GetSteamID().ConvertToUint64()));
@@ -1413,6 +1464,9 @@ namespace
         set("menu", h.menu);
         set("rules", h.rules);
         set("members", h.members);
+        set("qp", h.quick_play ? "1" : "0");
+        set("pid", h.player_id);
+        set("ao2", "1");
         // Where this PC is, for the others' ping (ready once the relays answered).
         SteamNetworkPingLocation_t loc;
         if (SteamNetworkingUtils()->GetLocalPingLocation(loc) >= 0.0f)
@@ -1431,9 +1485,9 @@ namespace
     void OnCreated(LobbyCreated_t *e, bool io_failure)
     {
       creating_ = false;
-      if (io_failure || e->m_eResult != k_EResultOK)
+      if (io_failure || !e || e->m_eResult != k_EResultOK)
       {
-        Log("lobby not created (%d)", io_failure ? -1 : int(e->m_eResult));
+        Log("lobby not created (%d)", io_failure || !e ? -1 : int(e->m_eResult));
         return;
       }
       if (joining_ || lobby_)
@@ -1444,6 +1498,7 @@ namespace
         return;
       }
       SetLobby(e->m_ulSteamIDLobby, true);
+      lobby_type_ = creating_type_;
       Log("lobby %llx created", (unsigned long long)lobby_);
       UpdateHosting();
     }
@@ -1451,10 +1506,9 @@ namespace
     void OnJoined(LobbyEnter_t *e, bool io_failure)
     {
       joining_ = false;
-      if (io_failure || e->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess)
+      if (io_failure || !e || e->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess)
       {
-        Log("lobby %llx not joined (%d)", (unsigned long long)e->m_ulSteamIDLobby,
-            io_failure ? -1 : int(e->m_EChatRoomEnterResponse));
+        Log("lobby not joined (%d)", io_failure || !e ? -1 : int(e->m_EChatRoomEnterResponse));
         bool quick;
         {
           std::lock_guard lock(shared().mutex);
@@ -1543,6 +1597,9 @@ namespace
     bool own_lobby_ = false;
     uint64_t lobby_host_ = 0; // the joined lobby's host (its owner at the join)
     bool creating_ = false;
+    Clock::time_point next_create_;
+    ELobbyType creating_type_ = k_ELobbyTypePublic;
+    std::optional<ELobbyType> lobby_type_;
     bool joining_ = false;      // JoinLobby asked, its answer not in yet
     bool hold_hosting_ = false; // a game hosted when the join started: no lobby for it
     Clock::time_point joined_since_;
@@ -1742,7 +1799,7 @@ namespace ao2::steam
         }
         name.resize(cut);
       }
-      if (!name.empty())
+      if (name != "[unknown]" && name.find_first_not_of(" \t\r\n") != std::string::npos)
       {
         rex::cvar::SetFlagByName("net_gamertag", name);
         Log("the player's name is the Steam name: %s", name.c_str());

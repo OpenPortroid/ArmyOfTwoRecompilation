@@ -309,11 +309,16 @@ namespace AO2Launcher
             {
                 a.Add("--ao2_coop_debug");
             }
-            // On the OpenPortroid server always a valid name (the one claimed on Play).
-            string tag = openportroid ? Nicks.Name(s) : s["gamertag"].Trim();
-            if (tag.Length > 0)
+            // OpenPortroid uses the name claimed on Play. Elsewhere a generated
+            // name is a fallback for an empty launcher and game configuration.
+            string tag = Nicks.ConfiguredName(s);
+            if (openportroid || tag.Length > 0)
             {
-                a.Add("--net_gamertag=" + tag);
+                a.Add("--net_gamertag=" + (tag.Length > 0 ? tag : Nicks.FallbackName(s)));
+            }
+            else
+            {
+                a.Add("--ao2_generated_gamertag=" + Nicks.FallbackName(s));
             }
             // The Steam name replaces it in the game once Steam has started (no Steam: this one).
             a.Add("--ao2_steam_name=" + (s["name_source"] == "own" ? "false" : "true"));

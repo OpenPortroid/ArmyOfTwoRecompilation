@@ -75,6 +75,7 @@ namespace
 
   struct Auto
   {
+    uint32_t session_id = 0;
     uint32_t last_frame = 0;
     uint32_t last_wait_frame = 0;
     int32_t waits = 0; // in this second
@@ -95,20 +96,28 @@ namespace
     return f;
   }
 
+  void ResetAutoIfNeeded(uint32_t frame)
+  {
+    Auto &a = g_auto;
+    const uint32_t session_id = ao2::coop::link::SessionId();
+    if (session_id != a.session_id || frame + 600 < a.last_frame || a.window == clock::time_point{})
+    {
+      a = Auto{};
+      a.session_id = session_id;
+      a.window = a.steady_since = a.last_change = clock::now();
+      ao2::coop::link::ProposeExtraMs(0, 0);
+      ao2::coop::link::SetLocalWaits(0);
+      g_extra_ms.store(0, std::memory_order_relaxed);
+      g_waits_shown.store(0, std::memory_order_relaxed);
+    }
+  }
+
   // Every call of the lead check (game thread): counts the frames that had
   // to wait, moves this machine's wish, applies both wishes at their frames.
   void UpdateAuto(uint32_t frame, bool waiting)
   {
     Auto &a = g_auto;
-    auto now = clock::now();
-    if (frame + 600 < a.last_frame || a.window == clock::time_point{})
-    {
-      // A new game (the frame count starts over).
-      a = Auto{};
-      a.window = a.steady_since = a.last_change = now;
-      ao2::coop::link::ProposeExtraMs(0, 0);
-      g_extra_ms.store(0, std::memory_order_relaxed);
-    }
+    const auto now = clock::now();
     a.last_frame = frame;
     if (waiting && frame != a.last_wait_frame)
     {
@@ -259,6 +268,7 @@ extern "C" REX_FUNC(sub_82A13B48)
   // As the game: the partner must have reached frame - lead; wait (1) if
   // it has not.
   int32_t frame = LoadS32(base, sync + 92);
+  ResetAutoIfNeeded(uint32_t(frame));
   int32_t needed = frame - CoopLeadFrames(LoadS32(base, sync + 260));
   StoreS32(base, out, needed);
   bool wait = needed > 0 && LoadS32(base, sync + 96) < needed;

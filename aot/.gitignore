@@ -8,3 +8,5 @@ rexglue/*
 !rexglue/README.md
 *.log
 dlc/*
+# The player's key pair (src/identity.cpp): private
+settings/identity.key*

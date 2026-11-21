@@ -37,7 +37,7 @@ foreach ($name in $Instances) {
   if (-not (Test-Path "$dir\shader_cache")) { Copy-Item -Recurse $cache "$dir\shader_cache" }
   $ip = "127.0.0.$i"
   $gargs = @("--fullscreen=false", "--net_bind_ip=$ip", "--net_gamertag=Player$name",
-            "--user_data_root=$dir\user", "--cache_root=$dir\cache",
+            "--user_data_root=$dir\user", "--cache_root=$dir\cache", "--ao2_identity_file=$dir\identity.key",
             "--ao2_native_gpu_resolution_scale=1") + $ExtraArgs
   if ($PythonEmu) { $gargs += "--net_title_server_ip=127.0.0.1" }
   elseif ($i -eq 1) { $gargs += "--ao2_coop_server=true" }
