@@ -7116,13 +7116,15 @@ float4 ps(float4 p : SV_Position) : SV_Target {
       {
         std::transform(v->begin(), v->end(), v->begin(), [](unsigned char c) { return char(std::tolower(c)); });
       }
-      s.ao = ao == "ssao" ? 1u : ao == "hbao" ? 2u : ao == "gtao" ? 3u : 0u;
+      const bool front_end = ao2::mouse::InFrontEnd();
+      // Leave GPU headroom for presenting the front end's 3D scenes.
+      s.ao = front_end ? 0u : (ao == "ssao" ? 1u : ao == "hbao" ? 2u : ao == "gtao" ? 3u : 0u);
       s.aa = aa == "fxaa" ? 1u : aa == "smaa" ? 2u : 0u;
       // Never in the main menu and the lobby (the front end).
-      s.motion_blur = ao2::mouse::InFrontEnd() ? 0 : std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
+      s.motion_blur = front_end ? 0 : std::clamp(REXCVAR_GET(ao2_motion_blur), 0, 2);
       // Not in the front end either: its 3D scenes are posed close up and
       // their characters blurred (#50).
-      s.dof = !ao2::mouse::InFrontEnd() && REXCVAR_GET(ao2_depth_of_field) > 0 ? 1 : 0;
+      s.dof = !front_end && REXCVAR_GET(ao2_depth_of_field) > 0 ? 1 : 0;
       g_post.settings = s;
       return g_post.settings;
     }
