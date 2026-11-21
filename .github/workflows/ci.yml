@@ -47,6 +47,24 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      - name: Set up LLVM 23.1.2
+        shell: pwsh
+        run: |
+          # The runner's system LLVM 20 is too old for the MSVC 14.52 headers.
+          $archive = Join-Path $env:RUNNER_TEMP 'llvm.tar.xz'
+          $llvm = Join-Path $env:RUNNER_TEMP 'llvm-23.1.2'
+          $url = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/clang%2Bllvm-23.1.2-x86_64-pc-windows-msvc.tar.xz'
+          curl.exe --fail --location --silent --show-error --retry 3 --output $archive $url
+          if ($LASTEXITCODE -ne 0) { throw 'LLVM download failed' }
+          $sha256 = '8fb91cdc44fcbbdcf6b3ffd0a1f9859abd14a3c3aae4423c2b6d4a4f90bf0095'
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $sha256) { throw 'LLVM SHA-256 mismatch' }
+          New-Item -ItemType Directory -Path $llvm | Out-Null
+          tar.exe -xf $archive -C $llvm --strip-components 1
+          if ($LASTEXITCODE -ne 0) { throw 'LLVM extraction failed' }
+          $bin = Join-Path $llvm 'bin'
+          & (Join-Path $bin 'clang++.exe') --version
+          if ($LASTEXITCODE -ne 0) { throw 'LLVM compiler failed to start' }
+          "AO2_CI_LLVM_BIN=$bin" >> $env:GITHUB_ENV
       - name: Apply sdk_changes to the SDK
         shell: pwsh
         run: sdk_changes\apply.ps1

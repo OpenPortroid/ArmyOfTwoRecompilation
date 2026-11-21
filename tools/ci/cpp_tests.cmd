@@ -2,6 +2,7 @@
 rem Builds and runs what needs no game files (tools\ci\CMakeLists.txt). Needs sdk\: sdk_changes\apply.ps1.
 rem Everything goes to out\ci, nothing of a normal build is touched.
 rem   tools\ci\cpp_tests.cmd [parallel jobs]
+rem   AO2_CI_LLVM_BIN can select another LLVM bin directory.
 setlocal
 set "ROOT=%~dp0..\.."
 for %%i in ("%ROOT%") do set "ROOT=%%~fi"
@@ -19,9 +20,17 @@ if not defined VCVARS (
 )
 set "PATH=%VSINSTALLER%;%PATH%"
 call "%VCVARS%" >nul || exit /b 1
-set "PATH=C:\Program Files\LLVM\bin;%PATH%"
-clang++ --version || exit /b 1
-set "CLANG=-G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+if defined AO2_CI_LLVM_BIN (
+  set "PATH=%AO2_CI_LLVM_BIN%;%PATH%"
+  set "AO2_CI_CC=%AO2_CI_LLVM_BIN%\clang.exe"
+  set "AO2_CI_CXX=%AO2_CI_LLVM_BIN%\clang++.exe"
+) else (
+  set "PATH=C:\Program Files\LLVM\bin;%PATH%"
+  set "AO2_CI_CC=clang"
+  set "AO2_CI_CXX=clang++"
+)
+"%AO2_CI_CXX%" --version || exit /b 1
+set CLANG=-G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_C_COMPILER=%AO2_CI_CC%" "-DCMAKE_CXX_COMPILER=%AO2_CI_CXX%"
 
 rem The SDK with the port's changes and the flags of its win-amd64 preset. Its outputs are redirected: by default they
 rem land in sdk\out.
